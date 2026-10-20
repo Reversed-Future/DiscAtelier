@@ -8,6 +8,7 @@ import { Icon } from '../ui/Icon';
 import { enter } from '../ui/motion';
 import { EditPurchase } from '../forms/EditPurchase';
 import { EditionContents } from './EditionContents';
+import { useEditionContent } from './useEditionContent';
 import { CollectionSource } from '../metadata/CollectionSource';
 
 export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot, prepareClose, modelBusy }: {
@@ -17,6 +18,7 @@ export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot
   const [tab, setTab] = useState('metadata');
   const [side, setSide] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState(false);
+  const editionContent = useEditionContent(item);
   const content = useRef<HTMLDivElement>(null);
   useEffect(() => { content.current?.scrollTo(0, 0); enter(content.current, 0); }, [tab]);
   const fields = [
@@ -41,13 +43,15 @@ export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot
         <h1 title={item.edition.title}>{item.edition.title}</h1><p className="object-creator">{item.edition.creator}</p>
         <nav className="detail-tabs" aria-label="详情内容">
           <button className={tab === 'metadata' ? 'active' : ''} onClick={() => setTab('metadata')}>资料</button>
+          <button className={tab === 'tracks' ? 'active' : ''} onClick={() => setTab('tracks')}>曲目</button>
           <button className={tab === 'purchase' ? 'active' : ''} onClick={() => setTab('purchase')}>购入</button>
         </nav>
-        <div ref={content} className="inspection-tab-content">
-          <div hidden={tab !== 'metadata'}><dl className="metadata">{fields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl><EditionContents item={item}/></div>
+        <div ref={content} className="inspection-tab-content" data-tab={tab}>
+          <div hidden={tab !== 'metadata'}><dl className="metadata">{fields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl><EditionContents title={item.edition.title} section="metadata" state={editionContent}/></div>
+          <div className="inspection-tracks-page" hidden={tab !== 'tracks'}><EditionContents title={item.edition.title} section="tracks" state={editionContent}/></div>
           <div hidden={tab !== 'purchase'}><dl className="metadata">{purchaseFields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl></div>
         </div>
-        <div className="object-actions"><button onClick={tab === 'metadata' ? edit : () => setEditingPurchase(true)} disabled={modelBusy}>{tab === 'metadata' ? '编辑版本' : '编辑购入'}</button><span>{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
+        <div className="object-actions"><button hidden={tab === 'tracks'} onClick={tab === 'metadata' ? edit : () => setEditingPurchase(true)} disabled={modelBusy}>{tab === 'metadata' ? '编辑版本' : '编辑购入'}</button><span>{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
         <CollectionSource source={item.source}/>
       </section>
     </div>
