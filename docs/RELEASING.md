@@ -2,6 +2,17 @@
 
 当前版本：0.1.4。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
 
+## 0.1.4 发布记录
+
+- [v0.1.4 Release](https://github.com/Reversed-Future/DiscAtelier/releases/tag/v0.1.4)，Release ID `418765867`，源码提交 `263639fe91b0979e5cc5c47242d7088b3d32d931`。仓库复核为私有。
+- 安装包 `DiscAtelier_0.1.4_x64-setup.exe`，15,359,884 字节，SHA-256 `1a5ec8392a1350df0a5a207ad2e55b4cab0977caf4cd231a0d011929a1d5b749`。
+- 同时发布安装包 `.sig`、`latest.json`、`release-manifest.json`、`SHA256SUMS.txt`。五项资产完整回读后的大小、SHA-256 与本地一致。
+- `verify_local_release_package` 通过；`verify_published_private_release` 使用实际 Rust GitHub 客户端成功下载私有安装资产，Tauri 验证签名和版本通过；损坏副本被拒绝。没有执行安装器。
+- 20 项前端测试、60 项 Rust 测试、严格 Clippy、TypeScript／Vite、签名 NSIS 构建通过。两个显式发行验证测试分别运行通过。
+- 更新签名已启用；Authenticode 仍为 `NotSigned`。未修改收藏目录或数据库 schema，未访问真实收藏内容或光盘。
+- 发布后再次核对资产，已单独删除 `D:\DiscAtelierBuilds\target\release\bundle\nsis\DiscAtelier_0.1.4_x64-setup.exe`。远端核验记录在 `artifacts/release/0.1.4/`。
+- 实际窗口、Token 配置交互、覆盖安装／重启以及下一更高版本的端到端更新仍待用户手动验收。
+
 ## 0.1.3 构建基线
 
 需要 Windows x64、Rust MSVC、Visual Studio C++ 工具、Node.js 22.19+。使用锁文件安装依赖：

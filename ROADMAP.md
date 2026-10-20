@@ -298,7 +298,7 @@
 
 ## 0.7 发布与可靠性
 
-**2026-10-21 0.1.4 增量**：已实现私有 GitHub API 更新、Windows 凭据管理器 Token、版本绑定的 Tauri 签名验证、检查／下载／安装分离、安装前一致性备份、播放期间安装拦截。设置改为数据／Discogs／播放／更新固定导航，菜单改为直接筛选和简洁入口。收藏路径和 schema 保持不变。20 项前端测试、60 项 Rust 测试及严格 Clippy 通过；覆盖更新、真实重启、窗口动效仍待用户手动验收。签名构建和新发行资产核验进行中，见 [更新说明](docs/UPDATES.md)。
+**2026-10-21 0.1.4 增量**：已实现私有 GitHub API 更新、Windows 凭据管理器 Token、版本绑定的 Tauri 签名验证、检查／下载／安装分离、安装前一致性备份、播放期间安装拦截。设置改为数据／Discogs／播放／更新固定导航，菜单改为直接筛选和简洁入口。收藏路径和 schema 保持不变。20 项前端测试、60 项 Rust 测试及严格 Clippy 通过。[0.1.4 已发布](https://github.com/Reversed-Future/DiscAtelier/releases/tag/v0.1.4)，五项远端资产完整回读并校验；实际 Rust 私有下载及安装包验签通过，篡改副本被拒绝。本地安装包已单独删除。覆盖安装、真实重启、窗口动效仍待用户手动验收，见 [更新说明](docs/UPDATES.md)。
 
 **2026-10-21 首次安装版**：[0.1.3 Windows x64 NSIS 安装包](https://github.com/Reversed-Future/DiscAtelier/releases/tag/v0.1.3) 已发布到私有仓库 `Reversed-Future/DiscAtelier`，源码标签对应提交 `ed07991450740e5779f1b3b1e885baf53f02a8fd`。20 项前端测试、53 项 Rust 测试通过。安装包、SHA-256 清单、发行清单均已从 GitHub 回读并校验大小与摘要；发布后复核资产，已单独删除本次本地安装包。详见 [发布记录](docs/RELEASING.md)。Windows 代码签名、应用内自更新、干净机器安装和覆盖升级仍待完成，未执行安装器或操作用户窗口。
 
