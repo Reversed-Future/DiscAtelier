@@ -62,3 +62,7 @@ npm run release:build
 - 本地核验记录保留在 `artifacts/release/remote-verification.json` 和 `artifacts/release/published-release.json`；源码、开发版与构建日志保留。
 
 `release-manifest.json` 是发行溯源记录，不是 Tauri 自动更新清单。安装及实盘手动验收仍未完成。
+
+## 0.1.5 发布
+
+2026-10-21：已发布私有正式版，标记为 Latest；五项资产回读一致，沿用更新签名身份，应用 Rust 私有下载与版本绑定验签通过，已删除本次本地安装包。完整资产哈希、源提交和验证范围见 [0.1.5 发布校验](releases/v0.1.5-verification.md)。
