@@ -42,4 +42,12 @@ npm run release:build
 4. 验证成功后公开该私有仓库中的 Release；只有有仓库权限的用户能访问。
 5. 再次确认已发布且资产完整，只用一个明确绝对路径删除本次本地安装包。没有发布成功则保留安装包，不做批量清理。
 
-发布结果另记于路线图。源代码、可运行开发版、校验清单和构建日志保留。
+## 已发布记录
+
+- [v0.1.3](https://github.com/Reversed-Future/DiscAtelier/releases/tag/v0.1.3) 已发布，仓库隐私状态复核为 `PRIVATE`。
+- 源码标签对应提交 `ed07991450740e5779f1b3b1e885baf53f02a8fd`；Release ID 为 `418741582`。
+- 安装包、`SHA256SUMS.txt`、`release-manifest.json` 均已通过 GitHub API 回读完整字节，大小与 SHA-256 与本地逐项一致。发布后再次核对远端三项资产与摘要。
+- 本次本地安装包 `D:\DiscAtelierBuilds\target\release\bundle\nsis\DiscAtelier_0.1.3_x64-setup.exe` 已在核验成功后单独删除，并确认路径不存在。
+- 本地核验记录保留在 `artifacts/release/remote-verification.json` 和 `artifacts/release/published-release.json`；源码、开发版与构建日志保留。
+
+`release-manifest.json` 是发行溯源记录，不是 Tauri 自动更新清单。安装及实盘手动验收仍未完成。
