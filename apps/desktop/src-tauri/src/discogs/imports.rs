@@ -3,6 +3,39 @@ use crate::commands::{self, LibraryState};
 use discatelier_provider_discogs::import_draft;
 
 #[tauri::command]
+pub async fn discogs_complete_content(
+    state: tauri::State<'_, DiscogsState>,
+    library: tauri::State<'_, LibraryState>,
+    edition_id: String,
+    id: u64,
+) -> Result<EditionContent, AppError> {
+    let expected = edition_id.clone();
+    let existing = commands::run(library.inner().clone(), move |service| {
+        let item = service
+            .source_copy("discogs", &id.to_string())?
+            .filter(|item| item.edition_id == expected)
+            .ok_or_else(|| AppError::new("conflict", "收藏来源不匹配，请重新打开详情。"))?;
+        Ok((item.source.unwrap(), service.edition_content(&expected)?))
+    })
+    .await?;
+    if let Some(content) = existing.1 {
+        return Ok(content);
+    }
+    let content = run(state.inner().clone(), move |service| {
+        let token = service.credentials.read()?;
+        let release = service.provider.release(id, token.as_deref())?;
+        Ok(EditionContent::from(&release))
+    })
+    .await?;
+    let saved = content.clone();
+    commands::run(library.inner().clone(), move |service| {
+        service.complete_content(&edition_id, &existing.0, &saved)
+    })
+    .await?;
+    Ok(content)
+}
+
+#[tauri::command]
 pub async fn discogs_prepare_import(
     state: tauri::State<'_, DiscogsState>,
     library: tauri::State<'_, LibraryState>,
@@ -40,6 +73,7 @@ pub async fn discogs_prepare_import(
         service.imports.insert(
             token.clone(),
             PreparedImport {
+                content: EditionContent::from(&snapshot.release),
                 source: source.clone(),
                 identifiers,
                 created: snapshot.received,
@@ -83,6 +117,7 @@ pub async fn discogs_import(
             .filter(|value| value.created.elapsed() < MAX_AGE)
             .ok_or_else(|| AppError::new("expired", "资料已过期，请返回资料页重新查询。"))?;
         Ok(ImportCopy {
+            content: prepared.content.clone(),
             request,
             source: prepared.source.clone(),
             identifiers: prepared.identifiers.clone(),

@@ -9,7 +9,9 @@ export interface MetadataSearch { mode: string; query: string; page: number }
 export interface SearchResult { id: number; title: string; thumb: string; cover_image: string; country: string; year: string; catno: string; format: string[]; type: string }
 export interface MetadataResults { results: SearchResult[]; pagination: { page: number; pages: number; items: number } }
 export interface ReleaseTrack { title: string; position: string; duration: string; type_: string; sub_tracks?: ReleaseTrack[] }
+export interface EditionContent { genres: string[]; styles: string[]; tracks: ReleaseTrack[] }
 export interface MetadataRelease {
+  genres: string[]; styles: string[];
   id: number; title: string; country: string; released: string;
   artists: { name: string; anv: string; join: string }[];
   formats: { name: string; qty: string; descriptions: string[]; text: string }[];
@@ -19,6 +21,7 @@ export interface MetadataRelease {
   images: { type: string; uri: string; uri150: string }[];
 }
 export const discogs = {
+  completeContent: (editionId: string, id: number) => invoke<EditionContent>('discogs_complete_content', { editionId, id }),
   prepareImport: (id: number, categoryId: string) => invoke<ImportPreview>('discogs_prepare_import', { id, categoryId }),
   importCopy: (request: ImportCopyRequest) => invoke<string>('discogs_import', { request }),
   openRelease: (id: number) => invoke<void>('discogs_open_release', { id }),

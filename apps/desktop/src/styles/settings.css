@@ -1,4 +1,4 @@
-.settings-panel { width: 820px; padding: 0; }
+.settings-panel { width: 1000px; padding: 0; }
 .settings-panel > .panel-heading { height: 84px; margin: 0; padding: 22px 28px; border-bottom: 1px solid var(--line); }
 .settings-panel > .panel-body { display: flex; overflow: hidden; }
 .settings-layout { display: grid; grid-template-columns: 168px minmax(0, 1fr); width: 100%; min-height: 0; }

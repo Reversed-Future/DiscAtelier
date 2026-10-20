@@ -22,6 +22,7 @@ fn query(text: &str) -> LibraryQuery {
 }
 fn request() -> ImportCopy {
     ImportCopy {
+        content: EditionContent::default(),
         request: ImportCopyRequest {
             request_id: Uuid::new_v4().to_string(),
             token: Uuid::new_v4().to_string(),
@@ -85,6 +86,149 @@ fn request() -> ImportCopy {
             },
         ],
     }
+}
+
+fn contents() -> EditionContent {
+    serde_json::from_str(r#"{"genres":["Rock"],"styles":["J-Rock"],"tracks":[{"position":"CD-1","title":"First","type_":"track"},{"position":"","title":"Live title","type_":"heading"},{"position":"DVD-1","title":"Suite","type_":"index","sub_tracks":[{"position":"1.1","title":"Movement"}]}]}"#).unwrap()
+}
+
+#[test]
+fn contents_survive_import_edit_restart_and_backup_restore() {
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let mut value = request();
+    value.content = contents();
+    let expected = serde_json::to_value(&value.content).unwrap();
+    service.import_copy(value).unwrap();
+    let item = service.source_copy("discogs", "249504").unwrap().unwrap();
+    let mut edition = item.edition.clone();
+    edition.title = "Edited locally".into();
+    service
+        .update_edition(UpdateEdition {
+            request_id: Uuid::new_v4().to_string(),
+            edition_id: item.edition_id.clone(),
+            expected_revision: item.edition_revision,
+            edition,
+            cover: CoverChange::Keep,
+            model: Default::default(),
+        })
+        .unwrap();
+    let backup = service.backup().unwrap();
+    drop(service);
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    assert_eq!(
+        serde_json::to_value(service.edition_content(&item.edition_id).unwrap().unwrap()).unwrap(),
+        expected
+    );
+    let preview = service.prepare_restore(backup.clone()).unwrap();
+    service.restore(preview.token).unwrap();
+    assert_eq!(
+        serde_json::to_value(service.edition_content(&item.edition_id).unwrap().unwrap()).unwrap(),
+        expected
+    );
+    assert_eq!(
+        service
+            .source_copy("discogs", "249504")
+            .unwrap()
+            .unwrap()
+            .edition
+            .title,
+        "Edited locally"
+    );
+    let conn = Connection::open(backup.clone()).unwrap();
+    conn.execute("UPDATE edition_content SET content_json='{}'", [])
+        .unwrap();
+    assert!(service.prepare_restore(backup).is_err());
+}
+
+#[test]
+fn old_collection_completion_checks_source_and_never_overwrites_personal_fields() {
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    service.import_copy(request()).unwrap();
+    let item = service.source_copy("discogs", "249504").unwrap().unwrap();
+    // Simulate a pre-v6 record, which has no edition contents row.
+    let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
+    conn.execute(
+        "DELETE FROM edition_content WHERE edition_id=?1",
+        [&item.edition_id],
+    )
+    .unwrap();
+    let mut source = item.source.clone().unwrap();
+    source.external_id = "249505".into();
+    assert!(service
+        .complete_content(&item.edition_id, &source, &contents())
+        .is_err());
+    assert!(service.edition_content(&item.edition_id).unwrap().is_none());
+    service
+        .complete_content(&item.edition_id, item.source.as_ref().unwrap(), &contents())
+        .unwrap();
+    service
+        .complete_content(
+            &item.edition_id,
+            item.source.as_ref().unwrap(),
+            &EditionContent::default(),
+        )
+        .unwrap();
+    assert_eq!(
+        service
+            .edition_content(&item.edition_id)
+            .unwrap()
+            .unwrap()
+            .tracks
+            .len(),
+        3
+    );
+    let after = service.source_copy("discogs", "249504").unwrap().unwrap();
+    assert_eq!(
+        serde_json::to_value(&after).unwrap(),
+        serde_json::to_value(&item).unwrap()
+    );
+}
+
+#[test]
+fn schema_five_upgrade_backs_up_existing_collection_before_adding_contents() {
+    let dir = directory();
+    let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
+    conn.execute_batch(
+        "CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, checksum TEXT NOT NULL);",
+    )
+    .unwrap();
+    for (index, sql) in [
+        include_str!("../migrations/001_library.sql"),
+        include_str!("../migrations/002_edition_assets.sql"),
+        include_str!("../migrations/003_sources.sql"),
+        include_str!("../migrations/004_models.sql"),
+        include_str!("../migrations/005_playback.sql"),
+    ]
+    .iter()
+    .enumerate()
+    {
+        conn.execute_batch(sql).unwrap();
+        conn.execute(
+            "INSERT INTO schema_migrations VALUES (?1,?2)",
+            params![
+                (index + 1) as i64,
+                format!("{:x}", Sha256::digest(sql.as_bytes()))
+            ],
+        )
+        .unwrap();
+    }
+    conn.pragma_update(None, "user_version", 5).unwrap();
+    drop(conn);
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let backups = service.backups().unwrap();
+    assert_eq!(backups.len(), 1);
+    let old = Connection::open(&backups[0].path).unwrap();
+    assert_eq!(
+        old.pragma_query_value::<i64, _>(None, "user_version", |row| row.get(0))
+            .unwrap(),
+        5
+    );
+    service.import_copy(request()).unwrap();
+    let preview = service.prepare_restore(backups[0].path.clone()).unwrap();
+    service.restore(preview.token).unwrap();
+    assert!(service.list(query("")).unwrap().copies.is_empty());
 }
 
 #[test]

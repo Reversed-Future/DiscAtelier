@@ -1,4 +1,5 @@
 mod artwork;
+mod content;
 mod editions;
 mod imports;
 mod migrations;
@@ -46,6 +47,18 @@ impl SqliteLibrary {
     }
 }
 impl LibraryRepository for SqliteLibrary {
+    fn edition_content(&self, edition_id: &str) -> Result<Option<EditionContent>, AppError> {
+        content::read(&self.connection, edition_id)
+    }
+    fn complete_content(
+        &mut self,
+        edition_id: &str,
+        source: &EditionSource,
+        value: &EditionContent,
+    ) -> Result<(), AppError> {
+        content::complete(&self.connection, edition_id, source, value)
+    }
+
     fn stage_model(&mut self, model: PreparedModel) -> Result<ModelPreparation, AppError> {
         Ok(self.prepared_models.insert(model))
     }

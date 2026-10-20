@@ -90,6 +90,10 @@ pub struct ReleaseImage {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MetadataRelease {
+    #[serde(default)]
+    pub genres: Vec<String>,
+    #[serde(default)]
+    pub styles: Vec<String>,
     pub id: u64,
     pub title: String,
     pub artists: Vec<ReleaseArtist>,

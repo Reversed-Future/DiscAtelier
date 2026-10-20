@@ -14,6 +14,7 @@ struct ReleaseSnapshot {
     received: Instant,
 }
 struct PreparedImport {
+    content: EditionContent,
     source: EditionSource,
     identifiers: Vec<ImportedIdentifier>,
     created: Instant,

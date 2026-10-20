@@ -1,7 +1,7 @@
 use super::*;
 use std::{io::Write, net::TcpListener, thread};
 
-const RELEASE: &str = r#"{"id":249504,"title":"Test release","artists":[{"name":"Test artist","anv":"","join":""}],"formats":[{"name":"CD","qty":"2","descriptions":["Album"],"text":"Limited"},{"name":"Blu-ray","qty":"1","descriptions":[]}],"labels":[{"name":"Label","catno":"Ab-001"}],"identifiers":[{"type":"Barcode","value":"000123"}],"tracklist":[{"position":"1-1","type_":"track","title":"Track","duration":"3:32"}],"country":"JP","released":"2020-00-00"}"#;
+const RELEASE: &str = r#"{"id":249504,"genres":["Rock"],"styles":["J-Rock"],"title":"Test release","artists":[{"name":"Test artist","anv":"","join":""}],"formats":[{"name":"CD","qty":"2","descriptions":["Album"],"text":"Limited"},{"name":"Blu-ray","qty":"1","descriptions":[]}],"labels":[{"name":"Label","catno":"Ab-001"}],"identifiers":[{"type":"Barcode","value":"000123"}],"tracklist":[{"position":"1-1","type_":"track","title":"Track","duration":"3:32"}],"country":"JP","released":"2020-00-00"}"#;
 fn server(
     status: &str,
     headers: &str,
@@ -47,6 +47,8 @@ fn server(
 fn release_keeps_quantities_identifiers_and_partial_dates() {
     let (mut provider, worker) = server("200 OK", "", RELEASE);
     let release = provider.release(249504, None).unwrap();
+    assert_eq!(release.genres, ["Rock"]);
+    assert_eq!(release.styles, ["J-Rock"]);
     assert_eq!(release.formats.len(), 2);
     assert_eq!(release.formats[0].qty, "2");
     assert_eq!(release.identifiers[0].value, "000123");

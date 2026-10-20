@@ -1,3 +1,4 @@
+import { leave } from '../ui/motion';
 import { measureAsync, measureSync } from '../models/timing';
 import { useRef, useState } from 'react';
 import type { CoverChange, Descriptor, LibraryCopy } from '../library/types';
@@ -21,13 +22,15 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   const attempt = useRef({ payload: '', requestId: crypto.randomUUID() });
   return <Modal title="编辑版本" onClose={onClose} busy={busy || reading} wide>
     <form className="editor-form" noValidate onSubmit={async event => {
+      const dialog = event.currentTarget.closest('dialog');
       event.preventDefault(); if (busy || reading) return;
       const payload = measureSync('draft_encode', () => JSON.stringify({ edition, cover, model }));
       if (payload !== attempt.current.payload) attempt.current = { payload, requestId: crypto.randomUUID() };
       setBusy(true); setError('');
       try {
         await measureAsync('save_ipc', () => library.updateEdition({ requestId: attempt.current.requestId, editionId: item.editionId, expectedRevision: item.editionRevision, edition, cover, model: modelChangeRequest(model) }));
-        onSaved(edition.categoryId); onClose();
+        onSaved(edition.categoryId);
+        dialog?.setAttribute('data-closing', 'true'); await leave(dialog); onClose();
       } catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
     }}>
       {item.editionCopyCount > 1 && <p className="form-note">本版本共 {item.editionCopyCount} 套，资料、封面与模型会同步更新。</p>}

@@ -75,7 +75,7 @@ export function App() {
   }, []);
   const openAdd = () => query.categoryId === 'music' ? setMetadataOpen(true) : setAdd({});
   const items = snapshot?.copies || [];
-  const modelActive = !editing && !add && !restoring && !metadataOpen && !settingsPage && !opticalOpen && !player.open;
+  const modelActive = !add && !restoring && !metadataOpen && !settingsPage && !opticalOpen && !player.open;
   const current = inspected || items.find(item => item.id === selectedId) || items[0];
   const artwork = useCollectionArtwork(current, modelActive && (!organize || !!inspected), !!inspected);
   return <div className="workspace">
@@ -112,9 +112,8 @@ export function App() {
     {player.active && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
       {player.snapshot?.paused ? '已暂停' : player.snapshot?.phase === 'loading' ? '读取中' : '播放中'} · {player.snapshot?.title}
     </button>}
-    {inspected && <Inspection key={inspected.id} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { await refresh(query); notify('已保存'); }}
-      duplicate={() => { setAdd({ existing: inspected }); setInspected(null); }}
-      edit={() => { setEditing(inspected); setInspected(null); }}/>}
+    {inspected && <Inspection key={inspected.id} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
+      edit={() => setEditing(inspected)}/>}
     {editing && snapshot && <EditEdition item={editing} categories={snapshot.categories} carriers={snapshot.carriers}
       onClose={() => setEditing(null)}
       onSaved={categoryId => { setSelectedId(editing.id); setQuery({ categoryId, query: '', status: null }); notify('版本已保存'); }}/>}

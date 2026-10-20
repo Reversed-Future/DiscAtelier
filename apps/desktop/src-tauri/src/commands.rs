@@ -5,6 +5,17 @@ use std::sync::{Arc, Mutex};
 
 pub type LibraryState = Arc<Mutex<Result<LibraryService<SqliteLibrary>, AppError>>>;
 
+#[tauri::command]
+pub async fn library_content(
+    state: tauri::State<'_, LibraryState>,
+    edition_id: String,
+) -> Result<Option<EditionContent>, AppError> {
+    run(state.inner().clone(), move |service| {
+        service.edition_content(&edition_id)
+    })
+    .await
+}
+
 pub(crate) async fn run<T: Send + 'static>(
     state: LibraryState,
     task: impl FnOnce(&mut LibraryService<SqliteLibrary>) -> Result<T, AppError> + Send + 'static,

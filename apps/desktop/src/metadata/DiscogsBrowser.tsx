@@ -7,6 +7,7 @@ import { ReleasePreview } from './ReleasePreview';
 import { AddCopy } from '../forms/AddCopy';
 import type { Descriptor } from '../library/types';
 import { enter } from '../ui/motion';
+import { SourceLink } from './SourceLink';
 import { SearchCover } from './SearchCover';
 
 export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onClose, onManual, onSettings }: {
@@ -73,9 +74,9 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
         <input aria-label="Discogs 搜索内容" value={query} onChange={event => setQuery(event.target.value)} disabled={busy} spellCheck={false}/>
         <button className="solid-button" disabled={busy || !query}>{busy ? '查询中' : '查询'}</button>
       </form>}
-      <p className="form-error" role="alert">{error}</p>
+      {(!release || error) && <p className="form-error" role="alert">{error}</p>}
       <div ref={content} className="metadata-search-body">{release ? <><ReleasePreview key={release.id} release={release}/>
-        <footer className="form-footer"><button type="button" className="solid-button" disabled={busy} onClick={async () => {
+        <footer className="form-footer release-footer"><SourceLink id={release.id} button/><button type="button" className="solid-button" disabled={busy} onClick={async () => {
           setBusy(true); setError('');
           try { setImported(await discogs.prepareImport(release.id, categoryId)); }
           catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }

@@ -50,6 +50,7 @@ pub struct ImportPreview {
 /// Only assembled by the provider/application boundary, not accepted as raw IPC.
 #[derive(Debug, Clone, Serialize)]
 pub struct ImportCopy {
+    pub content: crate::EditionContent,
     pub request: ImportCopyRequest,
     pub source: EditionSource,
     pub identifiers: Vec<ImportedIdentifier>,

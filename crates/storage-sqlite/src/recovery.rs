@@ -136,6 +136,7 @@ pub fn prepare(
     crate::models::validate_stored(&staged)?;
     let mut checked_copies = 0_i64;
     crate::imports::validate(&staged)?;
+    crate::content::validate(&staged)?;
     crate::playback::validate_stored(&staged)?;
     for category in discatelier_domain::categories() {
         for item in crate::reads::list(

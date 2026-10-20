@@ -9,6 +9,14 @@ mod playback;
 pub use playback::{PlaybackHistoryRepository, PlaybackProgress};
 
 pub trait LibraryRepository: Send {
+    fn edition_content(&self, edition_id: &str) -> Result<Option<EditionContent>, AppError>;
+    fn complete_content(
+        &mut self,
+        edition_id: &str,
+        source: &EditionSource,
+        value: &EditionContent,
+    ) -> Result<(), AppError>;
+
     fn stage_model(&mut self, model: PreparedModel) -> Result<ModelPreparation, AppError>;
     fn prepared_model_data(&self, token: &str) -> Result<std::sync::Arc<str>, AppError>;
     fn release_model(&mut self, token: &str) -> Result<(), AppError>;
@@ -33,6 +41,22 @@ pub struct LibraryService<R: LibraryRepository> {
     repository: R,
 }
 impl<R: LibraryRepository> LibraryService<R> {
+    pub fn edition_content(&self, edition_id: &str) -> Result<Option<EditionContent>, AppError> {
+        request_id(edition_id)?;
+        self.repository.edition_content(edition_id)
+    }
+    pub fn complete_content(
+        &mut self,
+        edition_id: &str,
+        source: &EditionSource,
+        value: &EditionContent,
+    ) -> Result<(), AppError> {
+        request_id(edition_id)?;
+        validate_source(source, &[])?;
+        validate_content(value)?;
+        self.repository.complete_content(edition_id, source, value)
+    }
+
     pub fn stage_model(&mut self, model: PreparedModel) -> Result<ModelPreparation, AppError> {
         self.repository.stage_model(model)
     }
@@ -57,6 +81,7 @@ impl<R: LibraryRepository> LibraryService<R> {
         validate_edition(&value.request.edition).map_err(validation)?;
         validate_copy(&value.request.copy).map_err(validation)?;
         validate_source(&value.source, &value.identifiers)?;
+        validate_content(&value.content)?;
         match (
             &value.request.existing_edition_id,
             value.request.expected_revision,

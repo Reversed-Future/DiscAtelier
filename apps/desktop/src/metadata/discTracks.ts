@@ -6,7 +6,9 @@ export interface DiscPage { key: string; name: string; tracks: ReleaseTrack[]; n
 // A1/B1 and 3.1 do not identify a physical disc; never infer one by track count.
 function discKey(position: string): string | null {
   const match = /^(CD|DVD)?([1-9]\d*)-0*[1-9]\d*(?:\.\d+)?$/.exec(position);
-  return match ? `${match[1] || ''}${match[2]}` : null;
+  if (match) return `${match[1] || ''}${match[2]}`;
+  // Release 14262376 explicitly uses CD-1…CD-15 and DVD-1…DVD-14.
+  return /^(CD|DVD)-0*[1-9]\d*(?:\.\d+)?$/.exec(position)?.[1] ?? null;
 }
 
 interface TrackRow { track: ReleaseTrack; key: string | null }

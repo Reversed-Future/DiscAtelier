@@ -37,6 +37,13 @@ test('carrier text removes only the repeated registered prefix and never mutates
 
 const track = (position, title = position) => ({ position, title, duration: '3:00', type_: 'track' });
 const heading = title => ({ position: '', title, duration: '', type_: 'heading' });
+test('release 14262376 CD-/DVD- positions split by medium and keep the DVD heading', () => {
+  const source = [track('CD-1'), track('CD-15'), heading('Live tour final'), track('DVD-1'), track('DVD-14')];
+  const pages = discPages(source, '人間開花');
+  assert.deepEqual(pages.map(page => [page.key, page.name]), [['CD', '人間開花'], ['DVD', 'Live tour final']]);
+  assert.deepEqual(pages[1].tracks.map(row => row.position), ['', 'DVD-1', 'DVD-14']);
+  assert.equal(pages.flatMap(page => page.tracks).length, source.length);
+});
 test('numbered discs retain their section titles and all tracks, without splitting bonus headings', () => {
   const source = [heading('Album'), track('1-1'), heading('Bonus'), track('1-2'), heading('Live'), track('2-1')];
   const original = structuredClone(source);

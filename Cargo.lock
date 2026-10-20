@@ -770,7 +770,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-application"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "discatelier-contracts",
  "discatelier-domain",
@@ -779,7 +779,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-contracts"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "chrono",
  "discatelier-domain",
@@ -788,7 +788,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-desktop"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "chrono",
  "discatelier-application",
@@ -813,7 +813,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-domain"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "chrono",
  "serde",
@@ -822,7 +822,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-optical-windows"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "discatelier-application",
  "discatelier-contracts",
@@ -833,7 +833,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-player-mpv"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "chrono",
  "discatelier-application",
@@ -846,7 +846,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-player-vlc"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "chrono",
  "discatelier-application",
@@ -859,7 +859,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-provider-discogs"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "base64 0.22.1",
  "discatelier-application",
@@ -873,7 +873,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-storage"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "base64 0.22.1",
  "chrono",

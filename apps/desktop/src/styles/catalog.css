@@ -23,7 +23,9 @@
 .object-info .object-actions { margin-top: 22px; padding-top: 18px; }
 .object-info > .collection-source { margin: 18px 0 0; }
 
-.release-preview { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(210px, .85fr) minmax(0, 1.65fr); gap: 30px; }
+.release-preview { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(210px, .85fr) minmax(0, 1.65fr); column-gap: 30px; row-gap: 0; grid-template-rows: 46px minmax(0, 1fr); }
+.release-preview > .disc-tabs { grid-column: 2; grid-row: 1; }
+.release-preview > .release-summary, .release-preview > .release-tracks { grid-row: 2; }
 .release-summary { min-height: 0; overflow: auto; overscroll-behavior: contain; padding-right: 3px; }
 .release-artwork { width: min(100%, 230px); margin-bottom: 20px; }
 .release-artwork .search-cover { width: 100%; height: auto; aspect-ratio: 1; }
@@ -32,12 +34,21 @@
 .release-summary .metadata { margin-top: 18px; gap: 16px; font-size: 11px; }
 .release-summary .metadata > div { grid-template-columns: 68px minmax(0, 1fr); gap: 10px; }
 .release-tracks { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.disc-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; flex: 0 0 46px; border-bottom: 1px solid var(--line); }
-.disc-pagination h4 { margin: 0; font-size: 13px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.disc-pagination > div { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
-.disc-pagination span { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.disc-arrow { width: 28px; height: 32px; font-size: 24px; line-height: 1; }
-.release-track-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding-top: 12px; }
+.disc-tabs { display: flex; align-items: stretch; gap: 6px; min-height: 46px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
+.disc-tabs button { position: relative; padding: 10px 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; color: var(--muted); font-size: 12px; transition: color 160ms ease, background-color 160ms ease; }
+.disc-tabs button[aria-selected="true"] { color: var(--ink); background: #ffffff08; }
+.disc-tabs button::after { content: ''; position: absolute; inset: auto 12px 0; height: 1px; background: currentColor; transform: scaleX(0); transition: transform 180ms var(--ease); }
+.disc-tabs button[aria-selected="true"]::after { transform: scaleX(1); }
+.disc-tabs button:focus-visible { outline: none; background: #ffffff10; }
+.release-footer { gap: 14px; align-items: center; position: relative; }
+.source-attribution.source-button { margin: 0; padding: 11px 16px; border: 1px solid var(--line); border-radius: 2px; color: var(--muted); text-decoration: none; background: #ffffff06; transition: color 160ms ease, background-color 160ms ease; }
+.release-footer > .form-error { position: absolute; bottom: 100%; right: 0; background: var(--surface); }
+.edition-contents .metadata { margin-top: 18px; }
+.collection-tracks { display: flex; flex-direction: column; height: 280px; min-height: 0; margin-top: 24px; }
+.complete-content { margin-top: 16px; padding-left: 0; color: var(--muted); }
+.object-info .metadata dd { overflow-wrap: anywhere; white-space: pre-wrap; }
+.release-track-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding-top: 0; }
+.release-tracks .track-list > li:first-child > div { padding-top: 0; }
 .release-track-scroll:focus-visible { outline: none; }
 .release-track-scroll .track-list { margin-top: 0; }
 .release-track-scroll .track-list li > div { grid-template-columns: 54px minmax(0, 1fr) 40px; padding-block: 11px; }
@@ -76,7 +87,7 @@
 .calendar-footer { height: 38px; border-top: 1px solid var(--line); margin-top: 10px; color: var(--muted); font-size: 11px; }
 .calendar-footer button { padding: 8px 5px; }
 @media (hover: hover) {
-  .calendar-popover button:not(:disabled):hover, .disc-arrow:not(:disabled):hover { background-color: #ffffff12; }
+  .calendar-popover button:not(:disabled):hover, .disc-tabs button:hover, .source-button:hover { background-color: #ffffff12; }
   .calendar-days [aria-selected="true"] button:hover, .calendar-options [aria-pressed="true"]:hover { background: #dfddd5; }
 }
 @media (max-width: 620px) {
@@ -85,8 +96,6 @@
   .release-preview h3 { font-size: 18px; }
   .release-track-scroll .track-list li > div { grid-template-columns: 28px minmax(0, 1fr); }
   .release-track-scroll .track-list li > div > :last-child { grid-column: 2; text-align: left; }
-  .disc-pagination { align-items: flex-start; flex-direction: column; flex-basis: 76px; gap: 0; }
-  .disc-pagination h4 { max-width: 100%; }
   .object-info { height: 640px; }
   .form-row .date-field { width: 100%; }
 }
@@ -100,4 +109,4 @@
   .object-info .detail-tabs { margin-bottom: 16px; }
   .object-info .object-actions { margin-top: 12px; padding-top: 12px; }
 }
-@media (prefers-reduced-motion: reduce) { .calendar-popover, .identifier-disclosure { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .calendar-popover, .identifier-disclosure, .disc-tabs button, .disc-tabs button::after, .source-button { transition: none; } }

@@ -81,6 +81,12 @@ pub fn create(
                 params![edition_id, (position + 1) as i64, identifier.namespace, identifier.kind, identifier.value, identifier.description]).map_err(db_error)?;
         }
     }
+    let edition_id: String = transaction
+        .query_row("SELECT edition_id FROM copies WHERE id=?1", [&id], |row| {
+            row.get(0)
+        })
+        .map_err(db_error)?;
+    crate::content::insert(&transaction, &edition_id, &value.content)?;
     writes::save_receipt(&transaction, &request.request_id, &payload, &id)?;
     transaction.commit().map_err(db_error)?;
     Ok(id)

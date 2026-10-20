@@ -1,6 +1,8 @@
 use discatelier_domain::{CopyDraft, Descriptor, EditionDraft};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+mod content;
+pub use content::*;
 mod models;
 pub use models::*;
 mod metadata;
