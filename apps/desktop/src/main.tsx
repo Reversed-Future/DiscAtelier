@@ -10,5 +10,6 @@ import './styles/shelf.css';
 import './styles/optical.css';
 import './styles/playback.css';
 import './styles/catalog.css';
+import './styles/settings.css';
 
 createRoot(document.getElementById('root')!).render(<App/>);

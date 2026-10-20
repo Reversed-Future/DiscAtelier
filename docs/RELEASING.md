@@ -1,8 +1,8 @@
 # Windows 发布
 
-版本：0.1.3。仓库固定为私有的 `Reversed-Future/DiscAtelier`。
+当前版本：0.1.4。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
 
-## 构建
+## 0.1.3 构建基线
 
 需要 Windows x64、Rust MSVC、Visual Studio C++ 工具、Node.js 22.19+。使用锁文件安装依赖：
 

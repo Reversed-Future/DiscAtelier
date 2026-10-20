@@ -1,21 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { enter } from '../ui/motion';
-import { library, errorMessage } from '../library/gateway';
+import { errorMessage } from '../library/gateway';
 import { discogs } from '../metadata/gateway';
 import { DiscogsSettings } from '../metadata/DiscogsSettings';
 import { PlaybackSettings } from '../optical/PlaybackSettings';
+import { DataSettings } from './DataSettings';
+import { UpdateSettings } from './UpdateSettings';
 
-export function Settings({ initialPage, libraryAvailable, onRestore, onClose }: {
-  initialPage: 'home' | 'discogs'; libraryAvailable: boolean; onRestore(): void; onClose(): void;
+const pages = [{ id: 'data', label: '数据' }, { id: 'discogs', label: 'Discogs' }, { id: 'playback', label: '播放' }, { id: 'updates', label: '更新' }] as const;
+type Page = typeof pages[number]['id'];
+export function Settings({ initialPage, libraryAvailable, onRestore, onClose, playing }: {
+  initialPage: 'home' | 'discogs'; libraryAvailable: boolean; onRestore(): void; onClose(): void; playing: boolean;
 }) {
-  const [page, setPage] = useState<'home' | 'discogs' | 'playback'>(initialPage);
+  const [page, setPage] = useState<Page>(initialPage === 'home' ? 'data' : initialPage);
   const [configured, setConfigured] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [backup, setBackup] = useState('');
   const content = useRef<HTMLDivElement>(null);
-  useEffect(() => { enter(content.current, 0); }, [page, backup]);
+  useEffect(() => { enter(content.current, 3); }, [page]);
   useEffect(() => {
     if (page !== 'discogs') return;
     let active = true;
@@ -25,31 +28,21 @@ export function Settings({ initialPage, libraryAvailable, onRestore, onClose }: 
       .finally(() => { if (active) setBusy(false); });
     return () => { active = false; };
   }, [page]);
-  return <Modal title={backup ? '备份已保存' : page === 'discogs' ? 'Discogs 设置' : page === 'playback' ? '播放设置' : '设置'} onClose={onClose} busy={busy}>
-    <div ref={content}>
-      {backup ? <p className="backup-path">{backup}</p> : page === 'discogs' ? <>
-        <button type="button" className="text-button settings-back" disabled={busy} onClick={() => { setError(''); setPage('home'); }}>返回设置</button>
-        <DiscogsSettings configured={configured} onConfigured={setConfigured} onBusy={setBusy} disabled={busy}/>
-      </> : page === 'playback' ? <>
-        <button type="button" className="text-button settings-back" disabled={busy} onClick={() => { setError(''); setPage('home'); }}>返回设置</button>
-        <PlaybackSettings onBusy={setBusy}/>
-      </> : <>
-        <div className="settings-list">
-          <button type="button" disabled={busy} onClick={() => { setError(''); setPage('discogs'); }}>Discogs<span aria-hidden="true">›</span></button>
-          <button type="button" disabled={busy} onClick={() => { setError(''); setPage('playback'); }}>播放<span aria-hidden="true">›</span></button>
-        </div>
-        <div className="settings-list">
-          <button type="button" disabled={!libraryAvailable || busy} onClick={async () => {
-            setBusy(true); setError('');
-            try { setBackup(await library.backup()); }
-            catch (cause) { setError(errorMessage(cause)); }
-            finally { setBusy(false); }
-          }}>{busy ? '备份中' : '备份收藏'}</button>
-          <button type="button" disabled={!libraryAvailable || busy} onClick={onRestore}>恢复收藏</button>
-        </div>
-        <p className="settings-version">DiscAtelier 0.1.3</p>
-      </>}
-      {error && <p className="form-error" role="alert">{error}</p>}
+  return <Modal title="设置" onClose={onClose} busy={busy} className="settings-panel">
+    <div className="settings-layout">
+      <nav className="settings-nav" aria-label="设置分类">
+        {pages.map(item => <button key={item.id} aria-current={page === item.id ? 'page' : undefined} disabled={busy}
+          onClick={() => { setError(''); setPage(item.id); }}>{item.label}</button>)}
+        <span className="settings-brand">DiscAtelier</span>
+      </nav>
+      <section ref={content} className="settings-content" aria-label={pages.find(item => item.id === page)?.label}>
+        <h3>{pages.find(item => item.id === page)?.label}</h3>
+        {page === 'data' && <DataSettings libraryAvailable={libraryAvailable} onRestore={onRestore} onBusy={setBusy}/>}
+        {page === 'discogs' && <DiscogsSettings configured={configured} onConfigured={setConfigured} onBusy={setBusy} disabled={busy}/>}
+        {page === 'playback' && <PlaybackSettings onBusy={setBusy}/>}
+        {page === 'updates' && <UpdateSettings onBusy={setBusy} playing={playing}/>}
+        {error && <p className="form-error" role="alert">{error}</p>}
+      </section>
     </div>
   </Modal>;
 }

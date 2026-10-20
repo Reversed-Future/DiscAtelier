@@ -1,9 +1,11 @@
 {
   "name": "discatelier",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "type": "module",
-  "workspaces": ["apps/desktop"],
+  "workspaces": [
+    "apps/desktop"
+  ],
   "scripts": {
     "dev": "npm run tauri:dev -w @discatelier/desktop",
     "prototype": "node scripts/serve.mjs",

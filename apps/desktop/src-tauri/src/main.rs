@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod commands;
 mod credentials;
+mod data_location;
 mod discogs;
 mod model_picker;
 mod model_stream;
@@ -12,6 +13,7 @@ mod playback_exit;
 #[cfg(feature = "performance-harness")]
 mod playback_fixture;
 mod playback_settings;
+mod updates;
 mod video_input;
 mod video_surface;
 mod window_layout;
@@ -24,6 +26,7 @@ use tauri::Manager;
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .register_uri_scheme_protocol("prepared-model", models::protocol)
         .register_asynchronous_uri_scheme_protocol("collection-model", model_stream::protocol)
         .setup(|app| {
@@ -48,6 +51,8 @@ fn main() {
             let metadata: discogs::DiscogsState =
                 Arc::new(Mutex::new(discogs::DiscogsService::new()));
             app.manage(metadata);
+            app.manage(data_location::DataLocation(directory.clone()));
+            app.manage(updates::UpdateState::default());
             app.manage(Arc::new(optical::OpticalService::new(directory)));
             app.manage(Arc::new(Mutex::new(None)) as playback::PlaybackState);
             app.manage(video_input::VideoInput::default());
@@ -55,6 +60,14 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            data_location::data_location,
+            data_location::data_open_directory,
+            updates::update_status,
+            updates::update_save_token,
+            updates::update_forget_token,
+            updates::update_check,
+            updates::update_download,
+            updates::update_install,
             video_surface::playback_viewport,
             video_surface::playback_fullscreen,
             video_surface::playback_pointer,

@@ -11,3 +11,4 @@
 *.ico binary
 *.png binary
 *.webp binary
+apps/desktop/src-tauri/src/updates/fixtures/payload.txt text eol=lf

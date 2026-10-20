@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LibraryCopy, LibraryQuery, LibrarySnapshot } from './library/types';
-import { statuses } from './library/types';
 import { library, desktopAvailable, errorMessage } from './library/gateway';
-import { formatPrice } from './library/money';
 import { Icon } from './ui/Icon';
-import { Select } from './ui/Select';
+import { CollectionMenu } from './ui/CollectionMenu';
 import { enter } from './ui/motion';
 import { Browse } from './collection/Browse';
 import { Inspection } from './collection/Inspection';
@@ -41,7 +39,6 @@ export function App() {
   const [metadataOpen, setMetadataOpen] = useState(false);
   const search = useRef<HTMLInputElement>(null);
   const searchTrigger = useRef<HTMLButtonElement>(null);
-  const menu = useRef<HTMLDivElement>(null);
   const scene = useRef<HTMLElement>(null);
   const generation = useRef(0);
   const notifyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -76,7 +73,6 @@ export function App() {
     document.addEventListener('keydown', shortcut);
     return () => { document.removeEventListener('keydown', shortcut); clearTimeout(notifyTimer.current); };
   }, []);
-  const closeMenu = () => menu.current?.hidePopover();
   const openAdd = () => query.categoryId === 'music' ? setMetadataOpen(true) : setAdd({});
   const items = snapshot?.copies || [];
   const modelActive = !editing && !add && !restoring && !metadataOpen && !settingsPage && !opticalOpen && !player.open;
@@ -99,20 +95,10 @@ export function App() {
         <button className={`icon-button${query.status || organize ? ' filtered' : ''}`} id="tools-toggle" popoverTarget="tools-popover" aria-label="更多" data-tooltip="更多"><Icon name="more"/></button>
       </div>
     </header>
-    <div id="tools-popover" popover="auto" ref={menu} onToggle={event => {
-      if (event.newState === 'open') menu.current?.querySelector<HTMLButtonElement>('button')?.focus();
-    }}>
-      <div className="scope-field">范围<Select label="收藏范围" value={query.status || 'all'} options={[{ id: 'all', label: '全部' }, ...statuses]} onChange={value => { setQuery({ ...query, status: value === 'all' ? null : value }); closeMenu(); }}/></div>
-      <button onClick={() => { setOrganize(value => !value); closeMenu(); }}><Icon name="list"/>{organize ? '返回收藏' : '整理'}</button>
-      <button onClick={() => { closeMenu(); setOpticalOpen(true); }}>光驱</button>
-      <button onClick={() => { closeMenu(); setSettingsPage('home'); }}><Icon name="settings"/>设置</button>
-      <div className="menu-totals">
-        <span>{items.length} 套 · {snapshot?.mediumCount || 0} 张</span>
-        <span>已购入 {snapshot?.ownedCount || 0} 套</span>
-        {Object.entries(snapshot?.amounts || {}).map(([currency, amount]) => <span key={currency}>{formatPrice(amount, currency)}</span>)}
-        {!!snapshot?.unpricedCount && <span>{snapshot.unpricedCount} 套未填价格</span>}
-      </div>
-    </div>
+    <CollectionMenu status={query.status} snapshot={snapshot} organize={organize}
+      onStatus={status => setQuery({ ...query, status })}
+      onOrganize={() => setOrganize(value => !value)}
+      onOptical={() => setOpticalOpen(true)} onSettings={() => setSettingsPage('home')}/>
     <main id="scene" ref={scene} aria-label="收藏展示" aria-busy={loading} inert={player.open}>
       {error ? <div className="empty-state"><span className="disc-mark"/><p role="alert">{error}</p>{desktopAvailable() && <button onClick={() => void refresh(query)}>重试</button>}</div> :
         !snapshot ? <div className="empty-state"><span className="disc-mark"/><p>正在打开收藏库</p></div> :
@@ -142,7 +128,7 @@ export function App() {
       onManual={() => { setMetadataOpen(false); setAdd({}); }}
       onClose={() => setMetadataOpen(false)}
       onSaved={async (id, categoryId) => { setSelectedId(id); setQuery({ categoryId, query: '', status: null }); notify('已加入收藏'); }}/>}
-    {settingsPage && <Settings initialPage={settingsPage} libraryAvailable={!!snapshot}
+    {settingsPage && <Settings initialPage={settingsPage} libraryAvailable={!!snapshot} playing={player.active}
       onClose={() => setSettingsPage(null)}
       onRestore={() => { setSettingsPage(null); setMetadataOpen(false); setRestoring(true); }}/>}
     <div className={`toast${notice ? ' visible' : ''}`} role="status">{notice}</div>
