@@ -26,15 +26,24 @@ pub struct OpticalMedium {
     pub token: String,
     pub kind: OpticalKind,
     pub playlists: Vec<String>,
+    #[serde(default)]
+    pub tracks: Vec<CdTrack>,
     pub aacs_directory: bool,
     pub java_directory: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum OpticalKind {
+    AudioCd,
     Bluray,
     DvdVideo,
     Other,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CdTrack {
+    pub number: u8,
+    pub duration_seconds: f64,
 }
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

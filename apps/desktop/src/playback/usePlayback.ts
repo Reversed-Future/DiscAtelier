@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { optical } from '../optical/gateway';
 import { desktopAvailable, errorMessage } from '../library/gateway';
 import { isActive, playback, type Control, type Snapshot } from './gateway';
 
@@ -7,6 +8,7 @@ export function usePlayback() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
+  const advanced = useRef('');
   const revision = useRef(0), pending = useRef(false), alive = useRef(true);
   useEffect(() => {
     alive.current = true;
@@ -19,6 +21,20 @@ export function usePlayback() {
         const value = await playback.snapshot();
         if (!stopped && version === revision.current) setSnapshot(value);
         if (isActive(value?.phase)) delay = 400;
+        if (!stopped && version === revision.current && !pending.current && value?.phase === 'ended' && value.source.playlist.startsWith('cd-track:') && advanced.current !== value.sessionId) {
+          advanced.current = value.sessionId;
+          const drives = await optical.list();
+          if (stopped) return;
+          const medium = drives.find(d => d.mountPoint === value.source.mountPoint && d.medium?.token === value.source.mediaToken)?.medium;
+          const index = medium?.playlists.indexOf(value.source.playlist) ?? -1;
+          if (version === revision.current && !pending.current && medium && index >= 0 && index + 1 < medium.playlists.length) {
+            await execute(async () => {
+              revision.current++;
+              const next = await playback.start(value.source.mountPoint, value.source.mediaToken, medium.playlists[index + 1]);
+              if (!stopped) setSnapshot(next);
+            });
+          }
+        }
       } catch (cause) { if (!stopped) setError(errorMessage(cause)); }
       if (!stopped) timer = setTimeout(poll, delay);
     }

@@ -115,3 +115,14 @@
   .object-info .object-actions { margin-top: 12px; padding-top: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .calendar-popover, .identifier-disclosure, .disc-tabs button, .disc-tabs button::after, .source-button { transition: none; } }
+
+.audio-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 56px; width: min(940px, 84vw); margin: auto; }
+.audio-disc { aspect-ratio: 1; border-radius: 50%; background: conic-gradient(#ddd, #676767, #eee, #666, #ddd); box-shadow: 0 22px 50px #0008; display: grid; place-items: center; }
+.audio-disc span { width: 17%; aspect-ratio: 1; border: 10px solid #b9b8b0; border-radius: 50%; background: #111; }
+.audio-track-list { max-height: 48vh; overflow: auto; scrollbar-width: none; }
+.audio-track-list button { display: flex; align-items: center; width: 100%; gap: 24px; padding: 15px 12px; border-bottom: 1px solid var(--line); color: var(--muted); transition: color 160ms, background 160ms; }
+.audio-track-list button[aria-current] { color: var(--ink); background: #ffffff07; }
+.audio-track-list time { margin-left: auto; }
+.audio-navigation { display: flex; gap: 20px; justify-content: center; }
+.audio-player { animation: audio-enter 180ms ease-out; }
+@keyframes audio-enter { from { opacity: 0; } to { opacity: 1; } }

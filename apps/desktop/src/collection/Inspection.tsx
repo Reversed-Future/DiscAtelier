@@ -9,12 +9,14 @@ import { enter } from '../ui/motion';
 import { EditPurchase } from '../forms/EditPurchase';
 import { EditionContents } from './EditionContents';
 import { useEditionContent } from './useEditionContent';
+import { NeteasePanel } from '../integrations/NeteasePanel';
 import { CollectionSource } from '../metadata/CollectionSource';
 
 export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot, prepareClose, modelBusy }: {
   item: LibraryCopy; carriers: Descriptor[]; onClose(): void; onSaved(): Promise<void>; edit(): void;
   artworkSlot(node: HTMLDivElement | null): void; prepareClose(): Promise<void>; modelBusy: boolean;
 }) {
+  const [neteaseOpen, setNeteaseOpen] = useState(false);
   const [tab, setTab] = useState('metadata');
   const [side, setSide] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState(false);
@@ -52,8 +54,8 @@ export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot
           <div hidden={tab !== 'purchase'}><dl className="metadata">{purchaseFields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl></div>
         </div>
         <div className="object-actions"><button hidden={tab === 'tracks'} onClick={tab === 'metadata' ? edit : () => setEditingPurchase(true)} disabled={modelBusy}>{tab === 'metadata' ? '编辑版本' : '编辑购入'}</button><span>{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
-        <CollectionSource source={item.source}/>
+        <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}</div>
       </section>
     </div>
-  </Modal>{editingPurchase && <EditPurchase item={item} onClose={() => setEditingPurchase(false)} onSaved={onSaved}/>}</>;
+  </Modal>{neteaseOpen && <NeteasePanel item={item} onClose={() => setNeteaseOpen(false)} onSaved={onSaved}/>} {editingPurchase && <EditPurchase item={item} onClose={() => setEditingPurchase(false)} onSaved={onSaved}/>}</>;
 }

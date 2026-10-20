@@ -16,6 +16,8 @@ import { Settings } from './settings/Settings';
 import { useCollectionArtwork } from './collection/useCollectionArtwork';
 import { OpticalPanel } from './optical/OpticalPanel';
 import { usePlayback } from './playback/usePlayback';
+import { AssistantPanel } from './assistant/AssistantPanel';
+import { AudioPlayer } from './playback/AudioPlayer';
 import { PlayerView } from './playback/PlayerView';
 
 export function App() {
@@ -33,6 +35,7 @@ export function App() {
   const [add, setAdd] = useState<{ existing?: LibraryCopy } | null>(null);
   const [editing, setEditing] = useState<LibraryCopy | null>(null);
   const [notice, setNotice] = useState('');
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [opticalOpen, setOpticalOpen] = useState(false);
   const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | null>(null);
   const [restoring, setRestoring] = useState(false);
@@ -75,7 +78,7 @@ export function App() {
   }, []);
   const openAdd = () => query.categoryId === 'music' ? setMetadataOpen(true) : setAdd({});
   const items = snapshot?.copies || [];
-  const modelActive = !add && !restoring && !metadataOpen && !settingsPage && !opticalOpen && !player.open;
+  const modelActive = !assistantOpen && !add && !restoring && !metadataOpen && !settingsPage && !opticalOpen && !player.open;
   const current = inspected || items.find(item => item.id === selectedId) || items[0];
   const artwork = useCollectionArtwork(current, modelActive && (!organize || !!inspected), !!inspected);
   return <div className="workspace">
@@ -98,7 +101,7 @@ export function App() {
     <CollectionMenu status={query.status} snapshot={snapshot} organize={organize}
       onStatus={status => setQuery({ ...query, status })}
       onOrganize={() => setOrganize(value => !value)}
-      onOptical={() => setOpticalOpen(true)} onSettings={() => setSettingsPage('home')}/>
+      onAssistant={() => setAssistantOpen(true)} onOptical={() => setOpticalOpen(true)} onSettings={() => setSettingsPage('home')}/>
     <main id="scene" ref={scene} aria-label="收藏展示" aria-busy={loading} inert={player.open}>
       {error ? <div className="empty-state"><span className="disc-mark"/><p role="alert">{error}</p>{desktopAvailable() && <button onClick={() => void refresh(query)}>重试</button>}</div> :
         !snapshot ? <div className="empty-state"><span className="disc-mark"/><p>正在打开收藏库</p></div> :
@@ -107,8 +110,9 @@ export function App() {
           <button onClick={() => query.query || query.status ? setQuery({ ...query, query: '', status: null }) : openAdd()}>{query.query || query.status ? '清除筛选' : '添加收藏'}</button></div>}
     </main>
     {artwork.portal}
+    {assistantOpen && <AssistantPanel onClose={() => setAssistantOpen(false)} onChanged={() => void refresh(query)}/>}
     {opticalOpen && !player.open && <OpticalPanel player={player} onClose={() => setOpticalOpen(false)}/>}
-    {player.open && <PlayerView player={player}/>}
+    {player.open && (player.snapshot?.source.playlist.startsWith('cd-track:') ? <AudioPlayer player={player}/> : <PlayerView player={player}/>)}
     {player.active && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
       {player.snapshot?.paused ? '已暂停' : player.snapshot?.phase === 'loading' ? '读取中' : '播放中'} · {player.snapshot?.title}
     </button>}

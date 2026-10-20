@@ -26,7 +26,7 @@ export function PlaybackSettings({ onBusy }: { onBusy(value: boolean): void }) {
   }}>
     <label>MPV<input value={value.mpvExecutable} onChange={event => change('mpvExecutable', event.target.value)} disabled={busy} spellCheck={false} placeholder="mpv.exe 完整路径；留空自动检测"/></label>
     <label>MakeMKV<input value={value.makeMkvLibrary} onChange={event => change('makeMkvLibrary', event.target.value)} disabled={busy} spellCheck={false} placeholder="libmmbd64.dll 完整路径；可留空"/></label>
-    <label>VLC · DVD<input value={value.vlcLibrary} onChange={event => change('vlcLibrary', event.target.value)} disabled={busy} spellCheck={false} placeholder="libvlc.dll 完整路径"/></label>
+    <label>VLC · CD / DVD<input value={value.vlcLibrary} onChange={event => change('vlcLibrary', event.target.value)} disabled={busy} spellCheck={false} placeholder="libvlc.dll 完整路径"/></label>
     {error && <p className="form-error" role="alert">{error}</p>}
     <footer className="settings-actions"><button className="solid-button" disabled={busy}>{saved ? '已保存' : busy ? '读取中' : '保存'}</button></footer>
   </form>;

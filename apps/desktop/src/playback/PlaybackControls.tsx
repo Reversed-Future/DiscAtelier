@@ -19,7 +19,7 @@ export function PlaybackControls({ player, onMenu }: { player: PlaybackControlle
     setDraft(null);
   }
   return <section className="playback-controls" aria-label="播放控制">
-    <div className="playback-title"><strong>{s.title}</strong><span>{s.source.playlist === 'dvd-menu' ? s.dvdMenu ? 'DVD' : `DVD · ${s.dvdTitle}` : s.source.playlist}</span></div>
+    <div className="playback-title"><strong>{s.title}</strong><span>{s.source.playlist === 'dvd-menu' ? s.dvdMenu ? 'DVD' : `DVD · ${s.dvdTitle}` : s.source.playlist.startsWith('cd-track:') ? 'CD' : s.source.playlist}</span></div>
     <input className="playback-seek" type="range" aria-label="播放进度" min="0" max={duration || 1} step="0.1"
       value={Math.min(position, duration)} disabled={!player.active || !s.seekable || !duration || loading || stopping || player.busy}
       aria-valuetext={`${time(position)} / ${time(duration)}`}
@@ -33,10 +33,10 @@ export function PlaybackControls({ player, onMenu }: { player: PlaybackControlle
       <button className="text-button" disabled={loading || stopping || player.busy} onClick={() => void player.control({ action: 'pause', paused: !s.paused })}>
         {loading ? '读取中' : stopping ? '停止中' : s.paused ? '继续' : '暂停'}
       </button>
-      <Select label="音轨" value={s.selectedAudio === null ? '' : String(s.selectedAudio)}
+      {!s.source.playlist.startsWith('cd-track:') && <Select label="音轨" value={s.selectedAudio === null ? '' : String(s.selectedAudio)}
         options={s.audioTracks.map(track => ({ id: String(track.id), label: `${track.id} · ${track.title || track.language || track.codec || '音轨'}` }))}
         disabled={loading || stopping || player.busy || !s.audioTracks.length}
-        onChange={id => void player.control({ action: 'audio', id: Number(id) })}/>
+        onChange={id => void player.control({ action: 'audio', id: Number(id) })}/>}
       <button className="text-button playback-stop" disabled={stopping || player.busy} onClick={() => void player.control({ action: 'stop' })}>停止</button>
     </div>}
     {s.error && <p className="form-error" role="alert">{s.error}</p>}

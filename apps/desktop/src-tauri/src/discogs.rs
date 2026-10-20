@@ -5,6 +5,7 @@ use discatelier_provider_discogs::DiscogsProvider;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+pub mod assistant;
 pub mod imports;
 
 const MAX_AGE: Duration = Duration::from_secs(6 * 60 * 60);

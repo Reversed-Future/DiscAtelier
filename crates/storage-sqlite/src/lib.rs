@@ -1,6 +1,7 @@
 mod artwork;
 mod content;
 mod editions;
+mod extensions;
 mod imports;
 mod migrations;
 mod models;

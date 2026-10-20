@@ -148,6 +148,34 @@ pub fn enumerate() -> Result<Vec<OpticalDrive>, AppError> {
             result.push(drive);
             continue;
         }
+        let mut toc = [0u8; 804];
+        let mut toc_bytes = 0;
+        let toc_ok = unsafe {
+            DeviceIoControl(
+                device.0,
+                windows_sys::Win32::Devices::Cdrom::IOCTL_CDROM_READ_TOC,
+                ptr::null(),
+                0,
+                toc.as_mut_ptr() as _,
+                toc.len() as u32,
+                &mut toc_bytes,
+                ptr::null_mut(),
+            )
+        };
+        if toc_ok != 0 {
+            if let Some(medium) = toc
+                .get(..toc_bytes as usize)
+                .and_then(crate::audio_cd::decode)
+            {
+                drive.status = OpticalStatus::Ready;
+                if medium.playlists.is_empty() {
+                    drive.error = Some("已识别音轨；混合模式或非标准起始曲号暂不支持播放。".into());
+                }
+                drive.medium = Some(medium);
+                result.push(drive);
+                continue;
+            }
+        }
         let mut label = [0u16; 261];
         let mut fs = [0u16; 261];
         let mut serial = 0;

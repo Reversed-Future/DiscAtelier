@@ -65,6 +65,7 @@ pub fn inspect(
             OpticalKind::Other
         },
         playlists,
+        tracks: Vec::new(),
         // Directory presence is not a claim of successful decryption or BD-J support.
         aacs_directory: root.join("AACS").is_dir(),
         java_directory: root.join("BDMV").join("JAR").is_dir(),

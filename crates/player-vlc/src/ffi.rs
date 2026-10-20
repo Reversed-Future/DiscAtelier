@@ -62,6 +62,7 @@ api! {
     libvlc_new: unsafe extern "C" fn(c_int, *const *const c_char) -> Handle,
     libvlc_release: unsafe extern "C" fn(Handle),
     libvlc_media_new_location: unsafe extern "C" fn(Handle, *const c_char) -> Handle,
+    libvlc_media_add_option: unsafe extern "C" fn(Handle, *const c_char),
     libvlc_media_release: unsafe extern "C" fn(Handle),
     libvlc_media_player_new_from_media: unsafe extern "C" fn(Handle) -> Handle,
     libvlc_media_player_release: unsafe extern "C" fn(Handle),

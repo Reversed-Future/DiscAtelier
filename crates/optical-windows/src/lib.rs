@@ -1,3 +1,4 @@
+mod audio_cd;
 mod structure;
 #[cfg(target_os = "windows")]
 mod windows;

@@ -1,3 +1,5 @@
+mod audio_cd;
+pub use audio_cd::cd_track;
 mod ffi;
 mod player;
 #[cfg(test)]
@@ -78,12 +80,23 @@ impl VlcSession {
         if window == 0 {
             return Err(ffi::error("内置播放区域尚未创建。"));
         }
-        let location = dvd_location(&source)?;
-        validate_resume(seconds, title)?;
+        let track = cd_track(&source.playlist);
+        let location = if track.is_some() {
+            if title.is_some() || !seconds.is_finite() || !(0.0..=604800.0).contains(&seconds) {
+                return Err(ffi::error("CD 续播位置无效。"));
+            }
+            audio_cd::location(&source)?.0
+        } else {
+            validate_resume(seconds, title)?;
+            dvd_location(&source)?
+        };
         let now = chrono::Utc::now().to_rfc3339();
         let initial = PlaybackSnapshot {
             session_id: uuid::Uuid::new_v4().to_string(),
-            title: source.label.clone(),
+            title: track.map_or_else(
+                || source.label.clone(),
+                |n| format!("{} · 曲目 {n}", source.label),
+            ),
             source,
             started_at: now.clone(),
             updated_at: now,
@@ -98,7 +111,7 @@ impl VlcSession {
             audio_tracks: Vec::new(),
             selected_audio: None,
             dvd_title: None,
-            dvd_menu: true,
+            dvd_menu: track.is_none(),
             error: None,
         };
         checkpoint(&initial)?;
@@ -115,6 +128,7 @@ impl VlcSession {
                     window,
                     seconds,
                     title,
+                    track,
                 },
                 initial,
                 state,

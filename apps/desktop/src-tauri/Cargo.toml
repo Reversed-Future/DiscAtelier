@@ -8,7 +8,11 @@ description = "Personal physical media collection"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+discatelier-agent-harness.workspace = true
+discatelier-integration-http.workspace = true
+discatelier-provider-netease.workspace = true
 chrono.workspace = true
+sha2.workspace = true
 uuid.workspace = true
 serde_json.workspace = true
 tauri = { version = "2", features = [] }

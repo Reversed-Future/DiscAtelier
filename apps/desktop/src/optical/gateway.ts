@@ -1,8 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 
+export interface CdTrack { number: number; durationSeconds: number }
 export interface OpticalMedium {
-  label: string; fileSystem: string; token: string; kind: 'bluray' | 'dvdVideo' | 'other';
-  playlists: string[]; aacsDirectory: boolean; javaDirectory: boolean;
+  label: string; fileSystem: string; token: string; kind: 'bluray' | 'dvdVideo' | 'audioCd' | 'other';
+  tracks: CdTrack[]; playlists: string[]; aacsDirectory: boolean; javaDirectory: boolean;
 }
 export interface OpticalDrive {
   mountPoint: string; name: string; status: 'empty' | 'ready' | 'unavailable';

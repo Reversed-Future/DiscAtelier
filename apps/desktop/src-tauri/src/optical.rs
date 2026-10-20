@@ -79,6 +79,7 @@ pub(crate) fn verify_disc(
         if let Some(medium) = drive.medium.filter(|m| {
             m.token == token
                 && match m.kind {
+                    OpticalKind::AudioCd => m.playlists.iter().any(|p| p == playlist),
                     OpticalKind::Bluray => m.playlists.iter().any(|p| p == playlist),
                     OpticalKind::DvdVideo => playlist == discatelier_player_vlc::DVD_MENU,
                     OpticalKind::Other => false,

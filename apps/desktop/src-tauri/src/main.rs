@@ -1,11 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+mod assistant;
 mod commands;
 mod credentials;
 mod data_location;
 mod discogs;
+mod integration_settings;
 mod model_picker;
 mod model_stream;
 mod models;
+mod netease;
 mod optical;
 mod playback;
 mod playback_backend;
@@ -53,6 +56,8 @@ fn main() {
             app.manage(metadata);
             app.manage(data_location::DataLocation(directory.clone()));
             app.manage(updates::UpdateState::default());
+            app.manage(Arc::new(assistant::AgentState::default()));
+            app.manage(Arc::new(netease::NeteaseState::default()));
             app.manage(Arc::new(optical::OpticalService::new(directory)));
             app.manage(Arc::new(Mutex::new(None)) as playback::PlaybackState);
             app.manage(video_input::VideoInput::default());
@@ -60,6 +65,17 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            integration_settings::integration_settings_get,
+            integration_settings::integration_settings_save,
+            netease::netease_search,
+            netease::netease_album,
+            netease::netease_saved,
+            netease::netease_apply,
+            assistant::assistant_snapshot,
+            assistant::assistant_send,
+            assistant::assistant_cancel,
+            assistant::assistant_new,
+            assistant::assistant_decide,
             data_location::data_location,
             data_location::data_open_directory,
             updates::update_status,

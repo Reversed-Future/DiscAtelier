@@ -3,9 +3,9 @@ import { statuses, type LibrarySnapshot } from '../library/types';
 import { formatPrice } from '../library/money';
 import { Icon } from './Icon';
 
-export function CollectionMenu({ status, snapshot, organize, onStatus, onOrganize, onOptical, onSettings }: {
+export function CollectionMenu({ status, snapshot, organize, onStatus, onOrganize, onOptical, onAssistant, onSettings }: {
   status: string | null; snapshot: LibrarySnapshot | null; organize: boolean;
-  onStatus(value: string | null): void; onOrganize(): void; onOptical(): void; onSettings(): void;
+  onStatus(value: string | null): void; onOrganize(): void; onOptical(): void; onAssistant(): void; onSettings(): void;
 }) {
   const menu = useRef<HTMLDivElement>(null);
   function choose(action: () => void) { menu.current?.hidePopover(); action(); }
@@ -18,6 +18,7 @@ export function CollectionMenu({ status, snapshot, organize, onStatus, onOrganiz
     </div>
     <button onClick={() => choose(onOrganize)}><Icon name="list"/><span>{organize ? '返回陈列' : '整理收藏'}</span><span className="menu-arrow">›</span></button>
     <button onClick={() => choose(onOptical)}><Icon name="disc"/><span>光驱</span><span className="menu-arrow">›</span></button>
+    <button onClick={() => choose(onAssistant)}><Icon name="search"/><span>助手</span><span className="menu-arrow">›</span></button>
     <button onClick={() => choose(onSettings)}><Icon name="settings"/><span>设置</span><span className="menu-arrow">›</span></button>
     <div className="menu-summary" aria-label="收藏统计">
       <div><span>{snapshot?.copies.length || 0} 套</span><span>{snapshot?.mediumCount || 0} 张</span></div>

@@ -1,0 +1,10 @@
+[package]
+name = "discatelier-provider-netease"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+discatelier-contracts.workspace = true
+discatelier-integration-http.workspace = true
+serde.workspace = true
+serde_json.workspace = true

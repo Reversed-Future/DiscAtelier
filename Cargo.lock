@@ -769,11 +769,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "discatelier-agent-harness"
+version = "0.1.6"
+dependencies = [
+ "discatelier-contracts",
+ "discatelier-domain",
+ "discatelier-integration-http",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "discatelier-application"
 version = "0.1.6"
 dependencies = [
  "discatelier-contracts",
  "discatelier-domain",
+ "serde_json",
  "uuid",
 ]
 
@@ -791,18 +804,22 @@ name = "discatelier-desktop"
 version = "0.1.6"
 dependencies = [
  "chrono",
+ "discatelier-agent-harness",
  "discatelier-application",
  "discatelier-contracts",
+ "discatelier-integration-http",
  "discatelier-optical-windows",
  "discatelier-player-mpv",
  "discatelier-player-vlc",
  "discatelier-provider-discogs",
+ "discatelier-provider-netease",
  "discatelier-storage",
  "keyring",
  "reqwest",
  "semver",
  "serde",
  "serde_json",
+ "sha2",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
@@ -818,6 +835,15 @@ dependencies = [
  "chrono",
  "serde",
  "url",
+]
+
+[[package]]
+name = "discatelier-integration-http"
+version = "0.1.6"
+dependencies = [
+ "discatelier-contracts",
+ "reqwest",
+ "serde_json",
 ]
 
 [[package]]
@@ -867,6 +893,16 @@ dependencies = [
  "discatelier-domain",
  "image",
  "reqwest",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "discatelier-provider-netease"
+version = "0.1.6"
+dependencies = [
+ "discatelier-contracts",
+ "discatelier-integration-http",
  "serde",
  "serde_json",
 ]

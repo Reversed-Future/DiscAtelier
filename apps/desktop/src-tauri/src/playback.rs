@@ -47,9 +47,19 @@ pub async fn playback_start(
         let mut current = player
             .lock()
             .map_err(|_| AppError::new("player", "播放服务不可用。"))?;
-        if current
+        let same_cd = current
             .as_ref()
-            .is_some_and(|s| s.snapshot().is_ok_and(|s| s.phase.active()))
+            .and_then(|s| s.snapshot().ok())
+            .is_some_and(|s| {
+                discatelier_player_vlc::cd_track(&s.source.playlist).is_some()
+                    && discatelier_player_vlc::cd_track(&playlist).is_some()
+                    && s.source.mount_point == mount_point
+                    && s.source.media_token == token
+            });
+        if !same_cd
+            && current
+                .as_ref()
+                .is_some_and(|s| s.snapshot().is_ok_and(|s| s.phase.active()))
         {
             return Err(AppError::new("player", "请先停止当前播放。"));
         }
@@ -72,9 +82,20 @@ pub async fn playback_start(
                 .map_err(|e| e.clone())?
                 .save_playback(&PlaybackRecord::from(snapshot))
         });
-        let session = if source.playlist == discatelier_player_vlc::DVD_MENU {
-            PlaybackSession::Dvd(discatelier_player_vlc::VlcSession::start(
-                discatelier_player_vlc::configured(&settings)?,
+        let vlc = source.playlist == discatelier_player_vlc::DVD_MENU
+            || discatelier_player_vlc::cd_track(&source.playlist).is_some();
+        let vlc_path = if vlc {
+            Some(discatelier_player_vlc::configured(&settings)?)
+        } else {
+            None
+        };
+        // Verification completes before an existing CD session is stopped.
+        if same_cd {
+            drop(current.take());
+        }
+        let session = if let Some(path) = vlc_path {
+            PlaybackSession::Vlc(discatelier_player_vlc::VlcSession::start(
+                path,
                 video_window,
                 source,
                 resume_seconds,

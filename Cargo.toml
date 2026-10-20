@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/domain", "crates/contracts", "crates/application", "crates/storage-sqlite", "crates/provider-discogs", "crates/optical-windows", "crates/player-mpv", "crates/player-vlc", "apps/desktop/src-tauri"]
+members = ["crates/agent-harness", "crates/integration-http", "crates/provider-netease", "crates/domain", "crates/contracts", "crates/application", "crates/storage-sqlite", "crates/provider-discogs", "crates/optical-windows", "crates/player-mpv", "crates/player-vlc", "apps/desktop/src-tauri"]
 resolver = "2"
 
 [workspace.package]
@@ -8,6 +8,9 @@ edition = "2021"
 license = "LicenseRef-Private"
 
 [workspace.dependencies]
+discatelier-agent-harness = { path = "crates/agent-harness" }
+discatelier-integration-http = { path = "crates/integration-http" }
+discatelier-provider-netease = { path = "crates/provider-netease" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }

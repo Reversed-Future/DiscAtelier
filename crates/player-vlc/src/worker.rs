@@ -16,6 +16,7 @@ pub struct Start {
     pub window: usize,
     pub seconds: f64,
     pub title: Option<i32>,
+    pub track: Option<u8>,
 }
 struct Publication {
     shared: Arc<Mutex<PlaybackSnapshot>>,
@@ -64,23 +65,24 @@ pub fn run(
         checkpoint,
         bookmark: None,
     };
-    let result = Player::open(&start.path, &start.location, start.window).and_then(|player| {
-        let result = playing(
-            &player,
-            &start,
-            &mut snapshot,
-            &mut publication,
-            receiver,
-            &cancelled,
-        );
-        let phase = snapshot.phase.clone();
-        snapshot.phase = PlaybackPhase::Stopping;
-        publication.publish(&mut snapshot, true);
-        // Blocking libVLC stop/release runs here, never on the UI thread.
-        drop(player);
-        snapshot.phase = phase;
-        result
-    });
+    let result =
+        Player::open(&start.path, &start.location, start.window, start.track).and_then(|player| {
+            let result = playing(
+                &player,
+                &start,
+                &mut snapshot,
+                &mut publication,
+                receiver,
+                &cancelled,
+            );
+            let phase = snapshot.phase.clone();
+            snapshot.phase = PlaybackPhase::Stopping;
+            publication.publish(&mut snapshot, true);
+            // Blocking libVLC stop/release runs here, never on the UI thread.
+            drop(player);
+            snapshot.phase = phase;
+            result
+        });
     if let Err(error) = result {
         snapshot.phase = PlaybackPhase::Failed;
         snapshot.error = Some(error.message);
@@ -107,6 +109,7 @@ fn playing(
     let mut progress = PlaybackProgress::default();
     let mut resume = start.title.map(|title| (title, false, Instant::now()));
     let mut loaded = false;
+    let mut cd_resume = start.track.is_some() && start.seconds > 0.0;
     loop {
         if cancelled.load(Ordering::Acquire) {
             return Ok(());
@@ -115,9 +118,11 @@ fn playing(
         let previous_title = snapshot.dvd_title;
         let state = unsafe { (api.libvlc_media_player_get_state)(handle) };
         if state == 7 {
-            return Err(ffi::error("DVD 读取或解码失败，请检查光盘与 VLC 安装。"));
+            return Err(ffi::error("光盘读取或解码失败，请检查光盘与 VLC 安装。"));
         }
         if state == 6 {
+            snapshot.completed =
+                start.track.is_some() && progress.completed(snapshot.duration_seconds, true);
             snapshot.phase = PlaybackPhase::Ended;
             return Ok(());
         }
@@ -126,7 +131,7 @@ fn playing(
         }
         loaded |= state == 3 || state == 4;
         if !loaded && started.elapsed() > Duration::from_secs(60) {
-            return Err(ffi::error("DVD 读取超时。"));
+            return Err(ffi::error("光盘读取超时。"));
         }
         let current_title = unsafe { (api.libvlc_media_player_get_title)(handle) };
         if metadata.elapsed() >= Duration::from_secs(1) || metadata_title != Some(current_title) {
@@ -137,10 +142,11 @@ fn playing(
             metadata = Instant::now();
             metadata_title = Some(current_title);
         }
-        snapshot.dvd_menu = !titles
-            .iter()
-            .any(|(id, menu)| *id == current_title && !menu);
-        snapshot.dvd_title = (!snapshot.dvd_menu).then_some(current_title);
+        snapshot.dvd_menu = start.track.is_none()
+            && !titles
+                .iter()
+                .any(|(id, menu)| *id == current_title && !menu);
+        snapshot.dvd_title = (start.track.is_none() && !snapshot.dvd_menu).then_some(current_title);
         if snapshot.dvd_title != previous_title {
             progress.reset_sample();
         }
@@ -183,7 +189,22 @@ fn playing(
                 return Err(ffi::error("未能恢复 DVD 标题，请从原盘菜单重新播放。"));
             }
         }
-        snapshot.phase = if !loaded || resume.is_some() {
+        if cd_resume && loaded && snapshot.seekable {
+            player.control(
+                PlaybackControl::Seek {
+                    seconds: start
+                        .seconds
+                        .min(snapshot.duration_seconds.unwrap_or(start.seconds)),
+                },
+                snapshot,
+            )?;
+            progress.reset_sample();
+            cd_resume = false;
+        }
+        if cd_resume && started.elapsed() > Duration::from_secs(60) {
+            return Err(ffi::error("CD 续播超时，请从头播放。"));
+        }
+        snapshot.phase = if !loaded || resume.is_some() || cd_resume {
             PlaybackPhase::Loading
         } else if snapshot.paused {
             PlaybackPhase::Paused

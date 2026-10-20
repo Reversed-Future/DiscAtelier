@@ -10,7 +10,12 @@ pub struct Player {
     instance: Handle,
 }
 impl Player {
-    pub fn open(path: &Path, location: &str, window: usize) -> Result<Self, AppError> {
+    pub fn open(
+        path: &Path,
+        location: &str,
+        window: usize,
+        track: Option<u8>,
+    ) -> Result<Self, AppError> {
         let api = Api::load(path)?;
         let location = CString::new(location).map_err(|_| ffi::error("光盘路径无效。"))?;
         // These flags are defined by VLC 3's src/libvlc-module.c.
@@ -29,13 +34,17 @@ impl Player {
             let media = (api.libvlc_media_new_location)(instance, location.as_ptr());
             if media.is_null() {
                 (api.libvlc_release)(instance);
-                return Err(ffi::error("无法打开 DVD。"));
+                return Err(ffi::error("无法打开光盘。"));
+            }
+            if let Some(number) = track {
+                let option = CString::new(format!("cdda-track={number}")).unwrap();
+                (api.libvlc_media_add_option)(media, option.as_ptr());
             }
             let handle = (api.libvlc_media_player_new_from_media)(media);
             (api.libvlc_media_release)(media);
             if handle.is_null() {
                 (api.libvlc_release)(instance);
-                return Err(ffi::error("无法创建 DVD 播放器。"));
+                return Err(ffi::error("无法创建光盘播放器。"));
             }
             let player = Self {
                 api,
@@ -47,7 +56,7 @@ impl Player {
             (player.api.libvlc_video_set_key_input)(handle, 0);
             (player.api.libvlc_media_player_set_video_title_display)(handle, -1, 0);
             if (player.api.libvlc_media_player_play)(handle) != 0 {
-                return Err(ffi::error("无法开始 DVD 播放。"));
+                return Err(ffi::error("无法开始光盘播放。"));
             }
             Ok(player)
         }
@@ -123,6 +132,9 @@ impl Player {
                     }
                 }
                 PlaybackControl::Menu { direction } => {
+                    if snapshot.source.playlist != crate::DVD_MENU {
+                        return Err(ffi::error("音频 CD 没有 DVD 菜单。"));
+                    }
                     if matches!(direction, MenuDirection::Root) {
                         // DVDnav marks its root-menu title with libvlc_title_menu.
                         let title = self

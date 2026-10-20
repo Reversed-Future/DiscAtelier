@@ -1,6 +1,8 @@
 use discatelier_contracts::*;
 use discatelier_domain::{carriers, categories, validate_copy, validate_edition};
 use std::collections::BTreeMap;
+mod extensions;
+pub use extensions::ExtensionRepository;
 mod metadata;
 pub use metadata::MetadataProvider;
 mod optical;
