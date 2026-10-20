@@ -1,0 +1,9 @@
+[package]
+name = "discatelier-application"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+discatelier-domain.workspace = true
+discatelier-contracts.workspace = true
+uuid.workspace = true

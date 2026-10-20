@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createModelCache } from '../apps/desktop/src/models/load-cache.ts';
+const tick = () => new Promise(resolve => setImmediate(resolve));
+test('同模型共享读取；一个调用取消不影响另一个；完成后直接复用', async () => {
+  let reads = 0, complete, workSignal;
+  const load = createModelCache((_id, signal) => { reads++; workSignal = signal; return new Promise(resolve => { complete = resolve; }); });
+  const a = new AbortController(), b = new AbortController();
+  const first = load('album', a.signal), second = load('album', b.signal);
+  const rejected = assert.rejects(first, { name: 'AbortError' });
+  await tick(); a.abort();
+  assert.equal(workSignal.aborted, false);
+  complete({ title: 'album' }); await rejected;
+  const value = await second;
+  assert.equal(await load('album', new AbortController().signal), value);
+  assert.equal(reads, 1);
+});
+test('最后一个调用取消终止读取，旧结果不会覆盖新模型，失败可重试', async () => {
+  const jobs = [];
+  const load = createModelCache((id, signal) => new Promise((resolve, reject) => jobs.push({ id, signal, resolve, reject })));
+  const a = new AbortController();
+  const old = load('old', a.signal); const rejected = assert.rejects(old, { name: 'AbortError' });
+  await tick(); a.abort(); await rejected;
+  assert.equal(jobs[0].signal.aborted, true);
+  const fresh = load('new', new AbortController().signal);
+  await tick(); jobs[1].resolve('new'); assert.equal(await fresh, 'new');
+  jobs[0].resolve('old'); await tick();
+  assert.equal(await load('new', new AbortController().signal), 'new');
+  const retry = load('old', new AbortController().signal);
+  const failed = assert.rejects(retry, /broken/);
+  await tick(); jobs[2].reject(Error('broken')); await failed;
+  const again = load('old', new AbortController().signal);
+  await tick(); jobs[3].resolve('repaired'); assert.equal(await again, 'repaired');
+});
+test('已取消的请求即使存在缓存也不再返回模型', async () => {
+  const load = createModelCache(async () => 'ready');
+  await load('album', new AbortController().signal);
+  const cancelled = new AbortController(); cancelled.abort();
+  await assert.rejects(load('album', cancelled.signal), { name: 'AbortError' });
+});

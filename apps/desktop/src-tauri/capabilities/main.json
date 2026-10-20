@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-window",
+  "description": "Local collection window; no shell, network, or arbitrary filesystem plugins.",
+  "windows": ["main"],
+  "permissions": ["core:default", "core:webview:allow-set-webview-zoom", "core:window:allow-set-size"]
+}

@@ -1,0 +1,58 @@
+@font-face {
+  font-family: MiSans;
+  src: url("../assets/fonts/MiSans-Regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: MiSans;
+  src: url("../assets/fonts/MiSans-Medium.otf") format("opentype");
+  font-style: normal;
+  font-weight: 500 900;
+  font-display: swap;
+}
+* { scrollbar-width: thin; scrollbar-color: #555 #171717; }
+::selection { color: #121212; background: #dfddd5; }
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: #171717; }
+::-webkit-scrollbar-thumb { background: #555; border: 2px solid #171717; border-radius: 5px; }
+input, textarea, select, button { appearance: none; -webkit-appearance: none; }
+input, textarea { caret-color: var(--ink); }
+input::-webkit-search-cancel-button, input::-webkit-search-decoration { -webkit-appearance: none; }
+input:-webkit-autofill { -webkit-text-fill-color: var(--ink); box-shadow: inset 0 0 0 100px var(--surface); }
+input:-webkit-autofill:focus { box-shadow: inset 0 0 0 100px var(--surface); }
+input::placeholder { color: #737373; opacity: 1; }
+.select-control { position: relative; display: block; min-width: 0; }
+.select-trigger { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 10px; border: 1px solid var(--line); border-radius: 2px; color: var(--ink); font-size: 12px; text-align: left; }
+.select-trigger::after { content: ""; width: 6px; height: 6px; border-right: 1px solid #aaa; border-bottom: 1px solid #aaa; transform: translateY(-2px) rotate(45deg); transition: transform 180ms var(--ease); }
+.select-trigger[aria-expanded="true"]::after { transform: translateY(2px) rotate(225deg); }
+.scope-field .select-trigger { border: 0; padding: 4px 0 4px 12px; }
+.select-list { position: fixed; inset: auto; margin: 0; padding: 5px; border: 1px solid #ffffff1a; border-radius: 5px; background: #242424; color: var(--ink); box-shadow: 0 12px 35px #0007; max-height: 240px; overflow: auto; }
+.select-option { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 9px; border-radius: 3px; font-size: 12px; text-align: left; }
+.select-option[aria-selected="true"]::after { content: ""; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.select-option:focus-visible { outline: none; background: #ffffff0f; }
+@media (hover: hover) { .select-option:hover { background: #ffffff0f; } }
+#tools-popover, .select-list {
+  opacity: 0; transform: translateY(-5px) scale(.98); transform-origin: top right;
+  transition: opacity 140ms ease, transform 180ms var(--ease), display 180ms allow-discrete, overlay 180ms allow-discrete;
+}
+#tools-popover:popover-open, .select-list:popover-open { opacity: 1; transform: translateY(0) scale(1); }
+@starting-style {
+  #tools-popover:popover-open, .select-list:popover-open { opacity: 0; transform: translateY(-5px) scale(.98); }
+}
+dialog::backdrop { opacity: 0; transition: opacity 160ms ease, display 160ms allow-discrete, overlay 160ms allow-discrete; }
+dialog[open]::backdrop { opacity: 1; }
+dialog[data-closing="true"]::backdrop { opacity: 0; }
+@starting-style { dialog[open]::backdrop { opacity: 0; } }
+.categories button, .detail-tabs button { transition: color 180ms ease; }
+.categories button::after, .detail-tabs button::after { content: ""; position: absolute; bottom: 2px; left: calc(50% - 6px); width: 12px; height: 1px; background: currentColor; opacity: 0; transform: scaleX(.4); transition: opacity 160ms ease, transform 180ms var(--ease); }
+.detail-tabs button::after { left: 0; right: 0; bottom: -1px; width: auto; }
+.categories button.active::after, .detail-tabs button.active::after { opacity: 1; transform: scaleX(1); }
+[data-tooltip] { position: relative; }
+[data-tooltip]::before { content: attr(data-tooltip); position: absolute; z-index: 10; top: calc(100% + 7px); left: 50%; padding: 6px 9px; transform: translate(-50%, -3px); opacity: 0; pointer-events: none; white-space: nowrap; font-size: 10px; font-weight: 400; color: var(--ink); background: #272727; border: 1px solid var(--line); border-radius: 3px; transition: opacity 120ms ease, transform 120ms var(--ease); }
+[data-tooltip]:hover::before, [data-tooltip]:focus-visible::before { opacity: 1; transform: translate(-50%, 0); transition-delay: 400ms; }
+.prototype-note a { color: inherit; text-decoration: none; }
+#scene { position: relative; }
+.scene-outgoing { position: absolute; inset: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }

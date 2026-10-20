@@ -1,0 +1,81 @@
+import { useEffect, useRef, useState } from 'react';
+import type { CoverChange, Descriptor, EditionDraft, LibraryCopy } from '../library/types';
+import { emptyCopy } from '../library/types';
+import { library, errorMessage } from '../library/gateway';
+import { parsePrice } from '../library/money';
+import { Modal } from '../ui/Modal';
+import { enter } from '../ui/motion';
+import { PurchaseFields } from './PurchaseFields';
+import { EditionFields } from './EditionFields';
+import { CoverField } from './CoverField';
+import { useModelDraft } from '../models/useModelDraft';
+import { ModelField } from '../models/ModelField';
+import { discogs, type ImportPreview } from '../metadata/gateway';
+
+export function AddCopy({ categoryId, categories, carriers, existing: suppliedExisting, imported, onBack, onClose, onSaved }: {
+  categoryId: string; categories: Descriptor[]; carriers: Descriptor[]; existing?: LibraryCopy; imported?: ImportPreview;
+  onBack?(): void;
+  onClose(): void; onSaved(id: string, categoryId: string): Promise<void>;
+}) {
+  const existing = imported?.existing || suppliedExisting;
+  const [edition, setEdition] = useState<EditionDraft>(existing?.edition || imported?.edition || {
+    categoryId, title: '', creator: '', editionLabel: '', barcode: '', catalogNumber: '', media: [{ carrierId: categoryId === 'music' ? 'cd' : 'bd', label: '' }],
+  });
+  const [copy, setCopy] = useState(emptyCopy);
+  const [amount, setAmount] = useState('');
+  const [tab, setTab] = useState(existing ? 'purchase' : 'edition');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [model, setModel] = useModelDraft();
+  const [cover, setCover] = useState<CoverChange>(() => imported?.cover
+    ? { action: 'replace', dataUrl: imported.cover } : { action: 'keep' });
+  const attempt = useRef({ payload: '', requestId: crypto.randomUUID() });
+  const fields = useRef<HTMLFieldSetElement>(null);
+  useEffect(() => { fields.current?.scrollTo(0, 0); enter(fields.current, 0); }, [tab]);
+  return <Modal title={existing ? '再收一套' : '添加收藏'} onClose={onClose} busy={busy || reading} wide className={imported ? 'metadata-browser-panel' : ''}>
+    <form className="editor-form" noValidate onSubmit={async event => {
+      event.preventDefault();
+      if (busy || reading) return;
+      if (tab === 'edition') {
+        if (!edition.title.trim()) { setError('请填写名称'); return; }
+        if (edition.media.some(medium => !carriers.some(carrier => carrier.id === medium.carrierId))) { setError('请选择每张盘片的载体'); return; }
+        setError(''); setTab('purchase'); return;
+      }
+      try {
+        const purchase = { ...copy, amountMinor: parsePrice(amount, copy.currency) };
+        const coverData = !existing && cover.action === 'replace' ? cover.dataUrl : null;
+        const modelToken = !existing && model.action === 'prepared' ? model.token : null;
+        const payload = JSON.stringify({ edition, purchase, coverData, modelToken, existingEditionId: existing?.editionId, token: imported?.token });
+        if (payload !== attempt.current.payload) attempt.current = { payload, requestId: crypto.randomUUID() };
+        setBusy(true); setError('');
+        const id = imported
+          ? await discogs.importCopy({ requestId: attempt.current.requestId, token: imported.token, edition, copy: purchase, cover: coverData, model: null, modelToken,
+            existingEditionId: existing?.editionId || null, expectedRevision: existing?.editionRevision || null })
+          : await library.create({ requestId: attempt.current.requestId, edition: existing ? null : edition, existingEditionId: existing?.editionId || null, copy: purchase, cover: coverData, model: null, modelToken });
+        await onSaved(id, edition.categoryId);
+        onClose();
+      } catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
+    }}>
+      {onBack && <button type="button" className="text-button import-back" onClick={onBack} disabled={busy || reading}>返回版本</button>}
+      {!existing && <nav className="detail-tabs" aria-label="添加步骤">
+        <button type="button" className={tab === 'edition' ? 'active' : ''} onClick={() => setTab('edition')} disabled={busy || reading}>版本</button>
+        <button type="button" className={tab === 'purchase' ? 'active' : ''} onClick={() => {
+          if (!edition.title.trim()) setError('请填写名称');
+          else if (edition.media.some(medium => !carriers.some(carrier => carrier.id === medium.carrierId))) setError('请选择每张盘片的载体');
+          else { setTab('purchase'); setError(''); }
+        }} disabled={busy || reading}>购入</button>
+      </nav>}
+      {existing && <p className="existing-edition">{edition.title}<span>{edition.editionLabel}</span>{imported && <span>已收藏 {existing.editionCopyCount} 套</span>}</p>}
+      <fieldset disabled={busy || reading} ref={fields}>
+      {tab === 'edition' ? <>
+        <CoverField edition={edition} value={cover} onChange={setCover} onBusy={setReading}/>
+        <ModelField value={model} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
+        <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
+      </> : <PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy}/>}
+      </fieldset>
+      <p className="form-error" role="alert">{error}</p>
+      <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading}>{busy ? '保存中' : tab === 'edition' ? '下一步' : '加入收藏'}</button></footer>
+    </form>
+  </Modal>;
+}

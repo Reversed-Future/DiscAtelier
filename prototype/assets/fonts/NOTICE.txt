@@ -1,0 +1,9 @@
+MiSans — Copyright Xiaomi.
+
+This UI prototype bundles unmodified MiSans Regular and Medium fonts.
+Regular: copied from the installed Windows font MiSans-Regular.otf.
+Medium: copied from the installed user font MiSans-Medium.otf.
+The supplied LICENSE.pdf is copied from the existing local MiSans font package.
+Official source: https://hyperos.mi.com/font/download
+
+Font files are distributed as part of the application, not sold separately.

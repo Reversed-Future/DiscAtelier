@@ -1,0 +1,292 @@
+{
+  "date": "2026-10-20",
+  "version": "0.1.3",
+  "evidence": {
+    "matrix": "D:\\DiscAtelierBuilds\\artifacts\\model-matrix-1792504999550\\results.json",
+    "shelf": "D:\\DiscAtelierBuilds\\artifacts\\shelf-1792504708505\\results.json",
+    "models": "D:\\DiscAtelierBuilds\\artifacts\\models-1792504524285\\results.json",
+    "loading": "D:\\DiscAtelierBuilds\\artifacts\\model-loading-1792504554001\\results.json",
+    "keyboardZoomRestore": "D:\\DiscAtelierBuilds\\artifacts\\recovery-access-1792505134895\\results.json"
+  },
+  "results": {
+    "matrix": {
+      "results": [
+        {
+          "file": "crayon-spylent.ateliermodel",
+          "title": "把他的蜡笔拿走！",
+          "states": 96,
+          "edges": 684,
+          "inspections": 891,
+          "normalMotionSteps": 11,
+          "normalMotionFrames": 4466
+        },
+        {
+          "file": "decoy.ateliermodel",
+          "title": "梦衫",
+          "states": 5,
+          "edges": 10,
+          "inspections": 8,
+          "normalMotionSteps": 1,
+          "normalMotionFrames": 494
+        },
+        {
+          "file": "example-drawer.ateliermodel",
+          "title": "抽屉收藏盒",
+          "states": 3,
+          "edges": 5,
+          "inspections": 5,
+          "normalMotionSteps": 1,
+          "normalMotionFrames": 304
+        },
+        {
+          "file": "example-hinge.ateliermodel",
+          "title": "翻盖纪念盒",
+          "states": 3,
+          "edges": 5,
+          "inspections": 5,
+          "normalMotionSteps": 1,
+          "normalMotionFrames": 304
+        },
+        {
+          "file": "jony-j-24.ateliermodel",
+          "title": "24时",
+          "states": 12,
+          "edges": 25,
+          "inspections": 29,
+          "normalMotionSteps": 1,
+          "normalMotionFrames": 665
+        },
+        {
+          "file": "leaf-siren.ateliermodel",
+          "title": "leaf. siren",
+          "states": 4,
+          "edges": 11,
+          "inspections": 6,
+          "normalMotionSteps": 1,
+          "normalMotionFrames": 424
+        },
+        {
+          "file": "lemon.ateliermodel",
+          "title": "Lemon",
+          "states": 27,
+          "edges": 139,
+          "inspections": 53,
+          "normalMotionSteps": 8,
+          "normalMotionFrames": 2436
+        },
+        {
+          "file": "location-shhh.ateliermodel",
+          "title": "location",
+          "states": 18,
+          "edges": 64,
+          "inspections": 45,
+          "normalMotionSteps": 1,
+          "normalMotionFrames": 329
+        },
+        {
+          "file": "moon-baby.ateliermodel",
+          "title": "MOON BABY",
+          "states": 4,
+          "edges": 13,
+          "inspections": 6,
+          "normalMotionSteps": 1,
+          "normalMotionFrames": 396
+        },
+        {
+          "file": "totem.ateliermodel",
+          "title": "图腾",
+          "states": 16,
+          "edges": 53,
+          "inspections": 5,
+          "normalMotionSteps": 1,
+          "normalMotionFrames": 400
+        }
+      ],
+      "errors": []
+    },
+    "shelf": {
+      "checks": [
+        "竖向陈列、架面、静态阴影和默认封面，保留抗锯齿且无横向溢出",
+        "取出和放回使用同一个 canvas／WebGL 场景，不重新读取或挂载模型",
+        "开启动效中连续四次反向放回，逐帧始终只有原画布，无空白或重复模型",
+        "减少动态模式直接衔接，Escape 返回与焦点恢复正常",
+        "影像独立分区、默认盒体侧面、最小窗口 200% 无页面滚动条"
+      ],
+      "shelf": {
+        "line": {
+          "height": "8px",
+          "bottom": "58px",
+          "width": "1100.8px"
+        },
+        "overflow": false,
+        "quality": {
+          "alpha": true,
+          "antialias": true,
+          "depth": true,
+          "desynchronized": false,
+          "failIfMajorPerformanceCaveat": false,
+          "powerPreference": "high-performance",
+          "premultipliedAlpha": true,
+          "preserveDrawingBuffer": false,
+          "stencil": false,
+          "xrCompatible": false
+        },
+        "width": 425,
+        "cssWidth": 340
+      },
+      "errors": [],
+      "recordedFrames": 621,
+      "sameSingleNonzeroCanvasEveryFrame": true
+    },
+    "models": {
+      "checks": [
+        "上传与版本原子保存，模型和封面分别保留，收藏页显示真实 WebGL",
+        "模型点击展开、按原路径合上、键盘旋转缩放、退出回到收藏",
+        "更换模型、移除模型恢复原封面",
+        "模型随备份恢复，原生进程重启后保留",
+        "损坏模型与外链贴图拒绝，旧模型不被覆盖",
+        "32 MiB 完整唱片包上传和真实渲染（10167 ms，含截图及陈列／检视）",
+        "快速取出放回三次，返回后仅一个画布，无未处理错误",
+        "模拟显卡上下文丢失后恢复封面，重新打开可重试",
+        "最小窗口 200% 编辑入口、焦点与无横向溢出"
+      ],
+      "errors": []
+    },
+    "loading": {
+      "checks": [
+        "加载时保留封面，首帧后交叉淡入，快速换模型取消旧 Worker且不闪回",
+        "快速往返复用已解析模型，取消的旧结果不覆盖当前收藏",
+        "画布创建后切换收藏，释放尚未显示的旧场景且新模型正常",
+        "快速取出放回后架上模型正常，始终只保留一个画布",
+        "减少动态模式下无加载渐变",
+        "只读模型协议正确读取；未知引用、查询参数和 POST 被拒绝"
+      ],
+      "errors": []
+    },
+    "keyboardZoomRestore": {
+      "passed": true,
+      "sizes": [
+        {
+          "windowSize": {
+            "width": 1440,
+            "height": 960
+          },
+          "zoom": 1,
+          "width": 1440,
+          "height": 960
+        },
+        {
+          "windowSize": {
+            "width": 1440,
+            "height": 960
+          },
+          "zoom": 1.25,
+          "width": 1152,
+          "height": 768
+        },
+        {
+          "windowSize": {
+            "width": 1440,
+            "height": 960
+          },
+          "zoom": 1.5,
+          "width": 960,
+          "height": 640
+        },
+        {
+          "windowSize": {
+            "width": 1440,
+            "height": 960
+          },
+          "zoom": 1.75,
+          "width": 823,
+          "height": 548
+        },
+        {
+          "windowSize": {
+            "width": 1440,
+            "height": 960
+          },
+          "zoom": 2,
+          "width": 720,
+          "height": 480
+        },
+        {
+          "windowSize": {
+            "width": 960,
+            "height": 680
+          },
+          "zoom": 1,
+          "width": 960,
+          "height": 680
+        },
+        {
+          "windowSize": {
+            "width": 960,
+            "height": 680
+          },
+          "zoom": 1.25,
+          "width": 768,
+          "height": 544
+        },
+        {
+          "windowSize": {
+            "width": 960,
+            "height": 680
+          },
+          "zoom": 1.5,
+          "width": 640,
+          "height": 453
+        },
+        {
+          "windowSize": {
+            "width": 960,
+            "height": 680
+          },
+          "zoom": 1.75,
+          "width": 548,
+          "height": 388
+        },
+        {
+          "windowSize": {
+            "width": 960,
+            "height": 680
+          },
+          "zoom": 2,
+          "width": 480,
+          "height": 340
+        }
+      ],
+      "errors": [],
+      "directory": "D:\\DiscAtelierBuilds\\artifacts\\recovery-access-1792505134895",
+      "checks": [
+        "keyboard-only create and duplicate",
+        "select arrows/End/Enter/Escape",
+        "gallery arrows/Enter/Escape",
+        "backup preview/confirm/restart with cover",
+        "native WebView zoom 100–200%",
+        "modal Tab containment and scroll reachability",
+        "reduced motion",
+        "search shortcut"
+      ]
+    }
+  },
+  "release": {
+    "path": "E:\\ToolsForMyself\\DiscAtelier\\target\\release\\discatelier-desktop.exe",
+    "sha256": "e80a76a6ad3abe692570cbecd9e1136143a36b206a370a6ca6f91d0ad09d6046",
+    "performanceHarness": false
+  },
+  "automatedChecks": {
+    "rustTests": 32,
+    "javascriptTests": 9,
+    "typescriptBuild": true,
+    "clippyWarningsDenied": true,
+    "rustfmt": true
+  },
+  "investigation": {
+    "issue": "One intermediate full-matrix run reported reset screen-bounds deviation for decoy.ateliermodel.",
+    "resolution": "Not reproduced in isolated sample or final full run; assertion threshold unchanged.",
+    "failedRun": "D:\\DiscAtelierBuilds\\artifacts\\model-matrix-1792504722615\\failure.json",
+    "isolatedPass": "D:\\DiscAtelierBuilds\\artifacts\\model-matrix-1792504913775\\results.json"
+  }
+}

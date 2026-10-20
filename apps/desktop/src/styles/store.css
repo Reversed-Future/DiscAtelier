@@ -1,0 +1,50 @@
+body[data-direction="store"] {
+  --ink: #f2f0e9;
+  --muted: #929292;
+  --line: #ffffff1a;
+  --surface: #121212;
+  --accent: #f2f0e9;
+  color: var(--ink);
+  background: #121212;
+}
+body[data-direction="store"] .workspace { background: #121212; }
+.record-store { min-height: calc(100svh - 100px); display: flex; flex-direction: column; justify-content: center; padding-bottom: 65px; overflow: hidden; }
+.record-stage {
+  position: relative;
+  height: clamp(300px, 52vh, 500px);
+  perspective: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1500px;
+  touch-action: pan-y;
+}
+.record-sleeve {
+  width: clamp(260px, 30vw, 410px);
+  aspect-ratio: 1;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 0;
+  transform: translate(calc(-50% + var(--distance) * var(--record-spacing, 260px)), -50%) scale(calc(1 - var(--abs-distance) * .16)) rotateY(calc(var(--distance) * -21deg));
+  opacity: calc(1 - var(--abs-distance) * .33);
+  z-index: calc(5 - var(--abs-distance));
+  border: 1px solid #ffffff30;
+  box-shadow: 0 35px 35px -24px #000000b0, 4px 0 0 #888, 5px 2px 0 #414141;
+  transition: transform 280ms var(--ease), opacity 200ms ease;
+}
+.record-sleeve:focus-visible { outline: none; }
+.record-sleeve:active { transform: translate(calc(-50% + var(--distance) * var(--record-spacing, 260px)), -50%) scale(calc(.99 - var(--abs-distance) * .16)) rotateY(calc(var(--distance) * -21deg)); }
+.record-sleeve .cover-art::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 4px #ffffff10; background: linear-gradient(120deg,#ffffff0c,transparent 45%); }
+.record-caption { text-align: center; position: relative; margin: 26px 0 0; }
+.record-caption h1 { font-weight: 400; font-size: 33px; margin: 9px 0 5px; letter-spacing: -.6px; }
+.record-caption p { color: #999; font-size: 12px; margin: 0; }
+.record-counter { font-size: 9px; font-variant-numeric: tabular-nums; color: #666; letter-spacing: 2px; }
+.record-sleeve[data-offstage="true"] { opacity: 0; pointer-events: none; }
+@media (max-width: 950px) {
+  .record-stage { --record-spacing: 185px; }
+}
+@media (max-width: 620px) {
+  .record-stage { height: 310px; --record-spacing: 145px; }
+  .record-sleeve { width: 235px; }
+  .record-store { min-height: calc(100svh - 125px); padding-bottom: 45px; }
+}

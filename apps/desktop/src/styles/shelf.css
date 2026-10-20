@@ -1,0 +1,34 @@
+.record-store {
+  height: calc(100svh - 100px); min-height: 0;
+  overflow: clip;
+}
+/* Layout, depth, spacing and shadows use the original store.css carousel. */
+.record-sleeve { background: transparent; }
+.shelf-artwork-slot { position: absolute; inset: 0; pointer-events: none; }
+.has-model .shelf-artwork-slot { inset: -12.5%; }
+.shelf-artwork-slot .shared-artwork { pointer-events: none; }
+.shelf-standin { position: absolute; inset: 0; }
+.shelf-standin .model-preview { object-fit: contain; }
+.has-model .shelf-standin { filter: drop-shadow(0 18px 14px #0008); }
+.shared-artwork { position: absolute; inset: 0; transform-origin: 0 0; }
+.shared-artwork > .physical-case { position: absolute; inset: 0; width: 100%; height: 100%; box-shadow: 3px 0 #53514d, 5px 1px #242321, 0 4px 8px #0007; }
+.shared-artwork .model-fallback { inset: 10%; }
+.inspection-artwork-slot { position: relative; width: min(100%, 65svh, 450px); aspect-ratio: 1; }
+.inspection-artwork-slot.has-model { width: min(100%, 65svh, 570px); }
+.inspection-artwork-slot[data-side="true"] .physical-case { transform: perspective(1400px) rotateY(-62deg); }
+.inspection-dialog { background: #121212; transition: background-color 240ms ease; }
+@starting-style { .inspection-dialog { background-color: #12121200; } }
+.inspection-dialog .object-info, .inspection-dialog .return-button, .inspection-dialog .rotate-button {
+  opacity: 1; transition: opacity 150ms cubic-bezier(.23,1,.32,1);
+}
+@starting-style {
+  .inspection-dialog .object-info, .inspection-dialog .return-button, .inspection-dialog .rotate-button { opacity: 0; }
+}
+.inspection-dialog[data-exiting] { pointer-events: none; }
+.inspection-dialog[data-exiting] .object-info, .inspection-dialog[data-exiting] .return-button,
+.inspection-dialog[data-exiting] .rotate-button { opacity: 0; }
+.inspection-dialog[data-departing] { background: #12121200; pointer-events: none; }
+.inspection-dialog[data-departing] .object-info, .inspection-dialog[data-departing] .return-button,
+.inspection-dialog[data-departing] .rotate-button, .inspection-dialog[data-departing] .object-floor { opacity: 0; }
+.inspection-dialog .object-floor { bottom: 10%; transition: opacity 150ms cubic-bezier(.23,1,.32,1); }
+@media (max-width: 620px) { .record-store { height: calc(100svh - 125px); min-height: 0; } }

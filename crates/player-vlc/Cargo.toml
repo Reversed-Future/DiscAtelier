@@ -1,0 +1,17 @@
+[package]
+name = "discatelier-player-vlc"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+discatelier-contracts.workspace = true
+discatelier-application.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+libloading = "=0.7.4"
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_System_LibraryLoader"] }

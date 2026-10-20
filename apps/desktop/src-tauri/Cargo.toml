@@ -1,0 +1,31 @@
+[package]
+name = "discatelier-desktop"
+version.workspace = true
+edition.workspace = true
+description = "Personal physical media collection"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+chrono.workspace = true
+uuid.workspace = true
+serde_json.workspace = true
+tauri = { version = "2", features = [] }
+discatelier-application.workspace = true
+discatelier-contracts.workspace = true
+discatelier-storage.workspace = true
+discatelier-provider-discogs.workspace = true
+discatelier-optical-windows.workspace = true
+discatelier-player-mpv.workspace = true
+discatelier-player-vlc.workspace = true
+keyring = { version = "=3.6.3", features = ["windows-native"] }
+tauri-plugin-opener = "2"
+
+[features]
+performance-harness = ["discatelier-player-mpv/test-fixture"]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_UI_Controls_Dialogs", "Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_Graphics_Gdi", "Win32_System_LibraryLoader"] }

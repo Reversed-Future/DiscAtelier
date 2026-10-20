@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DiscAtelier · 设计预览</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="DiscAtelier 首页"><span class="brand-symbol">◉</span> DiscAtelier<span class="brand-dot"></span></a>
+    <nav aria-label="收藏导航">
+      <button class="nav-item active" data-section="music"><span>♫</span>音乐<i id="music-count"></i></button>
+      <button class="nav-item" data-section="video"><span>▤</span>影像<i id="video-count"></i></button>
+      <div class="nav-divider"></div>
+      <button class="nav-item" data-section="wanted"><span>♡</span>想购入</button>
+      <button class="nav-item" data-section="transit"><span>↗</span>在途</button>
+      <button class="nav-item" data-section="history"><span>◷</span>播放历史</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="nav-item" data-info="drive"><span>⊙</span>光驱</button>
+      <button class="nav-item" data-info="assistant"><span>✳</span>助手</button>
+      <button class="nav-item" data-info="settings"><span>⚙</span>设置</button>
+      <div class="preview-label"><span></span>设计预览 <small>0.0</small></div>
+    </div>
+  </aside>
+  <main>
+    <header>
+      <h1 id="page-title">音乐</h1>
+      <div class="header-actions">
+        <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="搜索收藏" aria-label="搜索收藏"><kbd>/</kbd></label>
+        <button class="primary" id="add"><span>＋</span> 添加</button>
+      </div>
+    </header>
+    <section class="summary" aria-label="收藏统计">
+      <div><strong id="total">0</strong><span>套收藏</span></div>
+      <span class="summary-rule"></span>
+      <div class="cost"><strong id="cost">—</strong><span id="cost-label">购入金额</span></div>
+      <span id="result-count" class="result-count"></span>
+    </section>
+    <section class="toolbar" aria-label="筛选和显示">
+      <div class="filters"><select id="status" aria-label="收藏状态"><option value="all">全部状态</option><option value="owned">已购入</option><option value="wanted">想购入</option><option value="transit">在途</option></select>
+        <select id="sort" aria-label="排序"><option value="original">添加顺序</option><option value="title">名称排序</option><option value="creator">作者排序</option></select>
+      </div>
+      <div class="view-switch" aria-label="显示方式"><button class="selected" data-view="shelf" aria-pressed="true">陈列</button><button data-view="covers" aria-pressed="false">封面</button><button data-view="spines" aria-pressed="false">书脊</button></div>
+    </section>
+    <section id="collection" class="collection shelf" aria-label="收藏列表"></section>
+    <footer><span>DiscAtelier</span><span id="footer-note">展示素材来自现有模型包</span></footer>
+  </main>
+  <dialog id="detail-dialog" class="detail-dialog"><div id="detail"></div></dialog>
+  <dialog id="add-dialog">
+    <form id="add-form">
+      <div class="dialog-header"><h2>添加收藏</h2><button type="button" class="icon-button" data-close aria-label="关闭">×</button></div>
+      <div class="mode-tabs"><button type="button" class="selected">手动</button><button type="button" id="online-add">条码 / 品番</button></div>
+      <p class="inline-note" id="add-note">仅添加到本次演示，刷新后恢复。</p>
+      <label>名称<input name="title" required maxlength="200" autocomplete="off"></label>
+      <label>作者<input name="creator" maxlength="200" autocomplete="off"></label>
+      <div class="form-row"><label>分区<select name="category"><option value="music">音乐</option><option value="video">影像</option></select></label><label>状态<select name="status"><option value="owned">已购入</option><option value="wanted">想购入</option><option value="transit">在途</option></select></label></div>
+      <div class="form-row"><label>购入价格<input name="amount" inputmode="decimal" placeholder="未填写"></label><label>币种<select name="currency"><option>CNY</option><option>HKD</option><option>JPY</option></select></label></div>
+      <label>购入位置<input name="seller" maxlength="200" autocomplete="off"></label>
+      <p id="form-error" class="error" role="alert"></p>
+      <div class="form-actions"><button type="button" data-close>取消</button><button type="submit" class="primary">添加</button></div>
+    </form>
+  </dialog>
+  <dialog id="info-dialog"><div class="dialog-header"><h2 id="info-title"></h2><button class="icon-button" data-close aria-label="关闭">×</button></div><div id="info-body"></div></dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

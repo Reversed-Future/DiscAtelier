@@ -1,0 +1,177 @@
+use discatelier_contracts::*;
+use discatelier_domain::{carriers, categories, validate_copy, validate_edition};
+use std::collections::BTreeMap;
+mod metadata;
+pub use metadata::MetadataProvider;
+mod optical;
+pub use optical::{OpticalDeviceProvider, OpticalPlaybackProbe};
+mod playback;
+pub use playback::{PlaybackHistoryRepository, PlaybackProgress};
+
+pub trait LibraryRepository: Send {
+    fn stage_model(&mut self, model: PreparedModel) -> Result<ModelPreparation, AppError>;
+    fn prepared_model_data(&self, token: &str) -> Result<std::sync::Arc<str>, AppError>;
+    fn release_model(&mut self, token: &str) -> Result<(), AppError>;
+    fn source_copy(
+        &self,
+        provider_id: &str,
+        external_id: &str,
+    ) -> Result<Option<LibraryCopy>, AppError>;
+    fn import_copy(&mut self, request: &ImportCopy) -> Result<String, AppError>;
+    fn list(&self, query: &LibraryQuery) -> Result<Vec<LibraryCopy>, AppError>;
+    fn create(&mut self, request: &CreateCopy) -> Result<String, AppError>;
+    fn update(&mut self, request: &UpdateCopy) -> Result<String, AppError>;
+    fn update_edition(&mut self, request: &UpdateEdition) -> Result<String, AppError>;
+    fn model(&self, asset_id: &str, preview: bool) -> Result<String, AppError>;
+    fn cover(&self, asset_id: &str) -> Result<String, AppError>;
+    fn backup(&self) -> Result<String, AppError>;
+    fn backups(&self) -> Result<Vec<BackupEntry>, AppError>;
+    fn prepare_restore(&mut self, path: &str) -> Result<RestorePreview, AppError>;
+    fn restore(&mut self, token: &str) -> Result<String, AppError>;
+}
+pub struct LibraryService<R: LibraryRepository> {
+    repository: R,
+}
+impl<R: LibraryRepository> LibraryService<R> {
+    pub fn stage_model(&mut self, model: PreparedModel) -> Result<ModelPreparation, AppError> {
+        self.repository.stage_model(model)
+    }
+    pub fn prepared_model_data(&self, token: &str) -> Result<std::sync::Arc<str>, AppError> {
+        request_id(token)?;
+        self.repository.prepared_model_data(token)
+    }
+    pub fn release_model(&mut self, token: &str) -> Result<(), AppError> {
+        request_id(token)?;
+        self.repository.release_model(token)
+    }
+    pub fn source_copy(
+        &self,
+        provider_id: &str,
+        external_id: &str,
+    ) -> Result<Option<LibraryCopy>, AppError> {
+        self.repository.source_copy(provider_id, external_id)
+    }
+    pub fn import_copy(&mut self, value: ImportCopy) -> Result<String, AppError> {
+        request_id(&value.request.request_id)?;
+        request_id(&value.request.token)?;
+        validate_edition(&value.request.edition).map_err(validation)?;
+        validate_copy(&value.request.copy).map_err(validation)?;
+        validate_source(&value.source, &value.identifiers)?;
+        match (
+            &value.request.existing_edition_id,
+            value.request.expected_revision,
+        ) {
+            (None, None) => (),
+            (Some(id), Some(revision)) if revision > 0 => request_id(id)?,
+            _ => return Err(validation("版本关联无效。".into())),
+        }
+        self.repository.import_copy(&value)
+    }
+    pub fn new(repository: R) -> Self {
+        Self { repository }
+    }
+    pub fn list(&self, query: LibraryQuery) -> Result<LibrarySnapshot, AppError> {
+        if !categories()
+            .iter()
+            .any(|entry| entry.id == query.category_id)
+            || query
+                .status
+                .as_ref()
+                .is_some_and(|status| !["owned", "wanted", "transit"].contains(&status.as_str()))
+            || query.query.len() > 1000
+        {
+            return Err(AppError::new("validation", "搜索条件无效"));
+        }
+        let copies = self.repository.list(&query)?;
+        let mut totals: BTreeMap<String, i128> = BTreeMap::new();
+        let mut owned_count = 0;
+        let mut unpriced_count = 0;
+        let medium_count = copies.iter().map(|item| item.edition.media.len()).sum();
+        for item in &copies {
+            if item.copy.status == "owned" {
+                owned_count += 1;
+                if let Some(amount) = item.copy.amount_minor {
+                    *totals.entry(item.copy.currency.clone()).or_default() += i128::from(amount);
+                } else {
+                    unpriced_count += 1;
+                }
+            }
+        }
+        Ok(LibrarySnapshot {
+            copies,
+            categories: categories(),
+            carriers: carriers(),
+            amounts: totals
+                .into_iter()
+                .map(|(key, value)| (key, value.to_string()))
+                .collect(),
+            owned_count,
+            medium_count,
+            unpriced_count,
+        })
+    }
+    pub fn create(&mut self, request: CreateCopy) -> Result<String, AppError> {
+        request_id(&request.request_id)?;
+        match (&request.edition, &request.existing_edition_id) {
+            (Some(edition), None) => validate_edition(edition).map_err(validation)?,
+            (None, Some(id)) => request_id(id)?,
+            _ => return Err(validation("必须指定一个新版本或已有版本".into())),
+        }
+        validate_copy(&request.copy).map_err(validation)?;
+        self.repository.create(&request)
+    }
+    pub fn update(&mut self, request: UpdateCopy) -> Result<String, AppError> {
+        request_id(&request.request_id)?;
+        request_id(&request.id)?;
+        if request.expected_revision < 1 {
+            return Err(validation("记录版本无效".into()));
+        }
+        validate_copy(&request.copy).map_err(validation)?;
+        self.repository.update(&request)
+    }
+    pub fn backup(&self) -> Result<String, AppError> {
+        self.repository.backup()
+    }
+    pub fn backups(&self) -> Result<Vec<BackupEntry>, AppError> {
+        self.repository.backups()
+    }
+    pub fn prepare_restore(&mut self, path: String) -> Result<RestorePreview, AppError> {
+        if path.is_empty() || path.len() > 32768 {
+            return Err(validation("请选择备份文件".into()));
+        }
+        self.repository.prepare_restore(&path)
+    }
+    pub fn restore(&mut self, token: String) -> Result<String, AppError> {
+        request_id(&token)?;
+        self.repository.restore(&token)
+    }
+    pub fn update_edition(&mut self, request: UpdateEdition) -> Result<String, AppError> {
+        request_id(&request.request_id)?;
+        request_id(&request.edition_id)?;
+        if request.expected_revision < 1 {
+            return Err(validation("版本记录无效".into()));
+        }
+        validate_edition(&request.edition).map_err(validation)?;
+        self.repository.update_edition(&request)
+    }
+    pub fn model(&self, asset_id: String, preview: bool) -> Result<String, AppError> {
+        if asset_id.len() != 64 || !asset_id.bytes().all(|value| value.is_ascii_hexdigit()) {
+            return Err(validation("模型标识无效".into()));
+        }
+        self.repository.model(&asset_id, preview)
+    }
+    pub fn cover(&self, asset_id: String) -> Result<String, AppError> {
+        if asset_id.len() != 64 || !asset_id.bytes().all(|value| value.is_ascii_hexdigit()) {
+            return Err(validation("封面标识无效".into()));
+        }
+        self.repository.cover(&asset_id)
+    }
+}
+fn request_id(value: &str) -> Result<(), AppError> {
+    uuid::Uuid::parse_str(value)
+        .map(|_| ())
+        .map_err(|_| validation("请求标识无效".into()))
+}
+fn validation(message: String) -> AppError {
+    AppError::new("validation", message)
+}

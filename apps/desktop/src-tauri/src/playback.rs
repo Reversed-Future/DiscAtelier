@@ -1,0 +1,151 @@
+use crate::{
+    commands::LibraryState,
+    optical::{verify_disc, OpticalState},
+};
+use discatelier_contracts::*;
+use discatelier_player_mpv::{Checkpoint, MpvProbe, MpvSession};
+use std::sync::{Arc, Mutex};
+use tauri::Manager;
+
+use crate::playback_backend::PlaybackSession;
+pub type PlaybackState = Arc<Mutex<Option<PlaybackSession>>>;
+pub fn active(state: &PlaybackState) -> Result<bool, AppError> {
+    state
+        .lock()
+        .map_err(|_| AppError::new("player", "播放服务不可用。"))?
+        .as_ref()
+        .map(|session| session.snapshot().map(|s| s.phase.active()))
+        .transpose()
+        .map(|s| s.unwrap_or(false))
+}
+pub fn shutdown(state: &PlaybackState) {
+    let session = state.lock().ok().and_then(|mut current| current.take());
+    drop(session);
+}
+#[tauri::command]
+pub async fn playback_start(
+    optical: tauri::State<'_, OpticalState>,
+    window: tauri::WebviewWindow,
+    mount_point: String,
+    token: String,
+    playlist: String,
+    resume_seconds: f64,
+    resume_title: Option<i32>,
+) -> Result<PlaybackSnapshot, AppError> {
+    if window
+        .state::<crate::playback_exit::PlaybackExit>()
+        .is_closing()
+    {
+        return Err(AppError::new("player", "应用正在关闭。"));
+    }
+    let player = window.state::<PlaybackState>().inner().clone();
+    let library = window.state::<LibraryState>().inner().clone();
+    let video_window = window
+        .state::<crate::video_surface::VideoSurface>()
+        .handle();
+    crate::optical::run(optical.inner().clone(), move |directory| {
+        let mut current = player
+            .lock()
+            .map_err(|_| AppError::new("player", "播放服务不可用。"))?;
+        if current
+            .as_ref()
+            .is_some_and(|s| s.snapshot().is_ok_and(|s| s.phase.active()))
+        {
+            return Err(AppError::new("player", "请先停止当前播放。"));
+        }
+        let settings = crate::playback_settings::read(directory)?;
+        #[cfg(feature = "performance-harness")]
+        let fixture = crate::playback_fixture::resolve(directory, &mount_point, &token, &playlist)?;
+        #[cfg(feature = "performance-harness")]
+        let source = match &fixture {
+            Some((source, _)) => source.clone(),
+            None => verify_disc(&mount_point, &token, &playlist)?,
+        };
+        #[cfg(not(feature = "performance-harness"))]
+        let source = verify_disc(&mount_point, &token, &playlist)?;
+        let checkpoint: Checkpoint = Arc::new(move |snapshot| {
+            let mut library = library
+                .lock()
+                .map_err(|_| AppError::new("history", "收藏库不可访问。"))?;
+            library
+                .as_mut()
+                .map_err(|e| e.clone())?
+                .save_playback(&PlaybackRecord::from(snapshot))
+        });
+        let session = if source.playlist == discatelier_player_vlc::DVD_MENU {
+            PlaybackSession::Dvd(discatelier_player_vlc::VlcSession::start(
+                discatelier_player_vlc::configured(&settings)?,
+                video_window,
+                source,
+                resume_seconds,
+                resume_title,
+                checkpoint,
+            )?)
+        } else {
+            if resume_title.is_some() {
+                return Err(AppError::new("validation", "BD 不使用 DVD 标题编号。"));
+            }
+            let config = MpvProbe::configured(&settings)?.embedded(video_window)?;
+            #[cfg(feature = "performance-harness")]
+            let config = match fixture {
+                Some((_, file)) => config.with_fixture(file)?,
+                None => config,
+            };
+            PlaybackSession::Mpv(MpvSession::start(
+                config,
+                source,
+                resume_seconds,
+                directory.to_owned(),
+                checkpoint,
+            )?)
+        };
+        let snapshot = session.snapshot()?;
+        *current = Some(session);
+        Ok(snapshot)
+    })
+    .await
+}
+#[tauri::command]
+pub async fn playback_snapshot(
+    playback: tauri::State<'_, PlaybackState>,
+) -> Result<Option<PlaybackSnapshot>, AppError> {
+    let playback = playback.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        playback
+            .lock()
+            .map_err(|_| AppError::new("player", "播放服务不可用。"))?
+            .as_ref()
+            .map(|s| s.snapshot())
+            .transpose()
+    })
+    .await
+    .map_err(|_| AppError::new("player", "播放状态不可读取。"))?
+}
+#[tauri::command]
+pub async fn playback_control(
+    playback: tauri::State<'_, PlaybackState>,
+    session_id: String,
+    control: PlaybackControl,
+) -> Result<(), AppError> {
+    let playback = playback.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let current = playback
+            .lock()
+            .map_err(|_| AppError::new("player", "播放服务不可用。"))?;
+        current
+            .as_ref()
+            .ok_or_else(|| AppError::new("session", "没有正在播放的会话。"))?
+            .control(&session_id, control)
+    })
+    .await
+    .map_err(|_| AppError::new("player", "播放操作未完成。"))?
+}
+#[tauri::command]
+pub async fn playback_history(
+    library: tauri::State<'_, LibraryState>,
+) -> Result<Vec<PlaybackRecord>, AppError> {
+    crate::commands::run(library.inner().clone(), |service| {
+        service.playback_history()
+    })
+    .await
+}

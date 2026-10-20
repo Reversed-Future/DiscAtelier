@@ -1,0 +1,29 @@
+{
+  "build": {
+    "beforeBuildCommand": "npm run build:release",
+    "frontendDist": "../dist-release/0.1.3"
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Reversed-Future",
+    "homepage": "https://github.com/Reversed-Future/DiscAtelier",
+    "shortDescription": "个人实体音像收藏",
+    "resources": {
+      "../public/legal/": "legal/"
+    },
+    "windows": {
+      "allowDowngrades": false,
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["SimpChinese", "TradChinese", "English"],
+        "displayLanguageSelector": false,
+        "compression": "lzma"
+      }
+    }
+  }
+}

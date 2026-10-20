@@ -1,0 +1,9 @@
+[package]
+name = "discatelier-contracts"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+chrono.workspace = true
+serde.workspace = true
+discatelier-domain.workspace = true

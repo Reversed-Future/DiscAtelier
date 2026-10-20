@@ -1,0 +1,23 @@
+{
+  "source": "AtelierPublisher",
+  "files": {
+    "shared/interactive-model.js": "ded732a0139c6b8e8c788cf38e80478997324f55c20af5ef32c1a201100710fe",
+    "shared/model-v2.js": "87f8c35d41aea6e2d39172751c851804449251d62a043e346fda976239875942",
+    "src/discs/interactive/mount-model.js": "61dd7dc2fb7283189301229789dbe7aeb626f778b4c0a212c2a85e06f0f23205",
+    "src/discs/interactive/generic-asset.js": "8508eae7d819005762a1241db336a9966f497e63e87cc47cc318c83d7ce98a2b",
+    "src/discs/interactive/generic-session.js": "5c6c1ef3186606764e78e64026de9aae954331c4982f6a2a4cdd75d3b39733b5",
+    "src/discs/interactive/material-effects.js": "cef66f81686abf21e3b7be40ccacab3372babeb86ebc22fcbfa4319637bdaccf",
+    "src/discs/interactive/part-controls.js": "cfdf1884820fb2f81ae286c34e3efd5c1bf66cd074263bd47cb522f6b82bc875",
+    "src/discs/interactive/model/viewer.js": "fa22c887e8c518e437089f1da2b61a71a31eef98b68399b12a0ec0178e7bb154",
+    "src/discs/interactive/model/framing.js": "23a57fc5fefa6589352e748a55c2e2139416b71bcf0e096b67096467e7bb3c88",
+    "src/discs/interactive/model/view-clipping.js": "7f3bc0b998315100248c883d336a4d8fe0481ada6a2e8c94569f033a2b133715",
+    "src/discs/interactive/model/reading-frame.js": "45e678aad11b6b5825599feb0d9f65a99a1286f01c3aebb04dc164c434391369",
+    "src/discs/interactive/model/action-view.js": "8cba92a0b9a6b3733976b79c8785559b23a21029a36b3c2400a00ca072f655a7",
+    "src/discs/interactive/model/view-transition.js": "662e796dd876ed9c0aa3eef489fd805338b081a63a8cf86f45b73b63ea937adc",
+    "src/discs/interactive/vendor/three.module.js": "9052042d676cb0fdc1ddfefe193053f34b7ac0513a616fdac4535d49987812ea",
+    "src/discs/interactive/vendor/three.core.js": "9edde002b066a9a05676a6127f67735b62baf399bdea529f2f7e31657da769e6",
+    "src/discs/interactive/vendor/TrackballControls.js": "01320a15ccb2a38ed0d25262238bc85d6b2733169fc3b369c0ff8a79d2f23c98",
+    "src/discs/interactive/vendor/RoomEnvironment.js": "77d4d2bed2b60cb98424764264aedd84b56bbf3211e0f48430e15608aeded9dc",
+    "src/discs/interactive/vendor/THREE-LICENSE.txt": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc"
+  }
+}
