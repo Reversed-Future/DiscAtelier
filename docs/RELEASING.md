@@ -1,6 +1,6 @@
 # Windows 发布
 
-当前版本：0.1.5。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
+当前版本：0.1.6。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
 
 ## 0.1.4 发布记录
 
@@ -66,3 +66,7 @@ npm run release:build
 ## 0.1.5 发布
 
 2026-10-21：已发布私有正式版，标记为 Latest；五项资产回读一致，沿用更新签名身份，应用 Rust 私有下载与版本绑定验签通过，已删除本次本地安装包。完整资产哈希、源提交和验证范围见 [0.1.5 发布校验](releases/v0.1.5-verification.md)。
+
+## 0.1.6 发布记录
+
+标签、间距调整已发布到私有仓库并设为 Latest。五项资产完整回读、本地及真实私有更新验签通过；唯一的本次本地安装包已单独删除。详见 [0.1.6 发布校验](releases/v0.1.6-verification.md)。实际安装与窗口验收由用户手动执行。
