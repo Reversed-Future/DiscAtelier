@@ -29,12 +29,19 @@ impl Process {
             return Err(error("内置网易云组件缺失，请使用包含运行组件的完整程序。"));
         }
         std::fs::create_dir_all(cache).map_err(|_| error("无法创建网易云缓存目录。"))?;
+        // Tauri supplies verbatim Windows resource paths. Node's main-module
+        // loader rejects that form (EISDIR); preserve the target while converting
+        // to an ordinary absolute path only when it is safe to do so.
+        let node = dunce::canonicalize(node).map_err(|_| error("无法读取内置网易云程序路径。"))?;
+        let runner =
+            dunce::canonicalize(runner).map_err(|_| error("无法读取内置网易云脚本路径。"))?;
+        let cache = dunce::canonicalize(cache).map_err(|_| error("无法读取网易云缓存路径。"))?;
         let mut command = Command::new(node);
         command
             .arg(runner)
-            .current_dir(cache)
-            .env("TEMP", cache)
-            .env("TMP", cache)
+            .current_dir(&cache)
+            .env("TEMP", &cache)
+            .env("TMP", &cache)
             .env_remove("NODE_OPTIONS")
             .env_remove("NODE_PATH")
             .stdin(Stdio::piped())

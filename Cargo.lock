@@ -852,6 +852,7 @@ name = "discatelier-netease-runtime"
 version = "0.1.6"
 dependencies = [
  "discatelier-contracts",
+ "dunce",
  "serde_json",
  "uuid",
  "windows-sys 0.61.2",

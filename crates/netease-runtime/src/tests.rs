@@ -5,6 +5,9 @@ fn root() -> PathBuf {
 }
 fn fixture() -> Runtime {
     let dir = root().join(format!("netease-test-{}", uuid::Uuid::new_v4()));
+    fixture_at(dir)
+}
+fn fixture_at(dir: PathBuf) -> Runtime {
     fs::create_dir_all(&dir).unwrap();
     fs::hard_link(
         root().join("netease-runtime/node.exe"),
@@ -28,6 +31,23 @@ input.on('line', line => {
     )
     .unwrap();
     Runtime::new(dir.clone(), dir.join("cache"))
+}
+#[cfg(windows)]
+#[test]
+fn canonical_resource_path_with_unicode_and_spaces_starts_and_reuses() {
+    let mut runtime =
+        fixture_at(root().join(format!("netease-test-路径 空格-{}", uuid::Uuid::new_v4())));
+    // Tauri resolves the executable/resource directory with std::fs::canonicalize.
+    runtime.root = fs::canonicalize(&runtime.root).unwrap();
+    fs::create_dir_all(&runtime.cache).unwrap();
+    runtime.cache = fs::canonicalize(&runtime.cache).unwrap();
+    let first = runtime.request("search", json!({"query":"one"})).unwrap();
+    assert_eq!(
+        first,
+        runtime.request("search", json!({"query":"two"})).unwrap()
+    );
+    runtime.shutdown();
+    assert!(pid(&runtime).is_none());
 }
 fn pid(runtime: &Runtime) -> Option<u32> {
     runtime
@@ -163,10 +183,32 @@ fn parent_exit_helper() {
 }
 
 #[test]
+#[ignore = "Explicit offline check of the Release resource directory; no UI or API requests"]
+fn packaged_runner_starts_with_canonical_release_path() {
+    let resources = fs::canonicalize(root().join("../target/release/netease-runtime")).unwrap();
+    let cache = root().join(format!("netease-boot-test-{}", uuid::Uuid::new_v4()));
+    fs::create_dir_all(&cache).unwrap();
+    let mut process =
+        process::Process::spawn(&resources, &fs::canonicalize(cache).unwrap()).unwrap();
+    // Unsupported operations are answered by the actual runner before loading
+    // upstream modules, proving startup and pipes without contacting a service.
+    let result = process.exchange(
+        &json!({"id":"boot-check","operation":"invalid","arguments":{}}),
+        &AtomicBool::new(false),
+        Duration::from_secs(5),
+    );
+    assert_eq!(
+        result.unwrap_err().message,
+        "内置网易云查询失败，请稍后重试。"
+    );
+    assert!(!process.exited());
+}
+
+#[test]
 #[ignore = "Explicit public network check using packaged Node and api-enhanced; no UI, credentials or disc access"]
 fn actual_packaged_api() {
     let runtime = Runtime::new(
-        root().join("netease-runtime"),
+        fs::canonicalize(root().join("netease-runtime")).unwrap(),
         root().join(format!("netease-public-test-{}", uuid::Uuid::new_v4())),
     );
     assert!(pid(&runtime).is_none());
