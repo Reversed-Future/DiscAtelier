@@ -15,6 +15,7 @@ function harness({ fail = false, cache = '{}' } = {}) {
   runInNewContext(source, { module, global: { deviceId: 'test-device' }, require(name) {
     if (name === 'node:path') return { join };
     if (name === 'node:os') return { tmpdir: () => 'isolated-test-cache' };
+    if (name === './auth.cjs') return {status:async (_api,cookie)=>{events.push('status');assert.equal(cookie,'MUSIC_U=test-token');return {loggedIn:!state.expired};}};
     if (name === 'node:fs') return {
       readFileSync: () => state.cache,
       writeFileSync: (path, value) => { events.push('write'); if (state.writeFailure) throw new Error('private path'); state.cache = value; },
@@ -28,10 +29,10 @@ function harness({ fail = false, cache = '{}' } = {}) {
   } });
   const api = { song_url_v1: async args => {
     events.push('request'); assert.equal(JSON.parse(state.cache).publicKey, 'test-key');
-    assert.deepEqual(JSON.parse(JSON.stringify(args)), { id: 42, level: 'standard', unblock: 'false' });
+    assert.deepEqual(JSON.parse(JSON.stringify(args)), { id: 42, level: 'standard', unblock: 'false', ...(state.cookie ? {cookie:state.cookie} : {}) });
     return { body: { code: 200, data: [{id:42,url:null}] } };
   } };
-  return { play: () => module.exports(api, 42), events, state };
+  return { play: () => module.exports(api, 42, state.cookie), events, state };
 }
 
 test('playback initializes and writes the public key before requesting audio; subsequent songs reuse it', async () => {
@@ -40,6 +41,13 @@ test('playback initializes and writes the public key before requesting audio; su
   assert.equal((await h.play()).body.code, 200);
   await h.play();
   assert.deepEqual(h.events, ['initialize', 'write', 'request', 'request']);
+});
+test('authenticated playback carries the credential and never downgrades expired accounts to guest', async()=>{
+  const h=harness();h.state.cookie='MUSIC_U=test-token';
+  await h.play();assert.deepEqual(h.events,['status','initialize','write','request']);
+  h.state.expired=true;
+  await assert.rejects(h.play(),e=>e.code==='NETEASE_AUTH_EXPIRED');
+  assert.deepEqual(h.events,['status','initialize','write','request','status']);
 });
 
 test('failed initialization never requests audio, hides private diagnostics, and can retry', async () => {

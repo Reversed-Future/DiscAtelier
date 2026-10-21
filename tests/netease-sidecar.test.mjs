@@ -15,9 +15,9 @@ async function exchange(argumentsValue, operation = 'search', failure) {
     process: { stdin: {}, stdout: { write: line => respond(JSON.parse(line)) }, exit: () => {} },
     require(name) {
       if (name === 'node:readline') return { createInterface: () => input };
-      if (name === './playback.cjs') return async (api, id) => {
+      if (name === './playback.cjs') return async (api, id, cookie) => {
         if (failure) throw failure;
-        return api.song_url_v1({ id, level: 'standard', unblock: 'false' });
+        return api.song_url_v1({ id, level: 'standard', unblock: 'false', ...(cookie ? {cookie} : {}) });
       };
       if (name === '@neteasecloudmusicapienhanced/api') return {
         search: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code: 200, result: { albumCount: 513, albums: [] } } }; },
@@ -41,6 +41,14 @@ test('song URL requests use the registered API with unblocking disabled and vali
   assert.deepEqual(calls,[{id:42,level:'standard',unblock:'false'}]);
   assert.equal(response.body.data[0].id,42);
   assert.equal((await exchange({id:0},'songUrl')).calls.length,0);
+});
+test('private playback credentials are forwarded only as arguments, never echoed in replies', async()=>{
+  const {response,calls}=await exchange({id:42,cookie:'MUSIC_U=test-token'},'songUrl');
+  assert.equal(calls[0].cookie,'MUSIC_U=test-token');
+  assert.ok(!JSON.stringify(response).includes('test-token'));
+  for(const cookie of ['MUSIC_U=bad\nvalue','MUSIC_U=token;OTHER=token','OTHER=token']) {
+    assert.equal((await exchange({id:42,cookie},'songUrl')).calls.length,0);
+  }
 });
 
 test('playback failures distinguish initialization and upstream failures without exposing private error text', async () => {

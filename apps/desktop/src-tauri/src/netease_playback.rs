@@ -98,10 +98,11 @@ pub async fn netease_play(
         let settings = integration_settings::read(&directory)?;
         let vlc = discatelier_player_vlc::configured(&crate::playback_settings::read(&directory)?)?;
         let stream = if settings.netease_mode == integration_settings::NeteaseMode::Builtin {
-            provider::parse_song_stream(
-                runtime.request("songUrl", serde_json::json!({"id":song_id}))?,
-                song_id,
-            )?
+            let mut arguments = serde_json::json!({"id":song_id});
+            if let Some(cookie) = crate::netease_auth::credentials::playback_cookie()? {
+                arguments["cookie"] = cookie.into();
+            }
+            provider::parse_song_stream(runtime.request("songUrl", arguments)?, song_id)?
         } else {
             provider::song_stream(&settings.netease_base_url, song_id)?
         };

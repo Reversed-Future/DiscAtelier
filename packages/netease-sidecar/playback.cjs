@@ -6,7 +6,10 @@ const os = require('node:os');
 let ready = false;
 // Initialize only the playback protocol, using the verified key response adapter.
 // Search/album reads do not need this key. The Rust host supplies a private TMP.
-module.exports = async function songUrl(api, id) {
+module.exports = async function songUrl(api, id, cookie) {
+  if (cookie && !(await require('./auth.cjs').status(api, cookie)).loggedIn) {
+    throw Object.assign(new Error('Account expired'), { code: 'NETEASE_AUTH_EXPIRED' });
+  }
   if (!ready) {
     let phase = 'key';
     try {
@@ -30,7 +33,7 @@ module.exports = async function songUrl(api, id) {
     }
   }
   try {
-    return await api.song_url_v1({ id, level: 'standard', unblock: 'false' });
+    return await api.song_url_v1({ id, level: 'standard', unblock: 'false', ...(cookie ? { cookie } : {}) });
   } catch (error) {
     // Only carry a numeric upstream status; never forward headers, URLs or cookies.
     throw Object.assign(new Error('Playback request failed'), {

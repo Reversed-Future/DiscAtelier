@@ -34,6 +34,17 @@ impl Runtime {
         }
     }
     pub fn request(&self, operation: &str, arguments: Value) -> Result<Value, AppError> {
+        if arguments.get("cookie").is_some_and(|v| {
+            v.as_str().is_none_or(|s| {
+                s.len() > 4096
+                    || !s.starts_with("MUSIC_U=")
+                    || s.len() <= 8
+                    || s.bytes()
+                        .any(|b| b.is_ascii_whitespace() || b.is_ascii_control() || b == b';')
+            })
+        }) {
+            return Err(error("网易云登录凭据格式无效。"));
+        }
         if operation == "search"
             && arguments
                 .get("offset")
@@ -42,6 +53,16 @@ impl Runtime {
             return Err(error("网易云搜索页码无效。"));
         }
         match operation {
+            "authStart" | "authStatus" | "authLogout" => {}
+            "authCheck"
+                if arguments
+                    .get("key")
+                    .and_then(Value::as_str)
+                    .is_some_and(|s| {
+                        !s.is_empty()
+                            && s.len() <= 1024
+                            && !s.chars().any(|c| c.is_whitespace() || c.is_control())
+                    }) => {}
             "search"
                 if arguments
                     .get("query")

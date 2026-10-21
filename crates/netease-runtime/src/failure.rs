@@ -4,6 +4,8 @@ use serde_json::Value;
 // These fields are our private pipe protocol, not unchecked upstream messages.
 pub fn from_response(response: &Value) -> AppError {
     let label = match response.get("errorCode").and_then(Value::as_str) {
+        Some("NETEASE_AUTH") => "网易云账号请求失败，请重试",
+        Some("NETEASE_AUTH_EXPIRED") => "网易云登录已失效，请在设置中重新扫码",
         Some("NETEASE_PLAYBACK_INIT") => {
             match response.get("errorReason").and_then(Value::as_str) {
                 Some("key_response") => "网易云播放初始化失败：公钥接口未返回有效数据",

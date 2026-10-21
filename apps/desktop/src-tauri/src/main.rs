@@ -9,6 +9,7 @@ mod model_picker;
 mod model_stream;
 mod models;
 mod netease;
+mod netease_auth;
 mod netease_playback;
 mod optical;
 mod playback;
@@ -59,6 +60,7 @@ fn main() {
             app.manage(updates::UpdateState::default());
             app.manage(Arc::new(assistant::AgentState::default()));
             app.manage(Arc::new(netease::NeteaseState::default()));
+            app.manage(Arc::new(netease_auth::Auth::default()));
             let runtime_root = app.path().resource_dir()?.join("netease-runtime");
             #[cfg(debug_assertions)]
             let runtime_root = if runtime_root.is_dir() {
@@ -81,6 +83,11 @@ fn main() {
             integration_settings::integration_settings_get,
             integration_settings::integration_settings_save,
             netease::netease_search,
+            netease_auth::netease_account_status,
+            netease_auth::netease_login_begin,
+            netease_auth::netease_login_poll,
+            netease_auth::netease_login_cancel,
+            netease_auth::netease_account_logout,
             netease::netease_album,
             netease::netease_song_album,
             netease::netease_saved,

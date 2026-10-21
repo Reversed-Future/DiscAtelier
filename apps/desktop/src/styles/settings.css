@@ -11,6 +11,14 @@
 .setting-row { display: flex; justify-content: space-between; align-items: center; gap: 18px; min-height: 44px; font-size: 12px; }
 .setting-row .text-button { padding-right: 0; color: var(--muted); white-space: nowrap; }
 .settings-section { border-top: 1px solid var(--line); margin-top: 30px; padding-top: 16px; }
+.netease-account { margin-top: 24px; }
+.netease-qr { display: flex; flex-direction: column; align-items: center; padding: 16px 0 4px; }
+.netease-qr-image { display: grid; place-items: center; width: 212px; height: 212px; background: #f5f3ed; color: #555; font-size: 12px; border-radius: 3px; overflow: hidden; }
+.netease-qr-image img { display: block; animation: settings-feedback-in 180ms var(--ease); transition: opacity 160ms ease; }
+.netease-qr-image[data-expired="true"] img { opacity: .16; }
+.netease-qr-status { display: grid; place-items: center; height: 38px; font-size: 11px; color: var(--muted); }
+.netease-account .form-error { font-size: 11px; }
+@media (prefers-reduced-motion: reduce) { .netease-qr-image img { animation: none; transition: none; } }
 .data-path { margin: 8px 0 10px; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; user-select: text; }
 .setting-hint { color: var(--muted); font-size: 11px; line-height: 1.8; margin: 8px 0; }
 .settings-actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-top: 22px; }
