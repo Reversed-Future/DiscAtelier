@@ -19,17 +19,15 @@ function harness({ fail = false, cache = '{}' } = {}) {
       readFileSync: () => state.cache,
       writeFileSync: (path, value) => { events.push('write'); if (state.writeFailure) throw new Error('private path'); state.cache = value; },
     };
-    if (name === '@neteasecloudmusicapienhanced/api/util/xeapiKey') return {
-      getXeapiPublicKey: async (current, device) => {
+    if (name === './public-key.cjs') return async (device) => {
         events.push('initialize'); assert.equal(device, 'test-device');
         if (state.fail) throw state.fail === true ? new Error('private diagnostics') : state.fail;
-        return { sk: 'test-key', version: '1' };
-      },
-    };
+        return { publicKey: 'test-key', version: '1' };
+      };
     throw new Error(`Unexpected dependency: ${name}`);
   } });
   const api = { song_url_v1: async args => {
-    events.push('request'); assert.equal(JSON.parse(state.cache).sk, 'test-key');
+    events.push('request'); assert.equal(JSON.parse(state.cache).publicKey, 'test-key');
     assert.deepEqual(JSON.parse(JSON.stringify(args)), { id: 42, level: 'standard', unblock: 'false' });
     return { body: { code: 200, data: [{id:42,url:null}] } };
   } };
@@ -58,6 +56,7 @@ test('public key response and cache failures receive explicit safe reasons', asy
     ['xeapi public key request failed', 'key_response'],
     ['xeapi public key response signature mismatch', 'key_signature'],
     ['xeapi public key response missing sk', 'key_missing'],
+    ['xeapi public key response invalid key', 'key_missing'],
   ]) {
     await assert.rejects(harness({ fail: new Error(message) }).play(), e => e.reason === reason);
   }

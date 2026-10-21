@@ -349,6 +349,8 @@
 
 ## 更新规则
 
+**2026-10-21 网易云播放兼容与匹配修正**：实际公钥响应返回 `publicKey` 而无 `sk`，现已按核实结构适配并保留响应签名和公钥校验；源码及 Release 内置管道实测均成功获取试听地址，实际出声待手动确认。曲目匹配支持繁简、大小写、全半角、空格和标点差异，放宽时长容差；重复标题结合明确分盘／曲号和时长核对，保留版本差异及手动关联优先。43 项脚本测试、前端和 Release 构建通过。新预览为 `target/release/DiscAtelier-music-match-preview.exe`，资源哈希与源码一致；无数据库迁移、安装包或发布。详见 [验证记录](docs/MUSIC-DETAILS-PLAYBACK.md)。
+
 **2026-10-21 入库音乐资料增量**：Discogs 入库时可搜索／选择网易云专辑，资料与收藏在同一事务保存；支持粘贴已核实格式的网易云专辑及歌曲链接。逐曲 Credits 改为歌名同行的折叠入口，来源入口与购入状态同行，两级标签统一样式并去除额外间隔。修正内置播放错误被 Rust 通道覆盖的问题，具体网络失败和实际出声仍待手动复测。38 项 JavaScript 测试、网易云适配器 5 项、运行时 9 项、入库事务 11 项通过，TypeScript／Vite 和严格 Clippy 通过；隔离测试未操作用户窗口、个人库或光盘。详见 [资料与播放记录](docs/MUSIC-DETAILS-PLAYBACK.md)。
 
 本轮 Tauri Release 预览已构建：`target/release/DiscAtelier-import-music-preview.exe`；预览与构建主程序、内置 runner／播放模块与源码均已校验哈希。没有生成安装包或发布 GitHub。
