@@ -1,6 +1,8 @@
 use discatelier_domain::{CopyDraft, Descriptor, EditionDraft};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+mod backup_management;
+pub use backup_management::*;
 mod supplements;
 pub use supplements::*;
 mod content;

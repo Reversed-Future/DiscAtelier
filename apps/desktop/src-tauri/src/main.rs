@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod assistant;
+mod backups;
 mod commands;
 mod credentials;
 mod data_location;
@@ -104,6 +105,8 @@ fn main() {
             assistant::assistant_new,
             assistant::assistant_decide,
             data_location::data_location,
+            backups::backup_inventory,
+            backups::backup_delete_one,
             data_location::data_open_directory,
             updates::update_status,
             updates::update_save_token,

@@ -1,0 +1,17 @@
+.backup-manager { margin-top: 16px; }
+.backup-total { margin-left: 12px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.backup-list { max-height: 240px; overflow: auto; overscroll-behavior: contain; }
+.backup-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 11px; cursor: pointer; transition: opacity 140ms ease; }
+.backup-item:has(:disabled) { cursor: default; }
+.backup-item input[type="checkbox"] { appearance: auto; -webkit-appearance: checkbox; flex: 0 0 14px; width: 14px; height: 14px; margin: 0; padding: 0; accent-color: var(--ink); }
+.backup-item input:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+.backup-description { min-width: 0; flex: 1; display: grid; gap: 5px; }
+.backup-description small { margin-left: 8px; color: var(--muted); font-size: 10px; }
+.backup-filename { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.backup-size { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.backup-toolbar { display: flex; align-items: center; gap: 12px; padding-top: 8px; flex-wrap: wrap; }
+.backup-toolbar > span { margin-right: auto; }
+.backup-confirm { padding-top: 4px; animation: settings-feedback-in 160ms var(--ease); }
+.backup-confirm-actions { display: flex; justify-content: flex-end; align-items: center; gap: 16px; padding: 8px 0; }
+.backup-feedback { color: var(--muted); font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; animation: settings-feedback-in 160ms var(--ease); }
+@media (prefers-reduced-motion: reduce) { .backup-confirm, .backup-feedback { animation: none; } }

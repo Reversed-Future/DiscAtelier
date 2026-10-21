@@ -1,4 +1,5 @@
 mod artwork;
+pub mod backup_management;
 mod content;
 mod create_music;
 mod editions;
