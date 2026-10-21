@@ -1,6 +1,7 @@
 node_modules/
 target/
 dist/
+mobile-dist/
 .env
 .env.*
 !.env.example

@@ -11,5 +11,5 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "mobile", "vite.config.ts", "vite.mobile.config.ts"]
 }

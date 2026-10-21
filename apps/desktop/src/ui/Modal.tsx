@@ -41,7 +41,7 @@ export function Modal({ title, children, onClose, busy = false, wide = false, in
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     }}
-    onCancel={event => { event.preventDefault(); void close(); }}>
+    onCancel={event => { event.preventDefault(); event.stopPropagation(); void close(); }}>
     {inspection
       ? <button type="button" className="return-button" onClick={() => void close()} disabled={busy}><Icon name="back"/>放回</button>
       : <div className="panel-heading"><h2>{title}</h2><button type="button" className="icon-button" aria-label="关闭" disabled={busy} onClick={() => void close()}><Icon name="close"/></button></div>}

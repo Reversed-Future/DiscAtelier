@@ -9,6 +9,7 @@ mod integration_settings;
 mod model_picker;
 mod model_stream;
 mod models;
+mod mobile_bridge;
 mod netease;
 mod netease_artwork;
 mod netease_auth;
@@ -61,6 +62,7 @@ fn main() {
                 Arc::new(Mutex::new(discogs::DiscogsService::new()));
             app.manage(metadata);
             app.manage(data_location::DataLocation(directory.clone()));
+            app.manage(mobile_bridge::Bridge::default());
             app.manage(updates::UpdateState::default());
             app.manage(Arc::new(assistant::AgentState::default()));
             app.manage(Arc::new(netease::NeteaseState::default()));
@@ -84,6 +86,10 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            mobile_bridge::mobile_addresses,
+            mobile_bridge::mobile_start,
+            mobile_bridge::mobile_poll,
+            mobile_bridge::mobile_stop,
             purchase_recognition::purchase_recognize,
             integration_settings::integration_settings_get,
             integration_settings::integration_settings_save,

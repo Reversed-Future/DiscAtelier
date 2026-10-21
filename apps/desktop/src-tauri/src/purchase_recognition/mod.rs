@@ -1,4 +1,4 @@
-mod images;
+pub(crate) mod images;
 mod response;
 #[cfg(test)]
 mod tests;

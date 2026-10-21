@@ -15,7 +15,9 @@
 .purchase-review { margin-top: 12px; }
 .purchase-notice, .purchase-evidence { color: var(--muted); line-height: 1.7; margin: 10px 0; }
 .panel-dialog form label.purchase-review-row { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.purchase-review-row input[type="checkbox"] { width: 14px; height: 14px; padding: 0; margin: 3px 0 0; accent-color: var(--ink); }
+.purchase-review-row input[type="checkbox"] { appearance: auto; -webkit-appearance: checkbox; width: 14px; height: 14px; padding: 0; margin: 3px 0 0; accent-color: var(--ink); cursor: pointer; }
+.purchase-review-row { cursor: pointer; }
+.purchase-review-row input:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
 .purchase-review-row > span { min-width: 0; line-height: 1.7; overflow-wrap: anywhere; }
 .purchase-review-row .purchase-field-heading, .purchase-review-row small { display: block; color: var(--muted); font-size: 11px; }
 .purchase-before { color: var(--muted); margin-right: 8px; }

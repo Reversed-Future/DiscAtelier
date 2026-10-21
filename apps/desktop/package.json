@@ -1,18 +1,21 @@
 {
   "name": "@discatelier/desktop",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 1420 --strictPort",
-    "build": "tsc --noEmit && vite build",
-    "build:release": "tsc --noEmit && vite build --outDir dist-release/0.1.10",
+    "dev": "npm run build:mobile && vite --host 127.0.0.1 --port 1420 --strictPort",
+    "build:mobile": "vite build --config vite.mobile.config.ts",
+    "build": "tsc --noEmit && npm run build:mobile && vite build",
+    "build:release": "tsc --noEmit && npm run build:mobile && vite build --outDir dist-release/0.1.11",
     "tauri:dev": "npm run prepare:netease --prefix ../.. && tauri dev",
     "tauri:build": "npm run prepare:netease --prefix ../.. && tauri build --no-bundle",
     "tauri:release": "npm run prepare:netease --prefix ../.. && tauri build --config src-tauri/tauri.release.conf.json --bundles nsis --ci -- --locked"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",
+    "@zxing/browser": "0.1.5",
+    "@zxing/library": "0.21.3",
     "opencc-js": "1.4.2",
     "react": "19.3.1",
     "react-dom": "19.3.1"

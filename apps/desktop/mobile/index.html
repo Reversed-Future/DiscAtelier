@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#121212"><meta name="color-scheme" content="dark"><meta name="referrer" content="no-referrer"><title>DiscAtelier · 手机连接</title></head>
+<body><main>
+  <header><span class="mark">◎</span><span>DiscAtelier<span class="muted">.</span></span><span class="connection" id="connection">连接中</span></header>
+  <h1 id="title">连接你的收藏</h1><p id="subtitle" class="muted">正在连接电脑…</p>
+  <p id="message" role="status" aria-live="polite"></p>
+  <button id="cancel-read" type="button" hidden>取消读取</button>
+  <section id="barcode-panel" hidden>
+    <button id="take-barcode" class="primary" type="button">拍摄条码</button>
+    <input id="barcode-photo" type="file" accept="image/png,image/jpeg,image/webp" capture="environment" hidden>
+    <label for="barcode">条码数字</label><input id="barcode" inputmode="numeric" autocomplete="off" maxlength="13" placeholder="也可以手动输入" aria-describedby="barcode-help">
+    <p id="barcode-help" class="muted small">支持 EAN-13、UPC-A、EAN-8。让条码水平居中、四周留白，拍清整条后核对数字。</p>
+  </section>
+  <section id="images-panel" hidden>
+    <div class="image-actions"><button id="choose-images" class="primary" type="button">选择购物截图</button><button id="take-image" type="button">拍照</button></div>
+    <input id="screenshots" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden>
+    <input id="camera" type="file" accept="image/png,image/jpeg,image/webp" capture="environment" hidden>
+    <div id="thumbnails" class="thumbnails"></div><p id="count" class="muted small"></p>
+  </section>
+  <footer><button id="send" class="primary" type="button" disabled>发送到电脑</button><p class="muted small">仅传到本次连接的电脑，不会自动搜索、调用 AI 或保存收藏。局域网 HTTP 传输，请使用可信 Wi-Fi。</p></footer>
+</main><script type="module" src="/main.ts"></script></body></html>

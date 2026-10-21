@@ -8,8 +8,8 @@ const metadata = JSON.parse(execFileSync('cargo', ['metadata', '--locked', '--of
   '--filter-platform', 'x86_64-pc-windows-msvc'], { cwd: root, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 }));
 // Exact names enumerated from the installed, locked dependency source trees.
 const licenseNames = new Set(['COPYING', 'COPYRIGHT', 'LICENCE', 'LICENSE', 'LICENSE-0BSD', 'LICENSE-APACHE',
-  'LICENSE-APACHE-2.0', 'LICENSE-APACHE.md', 'LICENSE-Apache', 'LICENSE-BOOST', 'LICENSE-LIBM-MIT',
-  'LICENSE-MIT', 'LICENSE-MIT.md', 'LICENSE-THIRD-PARTY', 'LICENSE-UNICODE', 'LICENSE-ZLIB',
+  'LICENSE-APACHE-2.0', 'LICENSE-APACHE.md', 'LICENSE-APACHE.txt', 'LICENSE-Apache', 'LICENSE-BOOST', 'LICENSE-LIBM-MIT',
+  'LICENSE-MIT', 'LICENSE-MIT.md', 'LICENSE-MIT.txt', 'LICENSE-THIRD-PARTY', 'LICENSE-UNICODE', 'LICENSE-ZLIB',
   'LICENSE-ZLIB.md', 'LICENSE.BSD-3-Clause', 'LICENSE.MIT', 'LICENSE.md', 'LICENSE.spdx', 'LICENSE.txt',
   'LICENSE_APACHE-2.0', 'LICENSE_MIT', 'UNLICENSE', 'license-apache-2.0', 'license-mit']);
 const sections = ['DiscAtelier third-party notices\n\nThis file includes dependency licenses, including build dependencies.\n'
@@ -32,8 +32,9 @@ function append(name, directory, licenseFile, extraFile) {
   if (!files.size) missing.push(name);
   sections.push(`\n${'='.repeat(72)}\n${name}\n${[...files].map(file => readFileSync(file, 'utf8')).join('\n\n')}`);
 }
-for (const name of ['react', 'react-dom', 'scheduler', '@tauri-apps/api', 'opencc-js']) {
-  const directory = join(root, 'node_modules', name);
+const frontendPackages = ['react', 'react-dom', 'scheduler', '@tauri-apps/api', 'opencc-js', '@zxing/browser', '@zxing/library', '@zxing/text-encoding', 'ts-custom-error'];
+for (const name of frontendPackages) {
+  const directory = join(root, ...(['@zxing/browser', '@zxing/library'].includes(name) ? ['apps', 'desktop', 'node_modules'] : ['node_modules']), name);
   const pkg = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'));
   append(`${name} ${pkg.version} — ${pkg.license}`, directory);
 }
@@ -51,5 +52,5 @@ for (const pkg of metadata.packages.filter(pkg => pkg.source).sort((a, b) => a.n
     directory, pkg.license_file, supplemental[pkg.name]);
 }
 writeFileSync(join(root, 'apps/desktop/public/legal/THIRD-PARTY-NOTICES.txt'), sections.join('\n'), 'utf8');
-console.log(JSON.stringify({ packages: metadata.packages.filter(pkg => pkg.source).length + 6, missingLicenseFiles: missing }));
+console.log(JSON.stringify({ packages: metadata.packages.filter(pkg => pkg.source).length + frontendPackages.length + 1, missingLicenseFiles: missing }));
 if (missing.length) process.exitCode = 1;

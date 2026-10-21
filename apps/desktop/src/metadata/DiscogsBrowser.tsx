@@ -9,6 +9,7 @@ import type { Descriptor } from '../library/types';
 import { enter } from '../ui/motion';
 import { SourceLink } from './SourceLink';
 import { SearchCover } from './SearchCover';
+import { MobileReceive } from '../mobile/MobileReceive';
 
 export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onClose, onManual, onSettings }: {
   categoryId: string; categories: Descriptor[]; carriers: Descriptor[];
@@ -16,6 +17,7 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
 }) {
   const [mode, setMode] = useState('barcode');
   const [query, setQuery] = useState('');
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [submitted, setSubmitted] = useState<MetadataSearch | null>(null);
   const [results, setResults] = useState<MetadataResults | null>(null);
   const [release, setRelease] = useState<MetadataRelease | null>(null);
@@ -57,11 +59,12 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
   if (imported) return <AddCopy categoryId={categoryId} categories={categories} carriers={carriers} imported={imported}
     importTracks={release?.tracklist || []}
     onBack={() => setImported(null)} onClose={onClose} onSaved={onSaved}/>;
-  return <Modal title="Discogs" onClose={onClose} wide busy={busy} className="metadata-browser-panel">
+  return <><Modal title="Discogs" onClose={onClose} wide busy={busy} className="metadata-browser-panel">
     <div className="metadata-toolbar">
       {release ? <button type="button" className="text-button" disabled={busy} onClick={() => setRelease(null)}>返回搜索</button> :
         <button type="button" className="text-button" disabled={busy} onClick={onSettings}>设置</button>}
       {!release && <button type="button" className="text-button" disabled={busy} onClick={onManual}>手动录入</button>}
+      {!release && <button type="button" className="text-button" disabled={busy} onClick={() => setMobileOpen(true)}>手机扫条码</button>}
     </div>
     <>
       {!release && <form className="metadata-search" onSubmit={event => {
@@ -98,5 +101,7 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
         </div>}
       </>}</div>
     </>
-  </Modal>;
+  </Modal>{mobileOpen && <MobileReceive mode="barcode" onClose={() => setMobileOpen(false)} onReceive={value => {
+    if (value.kind === 'barcode') { setMode('barcode'); setQuery(value.value); setError(''); }
+  }}/>}</>;
 }

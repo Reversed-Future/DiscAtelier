@@ -6,6 +6,7 @@ import { Select } from '../../ui/Select';
 import { MAX_IMAGES, readPurchaseImage, type PurchaseImage } from './images';
 import type { Recognition } from './recognition';
 import { PurchaseReview } from './PurchaseReview';
+import { MobileReceive } from '../../mobile/MobileReceive';
 import '../../styles/purchase-recognition.css';
 
 export function PurchaseScreenshots({ title, creator, value, amount, onChange, setAmount, onBusy }: {
@@ -16,6 +17,7 @@ export function PurchaseScreenshots({ title, creator, value, amount, onChange, s
   const input = useRef<HTMLInputElement>(null);
   const locked = useRef(false);
   const [images, setImages] = useState<PurchaseImage[]>([]);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [busy, setBusy] = useState<'reading' | 'recognizing' | null>(null);
   const [result, setResult] = useState<Recognition | null>(null);
   const [record, setRecord] = useState(0);
@@ -62,10 +64,12 @@ export function PurchaseScreenshots({ title, creator, value, amount, onChange, s
 
   return <section ref={root} className="purchase-screenshots" aria-label="购物截图填写" aria-busy={!!busy}>
     <div className="purchase-recognition-heading"><strong>购物截图填写</strong>
-      <button type="button" className="text-button" disabled={!!busy || images.length >= MAX_IMAGES} onClick={() => input.current?.click()}>添加截图</button></div>
+      <div className="purchase-phone-actions"><button type="button" className="text-button" disabled={!!busy || images.length >= MAX_IMAGES} onClick={() => setMobileOpen(true)}>手机传图</button>
+      <button type="button" className="text-button" disabled={!!busy || images.length >= MAX_IMAGES} onClick={() => input.current?.click()}>添加截图</button></div></div>
     <div className="purchase-paste-area" tabIndex={0}>在这里按 Ctrl+V 粘贴，或添加 1–6 张截图</div>
     <input ref={input} type="file" multiple hidden accept="image/png,image/jpeg,image/webp" aria-label="购物截图文件" onChange={event => {
-      const files = [...(event.target.files || [])]; event.target.value = ''; void add(files);
+      const selectedInput = event.currentTarget;
+      const files = [...(selectedInput.files || [])]; void add(files).finally(() => { selectedInput.value = ''; });
     }}/>
     {!!images.length && <div className="purchase-thumbnails">{images.map((image, index) => <div key={image.id}>
       <img src={image.dataUrl} alt={`截图 ${index + 1}：${image.name}`}/><span>{index + 1}</span>
@@ -85,5 +89,13 @@ export function PurchaseScreenshots({ title, creator, value, amount, onChange, s
         onChange(copy); setAmount(price); setResult(null); setMessage('已填写表单，可继续修改；点击保存后才写入收藏。');
       }}/>
     </div>}
+    {mobileOpen && <MobileReceive mode="screenshots" maxImages={MAX_IMAGES - images.length} onClose={() => setMobileOpen(false)} onReceive={value => {
+      if (value.kind !== 'screenshots') return;
+      const next = [...images, ...value.images.map((dataUrl, index) => ({ id: crypto.randomUUID(), name: `手机截图 ${index + 1}`, dataUrl }))];
+      if (next.length > MAX_IMAGES || next.reduce((sum, image) => sum + image.dataUrl.length, 0) > 24 * 1024 * 1024) {
+        throw Error('截图总量超出限制，请减少图片后重新连接');
+      }
+      setImages(next); setResult(null); setError(''); setMessage(`已收到 ${value.images.length} 张手机截图，点击识别后才发送给 AI。`);
+    }}/>}
   </section>;
 }

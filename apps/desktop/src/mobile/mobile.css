@@ -1,0 +1,12 @@
+.panel-dialog.mobile-receive-panel { width: min(600px, calc(100vw - 48px)); }
+.mobile-receive-content { display: grid; gap: 20px; align-content: start; }
+.mobile-receive-content > p { margin: 0; }
+.mobile-receive-content > .solid-button { justify-self: start; }
+.mobile-connection { display: grid; justify-items: center; gap: 14px; text-align: center; animation: mobile-connection-in 180ms ease-out; }
+.mobile-qr { width: 240px; height: 240px; max-width: 100%; background: white; border: 10px solid white; }
+.mobile-connection p { margin: 0; }
+.mobile-connection-actions { display: flex; gap: 24px; }
+.mobile-connection small, .mobile-connection-note { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.purchase-phone-actions { display: flex; gap: 16px; }
+@keyframes mobile-connection-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .mobile-connection { animation: none; } }

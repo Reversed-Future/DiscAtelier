@@ -45,6 +45,7 @@ Ctrl + 加号／减号调整缩放，Ctrl + 0 恢复 100%；斜杠打开搜索�
 - [数据与扩展契约](docs/ARCHITECTURE.md)
 - [集成依据与实现边界](docs/INTEGRATIONS.md)
 - [版本路线与验收标准](ROADMAP.md)
+- [安卓同 Wi-Fi 扫条码与上传购物截图](docs/PHONE-CONNECTION.md)
 
 ## 预览
 
