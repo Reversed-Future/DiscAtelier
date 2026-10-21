@@ -23,7 +23,7 @@ export function createSession({root,viewer,parts,onChange}){
    actions.push(action('book',s.bookOut?'放回歌词本':'取出歌词本'),action('previous','上一页',!s.bookOut||s.page===0),action('next','下一页',!s.bookOut||s.page===d.leaves));
   }
   if(s.selected==='disc'){message=s.discOut?`光碟 · ${s.discFlipped?'银色背面':'印刷面'}`:'光碟 · 收纳在碟托内';actions.push(action('disc',s.discOut?'放回光碟':'取出光碟'),action('disc-flip','翻看另一面',!s.discOut));}
-  onChange({...s,message,actions});
+  onChange({...s,held:view.held?.userData.modelId??null,message,actions});
  }
  const view=createAssemblyView({root,viewer,motion:m}),showAll=()=>view.show();
  const all=()=>view.overview();

@@ -10,11 +10,11 @@ import * as THREE from '../packages/atelier-model-runtime/src/discs/interactive/
 
 const directory=process.argv[2];if(!directory)throw Error('Supply the exact authored package directory');
 const profiles=[
- {id:'qingluo-decoy',setup:[['act','case']],take:['pick','disc'],book:['pick','book']},
- {id:'yomei10-rad',setup:[['act','case']],take:['pick','disc'],book:['pick','book']},
- {id:'ups-and-downs-firdhaus',setup:[['act','case']],take:['pick','disc'],book:['pick','book']},
- {id:'thunder-radio-luoyan',setup:[['act','tray']],take:['act','cassette']},
- {id:'nafelibeta2',setup:[['pick','case'],['act','lid']],take:['act','take-disc'],book:['pick','book']},
+ {id:'qingluo-decoy',setup:[['pick','obi'],['pick','case']],take:['pick','disc'],book:['pick','book'],leaf:'book-leaf-0'},
+ {id:'yomei10-rad',setup:[['pick','obi'],['pick','case']],take:['pick','disc'],book:['pick','book'],leaf:'book-leaf-0'},
+ {id:'ups-and-downs-firdhaus',setup:[['pick','obi'],['pick','case']],take:['pick','disc'],book:['pick','book'],leaf:'book-leaf-0'},
+ {id:'thunder-radio-luoyan',setup:[['pick','box'],['pick','tray']],take:['pick','cassette']},
+ {id:'nafelibeta2',setup:[['pick','case'],['pick','lid']],take:['pick','disc'],book:['pick','book'],leaf:'leaf-0'},
  {id:'research-bai',setup:[['pick','band'],['pick','case-top'],['pick','case-bottom'],['pick','case-left'],['pick','case-right']],take:['pick','folder']},
 ];
 globalThis.matchMedia=()=>({matches:true});
@@ -35,19 +35,27 @@ for(const profile of profiles){
  const model=parseModel(fs.readFileSync(path.join(directory,profile.id+'.ateliermodel'),'utf8')),v=viewer();let state,changes=0;
  const runtime=await createAssemblyRuntime({viewer:v,model,onChange:next=>{state=next;changes++;assert.doesNotThrow(()=>JSON.stringify(next));}});
  try{
+  assert.equal(state.step,0);assert.deepEqual(state.returns,[]);assert.equal(state.held,null);
   const original=new Map();runtime.root.traverse(n=>original.set(n,{parent:n.parent,position:n.position.clone(),quaternion:n.quaternion.clone(),visible:n.visible}));
   const run=async([method,id])=>{
    if(method==='act')assert.ok(state.assembly.actions.some(action=>action.id===id&&!action.disabled),profile.id+' missing action '+id);
    await runtime[method](id);assert.equal(state.busy,false);
   };
   for(const op of profile.setup)await run(op);await run(profile.take);
+  assert.equal(state.step,1);assert.ok(state.returns.some(row=>row.target===profile.take[1]));
+  await runtime.putBack(profile.take[1]);assert.ok(!state.returns.some(row=>row.target===profile.take[1]));
+  await run(profile.take);
+  if(profile.take[1]==='disc'||profile.take[1]==='cassette'){
+   await run(profile.take);assert.equal(state.held,profile.take[1]);
+   await runtime.pick(null);assert.equal(state.held,null);
+  }
   if(profile.book){
    await run(profile.book);const before=v.snapshot();const visible=new Map();runtime.root.traverse(n=>visible.set(n,n.visible));
-   await run(['act','next']);await run(['act','previous']);const after=v.snapshot();
+   await run(['pick',profile.leaf]);await run(['pick',profile.leaf]);const after=v.snapshot();
    for(const key of ['position','up','target'])assert.ok(before[key].distanceTo(after[key])<1e-7,profile.id+' reading camera '+key);
    for(const [node,value] of visible)assert.equal(node.visible,value,profile.id+' reading visibility');
   }
-  await runtime.reset();assert.equal(state.busy,false);
+  await runtime.reset();assert.equal(state.busy,false);assert.equal(state.step,0);assert.equal(state.held,null);assert.deepEqual(state.returns,[]);
   for(const [node,home] of original){
    assert.equal(node.parent,home.parent,profile.id+' parent '+node.name);
    assert.ok(node.position.distanceTo(home.position)<1e-6,profile.id+' position '+node.name);

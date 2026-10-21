@@ -33,8 +33,10 @@ to the upstream files. The JSON profile table is a generated mirror used by Rust
 tests compare both tables so validation cannot silently diverge.
 
 The local V3 adapter owns resource disposal, bounds image decode concurrency to
-four, translates actions/parts into React controls, and keeps package code fields
+four, adapts current return/inspection state to the same minimal controls as V2, and keeps package code fields
 out of the parsed result. The shared motion helper observes the session abort
 signal and cancels pending animation frames. Initial and reset presentation use
 the desktop's front overview; authored dismantling and page paths are preserved.
 V3 continues through first-frame shader preparation and the existing cover fade.
+
+Local direct-interaction adaptations: the jewel-case and cassette sessions expose their actual held part in change events; the research poster opens/folds when clicked. `assembly/interaction-state.js` maps only documented state flags/action IDs to contextual returns, respecting authored disabled reasons. The original hashes in upstream.json remain provenance, not hashes of these local adaptations. Model packages and the source authoring project are unchanged.

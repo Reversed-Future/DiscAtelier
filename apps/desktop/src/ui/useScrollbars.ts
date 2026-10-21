@@ -10,7 +10,7 @@ export function useScrollbars() {
     function measure() {
       frame = 0;
       const nodes = new Set([document.documentElement, ...document.querySelectorAll<HTMLElement>(
-        '.panel-dialog, .inspection-dialog, .organizer, .backup-list, .select-list, #tools-popover, textarea',
+        '#scene, .panel-dialog, .inspection-dialog, .organizer, .backup-list, .select-list, #tools-popover, textarea',
       )]);
       for (const node of watched) if (!nodes.has(node)) { resize.unobserve(node); watched.delete(node); }
       for (const node of nodes) {

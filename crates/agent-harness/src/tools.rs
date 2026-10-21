@@ -73,11 +73,11 @@ pub fn definitions() -> Value {
         tool("propose_add_collection", "提出新增一套收藏，先查重并核对实体载体和状态；source 为 discogs、netease 或 manual。Discogs 使用真实发行载体；其他来源须用户提供 carrierId。manual 须提供 title、creator，其余不适用字段传 null。界面确认才写入。",
             json!({"source":{"type":"string","enum":["discogs","netease","manual"]},"sourceId":{"type":["integer","null"]},"category":{"type":"string","enum":["music","video"]},"status":{"type":"string","enum":["owned","wanted","transit"]},"carrierId":{"type":["string","null"],"enum":["cd","dvd","bd","vinyl","cassette","other",null]},"title":{"type":["string","null"]},"creator":{"type":["string","null"]}}),
             json!(["source","sourceId","category","status","carrierId","title","creator"])),
-        tool("propose_netease_supplement", "提出替换指定收藏版本的网易云补充资料，展示简介、曲目及关联变化；不改实体信息，界面确认才保存。", json!({"id":{"type":"string"},"albumId":{"type":"integer"}}), json!(["id","albumId"])),
-        tool("propose_cover", "提出更换收藏封面，source=netease 使用已关联专辑，discogs 使用收藏原发行。先展示新旧封面，界面确认才保存。", json!({"id":{"type":"string"},"source":{"type":"string","enum":["netease","discogs"]}}), json!(["id","source"])),
+        tool("propose_netease_supplement", "为指定收藏版本提出一张网易云专辑的资料补全：新 albumId 追加，已有 ID 更新该张；保留其他专辑、实体信息、Disc 绑定和独立单曲关联。不能修改分盘绑定。展示具体变化，界面确认后由应用保存。", json!({"id":{"type":"string"},"albumId":{"type":"integer"}}), json!(["id","albumId"])),
+        tool("propose_cover", "提出更换收藏版本封面。source=netease 使用默认关联专辑，不能指定其他 albumId；discogs 使用收藏原发行。以预览的实际来源为准，展示新旧封面和影响范围，界面确认后由应用保存。", json!({"id":{"type":"string"},"source":{"type":"string","enum":["netease","discogs"]}}), json!(["id","source"])),
         tool("get_playback", "读取内置播放器当前状态；不开始播放。", json!({}), json!([])),
-        tool("play_music", "仅在用户要求播放时，播放某收藏已关联网易云专辑内的真实 songId；账号权限不变。", json!({"id":{"type":"string"},"songId":{"type":"integer"}}), json!(["id","songId"])),
-        tool("control_playback", "仅按用户明确指令暂停、继续、停止、跳转秒数或上下曲。next/previous 只支持已关联网易云专辑。seek 须 seconds，其余 seconds=null。", json!({"action":{"type":"string","enum":["pause","resume","stop","seek","next","previous"]},"seconds":{"type":["number","null"]}}), json!(["action","seconds"])),
+        tool("play_music", "仅在用户要求播放时，播放某收藏已关联数字专辑或独立单曲中的真实 songId；先核实目标及歌曲关联，不用未关联的搜索结果代替。账号权限不变。", json!({"id":{"type":"string"},"songId":{"type":"integer"}}), json!(["id","songId"])),
+        tool("control_playback", "仅按用户明确指令暂停、继续、停止、跳转秒数或上下曲。next/previous 使用应用现有的有效网易云播放列表，沿用实体顺序、Disc 绑定及独立单曲关联，不自行重建。列表未就绪按错误提示处理。seek 须 seconds，其余 seconds=null。", json!({"action":{"type":"string","enum":["pause","resume","stop","seek","next","previous"]},"seconds":{"type":["number","null"]}}), json!(["action","seconds"])),
         tool(
             "search_library",
             "搜索本地收藏并返回精确数量、分币种总价。最多展示 30 条。",
@@ -86,7 +86,7 @@ pub fn definitions() -> Value {
         ),
         tool(
             "get_copy",
-            "按真实副本 ID 读取版本、曲目和网易云补充资料；不读取私人备注或购买链接。",
+            "按真实副本 ID 读取版本和实体曲目 content、全部关联数字专辑 neteaseAlbums、现有分盘绑定 discAlbumLinks；netease 仅为兼容单专辑信息。未提供编辑绑定或独立单曲关联明细的能力，不读取私人备注或购买链接。",
             json!({"id":{"type":"string"}}),
             json!(["id"])
         ),

@@ -884,7 +884,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-agent-harness"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "discatelier-contracts",
  "discatelier-domain",
@@ -896,7 +896,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-application"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "discatelier-contracts",
  "discatelier-domain",
@@ -906,7 +906,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-contracts"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "chrono",
  "discatelier-domain",
@@ -915,7 +915,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-desktop"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -952,7 +952,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-domain"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "chrono",
  "serde",
@@ -961,7 +961,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-integration-http"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "discatelier-contracts",
  "reqwest",
@@ -971,7 +971,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-netease-runtime"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "discatelier-contracts",
  "dunce",
@@ -982,7 +982,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-optical-windows"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "discatelier-application",
  "discatelier-contracts",
@@ -993,7 +993,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-player-mpv"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "chrono",
  "discatelier-application",
@@ -1006,7 +1006,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-player-vlc"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "chrono",
  "discatelier-application",
@@ -1020,7 +1020,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-provider-discogs"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "base64 0.22.1",
  "discatelier-application",
@@ -1034,7 +1034,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-provider-netease"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "base64 0.22.1",
  "discatelier-contracts",
@@ -1048,7 +1048,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-storage"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "base64 0.22.1",
  "chrono",

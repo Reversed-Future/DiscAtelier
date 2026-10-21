@@ -158,6 +158,7 @@ export function createSession({viewer,root,parts,onChange,decodeText,calibration
    else if(cardIds.includes(id)&&!state.out.has(id))await spreadCards();
    else if(id==='case'){const top=layerIds.find(k=>!state.out.has(k));if(caseOpen()&&top){state.selected=top;await take(top);}else emit('点击需要打开的折片');}
    else if(id.startsWith('case-')||['folder-cover','folder-tongue','folder-retainer','envelope-flap'].includes(id))await toggle(id);
+   else if(id==='poster'&&state.out.has(id))await unfold();
    else if(state.out.has(id))await inspect(id);
    else await take(id);
   });

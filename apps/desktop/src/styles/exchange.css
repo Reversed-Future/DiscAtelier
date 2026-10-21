@@ -4,5 +4,7 @@
 .exchange-rate-row strong { font-weight: 400; }
 .exchange-rate-row small { color: var(--muted); font-size: 10px; }
 .exchange-rates { animation: settings-feedback-in 160ms var(--ease); }
+.exchange-source, .exchange-source:visited { color: var(--muted); text-decoration: none; transition: color 140ms ease; }
+.exchange-source:hover, .exchange-source:focus-visible { color: var(--ink); }
 @media (max-width: 650px) { .exchange-rate-row { grid-template-columns: 70px minmax(0, 1fr); gap: 8px; } .exchange-rate-row small { grid-column: 2; } }
 @media (prefers-reduced-motion: reduce) { .exchange-rates { animation: none; } }

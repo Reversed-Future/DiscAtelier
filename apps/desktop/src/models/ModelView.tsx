@@ -3,7 +3,6 @@ import { mountModel, type ModelHandle, type ModelState } from '../../../../packa
 import { loadModel } from './assets';
 import { measureAsync } from './timing';
 import { errorMessage } from '../library/gateway';
-import { AssemblyControls } from './AssemblyControls';
 
 interface ModelViewProps {
   assetId: string; fallback: ReactNode; interactive?: boolean; enabled?: boolean; visible?: boolean;
@@ -61,11 +60,11 @@ function ModelSession({ assetId, fallback, interactive = false, enabled = true, 
   return <div className={`model-view${interactive ? ' interactive' : ''}`} data-loaded={enabled && loaded} data-visible={displayed} data-model-state={state?.stateId} aria-busy={enabled && !loaded && !error}>
     <div className="model-fallback" aria-hidden={displayed}>{fallback}</div>
     <div className="model-host" ref={host} aria-hidden={!interactive || !displayed} inert={!interactive || !displayed}/>
-    {interactive && displayed && <div className={`model-controls${state?.assembly ? ' model-assembly' : ''}`}>
-      {state?.assembly && <AssemblyControls state={state} handle={handle.current}/>}
+    {interactive && displayed && <div className="model-controls">
+      {state?.assembly?.actions.filter(action => ['decode', 'uncover'].includes(action.id) && !action.disabled).map(action => <button type="button" className="text-button" key={action.id} disabled={state.busy} onClick={() => void handle.current?.act(action.id).catch(() => {})}>{action.label}</button>)}
       {state?.returns.map(option => <button type="button" className="text-button" key={option.target} disabled={state.busy} onClick={() => void handle.current?.putBack(option.target).catch(() => {})}>{option.label}</button>)}
-      {state?.held && !state.assembly && <button type="button" className="text-button" disabled={state.busy} onClick={() => void handle.current?.exitInspection().catch(() => {})}>返回</button>}
-      {(state?.assembly || state?.step || state?.returns.length) ? <button type="button" className="text-button" disabled={state?.busy} onClick={() => void handle.current?.reset().catch(() => {})}>全部收起</button> : null}
+      {state?.held && <button type="button" className="text-button" disabled={state.busy} onClick={() => void handle.current?.exitInspection().catch(() => {})}>返回</button>}
+      {(state?.step || state?.returns.length) ? <button type="button" className="text-button" disabled={state?.busy} onClick={() => void handle.current?.reset().catch(() => {})}>全部收起</button> : null}
     </div>}
     {interactive && error && <p className="model-error" role="alert">{error}</p>}
   </div>;

@@ -36,7 +36,7 @@ export function ExchangeSettings({ onBusy }: { onBusy(value: boolean): void }) {
       <div className="setting-row"><span>最近汇率</span><button type="button" className="text-button" disabled={busy || changed || !status?.settings.enabled || !status.hasKey} onClick={() => void exchange?.refresh(true)}>{busy ? '更新中' : '立即更新'}</button></div>
       {status?.rates.map(rate => <div className="exchange-rate-row" key={rate.from}><span>1 {rate.from}</span><strong>{rate.rate} {rate.to}</strong><small>{rate.updatedAt}{rate.fetchedDate !== status.today ? ' · 旧缓存' : ''}</small></div>)}
       {!status?.rates.length && <p className="setting-hint">{status?.settings.enabled ? '保存配置后获取汇率' : '开启后显示每日汇率'}</p>}
-      <p className="setting-hint">来源：<a href="https://www.apihz.cn/api/jinronghuilv.html" onClick={e => { e.preventDefault(); void gateway.openDocs().catch(cause => setLinkError(errorMessage(cause))); }}>接口盒子</a> · 汇率每天更新一次</p>
+      <p className="setting-hint">来源：<a className="exchange-source" href="https://www.apihz.cn/api/jinronghuilv.html" onClick={e => { e.preventDefault(); void gateway.openDocs().catch(cause => setLinkError(errorMessage(cause))); }}>接口盒子</a> · 汇率每天更新一次</p>
       {(exchange?.error || status?.error || linkError) && <p className="form-error" role="alert">{exchange?.error || status?.error || linkError}</p>}
     </section>
   </form>;

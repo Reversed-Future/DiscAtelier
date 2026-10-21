@@ -66,6 +66,12 @@ button:active { transform: scale(.98); }
 .organizer .cover-art { width: 42px; height: 42px; }
 .organizer .row-title { text-align: left; }
 .organizer .row-title span { display: block; color: var(--muted); font-size: 10px; margin-top: 5px; }
+/* The navigation is outside the scrolling pane. Keep the table aligned with
+   it using viewport width, leaving the scrollbar in the existing right margin. */
+.workspace[data-list="true"] { height: 100svh; min-height: 0; display: flex; flex-direction: column; overflow: clip; }
+.workspace[data-list="true"] .topbar { flex-shrink: 0; }
+.workspace[data-list="true"] #scene { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.workspace[data-list="true"] .organizer { width: calc(100vw - 112px); margin-right: 0; }
 .toast { position: fixed; z-index: 50; bottom: 35px; left: 50%; transform: translate(-50%, 12px); background: var(--ink); color: var(--surface); padding: 11px 20px; border-radius: 6px; opacity: 0; pointer-events: none; font-size: 12px; transition: opacity 180ms ease, transform 180ms var(--ease); }
 .toast.visible { opacity: 1; transform: translate(-50%, 0); }
 @media (hover: hover) and (pointer: fine) { #tools-popover > button:hover { background: #ffffff0a; } .top-actions button:hover { color: #fff; } }
@@ -82,6 +88,7 @@ button:active { transform: scale(.98); }
   .search-control input { width: 80px; }
   #tools-popover { top: 116px; }
   .organizer { margin-left: 24px; margin-right: 24px; overflow-x: auto; }
+  .workspace[data-list="true"] .organizer { width: calc(100vw - 48px); }
   .organizer table { min-width: 480px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }

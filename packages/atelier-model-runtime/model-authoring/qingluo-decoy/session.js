@@ -24,7 +24,7 @@ export function createSession({root,viewer,parts,onChange}){
   }
   if(s.selected==='disc'){message=s.discOut?`光碟 · ${s.discFlipped?'银色背面':'印刷面'}`:'光碟 · 收纳在碟托内';actions.push(action('disc',s.discOut?'放回光碟':'取出光碟'),action('disc-flip','翻看另一面',!s.discOut));}
   if(giftIds.includes(s.selected)){message=giftLabels[s.selected]+' · '+(s.giftFlipped[s.selected]?'背面':'正面');actions.push(action('gift-flip','翻看另一面'));}
-  onChange({...s,message,actions});
+  onChange({...s,held:view.held?.userData.modelId??null,message,actions});
  }
  const view=createAssemblyView({root,viewer,motion:m}),showAll=()=>view.show();
  const all=()=>view.overview();

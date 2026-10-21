@@ -13,7 +13,7 @@ export function createSession({root,viewer,parts,onChange}){
    {id:'cassette',label:state.cassetteOut?'放回磁带盒':'取出磁带盒'}];
   if(state.cassetteOut)actions.push({id:'flip',label:'翻看磁带盒另一面'});
   actions.push({id:'back',label:'查看外盒背面'});
-  onChange({...state,actions,message:state.busy?'正在操作…':state.selected==='cassette'?'磁带盒 · 保持塑封，可查看六面':state.selected==='tray'&&state.trayOut?'内托 · 丝绸固定包覆海绵，点击磁带盒取出':state.open?'盒口已打开 · 点击内托抽出':'点击盒口打开，或直接选择要取出的部件'});
+  onChange({...state,held:view.held?.userData.modelId??null,actions,message:state.busy?'正在操作…':state.selected==='cassette'?'磁带盒 · 保持塑封，可查看六面':state.selected==='tray'&&state.trayOut?'内托 · 丝绸固定包覆海绵，点击磁带盒取出':state.open?'盒口已打开 · 点击内托抽出':'点击盒口打开，或直接选择要取出的部件'});
  }
  async function focus(node){await view.frame([node]);}
  async function open(){

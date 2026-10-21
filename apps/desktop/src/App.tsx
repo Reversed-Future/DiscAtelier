@@ -83,7 +83,7 @@ export function App() {
   const modelActive = !assistantOpen && !add && !restoring && !metadataOpen && !settingsPage && !opticalOpen && !player.open;
   const current = inspected || items.find(item => item.id === selectedId) || items[0];
   const artwork = useCollectionArtwork(current, modelActive && (!organize || !!inspected), !!inspected);
-  return <div className="workspace">
+  return <div className="workspace" data-list={organize}>
     <header className="topbar" inert={player.open}>
       <div className="wordmark"><span className="disc-mark"/>DiscAtelier<span className="wordmark-dot">.</span></div>
       <nav className="categories" aria-label="收藏分区">{snapshot?.categories.map(category =>

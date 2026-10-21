@@ -6,9 +6,24 @@ import {assemblyProfiles} from '../packages/atelier-model-runtime/shared/assembl
 import {assemblyLoaders} from '../packages/atelier-model-runtime/src/discs/interactive/assembly/registry.js';
 import {loadAssemblyImages} from '../packages/atelier-model-runtime/src/discs/interactive/assembly/images.js';
 import {makeMotion} from '../packages/atelier-model-runtime/model-authoring/research-bai/motion.js';
+import {assemblyInteractionState} from '../packages/atelier-model-runtime/src/discs/interactive/assembly/interaction-state.js';
 import * as THREE from '../packages/atelier-model-runtime/src/discs/interactive/vendor/three.module.js';
 
 const cover='data:image/png;base64,'+fs.readFileSync('apps/desktop/src-tauri/icons/32x32.png').toString('base64');
+test('assembly return controls respect packing constraints and only offer the selected loose part',()=>{
+ const state={out:new Set(['band','folder']),open:new Set(),selected:'folder',held:'folder',actions:[{id:'put',disabled:'先展开外盒再放回'}]};
+ const labels=[['folder','档案袋'],['band','橡皮带']];
+ assert.deepEqual(assemblyInteractionState('research-bai',state,labels),{step:1,held:'folder',returns:[]});
+ state.actions[0].disabled='';
+ assert.deepEqual(assemblyInteractionState('research-bai',state,labels).returns,[{target:'folder',label:'放回档案袋',action:'put'}]);
+ state.selected='case-top';assert.deepEqual(assemblyInteractionState('research-bai',state,labels).returns,[]);
+});
+test('jewel case controls do not expose take actions as returns or reset an untouched model',()=>{
+ const state={open:false,obiOut:false,bookOut:false,discOut:false,selected:'book',held:null,actions:[{id:'book',disabled:false}]};
+ assert.deepEqual(assemblyInteractionState('yomei10-rad',state,[['book','歌词本']]),{step:0,held:null,returns:[]});
+ state.bookOut=true;state.held='book';
+ assert.deepEqual(assemblyInteractionState('yomei10-rad',state,[['book','歌词本']]),{step:1,held:'book',returns:[{target:'book',label:'放回歌词本',action:'book'}]});
+});
 function fixture(profile){
  const values={boundaries:{},holePoints:[[0,0],[1,0],[0,1]],holes:Array.from({length:15},()=>({x:0,y:0,w:1,h:1})),decodeText:[],calibration:{registrations:[]}};
  return {format:'atelier-interactive-model',version:3,id:'test',title:'Fixture',creator:'Test',cover,rig:'album-assembly-v1',runtimeVersion:1,profile,
