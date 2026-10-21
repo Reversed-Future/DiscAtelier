@@ -8,3 +8,4 @@ discatelier-contracts.workspace = true
 discatelier-integration-http.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+url = "2"

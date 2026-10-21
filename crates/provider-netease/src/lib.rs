@@ -5,11 +5,21 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AlbumResult {
     pub id: u64,
     pub title: String,
     pub artists: Vec<String>,
+    pub cover_url: Option<String>,
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlbumSearchPage {
+    pub items: Vec<AlbumResult>,
+    pub total: u32,
+    pub offset: u32,
+    pub limit: u32,
+}
+pub const SEARCH_LIMIT: u32 = 20;
 #[derive(Deserialize)]
 struct Artist {
     name: String,
@@ -25,6 +35,8 @@ struct Album {
     company: Option<String>,
     #[serde(rename = "publishTime")]
     published_at: i64,
+    #[serde(rename = "picUrl", default)]
+    cover_url: Option<String>,
 }
 #[derive(Deserialize)]
 struct Song {
@@ -48,6 +60,8 @@ struct SearchResponse {
 struct SearchResult {
     #[serde(default)]
     albums: Vec<Album>,
+    #[serde(rename = "albumCount")]
+    album_count: u32,
 }
 
 fn checked(value: Value) -> Result<Value, AppError> {
@@ -57,36 +71,64 @@ fn checked(value: Value) -> Result<Value, AppError> {
     Ok(value)
 }
 pub fn search(base: &str, query: &str) -> Result<Vec<AlbumResult>, AppError> {
+    Ok(search_page(base, query, 0)?.items)
+}
+pub fn search_page(base: &str, query: &str, offset: u32) -> Result<AlbumSearchPage, AppError> {
     if query.trim().is_empty() || query.len() > 500 {
         return Err(error("请输入专辑或歌手，最多 500 字节。"));
     }
-    parse_search(request(
-        base,
-        "search",
-        &[
-            ("keywords", query.into()),
-            ("type", "10".into()),
-            ("limit", "20".into()),
-            ("offset", "0".into()),
-        ],
-        None,
-        None,
-    )?)
+    parse_search_page(
+        request(
+            base,
+            "search",
+            &[
+                ("keywords", query.into()),
+                ("type", "10".into()),
+                ("limit", SEARCH_LIMIT.to_string()),
+                ("offset", offset.to_string()),
+            ],
+            None,
+            None,
+        )?,
+        offset,
+    )
 }
 pub fn parse_search(value: Value) -> Result<Vec<AlbumResult>, AppError> {
+    Ok(parse_search_page(value, 0)?.items)
+}
+pub fn parse_search_page(value: Value, offset: u32) -> Result<AlbumSearchPage, AppError> {
     let response: SearchResponse =
         serde_json::from_value(checked(value)?).map_err(|_| error("网易云搜索响应格式不匹配。"))?;
-    Ok(response
+    let items = response
         .result
         .albums
         .into_iter()
-        .take(20)
         .map(|a| AlbumResult {
             id: a.id,
             title: a.name,
             artists: a.artists.into_iter().map(|v| v.name).collect(),
+            cover_url: cover_url(a.cover_url.as_deref()),
         })
-        .collect())
+        .collect();
+    Ok(AlbumSearchPage {
+        items,
+        total: response.result.album_count,
+        offset,
+        limit: SEARCH_LIMIT,
+    })
+}
+fn cover_url(value: Option<&str>) -> Option<String> {
+    let mut url = url::Url::parse(value?).ok()?;
+    if !matches!(url.scheme(), "http" | "https")
+        || !url.host_str()?.ends_with(".music.126.net")
+        || !url.username().is_empty()
+        || url.password().is_some()
+        || url.port().is_some()
+    {
+        return None;
+    }
+    url.set_scheme("https").ok()?;
+    Some(url.into())
 }
 pub fn album(base: &str, id: u64) -> Result<MusicSupplement, AppError> {
     if id == 0 || id > 9_007_199_254_740_991 {
@@ -129,6 +171,39 @@ pub fn parse_album(value: Value, id: u64) -> Result<MusicSupplement, AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn search_preserves_page_total_and_maps_cover() {
+        let raw = serde_json::json!({"code":200,"result":{"albumCount":513,"albums":[
+            {"id":42,"name":"Album","artists":[{"name":"Artist"}],"publishTime":1,"picUrl":"http://p4.music.126.net/cover.jpg"},
+            {"id":43,"name":"Without cover","artists":[],"publishTime":1}
+        ]}});
+        let page = parse_search_page(raw, 20).unwrap();
+        assert_eq!(page.total, 513);
+        assert_eq!(page.offset, 20);
+        assert_eq!(page.limit, 20);
+        assert_eq!(page.items.len(), 2);
+        assert_eq!(
+            page.items[0].cover_url.as_deref(),
+            Some("https://p4.music.126.net/cover.jpg")
+        );
+        assert!(page.items[1].cover_url.is_none());
+        let empty = parse_search_page(serde_json::json!({"code":200,"result":{"albumCount":0}}), 0)
+            .unwrap();
+        assert!(empty.items.is_empty());
+        assert_eq!(empty.total, 0);
+    }
+    #[test]
+    fn cover_rejects_foreign_hosts_credentials_and_local_schemes() {
+        for value in [
+            "https://p4.music.126.net.evil.example/a.jpg",
+            "file:///a.jpg",
+            "http://127.0.0.1/a.jpg",
+            "https://user:secret@p4.music.126.net/a.jpg",
+            "https://p4.music.126.net:8080/a.jpg",
+        ] {
+            assert!(cover_url(Some(value)).is_none());
+        }
+    }
     #[test]
     fn mapping_preserves_disc_numbers_and_refuses_wrong_album() {
         let raw = serde_json::json!({"code":200,"album":{"id":42,"name":"Album","artists":[{"name":"Artist"}],"description":"Info","company":null,"publishTime":1},"songs":[{"id":99,"name":"Track","ar":[{"name":"Artist"}],"cd":"2","no":3,"dt":123456}]});

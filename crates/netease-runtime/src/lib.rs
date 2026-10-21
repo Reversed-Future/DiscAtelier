@@ -33,6 +33,13 @@ impl Runtime {
         }
     }
     pub fn request(&self, operation: &str, arguments: Value) -> Result<Value, AppError> {
+        if operation == "search"
+            && arguments
+                .get("offset")
+                .is_some_and(|v| v.as_u64().is_none_or(|n| n > u32::MAX as u64))
+        {
+            return Err(error("网易云搜索页码无效。"));
+        }
         match operation {
             "search"
                 if arguments

@@ -66,6 +66,25 @@ fn missing_components_do_not_start_or_create_cache() {
     assert!(pid(&runtime).is_none());
 }
 #[test]
+fn invalid_search_offsets_do_not_start_a_process() {
+    let runtime = fixture();
+    for offset in [
+        json!(-1),
+        json!(0.5),
+        json!("20"),
+        json!(4_294_967_296_u64),
+        json!(null),
+    ] {
+        assert!(runtime
+            .request("search", json!({"query":"album", "offset":offset}))
+            .is_err());
+        assert!(pid(&runtime).is_none());
+    }
+    assert!(runtime
+        .request("search", json!({"query":"album", "offset":20}))
+        .is_ok());
+}
+#[test]
 fn lazy_reuse_restart_and_shutdown() {
     let runtime = fixture();
     assert!(pid(&runtime).is_none());

@@ -18,13 +18,14 @@ input.on('line', async line => {
     const args = request.arguments;
     if (request.operation === 'search') {
       if (!args || typeof args.query !== 'string' || !args.query.trim() || Buffer.byteLength(args.query) > 500) throw new Error('arguments');
+      if (args.offset !== undefined && (!Number.isInteger(args.offset) || args.offset < 0 || args.offset > 4294967295)) throw new Error('offset');
     } else if (request.operation === 'album') {
       if (!args || !Number.isSafeInteger(args.id) || args.id <= 0) throw new Error('arguments');
     } else throw new Error('operation');
     active = true;
     api ||= require('@neteasecloudmusicapienhanced/api');
     const response = request.operation === 'search'
-      ? await api.search({ keywords: args.query, type: 10, limit: 20, offset: 0 })
+      ? await api.search({ keywords: args.query, type: 10, limit: 20, offset: args.offset ?? 0 })
       : await api.album({ id: args.id });
     // Never forward upstream cookies, headers or errors containing request config.
     const reply = JSON.stringify({ id, body: response.body });

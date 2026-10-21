@@ -917,6 +917,7 @@ dependencies = [
  "discatelier-integration-http",
  "serde",
  "serde_json",
+ "url",
 ]
 
 [[package]]

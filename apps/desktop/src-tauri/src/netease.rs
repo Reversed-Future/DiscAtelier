@@ -5,7 +5,7 @@ use crate::{
 };
 use discatelier_contracts::{AppError, MusicSupplement};
 use discatelier_integration_http::error;
-use discatelier_provider_netease::{self as provider, AlbumResult};
+use discatelier_provider_netease::{self as provider, AlbumResult, AlbumSearchPage};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -19,10 +19,21 @@ pub fn search(
     settings: &integration_settings::Settings,
     query: &str,
 ) -> Result<Vec<AlbumResult>, AppError> {
+    Ok(search_page(runtime, settings, query, 0)?.items)
+}
+pub fn search_page(
+    runtime: &discatelier_netease_runtime::Runtime,
+    settings: &integration_settings::Settings,
+    query: &str,
+    offset: u32,
+) -> Result<AlbumSearchPage, AppError> {
     if settings.netease_mode == integration_settings::NeteaseMode::Builtin {
-        provider::parse_search(runtime.request("search", serde_json::json!({"query":query}))?)
+        provider::parse_search_page(
+            runtime.request("search", serde_json::json!({"query":query,"offset":offset}))?,
+            offset,
+        )
     } else {
-        provider::search(&settings.netease_base_url, query)
+        provider::search_page(&settings.netease_base_url, query, offset)
     }
 }
 pub fn album(
@@ -41,12 +52,15 @@ pub async fn netease_search(
     directory: tauri::State<'_, DataLocation>,
     runtime: tauri::State<'_, Arc<discatelier_netease_runtime::Runtime>>,
     query: String,
-) -> Result<Vec<AlbumResult>, AppError> {
+    offset: Option<u32>,
+) -> Result<AlbumSearchPage, AppError> {
     let settings = integration_settings::read(&directory.0)?;
     let runtime = runtime.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || search(&runtime, &settings, &query))
-        .await
-        .map_err(|_| error("网易云搜索未完成。"))?
+    tauri::async_runtime::spawn_blocking(move || {
+        search_page(&runtime, &settings, &query, offset.unwrap_or(0))
+    })
+    .await
+    .map_err(|_| error("网易云搜索未完成。"))?
 }
 #[tauri::command]
 pub async fn netease_album(
