@@ -9,6 +9,7 @@ import { useModelDraft } from '../models/useModelDraft';
 import { ModelField } from '../models/ModelField';
 import { modelChangeRequest } from '../models/assets';
 import { EditionFields } from './EditionFields';
+import { netease } from '../integrations/gateway';
 
 export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   item: LibraryCopy; categories: Descriptor[]; carriers: Descriptor[]; onClose(): void; onSaved(categoryId: string): void;
@@ -35,7 +36,12 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
     }}>
       {item.editionCopyCount > 1 && <p className="form-note">本版本共 {item.editionCopyCount} 套，资料、封面与模型会同步更新。</p>}
       <fieldset disabled={busy || reading}>
-        <CoverField edition={edition} assetId={item.coverAssetId} value={cover} onChange={setCover} onBusy={setReading}/>
+        <CoverField edition={edition} assetId={item.coverAssetId} value={cover} onChange={setCover} onBusy={setReading}
+          remoteCover={item.edition.categoryId === 'music' ? { label: '使用网易云封面', load: async () => {
+            const album = await netease.saved(item.editionId);
+            if (!album) throw new Error('请先在网易云资料中关联专辑。');
+            return netease.albumCover(album.albumId);
+          } } : undefined}/>
         <ModelField value={model} title={item.modelTitle} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
         <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
       </fieldset>

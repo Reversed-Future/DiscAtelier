@@ -2,6 +2,16 @@
 
 2026-10-21，本地预览，未发布安装包；收藏库仍为 schema 8。
 
+## 编辑版本封面入口增量
+
+后续预览：`E:\ToolsForMyself\DiscAtelier\target\release\DiscAtelier-cover-editor-preview.exe`，仍需保留同目录 `netease-runtime`。
+
+- 收藏详情 → 编辑版本 → 封面区域「使用网易云封面」。直接读取当前收藏已保存的网易云专辑关联，无需打开资料弹窗。
+- 获取中暂时禁用编辑和保存；成功后显示新封面预览，点击「保存版本」才提交。未关联或下载失败会显示具体提示，并保留原封面草稿。
+- 手动验收：已关联收藏可获取；获取后取消编辑应仍显示原封面，再次获取并保存后应持久化；未关联收藏点击后应提示关联；模型及其他版本编辑字段应保持原有值。
+- 本增量仅修改前端编辑入口，复用已校验的封面下载和版本保存接口，未新增自动化测试；通过 TypeScript / Vite 与 Tauri Release 构建，实际界面由用户测试。构建曾遇文件占用，用户手动退出后重试成功。
+- 此增量预览 SHA-256：`cbd481b3994a3986241d3f469feea42b22e36b201f84805caedea2670502e0b8`，与构建主程序一致。
+
 ## 手动测试
 
 完全退出旧版，打开 `E:\ToolsForMyself\DiscAtelier\target\release\DiscAtelier-music-queue-preview.exe`，保留同目录的 `netease-runtime`。
