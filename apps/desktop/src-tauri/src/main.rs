@@ -82,6 +82,7 @@ fn main() {
             integration_settings::integration_settings_save,
             netease::netease_search,
             netease::netease_album,
+            netease::netease_song_album,
             netease::netease_saved,
             netease::netease_apply,
             netease_playback::netease_play,

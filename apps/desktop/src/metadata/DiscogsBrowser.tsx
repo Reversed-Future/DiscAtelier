@@ -55,6 +55,7 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
     catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
   }
   if (imported) return <AddCopy categoryId={categoryId} categories={categories} carriers={carriers} imported={imported}
+    importTracks={release?.tracklist || []}
     onBack={() => setImported(null)} onClose={onClose} onSaved={onSaved}/>;
   return <Modal title="Discogs" onClose={onClose} wide busy={busy} className="metadata-browser-panel">
     <div className="metadata-toolbar">

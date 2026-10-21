@@ -1,4 +1,5 @@
 //! Lazy, private-pipe Node runtime. Creating this manager never starts a process.
+mod failure;
 #[cfg(windows)]
 mod job;
 mod process;
@@ -46,7 +47,7 @@ impl Runtime {
                     .get("query")
                     .and_then(Value::as_str)
                     .is_some_and(|q| !q.trim().is_empty() && q.len() <= 500) => {}
-            "album" | "songUrl"
+            "album" | "songUrl" | "songDetail"
                 if arguments
                     .get("id")
                     .and_then(Value::as_u64)

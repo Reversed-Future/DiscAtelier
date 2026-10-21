@@ -22,8 +22,10 @@ fn query(text: &str) -> LibraryQuery {
 }
 fn request() -> ImportCopy {
     ImportCopy {
+        supplement: None,
         content: EditionContent::default(),
         request: ImportCopyRequest {
+            netease_album_id: None,
             request_id: Uuid::new_v4().to_string(),
             token: Uuid::new_v4().to_string(),
             edition: EditionDraft {
@@ -90,6 +92,69 @@ fn request() -> ImportCopy {
 
 fn contents() -> EditionContent {
     serde_json::from_str(r#"{"genres":["Rock"],"styles":["J-Rock"],"tracks":[{"position":"CD-1","title":"First","type_":"track"},{"position":"","title":"Live title","type_":"heading"},{"position":"DVD-1","title":"Suite","type_":"index","sub_tracks":[{"position":"1.1","title":"Movement"}]}]}"#).unwrap()
+}
+
+fn import_with_music() -> ImportCopy {
+    let mut value = request();
+    value.request.netease_album_id = Some(42);
+    value.supplement = Some(MusicSupplement {
+        album_id: 42,
+        title: "Album".into(),
+        artists: vec!["Artist".into()],
+        description: "Introduction".into(),
+        company: "Label".into(),
+        published_at: 1,
+        tracks: vec![],
+        links: vec![],
+    });
+    value
+}
+#[test]
+fn netease_choice_commits_with_import_is_idempotent_and_survives_restore() {
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let value = import_with_music();
+    let id = service.import_copy(value.clone()).unwrap();
+    assert_eq!(service.import_copy(value).unwrap(), id);
+    let item = service.source_copy("discogs", "249504").unwrap().unwrap();
+    assert_eq!(
+        service
+            .supplement(&item.edition_id)
+            .unwrap()
+            .unwrap()
+            .description,
+        "Introduction"
+    );
+    assert_eq!(service.list(query("")).unwrap().copies.len(), 1);
+    let backup = service.backup().unwrap();
+    let prepared = service.prepare_restore(backup).unwrap();
+    service.restore(prepared.token).unwrap();
+    assert_eq!(
+        service
+            .supplement(&item.edition_id)
+            .unwrap()
+            .unwrap()
+            .album_id,
+        42
+    );
+}
+#[test]
+fn failed_supplement_insert_rolls_back_the_entire_collection_import() {
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
+    connection.execute_batch("CREATE TRIGGER reject_test_supplement BEFORE INSERT ON edition_supplements BEGIN SELECT RAISE(ABORT,'fixture'); END;").unwrap();
+    assert!(service.import_copy(import_with_music()).is_err());
+    assert!(service.list(query("")).unwrap().copies.is_empty());
+    assert!(service.source_copy("discogs", "249504").unwrap().is_none());
+}
+#[test]
+fn import_refuses_a_different_album_than_the_confirmed_choice() {
+    let mut service = LibraryService::new(SqliteLibrary::open(&directory()).unwrap());
+    let mut value = import_with_music();
+    value.request.netease_album_id = Some(43);
+    assert!(service.import_copy(value).is_err());
+    assert!(service.list(query("")).unwrap().copies.is_empty());
 }
 
 #[test]

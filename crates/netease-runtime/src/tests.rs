@@ -25,6 +25,8 @@ input.on('line', line => {
  if(r.arguments.query==='exit') return process.exit(3);
  if(r.arguments.query==='wait') return;
  if(r.arguments.query==='large') return process.stdout.write('x'.repeat(3*1024*1024)+'\n');
+ if(r.arguments.query==='playback-init') return process.stdout.write(JSON.stringify({id:r.id,error:'private URL and cookie',errorCode:'NETEASE_PLAYBACK_INIT',errorReason:'key_signature'})+'\n');
+ if(r.arguments.query==='playback-request') return process.stdout.write(JSON.stringify({id:r.id,error:'private URL and cookie',errorCode:'NETEASE_PLAYBACK_REQUEST',errorStatus:502})+'\n');
  process.stdout.write(JSON.stringify({id:r.id,body:{pid:process.pid}})+'\n');
 });
 "#,
@@ -56,6 +58,27 @@ fn pid(runtime: &Runtime) -> Option<u32> {
         .unwrap()
         .as_ref()
         .map(process::Process::pid)
+}
+#[test]
+fn playback_errors_survive_the_pipe_without_exposing_upstream_text() {
+    let runtime = fixture();
+    for (query, message) in [
+        (
+            "playback-init",
+            "网易云播放初始化失败：公钥响应签名不匹配。",
+        ),
+        ("playback-request", "网易云播放请求失败（HTTP 502）。"),
+    ] {
+        let result = runtime
+            .request("search", json!({"query":query}))
+            .unwrap_err();
+        assert_eq!(result.message, message);
+        assert!(pid(&runtime).is_none());
+    }
+    let unknown = crate::failure::from_response(
+        &json!({"errorCode":"private URL", "error":"secret", "errorStatus":500}),
+    );
+    assert_eq!(unknown.message, "内置网易云查询失败，请稍后重试。");
 }
 #[test]
 fn missing_components_do_not_start_or_create_cache() {

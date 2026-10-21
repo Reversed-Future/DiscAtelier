@@ -24,6 +24,8 @@ pub struct ImportedIdentifier {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ImportCopyRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub netease_album_id: Option<u64>,
     pub request_id: String,
     pub token: String,
     pub edition: EditionDraft,
@@ -50,6 +52,8 @@ pub struct ImportPreview {
 /// Only assembled by the provider/application boundary, not accepted as raw IPC.
 #[derive(Debug, Clone, Serialize)]
 pub struct ImportCopy {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub supplement: Option<crate::MusicSupplement>,
     pub content: crate::EditionContent,
     pub request: ImportCopyRequest,
     pub source: EditionSource,

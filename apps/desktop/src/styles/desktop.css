@@ -88,7 +88,7 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .collection-source .source-attribution { margin: 0; font-size: 10px; }
 .release-preview + .form-footer { margin-top: 24px; }
 .track-list { list-style: none; padding: 0; margin: 25px 0 0; font-size: 12px; }
-.track-list li > div { display: grid; grid-template-columns: 45px minmax(0, 1fr) 40px; gap: 8px; padding-block: 8px; border-bottom: 1px solid var(--line); }
+.track-list li > .track-row { display: grid; grid-template-columns: 45px minmax(0, 1fr) 40px; gap: 8px; padding-block: 8px; }
 .track-list .track-list { padding-left: 14px; margin-top: 0; }
 .record-caption { padding-inline: 24px; overflow-wrap: anywhere; }
 .object-info h1 { overflow-wrap: anywhere; }

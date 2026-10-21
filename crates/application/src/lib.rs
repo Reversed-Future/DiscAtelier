@@ -84,6 +84,15 @@ impl<R: LibraryRepository> LibraryService<R> {
         validate_copy(&value.request.copy).map_err(validation)?;
         validate_source(&value.source, &value.identifiers)?;
         validate_content(&value.content)?;
+        match (&value.supplement, value.request.netease_album_id) {
+            (Some(album), Some(id))
+                if album.album_id == id && value.request.edition.category_id == "music" =>
+            {
+                validate_supplement(album)?;
+            }
+            (None, None) => (),
+            _ => return Err(validation("网易云资料与入库选择不匹配。".into())),
+        }
         match (
             &value.request.existing_edition_id,
             value.request.expected_revision,

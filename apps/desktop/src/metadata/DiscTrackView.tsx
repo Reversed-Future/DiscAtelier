@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import type { ReleaseTrack } from './gateway';
 import { ReleaseDetails } from './ReleaseDetails';
+import { TrackRow, type TrackPlayback } from './TrackRow';
 import type { DiscPage } from './discTracks';
 import { enter } from '../ui/motion';
 
@@ -17,7 +18,7 @@ export function DiscTabs({ pages, page, onChange }: { pages: DiscPage[]; page: n
         (event.currentTarget.parentElement?.children[next] as HTMLButtonElement)?.focus();
       }}>{discTitle(disc, index)}</button>)}</nav>;
 }
-export function DiscTrackPanel({ disc, index, playback }: { disc?: DiscPage; index: number; playback?(track: ReleaseTrack): { playing: boolean; busy: boolean; play(): void } | undefined }) {
+export function DiscTrackPanel({ disc, index, playback }: { disc?: DiscPage; index: number; playback?(track: ReleaseTrack): TrackPlayback | undefined }) {
   const panel = useRef<HTMLDivElement>(null);
   const id = useId();
   useEffect(() => { panel.current?.scrollTo(0, 0); enter(panel.current, 0); }, [disc?.key]);
@@ -25,10 +26,8 @@ export function DiscTrackPanel({ disc, index, playback }: { disc?: DiscPage; ind
   return <div ref={panel} id={id} className="release-track-scroll" role="tabpanel" aria-label={disc ? discTitle(disc, index) : '曲目'} tabIndex={0}>
     {rows?.length ? <ol className="track-list">{rows.map((track, index) => {
       const action = track.type_ === 'heading' ? undefined : playback?.(track);
-      const content = <><span>{track.position}</span><span>{track.title}</span><span>{track.duration}</span></>;
       return <li key={index} className={track.type_ === 'heading' ? 'track-heading' : undefined}>
-      {track.type_ === 'heading' ? <h4>{track.title}</h4> : action ? <button type="button" className="track-row" disabled={action.busy} aria-current={action.playing ? 'true' : undefined} aria-label={`播放 ${track.title}`} onClick={action.play}>{content}</button> : <div className="track-row">{content}</div>}
-      {!!track.extraartists?.length && <ReleaseDetails credits={track.extraartists}/>}
+      {track.type_ === 'heading' ? <><h4>{track.title}</h4>{!!track.extraartists?.length && <ReleaseDetails credits={track.extraartists}/>}</> : <TrackRow track={track} playback={action}/>}
     </li>; })}</ol> : <p className="utility-copy">暂无曲目</p>}
   </div>;
 }

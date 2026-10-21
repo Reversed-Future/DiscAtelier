@@ -19,14 +19,16 @@ input.on('line', async line => {
     if (request.operation === 'search') {
       if (!args || typeof args.query !== 'string' || !args.query.trim() || Buffer.byteLength(args.query) > 500) throw new Error('arguments');
       if (args.offset !== undefined && (!Number.isInteger(args.offset) || args.offset < 0 || args.offset > 4294967295)) throw new Error('offset');
-    } else if (request.operation === 'album' || request.operation === 'songUrl') {
+    } else if (request.operation === 'album' || request.operation === 'songUrl' || request.operation === 'songDetail') {
       if (!args || !Number.isSafeInteger(args.id) || args.id <= 0) throw new Error('arguments');
     } else throw new Error('operation');
     active = true;
-    api ||= require('@neteasecloudmusicapienhanced/api');
+    try { api ||= require('@neteasecloudmusicapienhanced/api'); }
+    catch { throw Object.assign(new Error('Component load failed'), { code: 'NETEASE_COMPONENT_LOAD' }); }
     const response = request.operation === 'search'
       ? await api.search({ keywords: args.query, type: 10, limit: 20, offset: args.offset ?? 0 })
       : request.operation === 'album' ? await api.album({ id: args.id })
+      : request.operation === 'songDetail' ? await api.song_detail({ ids: String(args.id) })
       : await require('./playback.cjs')(api, args.id);
     // Never forward upstream cookies, headers or errors containing request config.
     const reply = JSON.stringify({ id, body: response.body });
@@ -38,6 +40,10 @@ input.on('line', async line => {
       : error?.code === 'NETEASE_PLAYBACK_REQUEST'
         ? `网易云播放请求失败${Number.isInteger(error.status) ? `（HTTP ${error.status}）` : ''}，请稍后重试。`
         : '内置网易云查询失败，请稍后重试。';
-    send({ id, error: message });
+    // Internal protocol codes let Rust display a safe, specific failure.
+    const errorCode = ['NETEASE_PLAYBACK_INIT', 'NETEASE_PLAYBACK_REQUEST', 'NETEASE_COMPONENT_LOAD'].includes(error?.code) ? error.code : 'NETEASE_QUERY';
+    const errorReason = ['key_response', 'key_signature', 'key_missing', 'cache_write', 'timeout', 'key_request'].includes(error?.reason) ? error.reason : undefined;
+    const errorStatus = Number.isInteger(error?.status) && error.status >= 400 && error.status <= 599 ? error.status : undefined;
+    send({ id, error: message, errorCode, errorReason, errorStatus });
   } finally { active = false; }
 });

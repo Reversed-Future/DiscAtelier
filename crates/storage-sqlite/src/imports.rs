@@ -87,6 +87,20 @@ pub fn create(
         })
         .map_err(db_error)?;
     crate::content::insert(&transaction, &edition_id, &value.content)?;
+    if let Some(album) = &value.supplement {
+        validate_supplement(album)?;
+        let payload = serde_json::to_string(album)
+            .map_err(|_| AppError::new("storage", "补充资料不可保存。"))?;
+        transaction.execute("INSERT INTO edition_supplements(edition_id,payload) VALUES(?1,?2) ON CONFLICT(edition_id) DO UPDATE SET payload=excluded.payload", params![edition_id,payload]).map_err(db_error)?;
+        if current.is_some() {
+            transaction
+                .execute(
+                    "UPDATE editions SET revision=revision+1 WHERE id=?1",
+                    [&edition_id],
+                )
+                .map_err(db_error)?;
+        }
+    }
     writes::save_receipt(&transaction, &request.request_id, &payload, &id)?;
     transaction.commit().map_err(db_error)?;
     Ok(id)

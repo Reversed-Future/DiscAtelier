@@ -11,9 +11,14 @@ import { CoverField } from './CoverField';
 import { useModelDraft } from '../models/useModelDraft';
 import { ModelField } from '../models/ModelField';
 import { discogs, type ImportPreview } from '../metadata/gateway';
+import type { ReleaseTrack } from '../metadata/gateway';
+import type { MusicSupplement } from '../integrations/gateway';
+import { ImportMusicField } from '../integrations/ImportMusicField';
+import { NeteaseBrowser } from '../integrations/NeteaseBrowser';
 
-export function AddCopy({ categoryId, categories, carriers, existing: suppliedExisting, imported, onBack, onClose, onSaved }: {
+export function AddCopy({ categoryId, categories, carriers, existing: suppliedExisting, imported, importTracks = [], onBack, onClose, onSaved }: {
   categoryId: string; categories: Descriptor[]; carriers: Descriptor[]; existing?: LibraryCopy; imported?: ImportPreview;
+  importTracks?: ReleaseTrack[];
   onBack?(): void;
   onClose(): void; onSaved(id: string, categoryId: string): Promise<void>;
 }) {
@@ -22,6 +27,8 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
     categoryId, title: '', creator: '', editionLabel: '', barcode: '', catalogNumber: '', media: [{ carrierId: categoryId === 'music' ? 'cd' : 'bd', label: '' }],
   });
   const [copy, setCopy] = useState(emptyCopy);
+  const [music, setMusic] = useState<MusicSupplement | null>(null);
+  const [musicOpen, setMusicOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [tab, setTab] = useState(existing ? 'purchase' : 'edition');
   const [error, setError] = useState('');
@@ -33,7 +40,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
   const attempt = useRef({ payload: '', requestId: crypto.randomUUID() });
   const fields = useRef<HTMLFieldSetElement>(null);
   useEffect(() => { fields.current?.scrollTo(0, 0); enter(fields.current, 0); }, [tab]);
-  return <Modal title={existing ? '再收一套' : '添加收藏'} onClose={onClose} busy={busy || reading} wide className={imported ? 'metadata-browser-panel' : ''}>
+  return <><Modal title={existing ? '再收一套' : '添加收藏'} onClose={onClose} busy={busy || reading} wide className={imported ? 'metadata-browser-panel' : ''}>
     <form className="editor-form" noValidate onSubmit={async event => {
       event.preventDefault();
       if (busy || reading) return;
@@ -46,12 +53,13 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
         const purchase = { ...copy, amountMinor: parsePrice(amount, copy.currency) };
         const coverData = !existing && cover.action === 'replace' ? cover.dataUrl : null;
         const modelToken = !existing && model.action === 'prepared' ? model.token : null;
-        const payload = JSON.stringify({ edition, purchase, coverData, modelToken, existingEditionId: existing?.editionId, token: imported?.token });
+        const neteaseAlbumId = edition.categoryId === 'music' ? music?.albumId || null : null;
+        const payload = JSON.stringify({ edition, purchase, coverData, modelToken, existingEditionId: existing?.editionId, token: imported?.token, neteaseAlbumId });
         if (payload !== attempt.current.payload) attempt.current = { payload, requestId: crypto.randomUUID() };
         setBusy(true); setError('');
         const id = imported
           ? await discogs.importCopy({ requestId: attempt.current.requestId, token: imported.token, edition, copy: purchase, cover: coverData, model: null, modelToken,
-            existingEditionId: existing?.editionId || null, expectedRevision: existing?.editionRevision || null })
+            existingEditionId: existing?.editionId || null, expectedRevision: existing?.editionRevision || null, neteaseAlbumId })
           : await library.create({ requestId: attempt.current.requestId, edition: existing ? null : edition, existingEditionId: existing?.editionId || null, copy: purchase, cover: coverData, model: null, modelToken });
         await onSaved(id, edition.categoryId);
         onClose();
@@ -71,11 +79,12 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
       {tab === 'edition' ? <>
         <CoverField edition={edition} value={cover} onChange={setCover} onBusy={setReading}/>
         <ModelField value={model} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
+        {imported && edition.categoryId === 'music' && <ImportMusicField tracks={importTracks} value={music} onChange={setMusic} onPick={() => setMusicOpen(true)}/>}
         <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
       </> : <PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy}/>}
       </fieldset>
       <p className="form-error" role="alert">{error}</p>
       <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading}>{busy ? '保存中' : tab === 'edition' ? '下一步' : '加入收藏'}</button></footer>
     </form>
-  </Modal>;
+  </Modal>{musicOpen && <NeteaseBrowser initialQuery={`${edition.title} ${edition.creator}`} autoSearch onClose={() => setMusicOpen(false)} confirmLabel="使用此资料" onConfirm={async album => { setMusic(album); setMusicOpen(false); }}/>}</>;
 }

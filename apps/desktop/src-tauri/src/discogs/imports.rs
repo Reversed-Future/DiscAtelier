@@ -110,8 +110,13 @@ pub async fn discogs_prepare_import(
 pub async fn discogs_import(
     state: tauri::State<'_, DiscogsState>,
     library: tauri::State<'_, LibraryState>,
+    netease: tauri::State<'_, Arc<crate::netease::NeteaseState>>,
     request: ImportCopyRequest,
 ) -> Result<String, AppError> {
+    let supplement = request
+        .netease_album_id
+        .map(|id| crate::netease::cached_album(&netease, id))
+        .transpose()?;
     let value = run(state.inner().clone(), move |service| {
         let prepared = service
             .imports
@@ -119,6 +124,7 @@ pub async fn discogs_import(
             .filter(|value| value.created.elapsed() < MAX_AGE)
             .ok_or_else(|| AppError::new("expired", "资料已过期，请返回资料页重新查询。"))?;
         Ok(ImportCopy {
+            supplement,
             content: prepared.content.clone(),
             request,
             source: prepared.source.clone(),

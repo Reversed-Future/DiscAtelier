@@ -136,7 +136,7 @@ impl Process {
                         return Err(error("内置服务响应不匹配。"));
                     }
                     if response.get("error").is_some() {
-                        return Err(error("内置网易云查询失败，请稍后重试。"));
+                        return Err(crate::failure::from_response(&response));
                     }
                     return response
                         .get("body")

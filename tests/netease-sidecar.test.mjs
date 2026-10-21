@@ -22,6 +22,7 @@ async function exchange(argumentsValue, operation = 'search', failure) {
       if (name === '@neteasecloudmusicapienhanced/api') return {
         search: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code: 200, result: { albumCount: 513, albums: [] } } }; },
         song_url_v1: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code: 200, data: [{ id: args.id, url: null, freeTrialInfo: null }] } }; },
+        song_detail: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code:200, songs:[{id:Number(args.ids),al:{id:42}}] } }; },
       };
       throw new Error(`Unexpected dependency: ${name}`);
     },
@@ -47,12 +48,32 @@ test('playback failures distinguish initialization and upstream failures without
     [{ code: 'NETEASE_PLAYBACK_INIT', message: 'secret cookie' }, '网易云播放初始化失败，请检查网络后重试。'],
     [{ code: 'NETEASE_PLAYBACK_REQUEST', status: 502, message: 'secret URL' }, '网易云播放请求失败（HTTP 502），请稍后重试。'],
   ]) {
-    assert.equal((await exchange({id:42}, 'songUrl', failure)).response.error, expected);
+    const { response } = await exchange({id:42}, 'songUrl', failure);
+    assert.equal(response.error, expected);
+    assert.equal(response.errorCode, failure.code);
+    assert.equal(response.errorStatus, failure.status);
   }
+});
+
+test('the pipe forwards only registered playback reasons and numeric HTTP status', async () => {
+  const error = {code:'NETEASE_PLAYBACK_INIT',reason:'key_signature',status:403,message:'secret'};
+  const { response } = await exchange({id:42}, 'songUrl', error);
+  assert.equal(response.errorReason, 'key_signature');
+  assert.equal(response.errorStatus, 403);
+  const other = (await exchange({id:42}, 'songUrl', {...error,reason:'secret URL',status:'secret cookie'})).response;
+  assert.equal(other.errorReason, undefined);
+  assert.equal(other.errorStatus, undefined);
 });
 test('bundled search defaults to the first page for existing callers', async () => {
   const { calls } = await exchange({ query: 'Lemon' });
   assert.equal(calls[0].offset, 0);
+});
+
+test('song sharing uses the upstream song_detail string ids argument', async () => {
+  const { response, calls } = await exchange({id:347230}, 'songDetail');
+  assert.deepEqual(calls, [{ids:'347230'}]);
+  assert.equal(response.body.songs[0].al.id,42);
+  assert.equal((await exchange({id:0},'songDetail')).calls.length,0);
 });
 test('bundled search refuses malformed offsets before contacting the provider', async () => {
   for (const offset of [-1, 0.5, '20', 4294967296, null]) {

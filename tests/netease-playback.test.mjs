@@ -17,12 +17,12 @@ function harness({ fail = false, cache = '{}' } = {}) {
     if (name === 'node:os') return { tmpdir: () => 'isolated-test-cache' };
     if (name === 'node:fs') return {
       readFileSync: () => state.cache,
-      writeFileSync: (path, value) => { events.push('write'); state.cache = value; },
+      writeFileSync: (path, value) => { events.push('write'); if (state.writeFailure) throw new Error('private path'); state.cache = value; },
     };
     if (name === '@neteasecloudmusicapienhanced/api/util/xeapiKey') return {
       getXeapiPublicKey: async (current, device) => {
         events.push('initialize'); assert.equal(device, 'test-device');
-        if (state.fail) throw new Error('private diagnostics');
+        if (state.fail) throw state.fail === true ? new Error('private diagnostics') : state.fail;
         return { sk: 'test-key', version: '1' };
       },
     };
@@ -51,6 +51,19 @@ test('failed initialization never requests audio, hides private diagnostics, and
   h.state.fail = false;
   await h.play();
   assert.deepEqual(h.events, ['initialize', 'initialize', 'write', 'request']);
+});
+
+test('public key response and cache failures receive explicit safe reasons', async () => {
+  for (const [message, reason] of [
+    ['xeapi public key request failed', 'key_response'],
+    ['xeapi public key response signature mismatch', 'key_signature'],
+    ['xeapi public key response missing sk', 'key_missing'],
+  ]) {
+    await assert.rejects(harness({ fail: new Error(message) }).play(), e => e.reason === reason);
+  }
+  const h = harness(); h.state.writeFailure = true;
+  await assert.rejects(h.play(), e => e.reason === 'cache_write' && !e.message.includes('private'));
+  assert.deepEqual(h.events, ['initialize', 'write']);
 });
 
 test('installed upstream playback reproduces the missing public key failure offline', () => {

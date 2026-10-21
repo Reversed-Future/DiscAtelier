@@ -64,15 +64,35 @@
 .credit-list dd { margin: 0; overflow-wrap: anywhere; }
 .credit-list small { color: var(--muted); }
 .track-list .release-details { margin: 0 0 10px 54px; }
-.track-list button.track-row { font-size: inherit; color: inherit; padding-inline: 0; transition: color 140ms ease, opacity 140ms ease; }
-.track-list button.track-row:hover, .track-list button.track-row:focus-visible { color: var(--muted); outline: none; }
-.track-list button.track-row:active { opacity: .65; transform: none; }
-.track-list button.track-row[aria-current] > :first-child { color: var(--ink); }
+/* A credit disclosure belongs to the track; only track boundaries get rules. */
+.track-list > li:not(.track-heading) { border-bottom: 1px solid var(--line); }
+.track-row { position: relative; }
+.track-play-target { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; }
+.track-play-target:active { transform: none; }
+.track-play-target:focus-visible { outline: none; }
+.track-position, .track-heading-content, .track-duration { pointer-events: none; }
+.track-heading-content { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.track-name { min-width: 0; overflow-wrap: anywhere; transition: color 140ms ease, opacity 140ms ease; }
+.track-credits-toggle { position: relative; z-index: 1; pointer-events: auto; padding: 0; flex: 0 0 auto; font-size: 10px; line-height: inherit; color: var(--muted); white-space: nowrap; }
+.track-credits-toggle[aria-expanded="true"] { color: var(--ink); }
+.track-row:has(.track-play-target:hover) .track-name, .track-row:has(.track-play-target:focus-visible) .track-name { color: var(--muted); }
+.track-row:has(.track-play-target:active) .track-name { opacity: .65; }
+.track-row[data-playing="true"] .track-position { color: var(--ink); }
+.track-credits { margin-left: 54px; }
+.track-credits .credit-list { margin: 2px 0 12px; gap: 6px; font-size: 10px; line-height: 1.6; }
+.detail-status { margin-left: auto; flex-shrink: 0; color: var(--muted); font-size: 10px; }
+.detail-sources { min-height: 24px; flex-wrap: nowrap; }
+@media (max-width: 620px) { .track-credits { margin-left: 28px; } }
 .track-link-manager { width: 780px; }
 .track-link-manager .panel-body { display: flex; flex-direction: column; overflow: hidden; }
 .track-link-manager .track-link-list strong { font-weight: 400; }
 .track-link-manager .track-link-list small { margin-left: auto; color: var(--muted); max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .netease-album-actions { display: flex; align-items: center; gap: 20px; }
+.import-music-field { display: flex; align-items: center; gap: 16px; margin: 20px 0; padding: 14px 0; border-block: 1px solid var(--line); }
+.import-music-field > div { display: grid; gap: 6px; margin-right: auto; min-width: 0; }
+.import-music-field span, .import-music-field small { color: var(--muted); font-size: 11px; }
+.import-music-field strong { font-size: 12px; font-weight: 400; overflow-wrap: anywhere; }
+.import-music-field button { flex-shrink: 0; }
 .track-link-panel { width: 700px; }
 .track-link-panel .panel-body { display: flex; flex-direction: column; overflow: hidden; }
 .track-link-title { margin: 0 0 20px; font-size: 14px; }
@@ -86,4 +106,4 @@
 .inspection-player .playback-title { margin-bottom: 10px; }
 .inspection-player .playback-actions { margin-top: 10px; }
 .inspection-player .playback-title strong { font-size: 12px; }
-@media (prefers-reduced-motion: reduce) { .inspection-player { animation: none; } .track-list button.track-row { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .inspection-player { animation: none; } .track-name { transition: none; } }

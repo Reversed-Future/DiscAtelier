@@ -61,8 +61,8 @@ export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot
         </div>
         {online && <div className="inspection-player"><PlaybackControls player={player}/></div>}
         {(supplement.error || player.error) && <p className="form-error" role="alert">{supplement.error || player.error}</p>}
-        <div className="object-actions"><button hidden={tab === 'tracks'} onClick={tab === 'metadata' ? edit : () => setEditingPurchase(true)} disabled={modelBusy}>{tab === 'metadata' ? '编辑版本' : '编辑购入'}</button><span>{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
-        <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}</div>
+        <div className="object-actions"><button hidden={tab === 'tracks'} onClick={tab === 'metadata' ? edit : () => setEditingPurchase(true)} disabled={modelBusy}>{tab === 'metadata' ? '编辑版本' : '编辑购入'}</button></div>
+        <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}<span className="detail-status">{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
       </section>
     </div>
   </Modal>{neteaseOpen && <NeteasePanel rows={editionContent.content?.tracks || []} item={item} onClose={() => setNeteaseOpen(false)} onSaved={onSaved}/>} {editingPurchase && <EditPurchase item={item} onClose={() => setEditingPurchase(false)} onSaved={onSaved}/>}</>;

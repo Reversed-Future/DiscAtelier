@@ -14,6 +14,25 @@ use std::{
 
 #[derive(Default)]
 pub struct NeteaseState(pub Mutex<HashMap<u64, (Instant, MusicSupplement)>>);
+pub fn cached_album(state: &NeteaseState, id: u64) -> Result<MusicSupplement, AppError> {
+    state
+        .0
+        .lock()
+        .map_err(|_| error("资料缓存不可用。"))?
+        .get(&id)
+        .filter(|(time, _)| time.elapsed() < Duration::from_secs(600))
+        .map(|(_, album)| album.clone())
+        .ok_or_else(|| error("网易云预览已过期，请重新读取。"))
+}
+fn cache_album(state: &NeteaseState, album: &MusicSupplement) -> Result<(), AppError> {
+    let mut cache = state.0.lock().map_err(|_| error("资料缓存不可用。"))?;
+    cache.retain(|_, (time, _)| time.elapsed() < Duration::from_secs(600));
+    if cache.len() >= 20 {
+        cache.clear();
+    }
+    cache.insert(album.album_id, (Instant::now(), album.clone()));
+    Ok(())
+}
 pub fn search(
     runtime: &discatelier_netease_runtime::Runtime,
     settings: &integration_settings::Settings,
@@ -74,16 +93,43 @@ pub async fn netease_album(
     let state = state.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         let album = album(&runtime, &settings, id)?;
-        let mut cache = state.0.lock().map_err(|_| error("资料缓存不可用。"))?;
-        cache.retain(|_, (time, _)| time.elapsed() < Duration::from_secs(600));
-        if cache.len() >= 20 {
-            cache.clear();
-        }
-        cache.insert(id, (Instant::now(), album.clone()));
+        cache_album(&state, &album)?;
         Ok(album)
     })
     .await
     .map_err(|_| error("网易云读取未完成。"))?
+}
+#[tauri::command]
+pub async fn netease_song_album(
+    directory: tauri::State<'_, DataLocation>,
+    runtime: tauri::State<'_, Arc<discatelier_netease_runtime::Runtime>>,
+    state: tauri::State<'_, Arc<NeteaseState>>,
+    id: u64,
+) -> Result<MusicSupplement, AppError> {
+    if id == 0 || id > 9_007_199_254_740_991 {
+        return Err(error("歌曲 ID 无效。"));
+    }
+    let settings = integration_settings::read(&directory.0)?;
+    let runtime = runtime.inner().clone();
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let album_id = if settings.netease_mode == integration_settings::NeteaseMode::Builtin {
+            provider::parse_song_album(
+                runtime.request("songDetail", serde_json::json!({"id":id}))?,
+                id,
+            )?
+        } else {
+            provider::song_album(&settings.netease_base_url, id)?
+        };
+        let value = album(&runtime, &settings, album_id)?;
+        if !value.tracks.iter().any(|track| track.id == id) {
+            return Err(error("返回的专辑不包含链接中的歌曲。"));
+        }
+        cache_album(&state, &value)?;
+        Ok(value)
+    })
+    .await
+    .map_err(|_| error("网易云歌曲资料读取未完成。"))?
 }
 #[tauri::command]
 pub async fn netease_saved(
@@ -100,14 +146,7 @@ pub async fn netease_apply(
     revision: i64,
     id: u64,
 ) -> Result<(), AppError> {
-    let album = state
-        .0
-        .lock()
-        .map_err(|_| error("资料缓存不可用。"))?
-        .get(&id)
-        .filter(|(time, _)| time.elapsed() < Duration::from_secs(600))
-        .map(|(_, album)| album.clone())
-        .ok_or_else(|| error("预览已过期，请重新查询。"))?;
+    let album = cached_album(&state, id)?;
     commands::run(library.inner().clone(), move |s| {
         s.save_supplement(&edition_id, revision, &album)
     })
