@@ -8,9 +8,12 @@ export interface ImportCopyRequest {
 export interface MetadataSearch { mode: string; query: string; page: number }
 export interface SearchResult { id: number; title: string; thumb: string; cover_image: string; country: string; year: string; catno: string; format: string[]; type: string }
 export interface MetadataResults { results: SearchResult[]; pagination: { page: number; pages: number; items: number } }
-export interface ReleaseTrack { title: string; position: string; duration: string; type_: string; sub_tracks?: ReleaseTrack[] }
-export interface EditionContent { genres: string[]; styles: string[]; tracks: ReleaseTrack[] }
+export interface ReleaseCredit { name: string; anv: string; role: string; tracks: string }
+export interface ReleaseCompany { name: string; entity_type_name: string; catno: string }
+export interface ReleaseTrack { title: string; position: string; duration: string; type_: string; sub_tracks?: ReleaseTrack[]; extraartists?: ReleaseCredit[] }
+export interface EditionContent { genres: string[]; styles: string[]; tracks: ReleaseTrack[]; credits: ReleaseCredit[]; companies: ReleaseCompany[]; notes: string; detailsLoaded: boolean }
 export interface MetadataRelease {
+  extraartists: ReleaseCredit[]; companies: ReleaseCompany[]; notes: string;
   genres: string[]; styles: string[];
   id: number; title: string; country: string; released: string;
   artists: { name: string; anv: string; join: string }[];

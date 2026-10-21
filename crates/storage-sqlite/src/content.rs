@@ -44,7 +44,40 @@ pub fn complete(
             "收藏来源已改变，请重新打开详情。",
         ));
     }
-    insert(connection, edition_id, content)
+    if let Some(mut saved) = read(connection, edition_id)? {
+        if !saved.details_loaded && content.details_loaded {
+            // Enrich existing contents without replacing the original track list.
+            fn enrich(old: &mut [ReleaseTrack], new: &[ReleaseTrack]) {
+                for row in old {
+                    let matches: Vec<_> = new
+                        .iter()
+                        .filter(|n| n.position == row.position && n.title == row.title)
+                        .collect();
+                    if let [entry] = matches.as_slice() {
+                        row.extraartists = entry.extraartists.clone();
+                        enrich(&mut row.sub_tracks, &entry.sub_tracks);
+                    }
+                }
+            }
+            enrich(&mut saved.tracks, &content.tracks);
+            saved.credits = content.credits.clone();
+            saved.companies = content.companies.clone();
+            saved.notes = content.notes.clone();
+            saved.details_loaded = true;
+            validate_content(&saved)?;
+            let text = serde_json::to_string(&saved)
+                .map_err(|_| AppError::new("storage", "资料无法保存。"))?;
+            connection
+                .execute(
+                    "UPDATE edition_content SET content_json=?2 WHERE edition_id=?1",
+                    params![edition_id, text],
+                )
+                .map_err(db_error)?;
+        }
+        Ok(())
+    } else {
+        insert(connection, edition_id, content)
+    }
 }
 pub fn validate(connection: &Connection) -> Result<(), AppError> {
     let mut statement = connection

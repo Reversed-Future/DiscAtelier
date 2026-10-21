@@ -78,6 +78,26 @@ pub struct ReleaseTrack {
     pub type_: String,
     #[serde(default)]
     pub sub_tracks: Vec<ReleaseTrack>,
+    #[serde(default)]
+    pub extraartists: Vec<ReleaseCredit>,
+}
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct ReleaseCredit {
+    pub name: String,
+    #[serde(default)]
+    pub anv: String,
+    #[serde(default)]
+    pub role: String,
+    #[serde(default)]
+    pub tracks: String,
+}
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct ReleaseCompany {
+    pub name: String,
+    #[serde(default)]
+    pub entity_type_name: String,
+    #[serde(default)]
+    pub catno: String,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ReleaseImage {
@@ -90,6 +110,12 @@ pub struct ReleaseImage {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MetadataRelease {
+    #[serde(default)]
+    pub extraartists: Vec<ReleaseCredit>,
+    #[serde(default)]
+    pub companies: Vec<ReleaseCompany>,
+    #[serde(default)]
+    pub notes: String,
     #[serde(default)]
     pub genres: Vec<String>,
     #[serde(default)]

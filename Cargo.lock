@@ -891,6 +891,7 @@ dependencies = [
  "discatelier-contracts",
  "libloading",
  "serde_json",
+ "url",
  "uuid",
  "windows-sys 0.61.2",
 ]

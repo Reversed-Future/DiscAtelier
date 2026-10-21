@@ -22,5 +22,5 @@ export function useEditionContent(item: LibraryCopy) {
     try { setContent(await discogs.completeContent(item.editionId, id)); }
     catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
   }
-  return { content, busy, error, complete, canComplete: !content && item.source?.providerId === 'discogs' };
+  return { content, busy, error, complete, canComplete: !content?.detailsLoaded && item.source?.providerId === 'discogs' };
 }

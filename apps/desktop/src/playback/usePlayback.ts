@@ -50,6 +50,11 @@ export function usePlayback() {
   }
   return {
     snapshot, busy, error, open, show: () => setOpen(true), hide: () => setOpen(false), active: isActive(snapshot?.phase),
+    startNetease: (editionId: string, songId: number) => execute(async () => {
+      revision.current++;
+      const value = await playback.netease(editionId, songId);
+      if (alive.current) setSnapshot(value);
+    }),
     start: (mount: string, token: string, playlist: string, resumeSeconds = 0, resumeTitle: number | null = null) => execute(async () => {
       revision.current++;
       const value = await playback.start(mount, token, playlist, resumeSeconds, resumeTitle);

@@ -18,14 +18,19 @@ export function PlaybackHistory({ drives, player, onResume }: { drives: OpticalD
     {loaded && !rows.length && <p className="optical-empty">暂无记录</p>}
     {rows.map(row => {
       const cd = row.source.playlist.startsWith('cd-track:');
+      const online = row.source.playlist.startsWith('netease-song:');
       const dvd = row.source.playlist === 'dvd-menu';
       const drive = drives.find(d => d.medium?.token === row.source.mediaToken && (dvd ? d.medium.kind === 'dvdVideo' : d.medium.playlists.includes(row.source.playlist)));
       return <article className="playback-history-row" key={row.sessionId}>
         <strong>{row.title}</strong>
-        <div className="playback-history-meta"><time dateTime={row.startedAt}>{new Date(row.startedAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</time><span>{dvd ? row.dvdTitle !== null ? `DVD · ${row.dvdTitle}` : 'DVD' : row.source.playlist}</span></div>
+        <div className="playback-history-meta"><time dateTime={row.startedAt}>{new Date(row.startedAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</time><span>{online ? '网易云' : dvd ? row.dvdTitle !== null ? `DVD · ${row.dvdTitle}` : 'DVD' : row.source.playlist}</span></div>
         <div className="playback-history-bottom">
-          <span>{time(row.positionSeconds)} / {time(row.durationSeconds)} · {cd ? '已听' : '已看'} {time(row.watchedSeconds)}
-            {row.completed ? cd ? ' · 听完' : ' · 看完' : row.phase === 'interrupted' ? ' · 中断' : row.phase === 'failed' ? ' · 失败' : ''}</span>
+          <span>{time(row.positionSeconds)} / {time(row.durationSeconds)} · {cd || online ? '已听' : '已看'} {time(row.watchedSeconds)}
+            {row.completed ? cd || online ? ' · 听完' : ' · 看完' : row.phase === 'interrupted' ? ' · 中断' : row.phase === 'failed' ? ' · 失败' : ''}</span>
+          {online && !player.active && <button className="text-button" disabled={player.busy} onClick={async () => {
+            const id = Number(row.source.playlist.slice('netease-song:'.length));
+            if (Number.isSafeInteger(id) && id > 0 && await player.startNetease(row.source.mountPoint, id)) { player.show(); onResume(); }
+          }}>重新播放</button>}
           {drive && !player.active && <button className="text-button" disabled={player.busy} onClick={async () => {
             const resume = row.durationSeconds && row.positionSeconds >= row.durationSeconds - 1 ? 0 : row.positionSeconds;
             if (await player.start(drive.mountPoint, row.source.mediaToken, row.source.playlist, dvd && row.dvdTitle === null ? 0 : resume, row.dvdTitle)) onResume();

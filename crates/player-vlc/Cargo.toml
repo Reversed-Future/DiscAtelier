@@ -9,6 +9,7 @@ discatelier-application.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 libloading = "=0.7.4"
+url = "2"
 
 [dev-dependencies]
 serde_json.workspace = true

@@ -5,7 +5,7 @@ import { EventEmitter } from 'node:events';
 import { runInNewContext } from 'node:vm';
 
 const source = readFileSync(new URL('../packages/netease-sidecar/runner.cjs', import.meta.url), 'utf8');
-async function exchange(argumentsValue) {
+async function exchange(argumentsValue, operation = 'search') {
   const input = new EventEmitter();
   const calls = [];
   let respond;
@@ -17,11 +17,12 @@ async function exchange(argumentsValue) {
       if (name === 'node:readline') return { createInterface: () => input };
       if (name === '@neteasecloudmusicapienhanced/api') return {
         search: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code: 200, result: { albumCount: 513, albums: [] } } }; },
+        song_url_v1: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code: 200, data: [{ id: args.id, url: null, freeTrialInfo: null }] } }; },
       };
       throw new Error(`Unexpected dependency: ${name}`);
     },
   });
-  input.emit('line', JSON.stringify({ id: 'page-check', operation: 'search', arguments: argumentsValue }));
+  input.emit('line', JSON.stringify({ id: 'page-check', operation, arguments: argumentsValue }));
   return { response: await response, calls };
 }
 test('bundled search forwards the requested page and preserves total count', async () => {
@@ -29,6 +30,12 @@ test('bundled search forwards the requested page and preserves total count', asy
   assert.deepEqual(calls, [{ keywords: 'Lemon', type: 10, limit: 20, offset: 20 }]);
   assert.equal(response.body.result.albumCount, 513);
   assert.equal(response.id, 'page-check');
+});
+test('song URL requests use the registered API with unblocking disabled and validate the ID', async () => {
+  const { response, calls } = await exchange({id:42}, 'songUrl');
+  assert.deepEqual(calls,[{id:42,level:'standard',unblock:'false'}]);
+  assert.equal(response.body.data[0].id,42);
+  assert.equal((await exchange({id:0},'songUrl')).calls.length,0);
 });
 test('bundled search defaults to the first page for existing callers', async () => {
   const { calls } = await exchange({ query: 'Lemon' });

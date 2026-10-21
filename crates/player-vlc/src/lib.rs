@@ -2,6 +2,7 @@ mod audio_cd;
 pub use audio_cd::cd_track;
 mod ffi;
 mod player;
+mod stream;
 #[cfg(test)]
 mod tests;
 mod worker;
@@ -90,10 +91,29 @@ impl VlcSession {
             validate_resume(seconds, title)?;
             dvd_location(&source)?
         };
+        Self::launch(
+            worker::Start {
+                path,
+                location,
+                window,
+                seconds,
+                title,
+                track,
+                dvd: track.is_none(),
+            },
+            source,
+            checkpoint,
+        )
+    }
+    fn launch(
+        start: worker::Start,
+        source: PlaybackSource,
+        checkpoint: Checkpoint,
+    ) -> Result<Self, AppError> {
         let now = chrono::Utc::now().to_rfc3339();
         let initial = PlaybackSnapshot {
             session_id: uuid::Uuid::new_v4().to_string(),
-            title: track.map_or_else(
+            title: start.track.map_or_else(
                 || source.label.clone(),
                 |n| format!("{} · 曲目 {n}", source.label),
             ),
@@ -111,7 +131,7 @@ impl VlcSession {
             audio_tracks: Vec::new(),
             selected_audio: None,
             dvd_title: None,
-            dvd_menu: track.is_none(),
+            dvd_menu: start.dvd,
             error: None,
         };
         checkpoint(&initial)?;
@@ -121,21 +141,7 @@ impl VlcSession {
         let cancelled = Arc::new(AtomicBool::new(false));
         let cancellation = cancelled.clone();
         let worker = thread::spawn(move || {
-            worker::run(
-                worker::Start {
-                    path,
-                    location,
-                    window,
-                    seconds,
-                    title,
-                    track,
-                },
-                initial,
-                state,
-                receiver,
-                checkpoint,
-                cancellation,
-            )
+            worker::run(start, initial, state, receiver, checkpoint, cancellation)
         });
         Ok(Self {
             snapshot,

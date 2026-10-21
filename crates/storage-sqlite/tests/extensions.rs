@@ -32,7 +32,19 @@ fn supplements_preserve_editions_reject_conflicts_and_survive_restore() {
         description: "Info".into(),
         company: "Company".into(),
         published_at: 1,
-        tracks: vec![],
+        tracks: vec![SupplementTrack {
+            id: 99,
+            title: "Song".into(),
+            artists: vec![],
+            disc: "1".into(),
+            number: 1,
+            duration_ms: 180000,
+        }],
+        links: vec![SupplementLink {
+            position: "CD-1".into(),
+            title: "Discogs Song".into(),
+            song_id: 99,
+        }],
     };
     service
         .save_supplement(&before.edition_id, before.edition_revision, &value)
@@ -63,12 +75,46 @@ fn supplements_preserve_editions_reject_conflicts_and_survive_restore() {
             .supplement(&before.edition_id)
             .unwrap()
             .unwrap()
+            .links[0]
+            .song_id,
+        99
+    );
+    assert_eq!(
+        service
+            .supplement(&before.edition_id)
+            .unwrap()
+            .unwrap()
             .title,
         "Digital album"
     );
     assert_eq!(
         service.assistant_load().unwrap().unwrap(),
         session.to_string()
+    );
+}
+#[test]
+fn schema_seven_gets_a_backup_before_expanded_json_contracts() {
+    let dir = directory();
+    drop(SqliteLibrary::open(&dir).unwrap());
+    let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
+    conn.execute("DELETE FROM schema_migrations WHERE version=8", [])
+        .unwrap();
+    conn.pragma_update(None, "user_version", 7).unwrap();
+    drop(conn);
+    let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let backups = service.backups().unwrap();
+    assert_eq!(backups.len(), 1);
+    let old = Connection::open(&backups[0].path).unwrap();
+    assert_eq!(
+        old.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
+            .unwrap(),
+        7
+    );
+    let new = Connection::open(dir.join("library.sqlite3")).unwrap();
+    assert_eq!(
+        new.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
+            .unwrap(),
+        8
     );
 }
 #[test]
@@ -113,6 +159,6 @@ fn schema_six_is_backed_up_before_extensions_are_added() {
     assert_eq!(
         new.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
             .unwrap(),
-        7
+        8
     );
 }

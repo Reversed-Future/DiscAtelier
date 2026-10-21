@@ -18,7 +18,7 @@ pub async fn discogs_complete_content(
         Ok((item.source.unwrap(), service.edition_content(&expected)?))
     })
     .await?;
-    if let Some(content) = existing.1 {
+    if let Some(content) = existing.1.filter(|c| c.details_loaded) {
         return Ok(content);
     }
     let content = run(state.inner().clone(), move |service| {
@@ -29,10 +29,12 @@ pub async fn discogs_complete_content(
     .await?;
     let saved = content.clone();
     commands::run(library.inner().clone(), move |service| {
-        service.complete_content(&edition_id, &existing.0, &saved)
+        service.complete_content(&edition_id, &existing.0, &saved)?;
+        service
+            .edition_content(&edition_id)?
+            .ok_or_else(|| AppError::new("storage", "资料未保存。"))
     })
-    .await?;
-    Ok(content)
+    .await
 }
 
 #[tauri::command]

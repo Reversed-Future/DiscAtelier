@@ -224,3 +224,21 @@ fn malformed_redirected_and_wrong_release_responses_are_rejected() {
     );
     worker.join().unwrap();
 }
+#[test]
+fn credits_companies_notes_and_track_credits_survive_content_mapping() {
+    // Field names and values checked against the local Discogs client release fixtures.
+    let release: discatelier_contracts::MetadataRelease = serde_json::from_value(serde_json::json!({
+        "id":1,"title":"Stockholm","artists":[],"formats":[],"labels":[],
+        "extraartists":[{"name":"Jesper Dahlbäck","anv":"","role":"Music By [All Tracks By]","tracks":""}],
+        "companies":[{"name":"The Globe Studios","entity_type_name":"Recorded At","catno":""}],
+        "notes":"Recorded at the Globe studio in Stockholm.",
+        "tracklist":[{"title":"Track","position":"3","extraartists":[{"name":"Mood II Swing","role":"Remix"}]}]
+    })).unwrap();
+    let content = discatelier_contracts::EditionContent::from(&release);
+    assert_eq!(content.credits[0].role, "Music By [All Tracks By]");
+    assert_eq!(content.companies[0].entity_type_name, "Recorded At");
+    assert_eq!(content.tracks[0].extraartists[0].role, "Remix");
+    assert!(!content.notes.is_empty());
+    assert!(content.details_loaded);
+    discatelier_contracts::validate_content(&content).unwrap();
+}

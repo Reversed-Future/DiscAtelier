@@ -380,3 +380,52 @@ fn schema_two_is_backed_up_before_source_migration() {
     service.import_copy(request()).unwrap();
     assert_eq!(service.list(query("")).unwrap().copies.len(), 1);
 }
+#[test]
+fn enrich_old_details_preserves_track_order_and_survives_restore() {
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let mut imported = request();
+    imported.content = contents();
+    service.import_copy(imported).unwrap();
+    let item = service.source_copy("discogs", "249504").unwrap().unwrap();
+    let mut new = contents();
+    new.details_loaded = true;
+    new.notes = "Original release notes".into();
+    new.credits = vec![ReleaseCredit {
+        name: "Artist".into(),
+        role: "Producer".into(),
+        ..Default::default()
+    }];
+    new.companies = vec![ReleaseCompany {
+        name: "Studio".into(),
+        entity_type_name: "Recorded At".into(),
+        catno: String::new(),
+    }];
+    new.tracks[0].extraartists = new.credits.clone();
+    new.tracks.reverse();
+    service
+        .complete_content(&item.edition_id, item.source.as_ref().unwrap(), &new)
+        .unwrap();
+    let saved = service.edition_content(&item.edition_id).unwrap().unwrap();
+    assert_eq!(saved.tracks[0].title, "First");
+    assert_eq!(saved.tracks[0].extraartists[0].role, "Producer");
+    assert_eq!(saved.companies[0].name, "Studio");
+    assert!(saved.details_loaded);
+    let expected = serde_json::to_value(&saved).unwrap();
+    let backup = service.backup().unwrap();
+    let preview = service.prepare_restore(backup).unwrap();
+    service.restore(preview.token).unwrap();
+    assert_eq!(
+        serde_json::to_value(service.edition_content(&item.edition_id).unwrap().unwrap()).unwrap(),
+        expected
+    );
+    assert_eq!(
+        service
+            .source_copy("discogs", "249504")
+            .unwrap()
+            .unwrap()
+            .edition
+            .title,
+        item.edition.title
+    );
+}

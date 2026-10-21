@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { DiscTabs, DiscTrackPanel } from './DiscTrackView';
 import { SearchCover } from './SearchCover';
 import { discPages } from './discTracks';
+import { ReleaseDetails } from './ReleaseDetails';
 
 export function ReleasePreview({ release }: { release: MetadataRelease }) {
   const [identifiersOpen, setIdentifiersOpen] = useState(false);
@@ -22,6 +23,7 @@ export function ReleasePreview({ release }: { release: MetadataRelease }) {
       <div><dt>载体</dt><dd>{release.formats.map((format, index) => <div key={index}>{format.qty} × {format.name}{format.descriptions.length ? ` · ${format.descriptions.join(' / ')}` : ''}{format.text ? ` · ${format.text}` : ''}</div>)}</dd></div>
       <div><dt>厂牌／品番</dt><dd>{release.labels.map((label, index) => <div key={index}>{label.name} · {label.catno}</div>)}</dd></div>
     </dl>
+    <ReleaseDetails credits={release.extraartists} companies={release.companies} notes={release.notes}/>
     {!!release.identifiers.length && <button type="button" className="text-button identifier-toggle" aria-expanded={identifiersOpen} onClick={() => setIdentifiersOpen(value => !value)}>标识符 · {release.identifiers.length}</button>}
     <div className="identifier-disclosure" data-open={identifiersOpen} inert={!identifiersOpen}><div><dl className="metadata">
       {release.identifiers.map((identifier, index) => <div key={index}><dt>{identifier.type}</dt><dd>{identifier.value}{identifier.description && <small> · {identifier.description}</small>}</dd></div>)}

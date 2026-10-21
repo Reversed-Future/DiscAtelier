@@ -17,6 +17,7 @@ pub struct Start {
     pub seconds: f64,
     pub title: Option<i32>,
     pub track: Option<u8>,
+    pub dvd: bool,
 }
 struct Publication {
     shared: Arc<Mutex<PlaybackSnapshot>>,
@@ -109,7 +110,7 @@ fn playing(
     let mut progress = PlaybackProgress::default();
     let mut resume = start.title.map(|title| (title, false, Instant::now()));
     let mut loaded = false;
-    let mut cd_resume = start.track.is_some() && start.seconds > 0.0;
+    let mut cd_resume = !start.dvd && start.seconds > 0.0;
     loop {
         if cancelled.load(Ordering::Acquire) {
             return Ok(());
@@ -118,11 +119,10 @@ fn playing(
         let previous_title = snapshot.dvd_title;
         let state = unsafe { (api.libvlc_media_player_get_state)(handle) };
         if state == 7 {
-            return Err(ffi::error("光盘读取或解码失败，请检查光盘与 VLC 安装。"));
+            return Err(ffi::error("媒体读取或解码失败，请检查来源与 VLC 安装。"));
         }
         if state == 6 {
-            snapshot.completed =
-                start.track.is_some() && progress.completed(snapshot.duration_seconds, true);
+            snapshot.completed = !start.dvd && progress.completed(snapshot.duration_seconds, true);
             snapshot.phase = PlaybackPhase::Ended;
             return Ok(());
         }
@@ -131,7 +131,7 @@ fn playing(
         }
         loaded |= state == 3 || state == 4;
         if !loaded && started.elapsed() > Duration::from_secs(60) {
-            return Err(ffi::error("光盘读取超时。"));
+            return Err(ffi::error("媒体读取超时。"));
         }
         let current_title = unsafe { (api.libvlc_media_player_get_title)(handle) };
         if metadata.elapsed() >= Duration::from_secs(1) || metadata_title != Some(current_title) {
@@ -142,11 +142,11 @@ fn playing(
             metadata = Instant::now();
             metadata_title = Some(current_title);
         }
-        snapshot.dvd_menu = start.track.is_none()
+        snapshot.dvd_menu = start.dvd
             && !titles
                 .iter()
                 .any(|(id, menu)| *id == current_title && !menu);
-        snapshot.dvd_title = (start.track.is_none() && !snapshot.dvd_menu).then_some(current_title);
+        snapshot.dvd_title = (start.dvd && !snapshot.dvd_menu).then_some(current_title);
         if snapshot.dvd_title != previous_title {
             progress.reset_sample();
         }

@@ -52,3 +52,34 @@
 
 .audio-player { grid-template-rows: 54px minmax(0, 1fr) 240px; }
 .audio-disc { max-width: min(42vh, 400px); width: 100%; margin: auto; }
+.edition-introduction { margin-top: 24px; font-size: 12px; line-height: 1.9; }
+.edition-introduction h4 { font-size: 12px; font-weight: 500; margin: 0 0 10px; }
+.edition-introduction h4 small { margin-left: 8px; color: var(--muted); font-size: 10px; font-weight: 400; }
+.edition-introduction p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.release-details { margin-top: 16px; }
+.release-details > button { font-size: 11px; color: var(--muted); padding: 8px 0; margin-right: 20px; }
+.credit-list { display: grid; gap: 12px; font-size: 11px; margin: 12px 0; }
+.credit-list > div { display: grid; grid-template-columns: minmax(80px, .8fr) minmax(0, 1.2fr); gap: 16px; }
+.credit-list dt { color: var(--muted); overflow-wrap: anywhere; }
+.credit-list dd { margin: 0; overflow-wrap: anywhere; }
+.credit-list small { color: var(--muted); }
+.track-list .release-details { margin: 0 0 10px 54px; }
+.release-track-scroll .track-list li > .playable-track-row { grid-template-columns: 46px minmax(0, 1fr) 36px auto; gap: 12px; }
+.track-play-actions { display: flex; align-items: center; gap: 6px; }
+.track-play-actions .track-play { width: 28px; height: 28px; color: var(--ink); font-size: 18px; transition: opacity 150ms, transform 150ms; }
+.track-play-actions .track-play:active { transform: scale(.94); }
+.track-link { font-size: 10px; color: var(--muted); padding: 6px; }
+.track-link-panel { width: 700px; }
+.track-link-panel .panel-body { display: flex; flex-direction: column; overflow: hidden; }
+.track-link-title { margin: 0 0 20px; font-size: 14px; }
+.track-link-list { flex: 1; min-height: 0; overflow: auto; scrollbar-width: none; }
+.track-link-list button { width: 100%; display: flex; align-items: center; gap: 20px; text-align: left; padding: 14px 4px; border-bottom: 1px solid var(--line); font-size: 12px; transition: background-color 150ms; }
+.track-link-list button:hover { background: #ffffff06; }
+.track-link-list span, .track-link-list time { color: var(--muted); }
+.track-link-list time { margin-left: auto; }
+.track-link-panel footer { padding-top: 18px; }
+.inspection-player { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); animation: settings-feedback-in 160ms ease-out; }
+.inspection-player .playback-title { margin-bottom: 10px; }
+.inspection-player .playback-actions { margin-top: 10px; }
+.inspection-player .playback-title strong { font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .inspection-player { animation: none; } .track-play-actions .track-play { transition: none; } }

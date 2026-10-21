@@ -3,6 +3,8 @@ use discatelier_contracts::{validate_supplement, AppError, MusicSupplement, Supp
 use discatelier_integration_http::{error, request};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+mod stream;
+pub use stream::{parse_song_stream, song_stream, SongStream};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -152,6 +154,7 @@ pub fn parse_album(value: Value, id: u64) -> Result<MusicSupplement, AppError> {
         description: r.album.description,
         company: r.album.company.unwrap_or_default(),
         published_at: r.album.published_at,
+        links: Vec::new(),
         tracks: r
             .songs
             .into_iter()

@@ -9,6 +9,7 @@ mod model_picker;
 mod model_stream;
 mod models;
 mod netease;
+mod netease_playback;
 mod optical;
 mod playback;
 mod playback_backend;
@@ -83,6 +84,8 @@ fn main() {
             netease::netease_album,
             netease::netease_saved,
             netease::netease_apply,
+            netease_playback::netease_play,
+            netease_playback::netease_link_track,
             assistant::assistant_snapshot,
             assistant::assistant_send,
             assistant::assistant_cancel,

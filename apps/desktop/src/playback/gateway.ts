@@ -15,6 +15,7 @@ export type Control = { action: 'pause'; paused: boolean } | { action: 'seek'; s
 export const isActive = (phase?: Phase) => !!phase && ['loading', 'playing', 'paused', 'buffering', 'stopping'].includes(phase);
 let viewportQueue: Promise<void> = Promise.resolve();
 export const playback = {
+  netease: (editionId: string, songId: number) => invoke<Snapshot>('netease_play', { editionId, songId }),
   viewport: (viewport: { x: number; y: number; width: number; height: number; visible: boolean; clipTop?: number; clipBottom?: number; interactive?: boolean }) => {
     const update = viewportQueue.then(() => invoke<void>('playback_viewport', { viewport }));
     viewportQueue = update.catch(() => {});
