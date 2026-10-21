@@ -58,6 +58,18 @@ fn main() {
             app.manage(updates::UpdateState::default());
             app.manage(Arc::new(assistant::AgentState::default()));
             app.manage(Arc::new(netease::NeteaseState::default()));
+            let runtime_root = app.path().resource_dir()?.join("netease-runtime");
+            #[cfg(debug_assertions)]
+            let runtime_root = if runtime_root.is_dir() {
+                runtime_root
+            } else {
+                std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../../artifacts/netease-runtime")
+            };
+            app.manage(Arc::new(discatelier_netease_runtime::Runtime::new(
+                runtime_root,
+                directory.join("netease-cache"),
+            )));
             app.manage(Arc::new(optical::OpticalService::new(directory)));
             app.manage(Arc::new(Mutex::new(None)) as playback::PlaybackState);
             app.manage(video_input::VideoInput::default());

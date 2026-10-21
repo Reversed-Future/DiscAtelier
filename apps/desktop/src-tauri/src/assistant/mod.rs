@@ -61,6 +61,7 @@ pub async fn assistant_snapshot(
 }
 #[tauri::command]
 pub async fn assistant_send(
+    runtime: tauri::State<'_, Arc<discatelier_netease_runtime::Runtime>>,
     library: tauri::State<'_, LibraryState>,
     discogs: tauri::State<'_, DiscogsState>,
     state: tauri::State<'_, Arc<AgentState>>,
@@ -71,6 +72,7 @@ pub async fn assistant_send(
     state.cancelled.store(false, Ordering::Release);
     let library = library.inner().clone();
     let discogs = discogs.inner().clone();
+    let runtime = runtime.inner().clone();
     let settings = integration_settings::read(&directory.0)?;
     if settings.ai_base_url.is_empty() || settings.ai_model.is_empty() {
         return Err(error("请在设置中填写 AI 服务地址和模型名称。"));
@@ -79,6 +81,7 @@ pub async fn assistant_send(
     tauri::async_runtime::spawn_blocking(move || {
         let mut session = load(&library)?;
         let mut host = host::ToolHost {
+            runtime,
             library,
             discogs,
             settings: settings.clone(),

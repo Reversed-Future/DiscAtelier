@@ -1,0 +1,6 @@
+{
+  "name": "discatelier-netease-sidecar",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": { "@neteasecloudmusicapienhanced/api": "4.41.1" }
+}

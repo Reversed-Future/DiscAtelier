@@ -12,7 +12,8 @@
     "homepage": "https://github.com/Reversed-Future/DiscAtelier",
     "shortDescription": "个人实体音像收藏",
     "resources": {
-      "../public/legal/": "legal/"
+      "../public/legal/": "legal/",
+      "../../../artifacts/netease-runtime/": "netease-runtime/"
     },
     "windows": {
       "allowDowngrades": false,

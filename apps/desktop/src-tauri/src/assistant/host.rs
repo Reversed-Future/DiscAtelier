@@ -7,6 +7,7 @@ use discatelier_storage::SqliteLibrary;
 use serde_json::{json, Value};
 
 pub struct ToolHost {
+    pub runtime: std::sync::Arc<discatelier_netease_runtime::Runtime>,
     pub library: LibraryState,
     pub discogs: DiscogsState,
     pub settings: Settings,
@@ -70,15 +71,17 @@ impl Host for ToolHost {
             }
             "search_netease" => {
                 let args: Query = parse(arguments)?;
-                json!(discatelier_provider_netease::search(
-                    &self.settings.netease_base_url,
+                json!(crate::netease::search(
+                    &self.runtime,
+                    &self.settings,
                     &args.query
                 )?)
             }
             "get_netease_album" => {
                 let args: RemoteId = parse(arguments)?;
-                json!(discatelier_provider_netease::album(
-                    &self.settings.netease_base_url,
+                json!(crate::netease::album(
+                    &self.runtime,
+                    &self.settings,
                     args.id
                 )?)
             }

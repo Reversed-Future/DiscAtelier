@@ -14,26 +14,52 @@ use std::{
 
 #[derive(Default)]
 pub struct NeteaseState(pub Mutex<HashMap<u64, (Instant, MusicSupplement)>>);
+pub fn search(
+    runtime: &discatelier_netease_runtime::Runtime,
+    settings: &integration_settings::Settings,
+    query: &str,
+) -> Result<Vec<AlbumResult>, AppError> {
+    if settings.netease_mode == integration_settings::NeteaseMode::Builtin {
+        provider::parse_search(runtime.request("search", serde_json::json!({"query":query}))?)
+    } else {
+        provider::search(&settings.netease_base_url, query)
+    }
+}
+pub fn album(
+    runtime: &discatelier_netease_runtime::Runtime,
+    settings: &integration_settings::Settings,
+    id: u64,
+) -> Result<MusicSupplement, AppError> {
+    if settings.netease_mode == integration_settings::NeteaseMode::Builtin {
+        provider::parse_album(runtime.request("album", serde_json::json!({"id":id}))?, id)
+    } else {
+        provider::album(&settings.netease_base_url, id)
+    }
+}
 #[tauri::command]
 pub async fn netease_search(
     directory: tauri::State<'_, DataLocation>,
+    runtime: tauri::State<'_, Arc<discatelier_netease_runtime::Runtime>>,
     query: String,
 ) -> Result<Vec<AlbumResult>, AppError> {
-    let base = integration_settings::read(&directory.0)?.netease_base_url;
-    tauri::async_runtime::spawn_blocking(move || provider::search(&base, &query))
+    let settings = integration_settings::read(&directory.0)?;
+    let runtime = runtime.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || search(&runtime, &settings, &query))
         .await
         .map_err(|_| error("网易云搜索未完成。"))?
 }
 #[tauri::command]
 pub async fn netease_album(
     directory: tauri::State<'_, DataLocation>,
+    runtime: tauri::State<'_, Arc<discatelier_netease_runtime::Runtime>>,
     state: tauri::State<'_, Arc<NeteaseState>>,
     id: u64,
 ) -> Result<MusicSupplement, AppError> {
-    let base = integration_settings::read(&directory.0)?.netease_base_url;
+    let settings = integration_settings::read(&directory.0)?;
+    let runtime = runtime.inner().clone();
     let state = state.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
-        let album = provider::album(&base, id)?;
+        let album = album(&runtime, &settings, id)?;
         let mut cache = state.0.lock().map_err(|_| error("资料缓存不可用。"))?;
         cache.retain(|_, (time, _)| time.elapsed() < Duration::from_secs(600));
         if cache.len() >= 20 {

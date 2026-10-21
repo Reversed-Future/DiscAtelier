@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { integrations, type IntegrationStatus } from './gateway';
 import { errorMessage } from '../library/gateway';
+import { Select } from '../ui/Select';
 
 export function IntegrationSettings({ kind, onBusy }: { kind: 'netease' | 'assistant'; onBusy(value: boolean): void }) {
   const [status, setStatus] = useState<IntegrationStatus | null>(null);
@@ -21,8 +22,12 @@ export function IntegrationSettings({ kind, onBusy }: { kind: 'netease' | 'assis
   }
   return <form onSubmit={e => { e.preventDefault(); void save(); }}>
     {kind === 'netease' ? <>
-      <label>服务地址<input value={status?.settings.neteaseBaseUrl || ''} disabled={!status || busy} spellCheck={false} placeholder="http://127.0.0.1:3000" onChange={e => change('neteaseBaseUrl', e.target.value)}/></label>
-      <p className="setting-hint">api-enhanced 部署地址。资料经预览后保存。</p>
+      <label>服务<Select label="网易云服务" value={status?.settings.neteaseMode || 'builtin'} options={[{ id: 'builtin', label: '内置' }, { id: 'custom', label: '自定义' }]} disabled={!status || busy} onChange={value => change('neteaseMode', value)}/></label>
+      <div className="netease-service-detail" key={status?.settings.neteaseMode}>
+        {status?.settings.neteaseMode === 'custom'
+          ? <label>服务地址<input value={status.settings.neteaseBaseUrl} disabled={busy} spellCheck={false} placeholder="http://127.0.0.1:3000" onChange={e => change('neteaseBaseUrl', e.target.value)}/></label>
+          : <p className="setting-hint">使用时自动启动，退出时关闭。</p>}
+      </div>
     </> : <>
       <label>Base URL<input value={status?.settings.aiBaseUrl || ''} disabled={!status || busy} spellCheck={false} placeholder="https://服务地址/v1" onChange={e => change('aiBaseUrl', e.target.value)}/></label>
       <label>模型<input value={status?.settings.aiModel || ''} disabled={!status || busy} spellCheck={false} onChange={e => change('aiModel', e.target.value)}/></label>

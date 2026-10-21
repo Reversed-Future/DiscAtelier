@@ -8,6 +8,7 @@ description = "Personal physical media collection"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+discatelier-netease-runtime.workspace = true
 discatelier-agent-harness.workspace = true
 discatelier-integration-http.workspace = true
 discatelier-provider-netease.workspace = true

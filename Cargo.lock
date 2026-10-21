@@ -808,6 +808,7 @@ dependencies = [
  "discatelier-application",
  "discatelier-contracts",
  "discatelier-integration-http",
+ "discatelier-netease-runtime",
  "discatelier-optical-windows",
  "discatelier-player-mpv",
  "discatelier-player-vlc",
@@ -844,6 +845,16 @@ dependencies = [
  "discatelier-contracts",
  "reqwest",
  "serde_json",
+]
+
+[[package]]
+name = "discatelier-netease-runtime"
+version = "0.1.6"
+dependencies = [
+ "discatelier-contracts",
+ "serde_json",
+ "uuid",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

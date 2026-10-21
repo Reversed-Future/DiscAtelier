@@ -7,9 +7,9 @@
     "dev": "vite --host 127.0.0.1 --port 1420 --strictPort",
     "build": "tsc --noEmit && vite build",
     "build:release": "tsc --noEmit && vite build --outDir dist-release/0.1.6",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build --no-bundle",
-    "tauri:release": "tauri build --config src-tauri/tauri.release.conf.json --bundles nsis --ci -- --locked"
+    "tauri:dev": "npm run prepare:netease --prefix ../.. && tauri dev",
+    "tauri:build": "npm run prepare:netease --prefix ../.. && tauri build --no-bundle",
+    "tauri:release": "npm run prepare:netease --prefix ../.. && tauri build --config src-tauri/tauri.release.conf.json --bundles nsis --ci -- --locked"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

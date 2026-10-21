@@ -12,6 +12,11 @@ impl PlaybackExit {
 /// Keep the native parent alive and its message loop running while VLC releases
 /// its video children. Joining a decoder from the window callback can deadlock.
 pub fn event(app: &tauri::AppHandle, event: &tauri::RunEvent) {
+    if matches!(event, tauri::RunEvent::Exit) {
+        app.state::<std::sync::Arc<discatelier_netease_runtime::Runtime>>()
+            .shutdown();
+        return;
+    }
     let state = app.state::<PlaybackExit>();
     if state.0.load(Ordering::Acquire) == 2 {
         return;
@@ -38,6 +43,8 @@ pub fn event(app: &tauri::AppHandle, event: &tauri::RunEvent) {
         .clone();
     let app = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
+        app.state::<std::sync::Arc<discatelier_netease_runtime::Runtime>>()
+            .shutdown();
         crate::playback::shutdown(&player);
         app.state::<PlaybackExit>().0.store(2, Ordering::Release);
         app.exit(0);

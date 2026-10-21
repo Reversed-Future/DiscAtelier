@@ -31,7 +31,10 @@
     "icon": [
       "icons/icon.ico",
       "icons/icon.png"
-    ]
+    ],
+    "resources": {
+      "../../../artifacts/netease-runtime/": "netease-runtime/"
+    }
   },
   "plugins": {
     "updater": {

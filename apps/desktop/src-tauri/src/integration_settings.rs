@@ -7,9 +7,18 @@ use std::{io::Read, path::Path};
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Settings {
+    #[serde(default)]
+    pub netease_mode: NeteaseMode,
     pub netease_base_url: String,
     pub ai_base_url: String,
     pub ai_model: String,
+}
+#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum NeteaseMode {
+    #[default]
+    Builtin,
+    Custom,
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -30,7 +39,15 @@ pub fn read(directory: &Path) -> Result<Settings, AppError> {
     if text.len() > 16384 {
         return Err(error("接口设置过长。"));
     }
-    serde_json::from_str(&text).map_err(|_| error("接口设置格式错误。"))
+    let raw: serde_json::Value =
+        serde_json::from_str(&text).map_err(|_| error("接口设置格式错误。"))?;
+    let legacy = raw.get("neteaseMode").is_none();
+    let mut settings: Settings =
+        serde_json::from_value(raw).map_err(|_| error("接口设置格式错误。"))?;
+    if legacy && !settings.netease_base_url.is_empty() {
+        settings.netease_mode = NeteaseMode::Custom;
+    }
+    Ok(settings)
 }
 fn entry(base: &str) -> Result<keyring::Entry, AppError> {
     let service = "com.reversedfuture.discatelier";
@@ -72,7 +89,7 @@ pub fn integration_settings_save(
     api_key: Option<String>,
     forget_key: bool,
 ) -> Result<Status, AppError> {
-    if !settings.netease_base_url.is_empty() {
+    if settings.netease_mode == NeteaseMode::Custom {
         endpoint(&settings.netease_base_url, "album")?;
     }
     if !settings.ai_base_url.is_empty() {
@@ -112,4 +129,30 @@ pub fn integration_settings_save(
         has_key: key(&settings.ai_base_url)?.is_some(),
         settings,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn mode_defaults_to_builtin_and_preserves_existing_custom_settings() {
+        let path = std::env::temp_dir().join(format!("discatelier-mode-{}", uuid::Uuid::new_v4()));
+        assert!(read(&path).unwrap().netease_mode == NeteaseMode::Builtin);
+        std::fs::create_dir_all(&path).unwrap();
+        let file = path.join("integration-settings.json");
+        std::fs::write(
+            &file,
+            r#"{"neteaseBaseUrl":"http://127.0.0.1:3000","aiBaseUrl":"","aiModel":""}"#,
+        )
+        .unwrap();
+        assert!(read(&path).unwrap().netease_mode == NeteaseMode::Custom);
+        std::fs::write(&file, r#"{"neteaseMode":"builtin","neteaseBaseUrl":"http://127.0.0.1:3000","aiBaseUrl":"","aiModel":""}"#).unwrap();
+        assert!(read(&path).unwrap().netease_mode == NeteaseMode::Builtin);
+        std::fs::write(
+            &file,
+            r#"{"neteaseMode":"invalid","neteaseBaseUrl":"","aiBaseUrl":"","aiModel":""}"#,
+        )
+        .unwrap();
+        assert!(read(&path).is_err());
+    }
 }
