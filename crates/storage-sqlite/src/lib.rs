@@ -1,5 +1,6 @@
 mod artwork;
 mod content;
+mod create_music;
 mod editions;
 mod extensions;
 mod imports;
@@ -10,7 +11,9 @@ mod playback;
 pub mod profiling;
 mod reads;
 mod recovery;
+mod update_backup;
 mod writes;
+pub use update_backup::backup_for_update;
 
 use discatelier_application::LibraryRepository;
 use discatelier_contracts::*;

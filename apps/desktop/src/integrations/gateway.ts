@@ -13,6 +13,7 @@ export const integrations = {
   save: (settings: IntegrationSettings, apiKey: string | null, forgetKey = false) => invoke<IntegrationStatus>('integration_settings_save', { settings, apiKey, forgetKey }),
 };
 export const netease = {
+  createCopy: (request: import('../library/types').CreateCopy, albumId: number) => invoke<string>('netease_create_copy', { request, albumId }),
   search: (query: string, offset = 0) => invoke<AlbumSearchPage>('netease_search', { query, offset }),
   album: (id: number) => invoke<MusicSupplement>('netease_album', { id }),
   albumCover: (id: number) => invoke<string>('netease_album_cover', { id }),

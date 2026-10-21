@@ -11,6 +11,7 @@ mod models;
 mod netease;
 mod netease_artwork;
 mod netease_auth;
+mod netease_create;
 mod netease_playback;
 mod optical;
 mod playback;
@@ -94,6 +95,7 @@ fn main() {
             netease::netease_song_album,
             netease::netease_saved,
             netease::netease_apply,
+            netease_create::netease_create_copy,
             netease_playback::netease_play,
             netease_playback::netease_link_track,
             assistant::assistant_snapshot,

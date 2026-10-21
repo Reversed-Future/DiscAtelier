@@ -1,8 +1,13 @@
 use crate::LibraryRepository;
 use crate::LibraryService;
-use discatelier_contracts::{validate_supplement, AppError, MusicSupplement};
+use discatelier_contracts::{validate_supplement, AppError, CreateCopy, MusicSupplement};
 
 pub trait ExtensionRepository {
+    fn create_music(
+        &mut self,
+        request: &CreateCopy,
+        album: &MusicSupplement,
+    ) -> Result<String, AppError>;
     fn supplement(&self, edition: &str) -> Result<Option<MusicSupplement>, AppError>;
     fn save_supplement(
         &mut self,
@@ -14,6 +19,26 @@ pub trait ExtensionRepository {
     fn assistant_save(&mut self, id: &str, payload: &str) -> Result<(), AppError>;
 }
 impl<R: LibraryRepository + ExtensionRepository> LibraryService<R> {
+    pub fn create_music(
+        &mut self,
+        request: CreateCopy,
+        album: MusicSupplement,
+    ) -> Result<String, AppError> {
+        crate::validate_create(&request)?;
+        if request.existing_edition_id.is_some()
+            || request
+                .edition
+                .as_ref()
+                .is_none_or(|edition| edition.category_id != "music")
+        {
+            return Err(AppError::new(
+                "validation",
+                "网易云资料只能用于新增音乐版本。",
+            ));
+        }
+        validate_supplement(&album)?;
+        self.repository.create_music(&request, &album)
+    }
     pub fn supplement(&self, edition: &str) -> Result<Option<MusicSupplement>, AppError> {
         crate::request_id(edition)?;
         self.repository.supplement(edition)

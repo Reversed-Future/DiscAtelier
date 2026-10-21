@@ -147,13 +147,7 @@ impl<R: LibraryRepository> LibraryService<R> {
         })
     }
     pub fn create(&mut self, request: CreateCopy) -> Result<String, AppError> {
-        request_id(&request.request_id)?;
-        match (&request.edition, &request.existing_edition_id) {
-            (Some(edition), None) => validate_edition(edition).map_err(validation)?,
-            (None, Some(id)) => request_id(id)?,
-            _ => return Err(validation("必须指定一个新版本或已有版本".into())),
-        }
-        validate_copy(&request.copy).map_err(validation)?;
+        validate_create(&request)?;
         self.repository.create(&request)
     }
     pub fn update(&mut self, request: UpdateCopy) -> Result<String, AppError> {
@@ -202,6 +196,15 @@ impl<R: LibraryRepository> LibraryService<R> {
         }
         self.repository.cover(&asset_id)
     }
+}
+fn validate_create(request: &CreateCopy) -> Result<(), AppError> {
+    request_id(&request.request_id)?;
+    match (&request.edition, &request.existing_edition_id) {
+        (Some(edition), None) => validate_edition(edition).map_err(validation)?,
+        (None, Some(id)) => request_id(id)?,
+        _ => return Err(validation("必须指定一个新版本或已有版本".into())),
+    }
+    validate_copy(&request.copy).map_err(validation)
 }
 fn request_id(value: &str) -> Result<(), AppError> {
     uuid::Uuid::parse_str(value)

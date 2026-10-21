@@ -194,6 +194,7 @@ pub async fn update_download(
 #[tauri::command]
 pub async fn update_install(
     app: tauri::AppHandle,
+    directory: tauri::State<'_, crate::data_location::DataLocation>,
     state: tauri::State<'_, UpdateState>,
     optical: tauri::State<'_, OpticalState>,
     library: tauri::State<'_, LibraryState>,
@@ -219,6 +220,7 @@ pub async fn update_install(
     };
     let library = library.inner().clone();
     let playback = playback.inner().clone();
+    let directory = directory.0.clone();
     // The shared optical gate prevents playback starting between the check and
     // installation. Hold the library lock through backup and installer launch.
     let result = crate::optical::run(optical.inner().clone(), move |_| {
@@ -229,9 +231,10 @@ pub async fn update_install(
             .verify(&bytes)
             .map_err(|_| error("更新签名校验失败，已拒绝安装。"))?;
         crate::playback::shutdown(&playback);
-        let mut library = library.lock().map_err(|_| error("收藏库不可访问。"))?;
-        let service = library.as_mut().map_err(|e| e.clone())?;
-        service.backup()?;
+        // Retain the write gate even when LibraryService failed to open a newer
+        // schema. Backup uses SQLite's read-only snapshot API independently.
+        let _library = library.lock().map_err(|_| error("收藏库不可访问。"))?;
+        discatelier_storage::backup_for_update(&directory)?;
         update
             .install(bytes.as_slice())
             .map_err(|_| error("安装程序未能启动，请重新下载后重试。"))

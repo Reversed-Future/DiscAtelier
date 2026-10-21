@@ -31,6 +31,7 @@ export function DataSettings({ libraryAvailable, onRestore, onBusy }: {
     <div className="settings-section">
       <div className="setting-row"><span>备份收藏</span><button className="text-button" disabled={!libraryAvailable || busy} onClick={() => void backup()}>{busy ? '保存中' : '创建备份'}</button></div>
       <div className="setting-row"><span>恢复收藏</span><button className="text-button" disabled={!libraryAvailable || busy} onClick={onRestore}>选择备份</button></div>
+      <p className="setting-hint">手动、升级和迁移前备份均保留在 backups 文件夹，不会自动清理。</p>
     </div>
     <div className="settings-feedback" aria-live="polite">
       {saved && <><span>备份已保存</span><p className="data-path">{saved}</p></>}

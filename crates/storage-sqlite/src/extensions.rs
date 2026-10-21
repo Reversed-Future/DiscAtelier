@@ -4,6 +4,13 @@ use discatelier_contracts::{validate_supplement, AppError, MusicSupplement};
 use rusqlite::{params, OptionalExtension};
 
 impl ExtensionRepository for SqliteLibrary {
+    fn create_music(
+        &mut self,
+        request: &discatelier_contracts::CreateCopy,
+        album: &MusicSupplement,
+    ) -> Result<String, AppError> {
+        crate::create_music::create(&mut self.connection, request, album, &self.prepared_models)
+    }
     fn supplement(&self, edition: &str) -> Result<Option<MusicSupplement>, AppError> {
         let raw: Option<String> = self
             .connection

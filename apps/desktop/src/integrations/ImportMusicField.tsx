@@ -2,11 +2,12 @@ import type { ReleaseTrack } from '../metadata/gateway';
 import type { MusicSupplement } from './gateway';
 import { trackMatches } from './trackMatches';
 
-export function ImportMusicField({ tracks, value, onChange, onPick }: {
+export function ImportMusicField({ tracks, value, onChange, onPick, manual = false }: {
   tracks: ReleaseTrack[]; value: MusicSupplement | null; onChange(value: MusicSupplement | null): void; onPick(): void;
+  manual?: boolean;
 }) {
-  return <><div className="import-music-field"><div><span>网易云资料</span>{value && <><strong>{value.title}</strong><small>{value.artists.join(' / ')} · 已匹配 {trackMatches(tracks, value).size} 首</small></>}</div>
-    <button type="button" className="text-button" onClick={onPick}>{value ? '更换' : '匹配'}</button>
+  return <><div className="import-music-field"><div><span>网易云资料</span>{value && <><strong>{value.title}</strong><small>{value.artists.join(' / ')} · {manual ? `${value.tracks.length} 首` : `已匹配 ${trackMatches(tracks, value).size} 首`}</small></>}</div>
+    <button type="button" className="text-button" onClick={onPick}>{value ? '更换' : manual ? '读取资料' : '匹配'}</button>
     {value && <button type="button" className="text-button" onClick={() => onChange(null)}>移除</button>}
   </div></>;
 }
