@@ -1,0 +1,24 @@
+.purchase-screenshots { padding: 0 0 20px; margin-bottom: 10px; border-bottom: 1px solid var(--line); font-size: 12px; }
+.purchase-recognition-heading, .purchase-recognition-actions { display: flex; gap: 16px; align-items: center; justify-content: space-between; }
+.purchase-recognition-heading { margin-bottom: 12px; }
+.purchase-paste-area { border: 1px dashed var(--line); padding: 18px 12px; color: var(--muted); text-align: center; border-radius: 3px; transition: border-color 160ms, color 160ms; }
+.purchase-paste-area:focus-visible { border-color: var(--ink); color: var(--ink); outline: none; }
+.purchase-recognition-actions { margin-top: 12px; }
+.purchase-recognition-actions > span { color: var(--muted); font-size: 11px; line-height: 1.7; }
+.purchase-recognition-actions button { flex-shrink: 0; }
+.purchase-thumbnails { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+.purchase-thumbnails > div { position: relative; width: 72px; height: 92px; animation: purchase-reveal 180ms ease-out; }
+.purchase-thumbnails img { width: 100%; height: 100%; object-fit: contain; background: #080808; border: 1px solid var(--line); border-radius: 2px; }
+.purchase-thumbnails span { position: absolute; bottom: 3px; left: 5px; padding: 1px 4px; background: #111d; color: #fff; font-size: 10px; }
+.purchase-thumbnails button { position: absolute; top: -6px; right: -6px; width: 23px; height: 23px; border: 1px solid var(--line); background: var(--surface); border-radius: 50%; }
+.purchase-recognition-result { margin-top: 20px; animation: purchase-reveal 180ms ease-out; }
+.purchase-review { margin-top: 12px; }
+.purchase-notice, .purchase-evidence { color: var(--muted); line-height: 1.7; margin: 10px 0; }
+.panel-dialog form label.purchase-review-row { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.purchase-review-row input[type="checkbox"] { width: 14px; height: 14px; padding: 0; margin: 3px 0 0; accent-color: var(--ink); }
+.purchase-review-row > span { min-width: 0; line-height: 1.7; overflow-wrap: anywhere; }
+.purchase-review-row .purchase-field-heading, .purchase-review-row small { display: block; color: var(--muted); font-size: 11px; }
+.purchase-before { color: var(--muted); margin-right: 8px; }
+.purchase-review .solid-button { padding: 10px 15px; font-size: 12px; }
+@keyframes purchase-reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .purchase-screenshots * { animation: none !important; transition: none !important; } }

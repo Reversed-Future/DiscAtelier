@@ -43,6 +43,19 @@ export function useMusicQueue(engine: Engine) {
     finally { pending.current = false; if (live.current) setBusy(false); }
   }
   const snapshot = engine.snapshot;
+  // Playback may also be started by the assistant's native tools. Adopt that
+  // session into the same queue/history without issuing a second play request.
+  useEffect(() => {
+    if (!snapshot?.source.playlist.startsWith('netease-song:') || pending.current) return;
+    const id = Number(snapshot.source.playlist.slice('netease-song:'.length));
+    let active = true;
+    void netease.saved(snapshot.source.mountPoint).then(album => {
+      if (!active || !album || String(album.albumId) !== snapshot.source.mediaToken || !album.tracks.some(t => t.id === id)) return;
+      const row: QueueAlbum = { editionId: snapshot.source.mountPoint, albumId: album.albumId, title: album.title, artists: album.artists, tracks: album.tracks, lastSongId: id };
+      setHistory(value => ({ ...value, albums: rememberAlbum(value.albums, row) }));
+    }).catch(cause => { if (active) setError(errorMessage(cause)); });
+    return () => { active = false; };
+  }, [snapshot?.sessionId]);
   const current = history.albums.find(album => album.editionId === snapshot?.source.mountPoint && String(album.albumId) === snapshot.source.mediaToken);
   const songId = snapshot?.source.playlist.startsWith('netease-song:') ? Number(snapshot.source.playlist.slice('netease-song:'.length)) : null;
   useEffect(() => {

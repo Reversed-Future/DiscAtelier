@@ -16,7 +16,7 @@ import { Settings } from './settings/Settings';
 import { useCollectionArtwork } from './collection/useCollectionArtwork';
 import { OpticalPanel } from './optical/OpticalPanel';
 import { usePlayback } from './playback/usePlayback';
-import { AssistantPanel } from './assistant/AssistantPanel';
+import { AssistantDock } from './assistant/AssistantDock';
 import { AudioPlayer } from './playback/AudioPlayer';
 import { PlayerView } from './playback/PlayerView';
 import { MusicDock } from './playback/MusicDock';
@@ -64,6 +64,7 @@ export function App() {
   }, []);
   useEffect(() => { void refresh(query); }, [query, refresh]);
   useEffect(() => { if (player.open) setOpticalOpen(false); }, [player.open]);
+  useEffect(() => { if (player.open || player.musicQueue.open) setAssistantOpen(false); }, [player.open, player.musicQueue.open]);
   useEffect(() => { enter(scene.current, 0); }, [query.categoryId, query.status, organize]);
   useEffect(() => {
     if (searchOpen) { enter(search.current); search.current?.focus(); }
@@ -102,7 +103,7 @@ export function App() {
     <CollectionMenu status={query.status} snapshot={snapshot} organize={organize}
       onStatus={status => setQuery({ ...query, status })}
       onOrganize={() => setOrganize(value => !value)}
-      onAssistant={() => setAssistantOpen(true)} onOptical={() => setOpticalOpen(true)} onSettings={() => setSettingsPage('home')}/>
+      onOptical={() => setOpticalOpen(true)} onSettings={() => setSettingsPage('home')}/>
     <main id="scene" ref={scene} aria-label="收藏展示" aria-busy={loading} inert={player.open}>
       {error ? <div className="empty-state"><span className="disc-mark"/><p role="alert">{error}</p>{desktopAvailable() && <button onClick={() => void refresh(query)}>重试</button>}</div> :
         !snapshot ? <div className="empty-state"><span className="disc-mark"/><p>正在打开收藏库</p></div> :
@@ -111,7 +112,6 @@ export function App() {
           <button onClick={() => query.query || query.status ? setQuery({ ...query, query: '', status: null }) : openAdd()}>{query.query || query.status ? '清除筛选' : '添加收藏'}</button></div>}
     </main>
     {artwork.portal}
-    {assistantOpen && <AssistantPanel onClose={() => setAssistantOpen(false)} onChanged={() => void refresh(query)}/>}
     {opticalOpen && !player.open && <OpticalPanel player={player} onClose={() => setOpticalOpen(false)}/>}
     {player.open && (player.snapshot?.source.playlist.startsWith('cd-track:') ? <AudioPlayer player={player}/> : <PlayerView player={player}/>)}
     {player.active && !player.snapshot?.source.playlist.startsWith('netease-song:') && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
@@ -137,5 +137,6 @@ export function App() {
       onRestore={() => { setSettingsPage(null); setMetadataOpen(false); setRestoring(true); }}/>}
     <div className={`toast${notice ? ' visible' : ''}`} role="status">{notice}</div>
     <MusicDock player={player}/>
+    <AssistantDock open={assistantOpen} hidden={player.open} onOpen={value => { if (value) player.musicQueue.setOpen(false); setAssistantOpen(value); }} onChanged={() => void refresh(query)}/>
   </div>;
 }

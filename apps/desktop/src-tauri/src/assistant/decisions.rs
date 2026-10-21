@@ -12,7 +12,7 @@ pub fn decide(
     undo: bool,
 ) -> Result<Session, AppError> {
     let mut session = load(library)?;
-    if session.id != session_id || undo && session.pending.is_some() {
+    if session.id != session_id || session.action.is_some() || undo && session.pending.is_some() {
         return Err(error("会话已变化，请刷新。"));
     }
     let proposal = if undo {
@@ -59,6 +59,56 @@ pub fn decide(
         .messages
         .push(Message::text("user", format!("界面操作结果：{result}。")));
     save(library, &session)?;
+    Ok(session)
+}
+
+pub fn decide_action(
+    library: &LibraryState,
+    state: &super::AgentState,
+    session_id: &str,
+    id: &str,
+    approve: bool,
+) -> Result<Session, AppError> {
+    let mut session = load(library)?;
+    if session.id != session_id {
+        return Err(error("会话已变化，请刷新。"));
+    }
+    let preview = session
+        .action
+        .clone()
+        .filter(|p| p.id == id)
+        .ok_or_else(|| error("操作已处理或不存在。"))?;
+    let mut guard = state
+        .prepared
+        .lock()
+        .map_err(|_| error("变更预览不可用。"))?;
+    if approve {
+        let prepared = guard
+            .as_ref()
+            .ok_or_else(|| error("应用重启或预览已失效，请取消后重新提出。"))?;
+        prepared.check(id)?;
+        prepared.apply(library)?;
+    }
+    // Cache stays available if the write fails. Revisions reject stale edits;
+    // create/import request receipts prevent duplicate inserts on retry.
+    session.action = None;
+    if approve {
+        session.undo = None;
+    }
+    session.phase = "idle".into();
+    session.error = None;
+    let result = if approve {
+        "已保存确认的变更"
+    } else {
+        "已取消，收藏未修改"
+    };
+    session.event(format!("{} · {result}", preview.title));
+    session.messages.push(Message::text(
+        "user",
+        format!("界面操作结果：{}；{result}。", preview.title),
+    ));
+    save(library, &session)?;
+    *guard = None;
     Ok(session)
 }
 

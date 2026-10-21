@@ -1,4 +1,4 @@
-.music-dock { position: fixed; right: 28px; bottom: 24px; z-index: 120; font: 12px var(--font); color: var(--ink); }
+.music-dock { position: fixed; right: 86px; bottom: 24px; z-index: 120; font: 12px var(--font); color: var(--ink); }
 .music-dock-trigger { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid var(--line); border-radius: 50%; background: #1b1b1b; box-shadow: 0 5px 20px #0004; }
 .music-dock-indicator { position: absolute; right: 8px; top: 8px; width: 4px; height: 4px; border-radius: 50%; background: var(--muted); transition: background-color 160ms ease; }
 .music-dock-indicator[data-playing="true"] { background: var(--ink); }

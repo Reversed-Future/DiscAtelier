@@ -770,7 +770,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-agent-harness"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "discatelier-contracts",
  "discatelier-domain",
@@ -782,7 +782,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-application"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "discatelier-contracts",
  "discatelier-domain",
@@ -792,7 +792,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-contracts"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "chrono",
  "discatelier-domain",
@@ -801,12 +801,14 @@ dependencies = [
 
 [[package]]
 name = "discatelier-desktop"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
+ "base64 0.22.1",
  "chrono",
  "discatelier-agent-harness",
  "discatelier-application",
  "discatelier-contracts",
+ "discatelier-domain",
  "discatelier-integration-http",
  "discatelier-netease-runtime",
  "discatelier-optical-windows",
@@ -815,6 +817,7 @@ dependencies = [
  "discatelier-provider-discogs",
  "discatelier-provider-netease",
  "discatelier-storage",
+ "image",
  "keyring",
  "reqwest",
  "semver",
@@ -831,7 +834,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-domain"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "chrono",
  "serde",
@@ -840,16 +843,17 @@ dependencies = [
 
 [[package]]
 name = "discatelier-integration-http"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "discatelier-contracts",
  "reqwest",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
 name = "discatelier-netease-runtime"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "discatelier-contracts",
  "dunce",
@@ -860,7 +864,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-optical-windows"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "discatelier-application",
  "discatelier-contracts",
@@ -871,7 +875,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-player-mpv"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "chrono",
  "discatelier-application",
@@ -884,7 +888,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-player-vlc"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "chrono",
  "discatelier-application",
@@ -898,7 +902,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-provider-discogs"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "base64 0.22.1",
  "discatelier-application",
@@ -912,7 +916,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-provider-netease"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "base64 0.22.1",
  "discatelier-contracts",
@@ -926,7 +930,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-storage"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -4332,7 +4336,19 @@ dependencies = [
  "mio",
  "pin-project-lite",
  "socket2",
+ "tokio-macros",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "2.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
 ]
 
 [[package]]

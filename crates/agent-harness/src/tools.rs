@@ -31,9 +31,53 @@ pub struct ChangeStatus {
     pub status: String,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AddCollection {
+    pub source: String,
+    pub source_id: Option<u64>,
+    pub category: String,
+    pub status: String,
+    pub carrier_id: Option<String>,
+    pub title: Option<String>,
+    pub creator: Option<String>,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SupplementChange {
+    pub id: String,
+    pub album_id: u64,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CoverChoice {
+    pub id: String,
+    pub source: String,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PlayMusic {
+    pub id: String,
+    pub song_id: u64,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PlayerControl {
+    pub action: String,
+    pub seconds: Option<f64>,
+}
+
 pub fn definitions() -> Value {
     let tool = |name: &str, description: &str, properties: Value, required: Value| json!({"type":"function","function":{"name":name,"description":description,"parameters":{"type":"object","properties":properties,"required":required,"additionalProperties":false}}});
     json!([
+        tool("propose_add_collection", "提出新增一套收藏，先查重并核对实体载体和状态；source 为 discogs、netease 或 manual。Discogs 使用真实发行载体；其他来源须用户提供 carrierId。manual 须提供 title、creator，其余不适用字段传 null。界面确认才写入。",
+            json!({"source":{"type":"string","enum":["discogs","netease","manual"]},"sourceId":{"type":["integer","null"]},"category":{"type":"string","enum":["music","video"]},"status":{"type":"string","enum":["owned","wanted","transit"]},"carrierId":{"type":["string","null"],"enum":["cd","dvd","bd","vinyl","cassette","other",null]},"title":{"type":["string","null"]},"creator":{"type":["string","null"]}}),
+            json!(["source","sourceId","category","status","carrierId","title","creator"])),
+        tool("propose_netease_supplement", "提出替换指定收藏版本的网易云补充资料，展示简介、曲目及关联变化；不改实体信息，界面确认才保存。", json!({"id":{"type":"string"},"albumId":{"type":"integer"}}), json!(["id","albumId"])),
+        tool("propose_cover", "提出更换收藏封面，source=netease 使用已关联专辑，discogs 使用收藏原发行。先展示新旧封面，界面确认才保存。", json!({"id":{"type":"string"},"source":{"type":"string","enum":["netease","discogs"]}}), json!(["id","source"])),
+        tool("get_playback", "读取内置播放器当前状态；不开始播放。", json!({}), json!([])),
+        tool("play_music", "仅在用户要求播放时，播放某收藏已关联网易云专辑内的真实 songId；账号权限不变。", json!({"id":{"type":"string"},"songId":{"type":"integer"}}), json!(["id","songId"])),
+        tool("control_playback", "仅按用户明确指令暂停、继续、停止、跳转秒数或上下曲。next/previous 只支持已关联网易云专辑。seek 须 seconds，其余 seconds=null。", json!({"action":{"type":"string","enum":["pause","resume","stop","seek","next","previous"]},"seconds":{"type":["number","null"]}}), json!(["action","seconds"])),
         tool(
             "search_library",
             "搜索本地收藏并返回精确数量、分币种总价。最多展示 30 条。",

@@ -66,6 +66,7 @@ impl Host for FakeHost {
         Ok(ToolResult {
             value: json!({"count":2}),
             proposal: None,
+            action: None,
         })
     }
     fn checkpoint(&mut self, s: &Session) -> Result<(), AppError> {

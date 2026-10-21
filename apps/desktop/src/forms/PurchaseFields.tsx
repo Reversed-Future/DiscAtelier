@@ -2,12 +2,15 @@ import type { CopyDraft } from '../library/types';
 import { currencies, statuses } from '../library/types';
 import { Select } from '../ui/Select';
 import { DatePicker } from '../ui/DatePicker';
+import { PurchaseScreenshots } from './purchase/PurchaseScreenshots';
 
-export function PurchaseFields({ value, amount, setAmount, onChange }: {
+export function PurchaseFields({ value, amount, setAmount, onChange, title, creator, onBusy }: {
   value: CopyDraft; amount: string; setAmount(value: string): void; onChange(value: CopyDraft): void;
+  title: string; creator: string; onBusy(value: boolean): void;
 }) {
   const update = (key: keyof CopyDraft, text: string) => onChange({ ...value, [key]: text });
   return <>
+    <PurchaseScreenshots title={title} creator={creator} value={value} amount={amount} setAmount={setAmount} onChange={onChange} onBusy={onBusy}/>
     <div className="form-row"><label>价格<input aria-label="价格" inputMode="decimal" value={amount} placeholder="未填写" onChange={event => setAmount(event.target.value)}/></label>
       <label>币种<Select label="币种" value={value.currency} options={currencies} onChange={text => update('currency', text)}/></label></div>
     <div className="form-row"><label>状态<Select label="状态" value={value.status} options={statuses} onChange={text => update('status', text)}/></label>

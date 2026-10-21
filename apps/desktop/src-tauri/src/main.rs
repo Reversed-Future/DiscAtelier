@@ -21,6 +21,7 @@ mod playback_exit;
 #[cfg(feature = "performance-harness")]
 mod playback_fixture;
 mod playback_settings;
+mod purchase_recognition;
 mod updates;
 mod video_input;
 mod video_surface;
@@ -83,6 +84,7 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            purchase_recognition::purchase_recognize,
             integration_settings::integration_settings_get,
             integration_settings::integration_settings_save,
             netease::netease_search,
@@ -104,6 +106,7 @@ fn main() {
             assistant::assistant_cancel,
             assistant::assistant_new,
             assistant::assistant_decide,
+            assistant::assistant_preview_images,
             data_location::data_location,
             backups::backup_inventory,
             backups::backup_delete_one,

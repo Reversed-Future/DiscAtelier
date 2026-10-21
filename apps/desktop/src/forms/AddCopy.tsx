@@ -99,7 +99,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
         <ModelField value={model} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
         {imported && edition.categoryId === 'music' && <ImportMusicField tracks={importTracks} value={music} onChange={setMusic} onPick={() => setMusicOpen(true)}/>}
         <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
-      </> : <PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy}/>}
+      </> : <PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy} title={edition.title} creator={edition.creator} onBusy={setReading}/>}
       </fieldset>
       <p className="form-error" role="alert">{error}</p>
       <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading}>{busy ? '保存中' : tab === 'edition' ? '下一步' : '加入收藏'}</button></footer>

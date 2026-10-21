@@ -7,6 +7,7 @@ use reqwest::{
 };
 use serde_json::Value;
 use std::{io::Read, time::Duration};
+pub mod stream;
 
 pub fn endpoint(base: &str, route: &str) -> Result<Url, AppError> {
     let mut url = Url::parse(base).map_err(|_| error("服务地址无效。"))?;

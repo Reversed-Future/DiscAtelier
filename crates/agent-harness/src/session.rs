@@ -3,6 +3,23 @@ use discatelier_domain::CopyDraft;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ChangeField {
+    pub label: String,
+    pub before: String,
+    pub after: String,
+}
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ActionPreview {
+    pub id: String,
+    pub title: String,
+    pub kind: String,
+    pub changes: Vec<ChangeField>,
+    pub has_images: bool,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Function {
     pub name: String,
     pub arguments: String,
@@ -62,6 +79,8 @@ pub struct Session {
     pub messages: Vec<Message>,
     pub events: Vec<String>,
     pub pending: Option<Proposal>,
+    #[serde(default)]
+    pub action: Option<ActionPreview>,
     pub undo: Option<Proposal>,
     pub error: Option<String>,
 }
@@ -73,6 +92,7 @@ impl Default for Session {
             messages: vec![],
             events: vec![],
             pending: None,
+            action: None,
             undo: None,
             error: None,
         }
@@ -100,6 +120,16 @@ impl Session {
         }
         if let Some(p) = &s.pending {
             p.validate()?;
+        }
+        if let Some(action) = &s.action {
+            if s.pending.is_some()
+                || uuid::Uuid::parse_str(&action.id).is_err()
+                || !["add", "supplement", "cover"].contains(&action.kind.as_str())
+                || action.changes.len() > 30
+                || action.title.len() > 2000
+            {
+                return Err(AppError::new("assistant", "待确认操作格式无效。"));
+            }
         }
         if let Some(p) = &s.undo {
             p.validate()?;
