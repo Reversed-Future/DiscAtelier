@@ -9,6 +9,7 @@ mod model_picker;
 mod model_stream;
 mod models;
 mod netease;
+mod netease_artwork;
 mod netease_auth;
 mod netease_playback;
 mod optical;
@@ -89,6 +90,7 @@ fn main() {
             netease_auth::netease_login_cancel,
             netease_auth::netease_account_logout,
             netease::netease_album,
+            netease_artwork::netease_album_cover,
             netease::netease_song_album,
             netease::netease_saved,
             netease::netease_apply,

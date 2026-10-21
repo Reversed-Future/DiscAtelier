@@ -9,3 +9,6 @@ discatelier-integration-http.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 url = "2"
+base64 = "0.22"
+image = { version = "=0.25.9", default-features = false, features = ["png", "jpeg", "webp"] }
+reqwest = { version = "=0.13.5", default-features = false, features = ["blocking", "native-tls", "system-proxy"] }

@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-export interface NeteaseAccountState { state: 'loggedOut' | 'loggedIn' | 'expired'; nickname: string | null }
+export interface NeteaseAccountState { state: 'loggedOut' | 'loggedIn' | 'expired'; nickname: string | null; avatarUrl: string | null }
 export interface LoginPoll { phase: 'waiting' | 'confirming' | 'loggedIn' | 'expired'; account: NeteaseAccountState | null }
 export const accountApi = {
   status: () => invoke<NeteaseAccountState>('netease_account_status'),

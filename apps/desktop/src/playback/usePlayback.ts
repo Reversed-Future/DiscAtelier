@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { optical } from '../optical/gateway';
 import { desktopAvailable, errorMessage } from '../library/gateway';
 import { isActive, playback, type Control, type Snapshot } from './gateway';
+import { useMusicQueue } from './useMusicQueue';
 
 export function usePlayback() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -48,21 +49,31 @@ export function usePlayback() {
     catch (cause) { if (alive.current) setError(errorMessage(cause)); return false; }
     finally { pending.current = false; if (alive.current) setBusy(false); }
   }
-  return {
-    snapshot, busy, error, open, show: () => setOpen(true), hide: () => setOpen(false), active: isActive(snapshot?.phase),
-    startNetease: (editionId: string, songId: number) => execute(async () => {
+  const control = (command: Control) => execute(async () => {
+    if (!snapshot) return;
+    revision.current++;
+    await playback.control(snapshot.sessionId, command);
+    const value = await playback.snapshot();
+    if (alive.current) setSnapshot(value);
+  });
+  const musicQueue = useMusicQueue({ snapshot, busy, control,
+    start: (editionId: string, songId: number) => execute(async () => {
       revision.current++;
       const value = await playback.netease(editionId, songId);
-      if (alive.current) setSnapshot(value);
+      if (alive.current) { setSnapshot(value); setOpen(false); }
     }),
+  });
+  return {
+    snapshot, busy: busy || musicQueue.busy, error: musicQueue.error || error, open,
+    show: () => snapshot?.source.playlist.startsWith('netease-song:') ? musicQueue.setOpen(true) : setOpen(true),
+    hide: () => setOpen(false), active: isActive(snapshot?.phase), musicQueue,
+    startNetease: musicQueue.start,
     start: (mount: string, token: string, playlist: string, resumeSeconds = 0, resumeTitle: number | null = null) => execute(async () => {
       revision.current++;
       const value = await playback.start(mount, token, playlist, resumeSeconds, resumeTitle);
       if (alive.current) { setSnapshot(value); setOpen(true); }
     }),
-    control: (control: Control) => execute(async () => {
-      if (snapshot) await playback.control(snapshot.sessionId, control);
-    }),
+    control,
   };
 }
 export type PlaybackController = ReturnType<typeof usePlayback>;

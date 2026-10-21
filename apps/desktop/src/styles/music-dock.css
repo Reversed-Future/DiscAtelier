@@ -1,0 +1,34 @@
+.music-dock { position: fixed; right: 28px; bottom: 24px; z-index: 120; font: 12px var(--font); color: var(--ink); }
+.music-dock-trigger { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid var(--line); border-radius: 50%; background: #1b1b1b; box-shadow: 0 5px 20px #0004; }
+.music-dock-indicator { position: absolute; right: 8px; top: 8px; width: 4px; height: 4px; border-radius: 50%; background: var(--muted); transition: background-color 160ms ease; }
+.music-dock-indicator[data-playing="true"] { background: var(--ink); }
+.music-dock-indicator[data-busy="true"] { animation: music-pulse 900ms ease-in-out infinite alternate; }
+.music-dock-panel { position: absolute; bottom: 60px; right: 0; width: min(420px, calc(100vw - 40px)); height: min(560px, calc(100svh - 112px)); display: flex; flex-direction: column; padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: #171717; box-shadow: 0 18px 65px #0007; opacity: 0; transform: translateY(8px) scale(.98); transform-origin: bottom right; pointer-events: none; visibility: hidden; transition: opacity 140ms ease, transform 180ms var(--ease), visibility 180ms; }
+.music-dock-panel[data-open="true"] { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; visibility: visible; }
+.music-dock-heading { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-bottom: 12px; }
+.music-dock-heading h3 { margin: 0; font-size: 14px; font-weight: 500; }
+.music-dock-heading .icon-button { width: 28px; height: 28px; }
+.music-album-tabs { display: flex; gap: 18px; flex-shrink: 0; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.music-album-tabs button { position: relative; padding: 10px 0 12px; min-width: 0; flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; transition: color 160ms; }
+.music-album-tabs button[aria-pressed="true"] { color: var(--ink); }
+.music-album-tabs button::after { position: absolute; content: ''; bottom: 0; left: 0; right: 0; height: 1px; background: currentColor; transform: scaleX(0); transition: transform 180ms var(--ease); }
+.music-album-tabs button[aria-pressed="true"]::after { transform: scaleX(1); }
+.music-queue-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.music-queue-track { display: grid; grid-template-columns: 24px minmax(0, 1fr) 36px; gap: 12px; width: 100%; padding: 12px 0; text-align: left; align-items: baseline; color: var(--muted); border-bottom: 1px solid #ffffff08; transition: color 140ms; }
+.music-queue-track strong { color: var(--ink); font-size: 12px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.music-queue-track > span, .music-queue-track time { font-size: 10px; font-variant-numeric: tabular-nums; }
+.music-queue-track time { text-align: right; }
+.music-queue-track[aria-current="true"] { color: var(--ink); }
+.music-queue-track[aria-current="true"] strong { text-decoration: underline; text-underline-offset: 4px; }
+.music-dock-footer { flex-shrink: 0; padding-top: 12px; }
+.music-queue-actions { display: flex; gap: 14px; align-items: center; }
+.music-repeat { margin-left: auto; color: var(--muted); }
+.music-dock .playback-controls { margin: 10px 0 0; padding: 14px 0 0; }
+.music-dock .playback-title { margin-bottom: 10px; }
+.music-dock .playback-title strong { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.music-dock .playback-title > span { flex-shrink: 0; }
+.music-dock .playback-times { margin-bottom: 6px; }
+.music-dock .form-error { font-size: 11px; max-height: 48px; overflow: auto; }
+@keyframes music-pulse { to { opacity: .3; } }
+@media (hover: hover) { .music-queue-track:hover, .music-album-tabs button:hover { color: var(--ink); } }
+@media (prefers-reduced-motion: reduce) { .music-dock-panel { transition: opacity 100ms ease, visibility 100ms; transform: none; } .music-dock-indicator[data-busy="true"] { animation: none; } .music-album-tabs button::after { transition: none; } }

@@ -914,8 +914,11 @@ dependencies = [
 name = "discatelier-provider-netease"
 version = "0.1.6"
 dependencies = [
+ "base64 0.22.1",
  "discatelier-contracts",
  "discatelier-integration-http",
+ "image",
+ "reqwest",
  "serde",
  "serde_json",
  "url",

@@ -33,6 +33,26 @@ fn authorized(op: &str, _args: Value) -> Result<Value, AppError> {
     })
 }
 #[test]
+fn account_portrait_is_optional_and_only_allows_https_music_images() {
+    for (url, allowed) in [
+        ("https://p1.music.126.net/avatar.jpg", true),
+        ("https://p1.music.126.net.evil.test/avatar.jpg", false),
+        ("javascript:alert(1)", false),
+        ("https://user:secret@p1.music.126.net/avatar.jpg", false),
+    ] {
+        let result =
+            protocol::account(&json!({"loggedIn":true,"nickname":"Test","avatarUrl":url})).unwrap();
+        assert_eq!(result.avatar_url.is_some(), allowed);
+        assert_eq!(result.state, AccountState::LoggedIn);
+    }
+    assert!(
+        protocol::account(&json!({"loggedIn":true,"nickname":"Test"}))
+            .unwrap()
+            .avatar_url
+            .is_none()
+    );
+}
+#[test]
 fn successful_login_saves_only_music_u_and_never_serializes_credentials() {
     let auth = Auth::default();
     let vault = MemoryVault::default();

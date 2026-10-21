@@ -19,7 +19,7 @@ import { usePlayback } from './playback/usePlayback';
 import { AssistantPanel } from './assistant/AssistantPanel';
 import { AudioPlayer } from './playback/AudioPlayer';
 import { PlayerView } from './playback/PlayerView';
-import { StreamPlayer } from './playback/StreamPlayer';
+import { MusicDock } from './playback/MusicDock';
 
 export function App() {
   const player = usePlayback();
@@ -113,8 +113,8 @@ export function App() {
     {artwork.portal}
     {assistantOpen && <AssistantPanel onClose={() => setAssistantOpen(false)} onChanged={() => void refresh(query)}/>}
     {opticalOpen && !player.open && <OpticalPanel player={player} onClose={() => setOpticalOpen(false)}/>}
-    {player.open && (player.snapshot?.source.playlist.startsWith('netease-song:') ? <StreamPlayer player={player}/> : player.snapshot?.source.playlist.startsWith('cd-track:') ? <AudioPlayer player={player}/> : <PlayerView player={player}/>)}
-    {player.active && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
+    {player.open && (player.snapshot?.source.playlist.startsWith('cd-track:') ? <AudioPlayer player={player}/> : <PlayerView player={player}/>)}
+    {player.active && !player.snapshot?.source.playlist.startsWith('netease-song:') && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
       {player.snapshot?.paused ? '已暂停' : player.snapshot?.phase === 'loading' ? '读取中' : '播放中'} · {player.snapshot?.title}
     </button>}
     {inspected && <Inspection key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
@@ -136,5 +136,6 @@ export function App() {
       onClose={() => setSettingsPage(null)}
       onRestore={() => { setSettingsPage(null); setMetadataOpen(false); setRestoring(true); }}/>}
     <div className={`toast${notice ? ' visible' : ''}`} role="status">{notice}</div>
+    <MusicDock player={player}/>
   </div>;
 }

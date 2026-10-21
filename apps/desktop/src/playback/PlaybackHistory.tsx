@@ -29,7 +29,7 @@ export function PlaybackHistory({ drives, player, onResume }: { drives: OpticalD
             {row.completed ? cd || online ? ' · 听完' : ' · 看完' : row.phase === 'interrupted' ? ' · 中断' : row.phase === 'failed' ? ' · 失败' : ''}</span>
           {online && !player.active && <button className="text-button" disabled={player.busy} onClick={async () => {
             const id = Number(row.source.playlist.slice('netease-song:'.length));
-            if (Number.isSafeInteger(id) && id > 0 && await player.startNetease(row.source.mountPoint, id)) { player.show(); onResume(); }
+            if (Number.isSafeInteger(id) && id > 0 && await player.startNetease(row.source.mountPoint, id)) { player.musicQueue.setOpen(true); onResume(); }
           }}>重新播放</button>}
           {drive && !player.active && <button className="text-button" disabled={player.busy} onClick={async () => {
             const resume = row.durationSeconds && row.positionSeconds >= row.durationSeconds - 1 ? 0 : row.positionSeconds;

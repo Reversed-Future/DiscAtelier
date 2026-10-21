@@ -15,6 +15,7 @@ export const integrations = {
 export const netease = {
   search: (query: string, offset = 0) => invoke<AlbumSearchPage>('netease_search', { query, offset }),
   album: (id: number) => invoke<MusicSupplement>('netease_album', { id }),
+  albumCover: (id: number) => invoke<string>('netease_album_cover', { id }),
   songAlbum: (id: number) => invoke<MusicSupplement>('netease_song_album', { id }),
   saved: (editionId: string) => invoke<MusicSupplement | null>('netease_saved', { editionId }),
   apply: (editionId: string, revision: number, id: number) => invoke<void>('netease_apply', { editionId, revision, id }),

@@ -1,6 +1,6 @@
 .supplement-panel { width: 1080px; }
 .assistant-panel { width: 940px; }
-.netease-service-detail { min-height: 106px; animation: settings-feedback-in 160ms ease-out; }
+.netease-service-detail { animation: settings-feedback-in 160ms ease-out; }
 @media (prefers-reduced-motion: reduce) { .netease-service-detail { animation: none; } }
 .supplement-panel .panel-body, .assistant-panel .panel-body { display: flex; flex-direction: column; gap: 20px; overflow: hidden; }
 .integration-search { display: flex; align-items: stretch; gap: 12px; }

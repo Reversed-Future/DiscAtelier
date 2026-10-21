@@ -32,7 +32,7 @@ input.on('line', async line => {
     catch { throw Object.assign(new Error('Component load failed'), { code: 'NETEASE_COMPONENT_LOAD' }); }
     const response = request.operation === 'authStart' ? { body: await require('./auth.cjs').start(api) }
       : request.operation === 'authCheck' ? { body: await require('./auth.cjs').check(api, args.key) }
-      : request.operation === 'authStatus' ? { body: await require('./auth.cjs').status(api, args?.cookie) }
+      : request.operation === 'authStatus' ? { body: await require('./auth.cjs').status(api, args?.cookie, true) }
       : request.operation === 'authLogout' ? { body: await require('./auth.cjs').logout(api, args?.cookie) }
       : request.operation === 'search'
       ? await api.search({ keywords: args.query, type: 10, limit: 20, offset: args.offset ?? 0 })

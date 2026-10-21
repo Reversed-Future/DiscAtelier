@@ -29,3 +29,18 @@ test('account projection keeps only nickname and ID; expired credentials remain 
   api.login_status=async()=>({body:{data:{code:502}}});
   await assert.rejects(auth.status(api,'MUSIC_U=secret'), e=>e.code==='NETEASE_AUTH');
 });
+
+test('optional portrait uses documented user detail, limits image hosts and cannot break login', async () => {
+  let calls = 0;
+  const api = { login_status: async () => ({ body: { data: { code: 200, profile: { userId: 42, nickname: 'Name' } } } }),
+    user_detail: async args => { calls++; assert.equal(args.uid, 42); assert.equal(args.cookie, 'MUSIC_U=test'); return { body: { profile: { avatarUrl: 'http://p1.music.126.net/avatar.jpg' } } }; } };
+  assert.equal((await auth.status(api, 'MUSIC_U=test')).avatarUrl, undefined);
+  assert.equal(calls, 0);
+  assert.equal((await auth.status(api, 'MUSIC_U=test', true)).avatarUrl, 'https://p1.music.126.net/avatar.jpg');
+  for (const url of ['https://music.126.net.evil.test/avatar', 'javascript:alert(1)', 'https://user:secret@p1.music.126.net/avatar']) {
+    api.user_detail = async () => ({ body: { profile: { avatarUrl: url } } });
+    assert.equal((await auth.status(api, 'MUSIC_U=test', true)).avatarUrl, null);
+  }
+  api.user_detail = async () => { throw new Error('offline'); };
+  assert.deepEqual(await auth.status(api, 'MUSIC_U=test', true), { loggedIn: true, userId: 42, nickname: 'Name', avatarUrl: null });
+});

@@ -7,10 +7,11 @@ import { netease, type MusicSupplement, type AlbumSearchPage, type AlbumResult }
 import { NeteaseCover } from './NeteaseCover';
 import { parseNeteaseShare } from './shareLink';
 
-export function NeteaseBrowser({ initialQuery, initialAlbum = null, loading = false, initialError = '', autoSearch = false, onClose, onConfirm, confirmLabel = '保存补充资料', footer }: {
+export function NeteaseBrowser({ initialQuery, initialAlbum = null, loading = false, initialError = '', autoSearch = false, onClose, onConfirm, confirmLabel = '保存补充资料', footer, onUseCover }: {
   initialQuery: string; initialAlbum?: MusicSupplement | null; loading?: boolean; initialError?: string; autoSearch?: boolean;
   onClose(): void; onConfirm(album: MusicSupplement): Promise<void>; confirmLabel?: string;
   footer?(album: MusicSupplement): ReactNode;
+  onUseCover?(album: MusicSupplement): Promise<string>;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<AlbumSearchPage | null>(null);
@@ -18,6 +19,7 @@ export function NeteaseBrowser({ initialQuery, initialAlbum = null, loading = fa
   const [cover, setCover] = useState<string | null>(null);
   const [album, setAlbum] = useState<MusicSupplement | null>(null);
   const [stored, setStored] = useState(false);
+  const [coverApplied, setCoverApplied] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const searched = useRef(false);
   const [error, setError] = useState('');
@@ -71,6 +73,7 @@ export function NeteaseBrowser({ initialQuery, initialAlbum = null, loading = fa
         <button disabled={busy || !results.items.length || results.offset + results.limit >= results.total} onClick={() => void search(submitted, results.offset + results.limit)}>下一页</button>
       </nav>}
       {album && <div className="netease-album-actions">{stored && footer?.(album)}
+        {stored && onUseCover && <button type="button" className="text-button" disabled={busy || loading || coverApplied === album.albumId} onClick={() => void run(async () => { setCover(await onUseCover(album)); setCoverApplied(album.albumId); })}>{coverApplied === album.albumId ? '已设为封面' : '用作封面'}</button>}
         <button className="solid-button" disabled={busy || loading || stored} onClick={() => void run(async () => { await onConfirm(album); setStored(true); })}>{stored ? '已保存' : confirmLabel}</button></div>}
     </footer>
     <p className="form-error" role="alert">{error || initialError}</p>

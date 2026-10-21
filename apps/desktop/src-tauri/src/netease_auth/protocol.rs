@@ -15,12 +15,14 @@ pub enum AccountState {
 pub struct Account {
     pub state: AccountState,
     pub nickname: Option<String>,
+    pub avatar_url: Option<String>,
 }
 impl Account {
     pub fn logged_out() -> Self {
         Self {
             state: AccountState::LoggedOut,
             nickname: None,
+            avatar_url: None,
         }
     }
 }
@@ -55,6 +57,7 @@ pub fn account(raw: &Value) -> Result<Account, AppError> {
         Some(false) => Ok(Account {
             state: AccountState::Expired,
             nickname: None,
+            avatar_url: None,
         }),
         Some(true) => {
             let nickname = raw
@@ -65,6 +68,19 @@ pub fn account(raw: &Value) -> Result<Account, AppError> {
             Ok(Account {
                 state: AccountState::LoggedIn,
                 nickname: Some(nickname.to_owned()),
+                avatar_url: raw
+                    .get("avatarUrl")
+                    .and_then(Value::as_str)
+                    .and_then(|raw| {
+                        let url = reqwest::Url::parse(raw).ok()?;
+                        (raw.len() <= 2048
+                            && url.scheme() == "https"
+                            && url.host_str()?.ends_with(".music.126.net")
+                            && url.username().is_empty()
+                            && url.password().is_none()
+                            && url.port().is_none())
+                        .then(|| url.to_string())
+                    }),
             })
         }
         _ => Err(error("网易云登录状态格式无效。")),

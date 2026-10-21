@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 mod song;
 mod stream;
+mod artwork;
+pub use artwork::{album_cover, download_album_cover};
 pub use song::{parse_song_album, song_album};
 pub use stream::{parse_song_stream, song_stream, SongStream};
 
