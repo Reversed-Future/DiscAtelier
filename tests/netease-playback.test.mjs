@@ -1,0 +1,70 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import { runInNewContext } from 'node:vm';
+
+const source = readFileSync(new URL('../packages/netease-sidecar/playback.cjs', import.meta.url), 'utf8');
+function harness({ fail = false, cache = '{}' } = {}) {
+  const events = [];
+  const state = { fail, cache };
+  const module = { exports: {} };
+  runInNewContext(source, { module, global: { deviceId: 'test-device' }, require(name) {
+    if (name === 'node:path') return { join };
+    if (name === 'node:os') return { tmpdir: () => 'isolated-test-cache' };
+    if (name === 'node:fs') return {
+      readFileSync: () => state.cache,
+      writeFileSync: (path, value) => { events.push('write'); state.cache = value; },
+    };
+    if (name === '@neteasecloudmusicapienhanced/api/util/xeapiKey') return {
+      getXeapiPublicKey: async (current, device) => {
+        events.push('initialize'); assert.equal(device, 'test-device');
+        if (state.fail) throw new Error('private diagnostics');
+        return { sk: 'test-key', version: '1' };
+      },
+    };
+    throw new Error(`Unexpected dependency: ${name}`);
+  } });
+  const api = { song_url_v1: async args => {
+    events.push('request'); assert.equal(JSON.parse(state.cache).sk, 'test-key');
+    assert.deepEqual(JSON.parse(JSON.stringify(args)), { id: 42, level: 'standard', unblock: 'false' });
+    return { body: { code: 200, data: [{id:42,url:null}] } };
+  } };
+  return { play: () => module.exports(api, 42), events, state };
+}
+
+test('playback initializes and writes the public key before requesting audio; subsequent songs reuse it', async () => {
+  const h = harness();
+  assert.deepEqual(h.events, []);
+  assert.equal((await h.play()).body.code, 200);
+  await h.play();
+  assert.deepEqual(h.events, ['initialize', 'write', 'request', 'request']);
+});
+
+test('failed initialization never requests audio, hides private diagnostics, and can retry', async () => {
+  const h = harness({ fail: true, cache: 'damaged JSON' });
+  await assert.rejects(h.play(), error => error.code === 'NETEASE_PLAYBACK_INIT' && !error.message.includes('private'));
+  assert.deepEqual(h.events, ['initialize']);
+  h.state.fail = false;
+  await h.play();
+  assert.deepEqual(h.events, ['initialize', 'initialize', 'write', 'request']);
+});
+
+test('installed upstream playback reproduces the missing public key failure offline', () => {
+  const cache = mkdtempSync(join(tmpdir(), 'discatelier-xeapi-test-'));
+  writeFileSync(join(cache, 'anonymous_token'), '');
+  const modulePath = fileURLToPath(new URL('../packages/netease-sidecar/node_modules/@neteasecloudmusicapienhanced/api/module/song_url_v1.js', import.meta.url));
+  const requestPath = fileURLToPath(new URL('../packages/netease-sidecar/node_modules/@neteasecloudmusicapienhanced/api/util/request.js', import.meta.url));
+  const result = spawnSync(process.execPath, ['-e', `
+    require('node:net').Socket.prototype.connect = () => { throw new Error('Network disabled in this test'); };
+    const assert = require('node:assert/strict');
+    const song = require(process.argv[1]);
+    const request = require(process.argv[2]);
+    assert.rejects(song({ id: 42, level: 'standard', unblock: 'false', cookie: {} }, request),
+      error => error.message === 'xeapi public key is missing').then(() => process.exit(0), () => process.exit(1));
+  `, modulePath, requestPath], { env: { ...process.env, TMP: cache, TEMP: cache, TMPDIR: cache }, encoding: 'utf8', timeout: 15000 });
+  assert.equal(result.status, 0, result.stderr);
+});

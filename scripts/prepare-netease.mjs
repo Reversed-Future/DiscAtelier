@@ -15,5 +15,6 @@ const version = JSON.parse(readFileSync(join(pkg, 'node_modules/@neteasecloudmus
 if (version !== '4.41.1') throw new Error('Unexpected api-enhanced version');
 if (!existsSync(join(out, 'node_modules'))) cpSync(join(pkg, 'node_modules'), join(out, 'node_modules'), { recursive: true, filter: source => !source.split(/[\\/]/).includes('.bin') });
 cpSync(join(pkg, 'runner.cjs'), join(out, 'runner.cjs'));
+cpSync(join(pkg, 'playback.cjs'), join(out, 'playback.cjs'));
 writeFileSync(manifestPath, JSON.stringify({ node: '22.23.3', api: version, lockSha256: fingerprint }, null, 2));
 console.log('Prepared NetEase runtime: Node 22.23.3 / API 4.41.1');

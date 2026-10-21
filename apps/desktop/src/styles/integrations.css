@@ -64,11 +64,15 @@
 .credit-list dd { margin: 0; overflow-wrap: anywhere; }
 .credit-list small { color: var(--muted); }
 .track-list .release-details { margin: 0 0 10px 54px; }
-.release-track-scroll .track-list li > .playable-track-row { grid-template-columns: 46px minmax(0, 1fr) 36px auto; gap: 12px; }
-.track-play-actions { display: flex; align-items: center; gap: 6px; }
-.track-play-actions .track-play { width: 28px; height: 28px; color: var(--ink); font-size: 18px; transition: opacity 150ms, transform 150ms; }
-.track-play-actions .track-play:active { transform: scale(.94); }
-.track-link { font-size: 10px; color: var(--muted); padding: 6px; }
+.track-list button.track-row { font-size: inherit; color: inherit; padding-inline: 0; transition: color 140ms ease, opacity 140ms ease; }
+.track-list button.track-row:hover, .track-list button.track-row:focus-visible { color: var(--muted); outline: none; }
+.track-list button.track-row:active { opacity: .65; transform: none; }
+.track-list button.track-row[aria-current] > :first-child { color: var(--ink); }
+.track-link-manager { width: 780px; }
+.track-link-manager .panel-body { display: flex; flex-direction: column; overflow: hidden; }
+.track-link-manager .track-link-list strong { font-weight: 400; }
+.track-link-manager .track-link-list small { margin-left: auto; color: var(--muted); max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.netease-album-actions { display: flex; align-items: center; gap: 20px; }
 .track-link-panel { width: 700px; }
 .track-link-panel .panel-body { display: flex; flex-direction: column; overflow: hidden; }
 .track-link-title { margin: 0 0 20px; font-size: 14px; }
@@ -82,4 +86,4 @@
 .inspection-player .playback-title { margin-bottom: 10px; }
 .inspection-player .playback-actions { margin-top: 10px; }
 .inspection-player .playback-title strong { font-size: 12px; }
-@media (prefers-reduced-motion: reduce) { .inspection-player { animation: none; } .track-play-actions .track-play { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .inspection-player { animation: none; } .track-list button.track-row { transition: none; } }

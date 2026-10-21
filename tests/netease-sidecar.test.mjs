@@ -5,7 +5,7 @@ import { EventEmitter } from 'node:events';
 import { runInNewContext } from 'node:vm';
 
 const source = readFileSync(new URL('../packages/netease-sidecar/runner.cjs', import.meta.url), 'utf8');
-async function exchange(argumentsValue, operation = 'search') {
+async function exchange(argumentsValue, operation = 'search', failure) {
   const input = new EventEmitter();
   const calls = [];
   let respond;
@@ -15,6 +15,10 @@ async function exchange(argumentsValue, operation = 'search') {
     process: { stdin: {}, stdout: { write: line => respond(JSON.parse(line)) }, exit: () => {} },
     require(name) {
       if (name === 'node:readline') return { createInterface: () => input };
+      if (name === './playback.cjs') return async (api, id) => {
+        if (failure) throw failure;
+        return api.song_url_v1({ id, level: 'standard', unblock: 'false' });
+      };
       if (name === '@neteasecloudmusicapienhanced/api') return {
         search: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code: 200, result: { albumCount: 513, albums: [] } } }; },
         song_url_v1: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code: 200, data: [{ id: args.id, url: null, freeTrialInfo: null }] } }; },
@@ -36,6 +40,15 @@ test('song URL requests use the registered API with unblocking disabled and vali
   assert.deepEqual(calls,[{id:42,level:'standard',unblock:'false'}]);
   assert.equal(response.body.data[0].id,42);
   assert.equal((await exchange({id:0},'songUrl')).calls.length,0);
+});
+
+test('playback failures distinguish initialization and upstream failures without exposing private error text', async () => {
+  for (const [failure, expected] of [
+    [{ code: 'NETEASE_PLAYBACK_INIT', message: 'secret cookie' }, '网易云播放初始化失败，请检查网络后重试。'],
+    [{ code: 'NETEASE_PLAYBACK_REQUEST', status: 502, message: 'secret URL' }, '网易云播放请求失败（HTTP 502），请稍后重试。'],
+  ]) {
+    assert.equal((await exchange({id:42}, 'songUrl', failure)).response.error, expected);
+  }
 });
 test('bundled search defaults to the first page for existing callers', async () => {
   const { calls } = await exchange({ query: 'Lemon' });

@@ -5,9 +5,9 @@ import type { MusicSupplement } from '../integrations/gateway';
 import type { LibraryCopy } from '../library/types';
 import type { PlaybackController } from '../playback/usePlayback';
 
-export function EditionContents({ section, state, album, item, player, onSaved }: {
+export function EditionContents({ section, state, album, item, player }: {
   section: 'metadata' | 'tracks'; state: ReturnType<typeof useEditionContent>; album: MusicSupplement | null;
-  item: LibraryCopy; player: PlaybackController; onSaved(): Promise<void>;
+  item: LibraryCopy; player: PlaybackController;
 }) {
   const { content, busy, error, complete, canComplete } = state;
   return <section className="edition-contents" data-section={section} aria-busy={busy}>
@@ -21,7 +21,7 @@ export function EditionContents({ section, state, album, item, player, onSaved }
       {album?.description && <section className="edition-introduction"><h4>简介 <small>网易云</small></h4><p>{album.description}</p></section>}
       <ReleaseDetails credits={content?.credits} companies={content?.companies} notes={content?.notes}/>
     </>}
-    {section === 'tracks' && <CollectionTracks rows={content?.tracks || []} album={album} item={item} player={player} onSaved={onSaved}/>}
+    {section === 'tracks' && <CollectionTracks rows={content?.tracks || []} album={album} item={item} player={player}/>}
     {canComplete && <button className="text-button complete-content" disabled={busy} onClick={() => void complete()}>{busy ? '读取中' : '补全资料'}</button>}
     {error && <p className="form-error" role="alert">{error}</p>}
   </section>;

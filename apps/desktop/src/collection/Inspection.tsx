@@ -55,8 +55,8 @@ export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot
           <button className={tab === 'purchase' ? 'active' : ''} onClick={() => setTab('purchase')}>购入</button>
         </nav>
         <div ref={content} className="inspection-tab-content" data-tab={tab}>
-          <div hidden={tab !== 'metadata'}><dl className="metadata">{fields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl><EditionContents section="metadata" state={editionContent} album={supplement.value} item={item} player={player} onSaved={onSaved}/></div>
-          <div className="inspection-tracks-page" hidden={tab !== 'tracks'}><EditionContents section="tracks" state={editionContent} album={supplement.value} item={item} player={player} onSaved={onSaved}/></div>
+          <div hidden={tab !== 'metadata'}><dl className="metadata">{fields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl><EditionContents section="metadata" state={editionContent} album={supplement.value} item={item} player={player}/></div>
+          <div className="inspection-tracks-page" hidden={tab !== 'tracks'}><EditionContents section="tracks" state={editionContent} album={supplement.value} item={item} player={player}/></div>
           <div hidden={tab !== 'purchase'}><dl className="metadata">{purchaseFields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl></div>
         </div>
         {online && <div className="inspection-player"><PlaybackControls player={player}/></div>}
@@ -65,5 +65,5 @@ export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot
         <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}</div>
       </section>
     </div>
-  </Modal>{neteaseOpen && <NeteasePanel item={item} onClose={() => setNeteaseOpen(false)} onSaved={onSaved}/>} {editingPurchase && <EditPurchase item={item} onClose={() => setEditingPurchase(false)} onSaved={onSaved}/>}</>;
+  </Modal>{neteaseOpen && <NeteasePanel rows={editionContent.content?.tracks || []} item={item} onClose={() => setNeteaseOpen(false)} onSaved={onSaved}/>} {editingPurchase && <EditPurchase item={item} onClose={() => setEditingPurchase(false)} onSaved={onSaved}/>}</>;
 }

@@ -41,11 +41,12 @@
 .release-summary .metadata > div { grid-template-columns: 68px minmax(0, 1fr); gap: 10px; }
 .release-tracks { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .disc-tabs { display: flex; align-items: stretch; gap: 6px; min-height: 46px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; }
-.disc-tabs button { position: relative; padding: 10px 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; color: var(--muted); font-size: 12px; transition: color 160ms ease, background-color 160ms ease; }
-.disc-tabs button[aria-selected="true"] { color: var(--ink); background: #ffffff08; }
+.disc-tabs button { position: relative; padding: 10px 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; color: var(--muted); font-size: 12px; transition: color 160ms ease; }
+.disc-tabs button[aria-selected="true"] { color: var(--ink); background: transparent; }
 .disc-tabs button::after { content: ''; position: absolute; inset: auto 12px 0; height: 1px; background: currentColor; transform: scaleX(0); transition: transform 180ms var(--ease); }
 .disc-tabs button[aria-selected="true"]::after { transform: scaleX(1); }
-.disc-tabs button:focus-visible { outline: none; background: #ffffff10; }
+.disc-tabs button:focus-visible { outline: none; color: var(--ink); }
+.disc-tabs button:focus-visible::after { transform: scaleX(1); }
 .release-footer { gap: 14px; align-items: center; position: relative; }
 .source-attribution.source-button { margin: 0; padding: 11px 16px; border: 1px solid var(--line); border-radius: 2px; color: var(--muted); text-decoration: none; background: #ffffff06; transition: color 160ms ease, background-color 160ms ease; }
 .release-footer > .form-error { position: absolute; bottom: 100%; right: 0; background: var(--surface); }
@@ -57,9 +58,9 @@
 .release-tracks .track-list > li:first-child > div { padding-top: 0; }
 .release-track-scroll:focus-visible { outline: none; }
 .release-track-scroll .track-list { margin-top: 0; }
-.release-track-scroll .track-list li > div { grid-template-columns: 54px minmax(0, 1fr) 40px; padding-block: 11px; }
-.track-list li > div > :first-child, .track-list li > div > :last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
-.track-list li > div > :last-child { text-align: right; }
+.release-track-scroll .track-list li > .track-row { display: grid; width: 100%; text-align: left; gap: 8px; border-bottom: 1px solid var(--line); grid-template-columns: 54px minmax(0, 1fr) 40px; padding-block: 11px; }
+.track-list li > .track-row > :first-child, .track-list li > .track-row > :last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+.track-list li > .track-row > :last-child { text-align: right; }
 .track-heading h4 { color: var(--muted); font-weight: 400; font-size: 11px; margin: 16px 0 8px; }
 .identifier-disclosure { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 180ms var(--ease), opacity 140ms ease; }
 .identifier-disclosure[data-open="true"] { grid-template-rows: 1fr; opacity: 1; }
@@ -93,15 +94,15 @@
 .calendar-footer { height: 38px; border-top: 1px solid var(--line); margin-top: 10px; color: var(--muted); font-size: 11px; }
 .calendar-footer button { padding: 8px 5px; }
 @media (hover: hover) {
-  .calendar-popover button:not(:disabled):hover, .disc-tabs button:hover, .source-button:hover { background-color: #ffffff12; }
+  .calendar-popover button:not(:disabled):hover, .source-button:hover { background-color: #ffffff12; }
   .calendar-days [aria-selected="true"] button:hover, .calendar-options [aria-pressed="true"]:hover { background: #dfddd5; }
 }
 @media (max-width: 620px) {
   .release-preview { grid-template-columns: minmax(120px, .8fr) minmax(0, 1.2fr); gap: 16px; }
   .release-summary .metadata > div { grid-template-columns: 1fr; gap: 5px; }
   .release-preview h3 { font-size: 18px; }
-  .release-track-scroll .track-list li > div { grid-template-columns: 28px minmax(0, 1fr); }
-  .release-track-scroll .track-list li > div > :last-child { grid-column: 2; text-align: left; }
+  .release-track-scroll .track-list li > .track-row { grid-template-columns: 28px minmax(0, 1fr); }
+  .release-track-scroll .track-list li > .track-row > :last-child { grid-column: 2; text-align: left; }
   .object-info { height: 640px; }
   .form-row .date-field { width: 100%; }
 }

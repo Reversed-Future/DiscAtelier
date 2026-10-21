@@ -6,14 +6,17 @@ import { enter } from '../ui/motion';
 import { time } from '../playback/gateway';
 import { netease, type MusicSupplement, type AlbumSearchPage, type AlbumResult } from './gateway';
 import { NeteaseCover } from './NeteaseCover';
+import type { ReleaseTrack } from '../metadata/gateway';
+import { TrackLinkManager } from '../collection/TrackLinkManager';
 
-export function NeteasePanel({ item, onClose, onSaved }: { item: LibraryCopy; onClose(): void; onSaved(): Promise<void> }) {
+export function NeteasePanel({ item, rows, onClose, onSaved }: { item: LibraryCopy; rows: ReleaseTrack[]; onClose(): void; onSaved(): Promise<void> }) {
   const [query, setQuery] = useState(`${item.edition.title} ${item.edition.creator}`);
   const [results, setResults] = useState<AlbumSearchPage | null>(null);
   const [submitted, setSubmitted] = useState('');
   const [cover, setCover] = useState<string | null>(null);
   const [album, setAlbum] = useState<MusicSupplement | null>(null);
   const [stored, setStored] = useState(false);
+  const [linking, setLinking] = useState(false);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
   const [disc, setDisc] = useState('');
@@ -36,7 +39,12 @@ export function NeteasePanel({ item, onClose, onSaved }: { item: LibraryCopy; on
     });
   }
   const discs = [...new Set(album?.tracks.map(t => t.disc) || [])];
-  return <Modal title="网易云" onClose={onClose} busy={busy} className="supplement-panel">
+  async function refreshLinks() {
+    const value = await netease.saved(item.editionId);
+    if (value) setAlbum(value);
+    await onSaved();
+  }
+  return <><Modal title="网易云" onClose={onClose} busy={busy} className="supplement-panel">
     <form className="integration-search" onSubmit={e => { e.preventDefault(); void search(query.trim()); }}>
       {album && results && <button type="button" className="text-button" disabled={busy} onClick={() => { setAlbum(null); setCover(null); setError(''); }}>返回搜索</button>}
       <input aria-label="搜索专辑" placeholder="专辑或歌手" value={query} onChange={e => setQuery(e.target.value)} disabled={busy}/><button className="solid-button" disabled={busy || !query.trim()}>{busy ? '读取中' : '搜索'}</button>
@@ -58,8 +66,9 @@ export function NeteasePanel({ item, onClose, onSaved }: { item: LibraryCopy; on
         <span>{Math.floor(results.offset / results.limit) + 1} / {Math.ceil(results.total / results.limit)}</span>
         <button disabled={busy || !results.items.length || results.offset + results.limit >= results.total} onClick={() => void search(submitted, results.offset + results.limit)}>下一页</button>
       </nav>}
-      {album && <button className="solid-button" disabled={busy || stored} onClick={() => void run(async () => { await netease.apply(item.editionId, item.editionRevision, album.albumId); setStored(true); await onSaved(); })}>{stored ? '已保存' : '保存补充资料'}</button>}
+      {album && <div className="netease-album-actions">{stored && !!rows.length && <button type="button" className="text-button" disabled={busy} onClick={() => setLinking(true)}>关联曲目</button>}
+        <button className="solid-button" disabled={busy || stored} onClick={() => void run(async () => { await netease.apply(item.editionId, item.editionRevision, album.albumId); setStored(true); await onSaved(); })}>{stored ? '已保存' : '保存补充资料'}</button></div>}
     </footer>
     <p className="form-error" role="alert">{error}</p>
-  </Modal>;
+  </Modal>{linking && album && stored && <TrackLinkManager item={item} rows={rows} album={album} onClose={() => setLinking(false)} onSaved={refreshLinks}/>}</>;
 }

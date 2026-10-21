@@ -27,12 +27,17 @@ input.on('line', async line => {
     const response = request.operation === 'search'
       ? await api.search({ keywords: args.query, type: 10, limit: 20, offset: args.offset ?? 0 })
       : request.operation === 'album' ? await api.album({ id: args.id })
-      : await api.song_url_v1({ id: args.id, level: 'standard', unblock: 'false' });
+      : await require('./playback.cjs')(api, args.id);
     // Never forward upstream cookies, headers or errors containing request config.
     const reply = JSON.stringify({ id, body: response.body });
     if (Buffer.byteLength(reply) > 2 * 1024 * 1024) throw new Error('size');
     process.stdout.write(reply + '\n');
-  } catch {
-    send({ id, error: '内置网易云查询失败，请稍后重试。' });
+  } catch (error) {
+    const message = error?.code === 'NETEASE_PLAYBACK_INIT'
+      ? '网易云播放初始化失败，请检查网络后重试。'
+      : error?.code === 'NETEASE_PLAYBACK_REQUEST'
+        ? `网易云播放请求失败${Number.isInteger(error.status) ? `（HTTP ${error.status}）` : ''}，请稍后重试。`
+        : '内置网易云查询失败，请稍后重试。';
+    send({ id, error: message });
   } finally { active = false; }
 });
