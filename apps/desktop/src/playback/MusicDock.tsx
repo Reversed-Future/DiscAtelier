@@ -13,11 +13,11 @@ export function MusicDock({ player }: { player: PlaybackController }) {
   const root = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const [selected, setSelected] = useState<number | null>(null);
-  const album = queue.albums.find(row => row.albumId === selected) || queue.current || queue.albums[0];
+  const [selected, setSelected] = useState<string | null>(null);
+  const album = queue.albums.find(row => row.editionId === selected) || queue.current || queue.albums[0];
   const online = !!player.snapshot?.source.playlist.startsWith('netease-song:');
-  useEffect(() => { if (queue.current) setSelected(queue.current.albumId); }, [queue.current?.albumId]);
-  useEffect(() => { list.current?.scrollTo(0, 0); enter(list.current, 0); }, [album?.albumId, host]);
+  useEffect(() => { if (queue.current) setSelected(queue.current.editionId); }, [queue.current?.editionId]);
+  useEffect(() => { list.current?.scrollTo(0, 0); enter(list.current, 0); }, [album?.editionId, host]);
   useEffect(() => {
     if (!queue.open) return;
     const pointer = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) queue.setOpen(false); };
@@ -32,10 +32,10 @@ export function MusicDock({ player }: { player: PlaybackController }) {
   return createPortal(<div className="music-dock" ref={root}>
     <section className="music-dock-panel" id="music-queue" role="region" aria-label="播放列表" data-open={queue.open} inert={!queue.open}>
       <header className="music-dock-heading"><h3>播放列表</h3><button className="icon-button" aria-label="收起播放列表" onClick={() => { queue.setOpen(false); trigger.current?.focus(); }}><Icon name="close"/></button></header>
-      <nav className="music-album-tabs" aria-label="最近播放的专辑">{queue.albums.map(row => <button key={row.albumId} title={row.title} aria-pressed={row.albumId === album?.albumId} onClick={() => setSelected(row.albumId)}>{row.title}</button>)}</nav>
+      <nav className="music-album-tabs" aria-label="最近播放的专辑">{queue.albums.map(row => <button key={row.editionId} title={row.title} aria-pressed={row.editionId === album?.editionId} onClick={() => setSelected(row.editionId)}>{row.title}</button>)}</nav>
       <div ref={list} className="music-queue-scroll" aria-busy={queue.busy}>
         {album?.tracks.map((track, index) => <button key={track.id} className="music-queue-track" disabled={player.busy}
-          aria-current={online && queue.current?.albumId === album.albumId && queue.songId === track.id ? 'true' : undefined}
+          aria-current={online && queue.current?.editionId === album.editionId && queue.songId === track.id ? 'true' : undefined}
           onClick={() => void queue.start(album.editionId, track.id)}>
           <span>{String(index + 1).padStart(2, '0')}</span><strong>{track.title}</strong><time>{time(track.durationMs / 1000)}</time>
         </button>)}

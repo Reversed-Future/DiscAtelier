@@ -12,11 +12,16 @@ export async function mountModel(host,model,{signal,onChange,onError,interactive
  function dispose(){if(disposed)return;disposed=true;session?.dispose();asset?.dispose();viewer.dispose();signal?.removeEventListener('abort',dispose);}
  signal?.addEventListener('abort',dispose,{once:true});
  try{
-  if(model.version!==2)throw Error('只支持 AtelierPublisher v2 模型。');
-  const loaded=await createGenericAsset(viewer.renderer,model.scene,{signal});
+  let loaded;
+  if(model.version===3){
+   const {createAssemblyRuntime}=await import('./assembly/runtime.js');signal?.throwIfAborted();
+   loaded=await createAssemblyRuntime({viewer,model,signal,onChange,onError});
+  }else if(model.version===2)loaded=await createGenericAsset(viewer.renderer,model.scene,{signal});
+  else throw Error('只支持 AtelierPublisher v2 或 v3 模型。');
   if(disposed||signal?.aborted){loaded.dispose();signal?.throwIfAborted();throw Error('Model disposed');}
-  asset=loaded;viewer.root.add(asset.root);
-  session=createGenericSession({viewer,asset,model,onChange,onError});
+  asset=loaded;
+  if(model.version===3)session=asset;
+  else{viewer.root.add(asset.root);session=createGenericSession({viewer,asset,model,onChange,onError});}
   viewer.setInteractive(interactive);
   // Submit shader compilation together before the first draw; avoid serial
   // compile-status waits in render. No quality or material variants are changed.
@@ -36,5 +41,5 @@ export async function mountModel(host,model,{signal,onChange,onError,interactive
   const rect=host.getBoundingClientRect(),xs=points.map(p=>(p.x+1)*rect.width/2),ys=points.map(p=>(1-p.y)*rect.height/2);
   return {left:Math.min(...xs),top:Math.min(...ys),width:Math.max(...xs)-Math.min(...xs),height:Math.max(...ys)-Math.min(...ys)};
  }
- return {reset:()=>session.reset(),activate:target=>session.pick(target),setInteractive:value=>viewer.setInteractive(value),capturePreview:()=>viewer.capturePreview(),putBack:target=>session.putBack?.(target),exitInspection:()=>session.pick(null),dispose,screenBounds,get state(){return session.state;}};
+ return {reset:()=>session.reset(),activate:target=>session.pick(target),act:id=>session.act?.(id),selectPart:id=>session.select?.(id),setInteractive:value=>viewer.setInteractive(value),capturePreview:()=>viewer.capturePreview(),putBack:target=>session.putBack?.(target),exitInspection:()=>session.pick(null),dispose,screenBounds,get state(){return session.state;}};
 }

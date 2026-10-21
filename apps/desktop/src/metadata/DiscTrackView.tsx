@@ -18,7 +18,7 @@ export function DiscTabs({ pages, page, onChange }: { pages: DiscPage[]; page: n
         (event.currentTarget.parentElement?.children[next] as HTMLButtonElement)?.focus();
       }}>{discTitle(disc, index)}</button>)}</nav>;
 }
-export function DiscTrackPanel({ disc, index, playback }: { disc?: DiscPage; index: number; playback?(track: ReleaseTrack): TrackPlayback | undefined }) {
+export function DiscTrackPanel({ disc, index, playback, positionLabel }: { disc?: DiscPage; index: number; playback?(track: ReleaseTrack): TrackPlayback | undefined; positionLabel?(track: ReleaseTrack): string }) {
   const panel = useRef<HTMLDivElement>(null);
   const id = useId();
   useEffect(() => { panel.current?.scrollTo(0, 0); enter(panel.current, 0); }, [disc?.key]);
@@ -27,7 +27,7 @@ export function DiscTrackPanel({ disc, index, playback }: { disc?: DiscPage; ind
     {rows?.length ? <ol className="track-list">{rows.map((track, index) => {
       const action = track.type_ === 'heading' ? undefined : playback?.(track);
       return <li key={index} className={track.type_ === 'heading' ? 'track-heading' : undefined}>
-      {track.type_ === 'heading' ? <><h4>{track.title}</h4>{!!track.extraartists?.length && <ReleaseDetails credits={track.extraartists}/>}</> : <TrackRow track={track} playback={action}/>}
+      {track.type_ === 'heading' ? <><h4>{track.title}</h4>{!!track.extraartists?.length && <ReleaseDetails credits={track.extraartists}/>}</> : <TrackRow track={track} playback={action} positionLabel={positionLabel?.(track)}/>}
     </li>; })}</ol> : <p className="utility-copy">暂无曲目</p>}
   </div>;
 }

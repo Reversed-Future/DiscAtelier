@@ -1,0 +1,8 @@
+.converted-price { display: block; margin-top: 5px; font-size: 10px; font-weight: 400; line-height: 1.7; color: var(--muted); font-variant-numeric: tabular-nums; }
+.form-row + .converted-price { margin: -4px 0 18px; }
+.exchange-rate-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 16px; align-items: baseline; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 12px; font-variant-numeric: tabular-nums; }
+.exchange-rate-row strong { font-weight: 400; }
+.exchange-rate-row small { color: var(--muted); font-size: 10px; }
+.exchange-rates { animation: settings-feedback-in 160ms var(--ease); }
+@media (max-width: 650px) { .exchange-rate-row { grid-template-columns: 70px minmax(0, 1fr); gap: 8px; } .exchange-rate-row small { grid-column: 2; } }
+@media (prefers-reduced-motion: reduce) { .exchange-rates { animation: none; } }

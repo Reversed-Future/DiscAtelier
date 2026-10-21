@@ -8,6 +8,7 @@
 .has-model .shelf-artwork-slot { inset: -12.5%; }
 .shelf-artwork-slot .shared-artwork { pointer-events: none; }
 .shelf-standin { position: absolute; inset: 0; }
+.shelf-standin[data-taken="true"] { visibility: hidden; }
 .shelf-standin .model-preview { object-fit: contain; }
 .has-model .shelf-standin { filter: drop-shadow(0 18px 14px #0008); }
 .shared-artwork { position: absolute; inset: 0; transform-origin: 0 0; }

@@ -1,6 +1,8 @@
 use crate::LibraryRepository;
 use crate::LibraryService;
-use discatelier_contracts::{validate_supplement, AppError, CreateCopy, MusicSupplement};
+use discatelier_contracts::{
+    validate_supplement, AppError, CreateCopy, LinkedMusicAlbum, MusicSupplement,
+};
 
 pub trait ExtensionRepository {
     fn create_music(
@@ -9,6 +11,24 @@ pub trait ExtensionRepository {
         album: &MusicSupplement,
     ) -> Result<String, AppError>;
     fn supplement(&self, edition: &str) -> Result<Option<MusicSupplement>, AppError>;
+    fn music_albums(&self, edition: &str) -> Result<Vec<LinkedMusicAlbum>, AppError>;
+    fn disc_albums(
+        &self,
+        edition: &str,
+    ) -> Result<Vec<discatelier_contracts::DiscAlbumLink>, AppError>;
+    fn save_disc_album(
+        &mut self,
+        edition: &str,
+        revision: i64,
+        disc_key: &str,
+        album_id: Option<u64>,
+    ) -> Result<(), AppError>;
+    fn write_music_albums(
+        &mut self,
+        edition: &str,
+        revision: i64,
+        albums: &[LinkedMusicAlbum],
+    ) -> Result<(), AppError>;
     fn save_supplement(
         &mut self,
         edition: &str,

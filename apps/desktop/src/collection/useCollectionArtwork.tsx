@@ -49,7 +49,9 @@ export function useCollectionArtwork(item: LibraryCopy | undefined, active: bool
     dialog?.setAttribute('data-departing', 'true');
     await motion.current.move(container, current, destination, true);
   };
-  const portal = active && item ? createPortal(
+  // Browsing uses persistent sleeve images. Only inspection needs the moving
+  // portal, so changing selection cannot replace a visible decoded cover.
+  const portal = active && item && inspecting ? createPortal(
     item.modelAssetId
       ? <ModelView assetId={item.modelAssetId} enabled={inspecting} visible={inspecting && phase === 'inspection'} interactive={inspecting && phase === 'inspection'} onReady={ready} onBusy={setBusy} fallback={
         <ModelPreview assetId={item.modelAssetId} authored={!item.coverAssetId} fallback={<Cover edition={item.edition} assetId={item.coverAssetId}/>}/>}/>

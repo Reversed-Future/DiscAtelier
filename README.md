@@ -2,13 +2,13 @@
 
 个人实体音像收藏软件，目标技术栈为 **Tauri 2 + Rust + React + TypeScript**。以具体发行版本和实物副本为核心，音乐与影像分区，支持实体模型陈列、购入记录、光驱识别、播放与可操作收藏库的 AI 助手。
 
-当前 0.1.4 支持真实 SQLite 收藏持久化、手动入库、同版多套、多载体、版本及购入编辑、封面导入、搜索筛选、备份和预检恢复。Discogs 已接通搜索 → 选择具体版本 → 核对资料 → 填写购入信息 → 入库；同一发行复用版本，不同发行分开。AtelierPublisher v2 模型上传与展示、Windows 光驱只读识别、内置播放和播放历史已接入。DVD 原盘菜单已接入，实盘验收待完成。应用内更新支持 GitHub 私有仓库、版本绑定签名和安装前备份；设置及菜单已重新设计。原型另行保留，不访问真实数据库。
+当前 0.1.12 支持真实 SQLite 收藏持久化、手动入库、同版多套、多载体、版本及购入编辑、封面导入、搜索筛选、备份和预检恢复。Discogs 已接通搜索 → 选择具体版本 → 核对资料 → 填写购入信息 → 入库；同一发行复用版本，不同发行分开。AtelierPublisher v2 模型上传与展示、Windows 光驱只读识别、内置播放和播放历史已接入。DVD 原盘菜单已接入，实盘验收待完成。应用内更新支持 GitHub 私有仓库、版本绑定签名和安装前备份；设置及菜单已重新设计。原型另行保留，不访问真实数据库。
 
 ## Windows 安装版
 
-私有仓库：[Reversed-Future/DiscAtelier](https://github.com/Reversed-Future/DiscAtelier)。安装包和校验文件在 [v0.1.4 Release](https://github.com/Reversed-Future/DiscAtelier/releases/tag/v0.1.4)，需登录有仓库访问权限的 GitHub 账号。
+私有仓库：[Reversed-Future/DiscAtelier](https://github.com/Reversed-Future/DiscAtelier)。安装包和校验文件在 [v0.1.12 Release](https://github.com/Reversed-Future/DiscAtelier/releases/tag/v0.1.12)，需登录有仓库访问权限的 GitHub 账号。
 
-关闭旧窗口后运行 Windows x64 `-setup.exe`，按当前用户安装。没有 WebView2 时安装器会联网下载。从 0.1.3 需手动安装一次；之后在“设置 → 更新”配置本仓库只读 Token，即可检查、下载和安装新版本。更新有 Tauri 签名，Windows 代码签名仍未配置。安装包不含个人收藏、凭据、光盘内容或外部播放器。具体能力和限制见 [发行说明](docs/releases/v0.1.4.md)。
+关闭旧窗口后运行 Windows x64 `-setup.exe`，按当前用户安装。没有 WebView2 时安装器会联网下载。从 0.1.3 需手动安装一次；之后在“设置 → 更新”配置本仓库只读 Token，即可检查、下载和安装新版本。更新有 Tauri 签名，Windows 代码签名仍未配置。安装包不含个人收藏、凭据、光盘内容或外部播放器。具体能力和限制见 [发行说明](docs/releases/v0.1.12.md)。
 
 ## 桌面开发版
 
@@ -28,11 +28,11 @@ npm run build
 cargo build -p discatelier-desktop --release
 ```
 
-程序将数据保存在 `%LOCALAPPDATA%\com.reversedfuture.discatelier`，“设置 → 数据”显示实际目录。`library.sqlite3` 包含收藏、封面、模型和播放历史，`backups` 保存备份。更新不更改目录或数据库 schema。详见 [数据与更新说明](docs/UPDATES.md)。
+程序将数据保存在 `%LOCALAPPDATA%\com.reversedfuture.discatelier`，“设置 → 数据”显示实际目录。`library.sqlite3` 包含收藏、封面、模型和播放历史，`backups` 保存备份。更新不更改数据目录；0.1.12 首次打开旧库会自动备份并迁移到 schema 10，保留已有收藏及关联。详见 [数据与更新说明](docs/UPDATES.md)。
 
 音乐分区点击“添加”直接打开 Discogs，也可切换手动录入。选择新版本时自动下载对应封面，确认入库后本地保存并显示，备份包含图片；可自行更换封面。已入库的发行进入“再收一套”，继承原有资料及封面。更多菜单保留范围、整理、设置与统计；Token 配置、备份、恢复及版本号统一放在设置中。恢复前显示备份内容数量，确认后整体替换，并自动备份原库。Discogs Token 保存到 Windows 凭据管理器；查询具体发行 ID 可使用公开接口，条码／品番／关键词检索需个人 Token。多个标识符保留原值供本地检索，未知载体必须手动选择。详见 [Discogs 接入记录](docs/DISCOGS-DEVELOPMENT.md)。
 
-添加和编辑版本支持上传 AtelierPublisher 导出的 v2 `.ateliermodel` 文件（≤50 MiB）。有模型优先展示模型，取出后可旋转和拆装；移除模型自动恢复原封面，模型随备份和重启保留。详见 [模型接入记录](docs/MODELS-DEVELOPMENT.md)。
+添加和编辑版本支持上传 AtelierPublisher 导出的 v2 `.ateliermodel` 文件（≤50 MiB），0.1.12 新增六种固定装配 V3 兼容。有模型时取出后按需加载，可旋转和拆装；移除模型恢复原封面，模型随备份和重启保留。详见 [模型接入记录](docs/MODELS-DEVELOPMENT.md) 与 [V3 测试步骤](docs/MODEL-V3.md)。
 
 Ctrl + 加号／减号调整缩放，Ctrl + 0 恢复 100%；斜杠打开搜索，左右方向键翻阅，Enter 取出，Escape 关闭。弹窗支持 Tab／Shift+Tab 循环。短内容默认隐藏滚动条，仍可滚轮与键盘滚动；特别长的内容显示细滚动条。
 

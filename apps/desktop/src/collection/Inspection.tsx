@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Descriptor, LibraryCopy } from '../library/types';
 import { mediumLabel } from '../library/mediumLabel';
 import { statuses } from '../library/types';
+import { ConvertedPrice } from '../exchange/ConvertedPrice';
 import { formatPrice } from '../library/money';
 import { Modal } from '../ui/Modal';
 import { Icon } from '../ui/Icon';
@@ -53,9 +54,9 @@ export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot
           <button className={tab === 'purchase' ? 'active' : ''} onClick={() => setTab('purchase')}>购入</button>
         </nav>
         <div ref={content} className="inspection-tab-content" data-tab={tab}>
-          <div hidden={tab !== 'metadata'}><dl className="metadata">{fields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl><EditionContents section="metadata" state={editionContent} album={supplement.value} item={item} player={player}/></div>
-          <div className="inspection-tracks-page" hidden={tab !== 'tracks'}><EditionContents section="tracks" state={editionContent} album={supplement.value} item={item} player={player}/></div>
-          <div hidden={tab !== 'purchase'}><dl className="metadata">{purchaseFields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl></div>
+          <div hidden={tab !== 'metadata'}><dl className="metadata">{fields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl><EditionContents section="metadata" state={editionContent} albums={supplement.value} links={supplement.links} bindings={supplement.bindings} item={item} player={player}/></div>
+          <div className="inspection-tracks-page" hidden={tab !== 'tracks'}><EditionContents section="tracks" state={editionContent} albums={supplement.value} links={supplement.links} bindings={supplement.bindings} item={item} player={player}/></div>
+          <div hidden={tab !== 'purchase'}><dl className="metadata">{purchaseFields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}{key === '购入价格' && <ConvertedPrice amount={item.copy.amountMinor} currency={item.copy.currency}/>}</dd></div>)}</dl></div>
         </div>
         {supplement.error && <p className="form-error" role="alert">{supplement.error}</p>}
         <div className="object-actions"><button hidden={tab === 'tracks'} onClick={tab === 'metadata' ? edit : () => setEditingPurchase(true)} disabled={modelBusy}>{tab === 'metadata' ? '编辑版本' : '编辑购入'}</button></div>

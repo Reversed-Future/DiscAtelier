@@ -83,3 +83,7 @@ cargo test -p discatelier-desktop verify_published_private_release -- --ignored 
 本轮不代用户执行安装／重启或窗口操作；跨版本真实安装验收待上述步骤完成。
 
 参考：[Tauri 更新机制](https://v2.tauri.app/plugin/updater/)、[GitHub Release API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)、[私有资产下载权限](https://docs.github.com/en/rest/releases/assets#get-a-release-asset)。
+
+## 0.1.12 数据兼容
+
+0.1.12 使用 schema 10，包含单曲独立关联（9）与多专辑／分盘绑定（10）。首次打开旧库前创建一致性备份，再事务执行迁移，保留既有资料、关联、封面与购入信息。已使用 schema 10 预览版的不重复迁移；回退旧版需恢复其可识别的旧备份，不能直接用旧版打开新结构。安装前备份及较新数据库不阻挡更新的修复继续保留。

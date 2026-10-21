@@ -87,7 +87,7 @@ impl Host for ToolHost {
                 with_library(&self.library, |s| {
                     let item = find(s, &args.id)?;
                     Ok(
-                        json!({"copy":public_item(&item),"content":s.edition_content(&item.edition_id)?,"netease":s.supplement(&item.edition_id)?}),
+                        json!({"copy":public_item(&item),"content":s.edition_content(&item.edition_id)?,"netease":s.supplement(&item.edition_id)?,"neteaseAlbums":s.music_albums(&item.edition_id)?,"discAlbumLinks":s.disc_albums(&item.edition_id)?}),
                     )
                 })?
             }

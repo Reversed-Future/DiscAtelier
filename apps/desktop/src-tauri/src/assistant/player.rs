@@ -39,24 +39,23 @@ pub fn execute(host: &ToolHost, name: &str, arguments: &str) -> Result<Value, Ap
                     .strip_prefix("netease-song:")
                     .and_then(|s| s.parse().ok())
                     .ok_or_else(|| error("助手上下曲仅支持网易云关联专辑。"))?;
-                let album =
-                    with_library(&host.library, |s| s.supplement(&current.source.mount_point))?
-                        .ok_or_else(|| error("专辑关联已改变。"))?;
-                let index = album
-                    .tracks
-                    .iter()
-                    .position(|t| t.id == id)
-                    .ok_or_else(|| error("歌曲已不在关联专辑内。"))?;
-                let next = if args.action == "next" {
-                    (index + 1) % album.tracks.len()
-                } else {
-                    (index + album.tracks.len() - 1) % album.tracks.len()
-                };
+                let state = host
+                    .window
+                    .state::<std::sync::Arc<crate::netease_queue::QueueState>>();
+                let next = with_library(&host.library, |s| {
+                    crate::netease_queue::adjacent(
+                        &state,
+                        s,
+                        &current.source.mount_point,
+                        id,
+                        args.action == "next",
+                    )
+                })?;
                 return Ok(public(Some(tauri::async_runtime::block_on(
                     crate::netease_playback::netease_play(
                         host.window.clone(),
                         current.source.mount_point,
-                        album.tracks[next].id,
+                        next,
                     ),
                 )?)));
             }

@@ -1,10 +1,10 @@
 # Atelier model runtime
 
-Private, locally vendored v2 runtime from the user's AtelierPublisher project.
+Private, locally vendored v2/v3 runtime from the user's AtelierPublisher project.
 `upstream.json` records exact original file hashes. No collection content, credentials
 or authoring server is included. Three.js retains its MIT license in `vendor`.
 
-Local integration changes: v2-only public adapter, non-interactive shelf mode,
+Local integration changes: v2/v3 public adapter, non-interactive shelf mode,
 React-owned controls instead of upstream inline UI, modifier-key handling and
 on-demand shelf rendering, bounded four-way texture loading, cancellation during
 loading, and drawing the first complete frame before resolving mount. Texture
@@ -24,3 +24,17 @@ creating another WebGL context. The desktop schedules and bounds this cache.
 
 The adapter is the only desktop entry point. A model is data, never an executable
 plugin. Full upstream validation runs in a disposable worker before rendering.
+
+V3 uses the six fixed profiles in `shared/assembly-profiles.js` and the lazy
+`assembly/registry.js`. Only their JavaScript dependency closure is vendored under
+`model-authoring`; no authored model files, photos, authoring server or collection
+records are included. Shared Three/material/framing dependencies remain identical
+to the upstream files. The JSON profile table is a generated mirror used by Rust;
+tests compare both tables so validation cannot silently diverge.
+
+The local V3 adapter owns resource disposal, bounds image decode concurrency to
+four, translates actions/parts into React controls, and keeps package code fields
+out of the parsed result. The shared motion helper observes the session abort
+signal and cancels pending animation frames. Initial and reset presentation use
+the desktop's front overview; authored dismantling and page paths are preserved.
+V3 continues through first-frame shader preparation and the existing cover fade.

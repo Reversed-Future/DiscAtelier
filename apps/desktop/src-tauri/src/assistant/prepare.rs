@@ -368,7 +368,11 @@ fn add(host: &ToolHost, args: AddCollection) -> Result<PreparedAction, AppError>
 fn supplement(host: &ToolHost, args: SupplementChange) -> Result<PreparedAction, AppError> {
     let (item, old) = with_library(&host.library, |s| {
         let item = find(s, &args.id)?;
-        let old = s.supplement(&item.edition_id)?;
+        let old = s
+            .music_albums(&item.edition_id)?
+            .into_iter()
+            .find(|a| a.album.album_id == args.album_id)
+            .map(|a| a.album);
         Ok((item, old))
     })?;
     if item.edition.category_id != "music" {
@@ -388,7 +392,7 @@ fn supplement(host: &ToolHost, args: SupplementChange) -> Result<PreparedAction,
         "影响范围",
         "",
         format!(
-            "此版本共 {} 套收藏；保留实体资料、Discogs 曲目和封面",
+            "此版本共 {} 套收藏；保留实体资料、其他关联专辑、Discogs 曲目和封面",
             item.edition_copy_count
         ),
     ));

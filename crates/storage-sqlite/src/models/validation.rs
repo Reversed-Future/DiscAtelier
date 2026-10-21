@@ -1,5 +1,7 @@
 //! Native storage boundary: bounded package, embedded images and referential integrity.
-//! The upstream v2 validator additionally checks geometry and animation before rendering.
+//! Full upstream validation additionally runs in a worker before rendering.
+#[path = "validation_v3.rs"]
+mod v3;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use discatelier_contracts::AppError;
 use serde_json::Value;
@@ -93,9 +95,11 @@ pub fn validate(text: &str) -> Result<Metadata, AppError> {
     }
     let value: Value = crate::profiling::measure("model.parse_json", || serde_json::from_str(text))
         .map_err(|_| invalid("模型文件不是有效的 JSON。"))?;
-    if value["format"] != "atelier-interactive-model" || value["version"].as_u64() != Some(2) {
+    if value["format"] != "atelier-interactive-model"
+        || !matches!(value["version"].as_u64(), Some(2 | 3))
+    {
         return Err(invalid(
-            "请使用 AtelierPublisher 导出的 v2 .ateliermodel 文件。",
+            "请使用 AtelierPublisher 导出的 v2 或 v3 .ateliermodel 文件。",
         ));
     }
     label(&value["id"], 100)?;
@@ -103,6 +107,13 @@ pub fn validate(text: &str) -> Result<Metadata, AppError> {
     label(&value["creator"], 600)?;
     let mut pixels = 0;
     image(&value["cover"], &mut pixels)?;
+    if value["version"] == 3 {
+        v3::validate(&value, &mut pixels)?;
+        return Ok(Metadata {
+            title,
+            preview: value["cover"].as_str().unwrap().to_owned(),
+        });
+    }
     let scene = &value["scene"];
     if scene["up"] != "Z" {
         return Err(invalid("模型坐标系无效。"));

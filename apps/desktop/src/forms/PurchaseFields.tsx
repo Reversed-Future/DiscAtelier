@@ -2,6 +2,7 @@ import type { CopyDraft } from '../library/types';
 import { currencies, statuses } from '../library/types';
 import { Select } from '../ui/Select';
 import { DatePicker } from '../ui/DatePicker';
+import { ConvertedInput } from '../exchange/ConvertedPrice';
 import { PurchaseScreenshots } from './purchase/PurchaseScreenshots';
 
 export function PurchaseFields({ value, amount, setAmount, onChange, title, creator, onBusy }: {
@@ -13,6 +14,7 @@ export function PurchaseFields({ value, amount, setAmount, onChange, title, crea
     <PurchaseScreenshots title={title} creator={creator} value={value} amount={amount} setAmount={setAmount} onChange={onChange} onBusy={onBusy}/>
     <div className="form-row"><label>价格<input aria-label="价格" inputMode="decimal" value={amount} placeholder="未填写" onChange={event => setAmount(event.target.value)}/></label>
       <label>币种<Select label="币种" value={value.currency} options={currencies} onChange={text => update('currency', text)}/></label></div>
+    <ConvertedInput amount={amount} currency={value.currency}/>
     <div className="form-row"><label>状态<Select label="状态" value={value.status} options={statuses} onChange={text => update('status', text)}/></label>
       <div className="date-field"><span>购入日期</span><DatePicker label="购入日期" value={value.acquiredAt} onChange={text => update('acquiredAt', text)}/></div></div>
     <label>购入位置<input aria-label="购入位置" value={value.seller} maxLength={200} onChange={event => update('seller', event.target.value)}/></label>

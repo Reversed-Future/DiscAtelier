@@ -139,6 +139,8 @@ pub fn prepare(
     crate::content::validate(&staged)?;
     crate::playback::validate_stored(&staged)?;
     crate::extensions::validate(&staged)?;
+    crate::music_albums::validate(&staged)?;
+    crate::song_links::validate(&staged)?;
     for category in discatelier_domain::categories() {
         for item in crate::reads::list(
             &staged,

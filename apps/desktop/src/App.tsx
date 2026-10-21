@@ -107,7 +107,7 @@ export function App() {
     <main id="scene" ref={scene} aria-label="收藏展示" aria-busy={loading} inert={player.open}>
       {error ? <div className="empty-state"><span className="disc-mark"/><p role="alert">{error}</p>{desktopAvailable() && <button onClick={() => void refresh(query)}>重试</button>}</div> :
         !snapshot ? <div className="empty-state"><span className="disc-mark"/><p>正在打开收藏库</p></div> :
-        items.length ? <Browse items={items} selectedId={selectedId} select={setSelectedId} inspect={setInspected} organize={organize} modelActive={modelActive} artworkSlot={artwork.shelfRef}/> :
+        items.length ? <Browse items={items} selectedId={selectedId} select={setSelectedId} inspect={setInspected} organize={organize} modelActive={modelActive} takenId={inspected?.id} artworkSlot={artwork.shelfRef}/> :
         <div className="empty-state"><span className="disc-mark"/><p>{query.query || query.status ? '没有匹配的收藏' : query.categoryId === 'music' ? '还没有音乐收藏' : '还没有影像收藏'}</p>
           <button onClick={() => query.query || query.status ? setQuery({ ...query, query: '', status: null }) : openAdd()}>{query.query || query.status ? '清除筛选' : '添加收藏'}</button></div>}
     </main>

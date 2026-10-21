@@ -7,7 +7,7 @@ mod song;
 mod stream;
 mod artwork;
 pub use artwork::{album_cover, download_album_cover};
-pub use song::{parse_song_album, song_album};
+pub use song::{parse_song, song_detail, parse_song_album, song_album};
 pub use stream::{parse_song_stream, song_stream, SongStream};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

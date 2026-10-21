@@ -1,5 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { ExchangeProvider } from './exchange/ExchangeContext';
+import './styles/exchange.css';
 import './styles/shell.css';
 import './styles/store.css';
 import './styles/inspection.css';
@@ -14,4 +16,4 @@ import './styles/settings.css';
 import './styles/integrations.css';
 import './styles/music-dock.css';
 
-createRoot(document.getElementById('root')!).render(<App/>);
+createRoot(document.getElementById('root')!).render(<ExchangeProvider><App/></ExchangeProvider>);

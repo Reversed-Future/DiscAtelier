@@ -7,10 +7,10 @@ import { netease, type MusicSupplement, type AlbumSearchPage, type AlbumResult }
 import { NeteaseCover } from './NeteaseCover';
 import { parseNeteaseShare } from './shareLink';
 
-export function NeteaseBrowser({ initialQuery, initialAlbum = null, loading = false, initialError = '', autoSearch = false, onClose, onConfirm, confirmLabel = '保存补充资料', footer, onUseCover }: {
+export function NeteaseBrowser({ initialQuery, initialAlbum = null, loading = false, initialError = '', autoSearch = false, onClose, onConfirm, confirmLabel = '保存补充资料', footer, header, savedIds, onBusyChange, onUseCover }: {
   initialQuery: string; initialAlbum?: MusicSupplement | null; loading?: boolean; initialError?: string; autoSearch?: boolean;
   onClose(): void; onConfirm(album: MusicSupplement): Promise<void>; confirmLabel?: string;
-  footer?(album: MusicSupplement): ReactNode;
+  footer?(album: MusicSupplement | null): ReactNode; header?: ReactNode; savedIds?: number[]; onBusyChange?(busy: boolean): void;
   onUseCover?(album: MusicSupplement): Promise<string>;
 }) {
   const [query, setQuery] = useState(initialQuery);
@@ -21,12 +21,13 @@ export function NeteaseBrowser({ initialQuery, initialAlbum = null, loading = fa
   const [stored, setStored] = useState(false);
   const [coverApplied, setCoverApplied] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  useEffect(() => { onBusyChange?.(busy); }, [busy, onBusyChange]);
   const searched = useRef(false);
   const [error, setError] = useState('');
   const [disc, setDisc] = useState('');
   const body = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (initialAlbum) { setAlbum(initialAlbum); setStored(true); setDisc(initialAlbum.tracks[0]?.disc || ''); } }, [initialAlbum]);
+  useEffect(() => { setAlbum(initialAlbum); setCover(null); setStored(!!initialAlbum); setDisc(initialAlbum?.tracks[0]?.disc || ''); }, [initialAlbum]);
   useEffect(() => { if (autoSearch && !searched.current) { searched.current = true; void search(initialQuery); } }, [autoSearch, initialQuery]);
   useEffect(() => { enter(body.current, 0); }, [album?.albumId, disc, results]);
   useEffect(() => { list.current?.scrollTo(0, 0); }, [results]);
@@ -36,7 +37,7 @@ export function NeteaseBrowser({ initialQuery, initialAlbum = null, loading = fa
       const reference = parseNeteaseShare(text);
       if (reference) {
         const value = reference.kind === 'album' ? await netease.album(reference.id) : await netease.songAlbum(reference.id);
-        setAlbum(value); setCover(null); setStored(false); setDisc(value.tracks[0]?.disc || '');
+        setAlbum(value); setCover(null); setStored(savedIds?.includes(value.albumId) ?? false); setDisc(value.tracks[0]?.disc || '');
         return;
       }
       const page = await netease.search(text, offset);
@@ -46,11 +47,12 @@ export function NeteaseBrowser({ initialQuery, initialAlbum = null, loading = fa
   async function open(row: AlbumResult) {
     await run(async () => {
       const value = await netease.album(row.id);
-      setAlbum(value); setCover(row.coverUrl); setStored(false); setDisc(value.tracks[0]?.disc || '');
+      setAlbum(value); setCover(row.coverUrl); setStored(savedIds?.includes(value.albumId) ?? false); setDisc(value.tracks[0]?.disc || '');
     });
   }
   const discs = [...new Set(album?.tracks.map(t => t.disc) || [])];
   return <Modal title="网易云" onClose={onClose} busy={busy || loading} className="supplement-panel">
+    {header}
     <form className="integration-search" onSubmit={e => { e.preventDefault(); void search(query.trim()); }}>
       {album && results && <button type="button" className="text-button" disabled={busy || loading} onClick={() => { setAlbum(null); setCover(null); setError(''); }}>返回搜索</button>}
       <input aria-label="搜索专辑或读取分享链接" placeholder="专辑、歌手或分享链接" value={query} onChange={e => setQuery(e.target.value)} disabled={busy || loading}/><button className="solid-button" disabled={busy || loading || !query.trim()}>{busy || loading ? '读取中' : '读取'}</button>
@@ -72,7 +74,8 @@ export function NeteaseBrowser({ initialQuery, initialAlbum = null, loading = fa
         <span>{Math.floor(results.offset / results.limit) + 1} / {Math.ceil(results.total / results.limit)}</span>
         <button disabled={busy || !results.items.length || results.offset + results.limit >= results.total} onClick={() => void search(submitted, results.offset + results.limit)}>下一页</button>
       </nav>}
-      {album && <div className="netease-album-actions">{stored && footer?.(album)}
+      {footer?.(album)}
+      {album && <div className="netease-album-actions">
         {stored && onUseCover && <button type="button" className="text-button" disabled={busy || loading || coverApplied === album.albumId} onClick={() => void run(async () => { setCover(await onUseCover(album)); setCoverApplied(album.albumId); })}>{coverApplied === album.albumId ? '已设为封面' : '用作封面'}</button>}
         <button className="solid-button" disabled={busy || loading || stored} onClick={() => void run(async () => { await onConfirm(album); setStored(true); })}>{stored ? '已保存' : confirmLabel}</button></div>}
     </footer>

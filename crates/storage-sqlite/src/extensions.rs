@@ -12,19 +12,39 @@ impl ExtensionRepository for SqliteLibrary {
         crate::create_music::create(&mut self.connection, request, album, &self.prepared_models)
     }
     fn supplement(&self, edition: &str) -> Result<Option<MusicSupplement>, AppError> {
-        let raw: Option<String> = self
-            .connection
-            .query_row(
-                "SELECT payload FROM edition_supplements WHERE edition_id=?1",
-                [edition],
-                |r| r.get(0),
-            )
-            .optional()
-            .map_err(db_error)?;
-        raw.map(|s| {
-            serde_json::from_str(&s).map_err(|_| AppError::new("storage", "补充资料不可读取。"))
-        })
-        .transpose()
+        Ok(crate::music_albums::read(&self.connection, edition)?
+            .into_iter()
+            .next()
+            .map(|a| a.album))
+    }
+    fn disc_albums(
+        &self,
+        edition: &str,
+    ) -> Result<Vec<discatelier_contracts::DiscAlbumLink>, AppError> {
+        crate::disc_albums::read(&self.connection, edition)
+    }
+    fn save_disc_album(
+        &mut self,
+        edition: &str,
+        revision: i64,
+        disc_key: &str,
+        album_id: Option<u64>,
+    ) -> Result<(), AppError> {
+        crate::disc_albums::save(&mut self.connection, edition, revision, disc_key, album_id)
+    }
+    fn music_albums(
+        &self,
+        edition: &str,
+    ) -> Result<Vec<discatelier_contracts::LinkedMusicAlbum>, AppError> {
+        crate::music_albums::read(&self.connection, edition)
+    }
+    fn write_music_albums(
+        &mut self,
+        edition: &str,
+        revision: i64,
+        albums: &[discatelier_contracts::LinkedMusicAlbum],
+    ) -> Result<(), AppError> {
+        crate::music_albums::write(&mut self.connection, edition, revision, albums)
     }
     fn save_supplement(
         &mut self,
@@ -33,18 +53,31 @@ impl ExtensionRepository for SqliteLibrary {
         value: &MusicSupplement,
     ) -> Result<(), AppError> {
         validate_supplement(value)?;
-        let payload = serde_json::to_string(value)
-            .map_err(|_| AppError::new("storage", "补充资料不可保存。"))?;
-        let tx = self.connection.transaction().map_err(db_error)?;
-        let changed = tx.execute("UPDATE editions SET revision=revision+1 WHERE id=?1 AND revision=?2 AND work_id IN (SELECT id FROM works WHERE category_id='music')", params![edition,revision]).map_err(db_error)?;
-        if changed != 1 {
-            return Err(AppError::new(
-                "conflict",
-                "收藏资料已改变，请重新打开详情。",
-            ));
+        let mut albums = self.music_albums(edition)?;
+        if let Some(entry) = albums
+            .iter_mut()
+            .find(|a| a.album.album_id == value.album_id)
+        {
+            let links = entry.album.links.clone();
+            entry.album = value.clone();
+            for link in links {
+                if entry.album.tracks.iter().any(|t| t.id == link.song_id)
+                    && !entry
+                        .album
+                        .links
+                        .iter()
+                        .any(|l| l.position == link.position && l.title == link.title)
+                {
+                    entry.album.links.push(link);
+                }
+            }
+        } else {
+            albums.push(discatelier_contracts::LinkedMusicAlbum {
+                album: value.clone(),
+                legacy_positions: false,
+            });
         }
-        tx.execute("INSERT INTO edition_supplements(edition_id,payload) VALUES(?1,?2) ON CONFLICT(edition_id) DO UPDATE SET payload=excluded.payload", params![edition,payload]).map_err(db_error)?;
-        tx.commit().map_err(db_error)
+        self.write_music_albums(edition, revision, &albums)
     }
     fn assistant_load(&self) -> Result<Option<String>, AppError> {
         self.connection

@@ -1,8 +1,10 @@
 import {validateV2} from './model-v2.js';
+import {validateV3} from './model-v3.js';
 export const modelFileLimit=50*1024*1024;
 export const modelTextureKeys=['box','kraft','blackPaper','sleeve','sleeveBack','sleeveLeft','sleeveRight','orange','blue','bookAM','bookPM','discAM','discPM','pmCenter','amCenter','amSpine','pmSpine'];
 const label=(value,max)=>typeof value==='string'&&value.trim().length>0&&value.length<=max;
 export function validateModelPackage(value){
+ if(value?.format==='atelier-interactive-model'&&value.version===3)return validateV3(value);
  if(value?.format==='atelier-interactive-model'&&value.version===2){
   if(!label(value.id,100)||!label(value.title,300)||!label(value.creator,600))throw Error('模型缺少编号、标题或作者。');
   return validateV2(value);

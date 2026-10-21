@@ -1,6 +1,6 @@
 import { leave } from '../ui/motion';
 import { measureAsync, measureSync } from '../models/timing';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CoverChange, Descriptor, LibraryCopy } from '../library/types';
 import { library, errorMessage } from '../library/gateway';
 import { Modal } from '../ui/Modal';
@@ -9,11 +9,18 @@ import { useModelDraft } from '../models/useModelDraft';
 import { ModelField } from '../models/ModelField';
 import { modelChangeRequest } from '../models/assets';
 import { EditionFields } from './EditionFields';
-import { netease } from '../integrations/gateway';
+import { Select } from '../ui/Select';
+import { netease, type LinkedMusicAlbum } from '../integrations/gateway';
 
 export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   item: LibraryCopy; categories: Descriptor[]; carriers: Descriptor[]; onClose(): void; onSaved(categoryId: string): void;
 }) {
+  const [albums, setAlbums] = useState<LinkedMusicAlbum[]>([]), [coverAlbum, setCoverAlbum] = useState('');
+  useEffect(() => {
+    let live = true;
+    if (item.edition.categoryId === 'music') void netease.albums(item.editionId).then(value => { if (live) { setAlbums(value); setCoverAlbum(String(value[0]?.album.albumId || '')); } }).catch(cause => { if (live) setError(errorMessage(cause)); });
+    return () => { live = false; };
+  }, [item.editionId]);
   const [edition, setEdition] = useState(item.edition);
   const [cover, setCover] = useState<CoverChange>({ action: 'keep' });
   const [busy, setBusy] = useState(false);
@@ -36,9 +43,10 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
     }}>
       {item.editionCopyCount > 1 && <p className="form-note">本版本共 {item.editionCopyCount} 套，资料、封面与模型会同步更新。</p>}
       <fieldset disabled={busy || reading}>
+        {albums.length > 1 && <label className="cover-album-choice">网易云封面来源<Select label="网易云封面来源" value={coverAlbum} options={albums.map(a => ({id:String(a.album.albumId),label:a.album.title}))} onChange={setCoverAlbum}/></label>}
         <CoverField edition={edition} assetId={item.coverAssetId} value={cover} onChange={setCover} onBusy={setReading}
           remoteCover={item.edition.categoryId === 'music' ? { label: '使用网易云封面', load: async () => {
-            const album = await netease.saved(item.editionId);
+            const album = albums.find(a => String(a.album.albumId) === coverAlbum)?.album ?? (await netease.albums(item.editionId))[0]?.album;
             if (!album) throw new Error('请先在网易云资料中关联专辑。');
             return netease.albumCover(album.albumId);
           } } : undefined}/>

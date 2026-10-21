@@ -1,5 +1,5 @@
 import type { ReleaseTrack } from '../metadata/gateway';
-import type { MusicSupplement } from './gateway';
+import type { MusicSupplement, SongLink } from './gateway';
 import { comparableTitle } from './trackTitle.ts';
 
 export const trackKey = (track: Pick<ReleaseTrack, 'position' | 'title'>) => JSON.stringify([track.position, track.title]);
@@ -26,21 +26,22 @@ function sameSlot(track: ReleaseTrack, song: Song, album: MusicSupplement) {
 }
 // Match only inside a user-selected album. Normalization applies to display
 // titles, never source IDs or stored link keys. Version words remain significant.
-export function trackMatches(rows: ReleaseTrack[], album: MusicSupplement | null) {
+export function trackMatches(rows: ReleaseTrack[], album: MusicSupplement | null, links: SongLink[] = []) {
   const result = new Map<string, MusicSupplement['tracks'][number]>();
-  if (!album) return result;
   const tracks = leaves(rows);
   const audio = tracks.filter(t => !t.position.startsWith('DVD'));
   const names = new Map(audio.map(t => [t, comparableTitle(t.title)]));
-  const songNames = new Map(album.tracks.map(t => [t, comparableTitle(t.title)]));
+  const songNames = new Map((album?.tracks || []).map(t => [t, comparableTitle(t.title)]));
   const used = new Set<number>();
   for (const track of tracks) {
     const key = trackKey(track);
     if (tracks.filter(t => trackKey(t) === key).length !== 1) continue;
-    const link = album.links?.find(l => l.position === track.position && l.title === track.title);
-    const manual = link && album.tracks.find(t => t.id === link.songId);
+    const link = album?.links?.find(l => l.position === track.position && l.title === track.title);
+    const manual = links.find(l => l.position === track.position && l.title === track.title)?.song
+      || (link && album?.tracks.find(t => t.id === link.songId));
     if (manual) { result.set(key, manual); used.add(manual.id); }
   }
+  if (!album) return result;
   for (const track of audio) {
     const key = trackKey(track), name = names.get(track);
     if (result.has(key) || !name || tracks.filter(t => trackKey(t) === key).length !== 1) continue;

@@ -6,15 +6,19 @@ mod credentials;
 mod data_location;
 mod discogs;
 mod integration_settings;
+mod exchange;
 mod model_picker;
 mod model_stream;
 mod models;
 mod mobile_bridge;
 mod netease;
+mod netease_albums;
+mod netease_queue;
 mod netease_artwork;
 mod netease_auth;
 mod netease_create;
 mod netease_playback;
+mod netease_links;
 mod optical;
 mod playback;
 mod playback_backend;
@@ -64,8 +68,11 @@ fn main() {
             app.manage(data_location::DataLocation(directory.clone()));
             app.manage(mobile_bridge::Bridge::default());
             app.manage(updates::UpdateState::default());
+            app.manage(Arc::new(exchange::ExchangeState::default()));
             app.manage(Arc::new(assistant::AgentState::default()));
             app.manage(Arc::new(netease::NeteaseState::default()));
+            app.manage(Arc::new(netease_queue::QueueState::default()));
+            app.manage(Arc::new(netease_links::SongState::default()));
             app.manage(Arc::new(netease_auth::Auth::default()));
             let runtime_root = app.path().resource_dir()?.join("netease-runtime");
             #[cfg(debug_assertions)]
@@ -91,6 +98,10 @@ fn main() {
             mobile_bridge::mobile_poll,
             mobile_bridge::mobile_stop,
             purchase_recognition::purchase_recognize,
+            exchange::exchange_status,
+            exchange::exchange_open_docs,
+            exchange::exchange_save,
+            exchange::exchange_refresh,
             integration_settings::integration_settings_get,
             integration_settings::integration_settings_save,
             netease::netease_search,
@@ -103,10 +114,19 @@ fn main() {
             netease_artwork::netease_album_cover,
             netease::netease_song_album,
             netease::netease_saved,
+            netease_albums::netease_albums,
+            netease_queue::netease_queue_context,
+            netease_queue::netease_queue_remember,
+            netease_albums::netease_disc_albums,
+            netease_albums::netease_bind_disc,
+            netease_albums::netease_reorder_albums,
+            netease_albums::netease_remove_album,
             netease::netease_apply,
             netease_create::netease_create_copy,
             netease_playback::netease_play,
-            netease_playback::netease_link_track,
+            netease_links::netease_link_track,
+            netease_links::netease_track_links,
+            netease_links::netease_song_detail,
             assistant::assistant_snapshot,
             assistant::assistant_send,
             assistant::assistant_cancel,

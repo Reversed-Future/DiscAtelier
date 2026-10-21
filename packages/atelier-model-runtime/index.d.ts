@@ -1,14 +1,21 @@
 export interface ModelState {
   step: number; stateId: string; busy: boolean; held: string | null;
   returns: {target: string; label: string}[];
+  assembly?: {
+    message: string; selected: string;
+    actions: {id: string; label: string; disabled: boolean}[];
+    parts: {id: string; label: string}[];
+  };
 }
 export interface ModelPackage {
-  version: 2; id: string; title: string; creator: string; cover: string;
-  initialState: string;
+  version: 2 | 3; id: string; title: string; creator: string; cover: string;
+  initialState?: string;
 }
 export interface ModelHandle {
   reset(): Promise<void>;
   activate(target: string | null): Promise<void>;
+  act(id: string): Promise<void>;
+  selectPart(id: string): Promise<void>;
   setInteractive(value: boolean): void;
   capturePreview(): Promise<{blob: Blob; width: number; height: number}>;
   screenBounds(): {left: number; top: number; width: number; height: number};

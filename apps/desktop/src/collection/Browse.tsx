@@ -3,11 +3,12 @@ import type { LibraryCopy } from '../library/types';
 import { Cover } from './Cover';
 import { ModelPreview } from '../models/ModelPreview';
 import { enter } from '../ui/motion';
+import { ConvertedPrice } from '../exchange/ConvertedPrice';
 import { formatPrice } from '../library/money';
 import { statuses } from '../library/types';
 
-export function Browse({ items, selectedId, select, inspect, organize, modelActive, artworkSlot }: {
-  items: LibraryCopy[]; selectedId: string; select(id: string): void; inspect(item: LibraryCopy): void; organize: boolean; modelActive: boolean; artworkSlot(node: HTMLDivElement | null): void;
+export function Browse({ items, selectedId, select, inspect, organize, modelActive, takenId, artworkSlot }: {
+  items: LibraryCopy[]; selectedId: string; select(id: string): void; inspect(item: LibraryCopy): void; organize: boolean; modelActive: boolean; takenId?: string; artworkSlot(node: HTMLDivElement | null): void;
 }) {
   const index = Math.max(0, items.findIndex(item => item.id === selectedId));
   const caption = useRef<HTMLDivElement>(null);
@@ -21,7 +22,7 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
   if (organize) return <div className="organizer" ref={root}><table><thead><tr><th>收藏</th><th>载体</th><th>状态</th><th>价格</th></tr></thead><tbody>
     {items.map(item => <tr key={item.id}><td>{item.modelAssetId ? <ModelPreview assetId={item.modelAssetId} authored={!item.coverAssetId} fallback={<Cover edition={item.edition} assetId={item.coverAssetId}/>}/> : <Cover edition={item.edition} assetId={item.coverAssetId}/>}<div><button className="row-title" onClick={() => inspect(item)}>{item.edition.title}<span>{item.edition.creator}</span></button></div></td>
       <td>{item.edition.media.map(medium => medium.carrierId.toUpperCase()).join(' + ')}</td><td>{statuses.find(status => status.id === item.copy.status)?.label}</td>
-      <td>{formatPrice(item.copy.amountMinor, item.copy.currency)}</td></tr>)}
+      <td>{formatPrice(item.copy.amountMinor, item.copy.currency)}<ConvertedPrice amount={item.copy.amountMinor} currency={item.copy.currency}/></td></tr>)}
   </tbody></table></div>;
   return <div className="record-store" ref={root} onKeyDown={event => {
     if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -41,8 +42,10 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
           aria-label={`${distance === 0 ? '取出' : '选择'} ${item.edition.title}`} tabIndex={distance === 0 ? 0 : -1}
           style={{ '--distance': distance, '--abs-distance': Math.abs(distance), '--direction': Math.sign(distance) } as CSSProperties}
           onClick={() => { if (dragged.current) { dragged.current = false; return; } setKeyNavigation(false); distance === 0 ? inspect(item) : select(item.id); }}>
-          {distance === 0 && modelActive ? <div className="shelf-artwork-slot" ref={artworkSlot}/> :
-            <div className="shelf-standin">{item.modelAssetId ? <ModelPreview assetId={item.modelAssetId} authored={!item.coverAssetId} fallback={<Cover edition={item.edition} assetId={item.coverAssetId}/>}/> : <Cover edition={item.edition} assetId={item.coverAssetId}/>}</div>}
+          {/* Keep the same decoded image node while it moves into/out of the
+              centre. Replacing it with a portal forced another cache lookup. */}
+          <div className="shelf-standin" data-taken={takenId === item.id}>{item.modelAssetId ? <ModelPreview assetId={item.modelAssetId} authored={!item.coverAssetId} fallback={<Cover edition={item.edition} assetId={item.coverAssetId}/>}/> : <Cover edition={item.edition} assetId={item.coverAssetId}/>}</div>
+          {distance === 0 && modelActive && <div className="shelf-artwork-slot" ref={artworkSlot}/>}
         </button>;
       })}
     </div>

@@ -6,10 +6,11 @@ import { discogs } from '../metadata/gateway';
 import { DiscogsSettings } from '../metadata/DiscogsSettings';
 import { PlaybackSettings } from '../optical/PlaybackSettings';
 import { IntegrationSettings } from '../integrations/IntegrationSettings';
+import { ExchangeSettings } from '../exchange/ExchangeSettings';
 import { DataSettings } from './DataSettings';
 import { UpdateSettings } from './UpdateSettings';
 
-const pages = [{ id: 'data', label: '数据' }, { id: 'discogs', label: 'Discogs' }, { id: 'netease', label: '网易云' }, { id: 'assistant', label: '助手' }, { id: 'playback', label: '播放' }, { id: 'updates', label: '更新' }] as const;
+const pages = [{ id: 'data', label: '数据' }, { id: 'exchange', label: '汇率' }, { id: 'discogs', label: 'Discogs' }, { id: 'netease', label: '网易云' }, { id: 'assistant', label: '助手' }, { id: 'playback', label: '播放' }, { id: 'updates', label: '更新' }] as const;
 type Page = typeof pages[number]['id'];
 export function Settings({ initialPage, libraryAvailable, onRestore, onClose, playing }: {
   initialPage: 'home' | 'discogs'; libraryAvailable: boolean; onRestore(): void; onClose(): void; playing: boolean;
@@ -41,6 +42,7 @@ export function Settings({ initialPage, libraryAvailable, onRestore, onClose, pl
         {page === 'data' && <DataSettings libraryAvailable={libraryAvailable} onRestore={onRestore} onBusy={setBusy}/>}
         {page === 'discogs' && <DiscogsSettings configured={configured} onConfigured={setConfigured} onBusy={setBusy} disabled={busy}/>}
         {(page === 'netease' || page === 'assistant') && <IntegrationSettings key={page} kind={page} onBusy={setBusy}/>}
+        {page === 'exchange' && <ExchangeSettings onBusy={setBusy}/>}
         {page === 'playback' && <PlaybackSettings onBusy={setBusy}/>}
         {page === 'updates' && <UpdateSettings onBusy={setBusy} playing={playing}/>}
         {error && <p className="form-error" role="alert">{error}</p>}

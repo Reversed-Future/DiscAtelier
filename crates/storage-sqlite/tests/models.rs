@@ -227,3 +227,38 @@ fn cancelled_preparation_and_dual_model_sources_cannot_write() {
     std::fs::write(&wrong, model()).unwrap();
     assert!(discatelier_storage::prepare_model_file(&wrong).is_err());
 }
+
+#[test]
+fn v3_prepared_import_survives_backup_and_restore() {
+    let dir = directory();
+    let cover: serde_json::Value =
+        serde_json::from_str::<serde_json::Value>(&model()).unwrap()["cover"].clone();
+    let profiles: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../packages/atelier-model-runtime/shared/assembly-profiles.json"
+    ))
+    .unwrap();
+    let textures: Vec<_> = profiles["nafelibeta2"]["textures"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|id| json!({"id":id,"image":"image"}))
+        .collect();
+    let text=json!({"format":"atelier-interactive-model","version":3,"id":"v3-test","title":"V3 fixture","creator":"Test","cover":cover,"rig":"album-assembly-v1","runtimeVersion":1,"profile":"nafelibeta2","images":[{"id":"image","image":cover}],"textures":textures,"data":{}}).to_string();
+    let path = dir.join("v3.ateliermodel");
+    std::fs::write(&path, &text).unwrap();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let asset = discatelier_storage::prepare_model_file(&path).unwrap();
+    let id = asset.id.clone();
+    let prepared = service.stage_model(asset).unwrap();
+    let mut request = request();
+    request.model = None;
+    request.model_token = Some(prepared.token);
+    service.create(request).unwrap();
+    let backup = service.backup().unwrap();
+    let preview = service.prepare_restore(backup).unwrap();
+    assert_eq!((preview.copies, preview.models), (1, 1));
+    service.restore(preview.token).unwrap();
+    drop(service);
+    let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    assert_eq!(service.model(id, false).unwrap(), text);
+}
