@@ -9,6 +9,7 @@ mod imports;
 mod migrations;
 mod models;
 mod music_albums;
+mod ordering;
 mod song_links;
 mod video;
 pub use models::file::prepare as prepare_model_file;

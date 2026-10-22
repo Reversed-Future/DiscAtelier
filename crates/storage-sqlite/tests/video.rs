@@ -99,7 +99,7 @@ fn schema_ten_gets_backup_and_existing_collection_is_unchanged() {
     let before = service.list(query()).unwrap().copies.remove(0);
     drop(service);
     let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
-    conn.execute_batch("DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DELETE FROM schema_migrations WHERE version=11; PRAGMA user_version=10;").unwrap();
+    conn.execute_batch("DROP TABLE collection_order; DROP TABLE video_edition_parts; DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DELETE FROM schema_migrations WHERE version>=11; PRAGMA user_version=10;").unwrap();
     drop(conn);
     let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
     let after = service.list(query()).unwrap().copies.remove(0);
@@ -307,4 +307,77 @@ fn source_validation_rejects_duplicates_or_orphans_and_keeps_old_serialization()
     additional.source = VideoSource::TmdbTv;
     valid.additional_works.push(additional);
     assert!(validate_video(&valid).is_ok());
+}
+#[test]
+fn parts_are_explicit_and_preserved_with_purchase_through_restore() {
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let mut value = metadata();
+    let mut back = value.work.clone().unwrap();
+    back.external_id = 312;
+    back.title = "后编".into();
+    value.additional_works.push(back);
+    value.parts = serde_json::from_value(json!([
+      {"id":"front","label":"前编","sourceKeys":["bangumi:311"],"coverSourceKey":"bangumi:311"},
+      {"id":"back","label":"后编","sourceKeys":["bangumi:312"],"coverSourceKey":"bangumi:312"}
+    ]))
+    .unwrap();
+    service.create_video(request(), value.clone()).unwrap();
+    let item = service.list(query()).unwrap().copies.remove(0);
+    assert_eq!(service.list(query()).unwrap().copies.len(), 1);
+    let backup = service.backup().unwrap();
+    let mut invalid = value.clone();
+    invalid.parts[1].source_keys = vec!["bangumi:311".into()];
+    let update = UpdateEdition {
+        request_id: uuid::Uuid::new_v4().to_string(),
+        edition_id: item.edition_id.clone(),
+        expected_revision: item.edition_revision,
+        edition: item.edition.clone(),
+        cover: CoverChange::Keep,
+        model: ModelChange::Keep,
+    };
+    assert!(service.update_video(update, invalid).is_err());
+    drop(service);
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let restore = service.prepare_restore(backup).unwrap();
+    service.restore(restore.token).unwrap();
+    assert_eq!(
+        to_value(service.video_metadata(&item.edition_id).unwrap().unwrap()).unwrap(),
+        to_value(value).unwrap()
+    );
+    assert_eq!(
+        to_value(service.list(query()).unwrap().copies[0].copy.clone()).unwrap(),
+        to_value(item.copy).unwrap()
+    );
+}
+
+#[test]
+fn schema_eleven_migrates_with_backup_and_no_automatic_parts() {
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    service.create_video(request(), metadata()).unwrap();
+    let before = service.list(query()).unwrap().copies.remove(0);
+    drop(service);
+    let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
+    connection.execute_batch("DROP TABLE collection_order; DROP TABLE video_edition_parts; DELETE FROM schema_migrations WHERE version>=12; PRAGMA user_version=11;").unwrap();
+    drop(connection);
+    let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    assert!(service
+        .video_metadata(&before.edition_id)
+        .unwrap()
+        .unwrap()
+        .parts
+        .is_empty());
+    assert_eq!(
+        to_value(service.list(query()).unwrap().copies.remove(0)).unwrap(),
+        to_value(before).unwrap()
+    );
+    let backups = service.backups().unwrap();
+    assert_eq!(backups.len(), 1);
+    let old = Connection::open(&backups[0].path).unwrap();
+    assert_eq!(
+        old.pragma_query_value::<i64, _>(None, "user_version", |row| row.get(0))
+            .unwrap(),
+        11
+    );
 }

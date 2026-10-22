@@ -3,6 +3,7 @@ import type { LibraryGateway } from './types';
 
 /** All storage access crosses this port; UI cannot issue SQL or filesystem calls. */
 export const library: LibraryGateway = {
+  move: (copyId,beforeId) => invoke('library_move', {copyId,beforeId}),
   content: editionId => invoke('library_content', { editionId }),
   backups: () => invoke('library_backups'),
   prepareRestore: path => invoke('library_prepare_restore', { path }),

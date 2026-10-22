@@ -34,5 +34,6 @@ pub(super) fn decode(text: &str) -> Result<VideoMetadata, AppError> {
         work,
         additional_works,
         physical: Default::default(),
+        parts: vec![],
     })
 }

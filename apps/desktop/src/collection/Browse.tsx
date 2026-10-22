@@ -1,22 +1,19 @@
+import { CollectionList } from './CollectionList';
+import { VideoCollectionCover } from '../video/VideoCollectionCover';
 import { useVideoMetadata } from '../video/useVideoMetadata';
 import { workTitles } from '../video/titles';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { LibraryCopy } from '../library/types';
-import { Cover } from './Cover';
 import { portraitCover } from '../library/coverShape';
-import { ModelPreview } from '../models/ModelPreview';
 import { enter } from '../ui/motion';
-import { ConvertedPrice } from '../exchange/ConvertedPrice';
-import { formatPrice } from '../library/money';
-import { statuses } from '../library/types';
 
-export function Browse({ items, selectedId, select, inspect, organize, modelActive, takenId, artworkSlot }: {
-  items: LibraryCopy[]; selectedId: string; select(id: string): void; inspect(item: LibraryCopy): void; organize: boolean; modelActive: boolean; takenId?: string; artworkSlot(node: HTMLDivElement | null): void;
+export function Browse({ items, selectedId, select, inspect, organize, modelActive, takenId, artworkSlot, move }: {
+  move(id:string,beforeId:string|null):Promise<void>; items: LibraryCopy[]; selectedId: string; select(id: string): void; inspect(item: LibraryCopy): void; organize: boolean; modelActive: boolean; takenId?: string; artworkSlot(node: HTMLDivElement | null): void;
 }) {
   const index = Math.max(0, items.findIndex(item => item.id === selectedId));
   const selected = items[index];
   const selectedVideo = useVideoMetadata(selected?.editionId || '', selected?.editionRevision || 0, selected?.edition.categoryId === 'video');
-  const titles = selected?.edition.categoryId === 'video' ? workTitles(selectedVideo.value?.work, selected.edition.title, selected.edition.creator) : { title: selected?.edition.title, subtitle: selected?.edition.creator };
+  const titles = selected?.edition.categoryId === 'video' ? selectedVideo.value?.parts?.length ? {title:selected.edition.title,subtitle:selected.edition.creator} : workTitles(selectedVideo.value?.work, selected.edition.title, selected.edition.creator) : { title: selected?.edition.title, subtitle: selected?.edition.creator };
   const caption = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
   const startX = useRef<number | undefined>(undefined);
@@ -25,11 +22,7 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
   useEffect(() => { enter(caption.current); }, [items[index]?.id]);
   useEffect(() => { enter(root.current, 0); }, [organize]);
   useEffect(() => { if (keyNavigation) root.current?.querySelector<HTMLButtonElement>('[data-current="true"]')?.focus(); }, [index, keyNavigation]);
-  if (organize) return <div className="organizer" ref={root}><table><thead><tr><th>收藏</th><th>载体</th><th>状态</th><th>价格</th></tr></thead><tbody>
-    {items.map(item => <tr key={item.id}><td>{item.modelAssetId ? <ModelPreview assetId={item.modelAssetId} authored={!item.coverAssetId} fallback={<Cover edition={item.edition} assetId={item.coverAssetId}/>}/> : <Cover edition={item.edition} assetId={item.coverAssetId}/>}<div><button className="row-title" onClick={() => inspect(item)}>{item.edition.title}<span>{item.edition.creator}</span></button></div></td>
-      <td>{item.edition.media.map(medium => medium.carrierId.toUpperCase()).join(' + ')}</td><td>{statuses.find(status => status.id === item.copy.status)?.label}</td>
-      <td>{formatPrice(item.copy.amountMinor, item.copy.currency)}<ConvertedPrice amount={item.copy.amountMinor} currency={item.copy.currency}/></td></tr>)}
-  </tbody></table></div>;
+  if (organize) return <CollectionList items={items} inspect={inspect} move={move}/>;
   return <div className="record-store" ref={root} onKeyDown={event => {
     if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
     event.preventDefault(); setKeyNavigation(true);
@@ -50,7 +43,7 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
           onClick={() => { if (dragged.current) { dragged.current = false; return; } setKeyNavigation(false); distance === 0 ? inspect(item) : select(item.id); }}>
           {/* Keep the same decoded image node while it moves into/out of the
               centre. Replacing it with a portal forced another cache lookup. */}
-          <div className="shelf-standin" data-taken={takenId === item.id}>{item.modelAssetId ? <ModelPreview assetId={item.modelAssetId} authored={!item.coverAssetId} fallback={<Cover edition={item.edition} assetId={item.coverAssetId}/>}/> : <Cover edition={item.edition} assetId={item.coverAssetId}/>}</div>
+          <div className="shelf-standin" data-taken={takenId === item.id}><VideoCollectionCover item={item}/></div>
           {distance === 0 && modelActive && <div className="shelf-artwork-slot" ref={artworkSlot}/>}
         </button>;
       })}

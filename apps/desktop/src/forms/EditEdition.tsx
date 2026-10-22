@@ -1,3 +1,4 @@
+import { partsError } from '../video/parts';
 import { video, emptyVideo } from '../video/gateway';
 import { VideoFields } from '../video/VideoFields';
 import { leave } from '../ui/motion';
@@ -41,6 +42,7 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
     <form className="editor-form" noValidate onSubmit={async event => {
       const dialog = event.currentTarget.closest('dialog');
       event.preventDefault(); if (busy || reading || !videoLoaded) return;
+      if (edition.categoryId === 'video' && partsError(videoDraft)) {setError(partsError(videoDraft));return;}
       const payload = measureSync('draft_encode', () => JSON.stringify({ edition, cover, model, videoDraft }));
       if (payload !== attempt.current.payload) attempt.current = { payload, requestId: crypto.randomUUID() };
       setBusy(true); setError('');

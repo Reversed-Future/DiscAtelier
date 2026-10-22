@@ -1,7 +1,9 @@
+import { useVideoMetadata } from './video/useVideoMetadata';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LibraryCopy, LibraryQuery, LibrarySnapshot } from './library/types';
 import { library, desktopAvailable, errorMessage } from './library/gateway';
 import { Icon } from './ui/Icon';
+import { WindowChrome } from './ui/WindowChrome';
 import { CollectionMenu } from './ui/CollectionMenu';
 import { enter } from './ui/motion';
 import { Browse } from './collection/Browse';
@@ -83,9 +85,13 @@ export function App() {
   const items = snapshot?.copies || [];
   const modelActive = !assistantOpen && !add && !restoring && !metadataOpen && !settingsPage && !opticalOpen && !player.open;
   const current = inspected || items.find(item => item.id === selectedId) || items[0];
-  const artwork = useCollectionArtwork(current, modelActive && (!organize || !!inspected), !!inspected);
+  const currentVideo = useVideoMetadata(current?.editionId || '',current?.editionRevision || 0,current?.edition.categoryId === 'video');
+  const [partId,setPartId] = useState(''), [instantFlip,setInstantFlip] = useState(false);
+  useEffect(() => {setPartId('');},[inspected?.id]);
+  const artwork = useCollectionArtwork(current, modelActive && (!organize || !!inspected), !!inspected, currentVideo.value, partId, instantFlip);
   return <div className="workspace" data-list={organize}>
-    <header className="topbar" inert={player.open}>
+    <WindowChrome/>
+    <header className="topbar" inert={player.open} data-window-drag="true">
       <div className="wordmark"><span className="disc-mark"/>DiscAtelier<span className="wordmark-dot">.</span></div>
       <nav className="categories" aria-label="收藏分区">{snapshot?.categories.map(category =>
         <button key={category.id} className={query.categoryId === category.id ? 'active' : ''} onClick={() => setQuery({ ...query, categoryId: category.id, query: '' })}>{category.label}</button>
@@ -108,7 +114,7 @@ export function App() {
     <main id="scene" ref={scene} aria-label="收藏展示" aria-busy={loading} inert={player.open}>
       {error ? <div className="empty-state"><span className="disc-mark"/><p role="alert">{error}</p>{desktopAvailable() && <button onClick={() => void refresh(query)}>重试</button>}</div> :
         !snapshot ? <div className="empty-state"><span className="disc-mark"/><p>正在打开收藏库</p></div> :
-        items.length ? <Browse items={items} selectedId={selectedId} select={setSelectedId} inspect={setInspected} organize={organize} modelActive={modelActive} takenId={inspected?.id} artworkSlot={artwork.shelfRef}/> :
+        items.length ? <Browse move={async (id,beforeId) => {await library.move(id,beforeId);await refresh(query);}} items={items} selectedId={selectedId} select={setSelectedId} inspect={setInspected} organize={organize} modelActive={modelActive} takenId={inspected?.id} artworkSlot={artwork.shelfRef}/> :
         <div className="empty-state"><span className="disc-mark"/><p>{query.query || query.status ? '没有匹配的收藏' : query.categoryId === 'music' ? '还没有音乐收藏' : '还没有影像收藏'}</p>
           <button onClick={() => query.query || query.status ? setQuery({ ...query, query: '', status: null }) : openAdd()}>{query.query || query.status ? '清除筛选' : '添加收藏'}</button></div>}
     </main>
@@ -118,7 +124,7 @@ export function App() {
     {player.active && !player.snapshot?.source.playlist.startsWith('netease-song:') && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
       {player.snapshot?.paused ? '已暂停' : player.snapshot?.phase === 'loading' ? '读取中' : '播放中'} · {player.snapshot?.title}
     </button>}
-    {inspected && <Inspection key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
+    {inspected && <Inspection metadata={currentVideo.value} metadataError={currentVideo.error} partId={partId} onPart={(id,instant) => {setPartId(id);setInstantFlip(instant);}} key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
       edit={() => setEditing(inspected)}/>}
     {editing && snapshot && <EditEdition item={editing} categories={snapshot.categories} carriers={snapshot.carriers}
       onClose={() => setEditing(null)}

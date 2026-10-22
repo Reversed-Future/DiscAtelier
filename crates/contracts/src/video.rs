@@ -1,4 +1,6 @@
+mod parts;
 use crate::AppError;
+pub use parts::VideoPart;
 use serde::{Deserialize, Serialize};
 
 /// Internal normalized fields; provider JSON is mapped explicitly by its adapter.
@@ -115,6 +117,8 @@ pub struct VideoEditionDetails {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct VideoMetadata {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parts: Vec<VideoPart>,
     pub work: Option<VideoWork>,
     pub physical: VideoEditionDetails,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -215,7 +219,7 @@ pub fn validate_video(value: &VideoMetadata) -> Result<(), AppError> {
                         })
                 })
         });
-    if !valid_physical || !valid_work {
+    if !valid_physical || !valid_work || !parts::valid(value) {
         return Err(AppError::new("validation", "作品或实体版本资料无效。"));
     }
     Ok(())

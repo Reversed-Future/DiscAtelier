@@ -8,7 +8,7 @@ pub(super) fn client() -> Result<Client, AppError> {
         .timeout(Duration::from_secs(25))
         .connect_timeout(Duration::from_secs(10))
         .redirect(reqwest::redirect::Policy::none())
-        .user_agent("DiscAtelier/0.1.14 (https://github.com/Reversed-Future/DiscAtelier)")
+        .user_agent("DiscAtelier/0.1.15 (https://github.com/Reversed-Future/DiscAtelier)")
         .build()
         .map_err(|_| error("无法建立资料查询连接。"))
 }

@@ -1,0 +1,18 @@
+/* Window controls share the navigation's surface, without a second wordmark. */
+.window-chrome { position: fixed; inset: 0 0 auto; z-index: 200; height: 30px; display: flex; color: var(--muted); background: var(--surface); user-select: none; pointer-events: auto; }
+.window-drag-region { flex: 1; min-width: 0; }
+.window-chrome button { flex: 0 0 44px; display: grid; place-items: center; padding: 0; border-radius: 0; cursor: default; transition: color 120ms ease, background-color 120ms ease; }
+.window-chrome button svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1; pointer-events: none; }
+.window-chrome button:hover { color: var(--ink); background: #ffffff0e; }
+.window-chrome .window-close:hover { color: var(--surface); background: var(--ink); }
+.window-chrome button:active { transform: none; background: #ffffff24; }
+.window-chrome button:focus-visible { outline-offset: -4px; }
+.window-error { display: block; padding: 6px 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+[data-window-drag] { user-select: none; }
+/* A viewport-sized dialog host keeps native controls outside the animated,
+   scrolling panel while still inside the modal top layer (and not inert). */
+.window-modal { position: fixed; inset: 0; margin: 0; width: 100vw; height: 100svh; max-width: none; max-height: none; padding: 48px 18px 18px; border: 0; background: transparent; color: var(--ink); overflow: hidden; }
+.window-modal[open] { display: grid; place-items: center; }
+.window-modal::backdrop { background: #00000070; }
+.window-modal > .panel-dialog { margin: 0; display: flex; flex-direction: column; height: min(720px, calc(100svh - 66px)); max-height: calc(100svh - 66px); }
+.player-view:not([data-fullscreen="true"]) { padding-top: 30px; }

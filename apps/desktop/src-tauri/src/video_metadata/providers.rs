@@ -44,6 +44,7 @@ pub fn detail(source: VideoSource, id: u64) -> Result<VideoWork, AppError> {
         work: Some(value.clone()),
         physical: Default::default(),
         additional_works: vec![],
+        parts: vec![],
     })?;
     Ok(value)
 }

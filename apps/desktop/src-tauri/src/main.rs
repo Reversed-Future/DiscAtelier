@@ -176,6 +176,7 @@ fn main() {
             models::model_choose,
             models::model_release,
             commands::library_list,
+            commands::library_move,
             commands::library_content,
             discogs::imports::discogs_complete_content,
             commands::library_create,

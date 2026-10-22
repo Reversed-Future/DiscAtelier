@@ -7,7 +7,8 @@ export interface VideoImage { kind: 'poster' | 'backdrop'; url: string; previewU
 export interface VideoChapter { id: number; group: string; number: string; title: string; originalTitle: string; airDate: string; duration: string; summary?: string; imageUrl?: string; episodeKind?: number; seasonNumber?: number }
 export interface VideoWork { source: VideoSource; externalId: number; title: string; originalTitle: string; summary: string; premiereDate: string; posterUrl: string; episodeCount: number | null; genres: string[]; people: { name: string; role: string }[]; facts?: VideoFact[]; characters?: VideoCharacter[]; chapters?: VideoChapter[] | null; images?: VideoImage[] | null }
 export interface VideoPhysical { territory: string; releaseDate: string; volume: string; includedContent: string; packaging: string }
-export interface VideoMetadata { work: VideoWork | null; physical: VideoPhysical; additionalWorks?: VideoWork[] }
+export interface VideoPart { id: string; label: string; sourceKeys: string[]; coverSourceKey: string }
+export interface VideoMetadata { parts?: VideoPart[]; work: VideoWork | null; physical: VideoPhysical; additionalWorks?: VideoWork[] }
 export const emptyVideo = (): VideoMetadata => ({ work: null, physical: { territory: '', releaseDate: '', volume: '', includedContent: '', packaging: '' } });
 export type PackagingKey = 'title' | 'creator' | 'editionLabel' | 'barcode' | 'catalogNumber' | 'territory' | 'releaseDate' | 'volume' | 'includedContent' | 'packaging' | 'discCount' | 'carrier';
 export interface PackagingField { key: PackagingKey; value: string; evidence: string; image: number }

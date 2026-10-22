@@ -2,6 +2,7 @@ export const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matc
 const ease = 'cubic-bezier(.23,1,.32,1)';
 const entering = new WeakMap<HTMLElement, Animation>();
 export function enter(node: HTMLElement | null, distance = 6) {
+  node = modalPanel(node);
   if (!node || reduced()) return;
   entering.get(node)?.cancel();
   const frames = distance === 0 ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: `translateY(${distance}px)` }, { opacity: 1, transform: 'translateY(0)' }];
@@ -10,6 +11,7 @@ export function enter(node: HTMLElement | null, distance = 6) {
   return animation;
 }
 export async function leave(node: HTMLElement | null) {
+  node = modalPanel(node);
   if (!node || reduced()) return;
   const computed = getComputedStyle(node);
   const start = { opacity: computed.opacity, transform: computed.transform };
@@ -17,4 +19,8 @@ export async function leave(node: HTMLElement | null) {
   try {
     await node.animate([start, { opacity: 0, transform: 'translateY(5px)' }], { duration: 120, easing: ease, fill: 'forwards' }).finished;
   } catch {}
+}
+
+function modalPanel(node: HTMLElement | null) {
+  return node?.matches('dialog.window-modal') ? node.querySelector<HTMLElement>(':scope > .panel-dialog') : node;
 }

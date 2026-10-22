@@ -239,3 +239,76 @@ fn future_and_modified_schemas_are_refused() {
         .unwrap();
     assert!(SqliteLibrary::open(&directory).is_err());
 }
+#[test]
+fn manual_order_survives_reopen_and_backup_without_editing_collection_fields() {
+    let dir = database();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    for _ in 0..3 {
+        service.create(request()).unwrap();
+    }
+    let before = service.list(query()).unwrap().copies;
+    let ids: Vec<String> = before.iter().map(|x| x.id.clone()).collect();
+    service.move_copy(&ids[2], Some(&ids[0])).unwrap();
+    let expected = vec![ids[2].clone(), ids[0].clone(), ids[1].clone()];
+    assert_eq!(
+        service
+            .list(query())
+            .unwrap()
+            .copies
+            .iter()
+            .map(|x| x.id.clone())
+            .collect::<Vec<_>>(),
+        expected
+    );
+    let backup = service.backup().unwrap();
+    service.move_copy(&ids[2], None).unwrap();
+    drop(service);
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let restore = service.prepare_restore(backup).unwrap();
+    service.restore(restore.token).unwrap();
+    let after = service.list(query()).unwrap().copies;
+    assert_eq!(
+        after.iter().map(|x| x.id.clone()).collect::<Vec<_>>(),
+        expected
+    );
+    for item in after {
+        assert_eq!(
+            serde_json::to_value(&item).unwrap(),
+            serde_json::to_value(before.iter().find(|old| old.id == item.id).unwrap()).unwrap()
+        );
+    }
+    assert!(service
+        .move_copy(&ids[0], Some(&Uuid::new_v4().to_string()))
+        .is_err());
+    assert_eq!(
+        service
+            .list(query())
+            .unwrap()
+            .copies
+            .iter()
+            .map(|x| x.id.clone())
+            .collect::<Vec<_>>(),
+        expected
+    );
+}
+
+#[test]
+fn ordering_does_not_cross_categories_or_drop_unfiltered_items() {
+    let dir = database();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    for _ in 0..3 {
+        service.create(request()).unwrap();
+    }
+    let before = service.list(query()).unwrap().copies;
+    let mut video = request();
+    video.edition.as_mut().unwrap().category_id = "video".into();
+    let video_id = service.create(video).unwrap();
+    assert!(service.move_copy(&before[0].id, Some(&video_id)).is_err());
+    service
+        .move_copy(&before[2].id, Some(&before[0].id))
+        .unwrap();
+    let after = service.list(query()).unwrap().copies;
+    assert_eq!(after.len(), 3);
+    assert_eq!(after[0].id, before[2].id);
+    assert_eq!(after[2].id, before[1].id);
+}

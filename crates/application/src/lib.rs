@@ -1,4 +1,5 @@
 use discatelier_contracts::*;
+pub mod ordering;
 pub mod video;
 use discatelier_domain::{carriers, categories, validate_copy, validate_edition};
 use std::collections::BTreeMap;

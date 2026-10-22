@@ -182,7 +182,7 @@ fn schema_nine_migration_preserves_original_bytes_and_fallback_manual_song_ident
             |r| r.get(0),
         )
         .unwrap();
-    conn.execute_batch("DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DROP TRIGGER music_album_import_insert; DROP TRIGGER music_album_import_update; DROP TABLE edition_disc_albums; DROP TABLE edition_music_albums; DELETE FROM schema_migrations WHERE version>=10; PRAGMA user_version=9;").unwrap();
+    conn.execute_batch("DROP TABLE collection_order; DROP TABLE video_edition_parts; DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DROP TRIGGER music_album_import_insert; DROP TRIGGER music_album_import_update; DROP TABLE edition_disc_albums; DROP TABLE edition_music_albums; DELETE FROM schema_migrations WHERE version>=10; PRAGMA user_version=9;").unwrap();
     drop(conn);
     let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
     let conn = Connection::open(dir.join("library.sqlite3")).unwrap();

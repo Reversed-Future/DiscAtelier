@@ -1,3 +1,4 @@
+import { partsError } from '../video/parts';
 import { video, emptyVideo } from '../video/gateway';
 import { VideoFields } from '../video/VideoFields';
 import { useEffect, useRef, useState } from 'react';
@@ -70,6 +71,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
       }
       try {
         const purchase = { ...copy, amountMinor: parsePrice(amount, copy.currency) };
+        if (edition.categoryId === 'video' && !existing && partsError(videoDraft)) throw new Error(partsError(videoDraft));
         const coverData = !existing && cover.action === 'replace' ? cover.dataUrl : null;
         const modelToken = !existing && model.action === 'prepared' ? model.token : null;
         const neteaseAlbumId = edition.categoryId === 'music' ? music?.albumId || null : null;

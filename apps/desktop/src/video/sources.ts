@@ -17,7 +17,10 @@ export function putVideoWork(value: VideoMetadata, work: VideoWork): VideoMetada
 }
 export function removeVideoWork(value: VideoMetadata, key: string): VideoMetadata {
   const [work, ...additionalWorks] = videoWorks(value).filter(w => workKey(w) !== key);
-  return {...value, work: work || null, additionalWorks};
+  return {...value, work: work || null, additionalWorks, parts: value.parts?.map(part => {
+    const sourceKeys = part.sourceKeys.filter(source => source !== key);
+    return {...part, sourceKeys, coverSourceKey: sourceKeys.includes(part.coverSourceKey) ? part.coverSourceKey : sourceKeys[0] || ''};
+  })};
 }
 export function primaryVideoWork(value: VideoMetadata, key: string): VideoMetadata {
   const works = videoWorks(value), work = works.find(w => workKey(w) === key);

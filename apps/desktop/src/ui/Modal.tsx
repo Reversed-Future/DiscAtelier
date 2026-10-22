@@ -31,7 +31,7 @@ export function Modal({ title, children, onClose, busy = false, wide = false, in
     if (!shared) ref.current?.close();
     onClose();
   }
-  return <dialog ref={ref} aria-label={title} className={`${inspection ? 'inspection-dialog' : `panel-dialog${wide ? ' wide-panel' : ''}`} ${className}`}
+  return <dialog ref={ref} aria-label={title} className={inspection ? `inspection-dialog ${className}` : 'window-modal'}
     onKeyDown={event => {
       if (event.key !== 'Tab') return;
       const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('button, input, textarea, a[href], [tabindex]')]
@@ -41,10 +41,18 @@ export function Modal({ title, children, onClose, busy = false, wide = false, in
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     }}
-    onCancel={event => { event.preventDefault(); event.stopPropagation(); void close(); }}>
-    {inspection
-      ? <button type="button" className="return-button" onClick={() => void close()} disabled={busy}><Icon name="back"/>放回</button>
-      : <div className="panel-heading"><h2>{title}</h2><button type="button" className="icon-button" aria-label="关闭" disabled={busy} onClick={() => void close()}><Icon name="close"/></button></div>}
-    {inspection ? children : <div className="panel-body">{children}</div>}
+    onCancel={event => {
+      event.preventDefault(); event.stopPropagation();
+      // A file input emits a bubbling cancel event when its chooser is dismissed.
+      // It is not a request to close this editor (or any enclosing dialog).
+      if (event.target === event.currentTarget) void close();
+    }}>
+    {inspection ? <>
+      <button type="button" className="return-button" onClick={() => void close()} disabled={busy}><Icon name="back"/>放回</button>
+      {children}
+    </> : <section className={`panel-dialog${wide ? ' wide-panel' : ''} ${className}`}>
+      <div className="panel-heading" data-window-drag="true"><h2>{title}</h2><button type="button" className="icon-button" aria-label="关闭" disabled={busy} onClick={() => void close()}><Icon name="close"/></button></div>
+      <div className="panel-body">{children}</div>
+    </section>}
   </dialog>;
 }

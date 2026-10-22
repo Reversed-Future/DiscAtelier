@@ -3,11 +3,11 @@ use discatelier_contracts::{validate_supplement, AppError, MusicSupplement, Supp
 use discatelier_integration_http::{error, request};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+mod artwork;
 mod song;
 mod stream;
-mod artwork;
 pub use artwork::{album_cover, download_album_cover};
-pub use song::{parse_song, song_detail, parse_song_album, song_album};
+pub use song::{parse_song, parse_song_album, song_album, song_detail};
 pub use stream::{parse_song_stream, song_stream, SongStream};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

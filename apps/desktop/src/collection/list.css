@@ -1,0 +1,6 @@
+.collection-drag-handle { flex-shrink: 0; color: var(--muted); font-size: 16px; width: 16px; padding: 8px 0; cursor: grab; user-select: none; }
+.collection-drag-handle:active { cursor: grabbing; }
+.collection-drag-handle:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+.organizer tr[data-drop="before"] { box-shadow: inset 0 2px var(--ink); }
+.organizer tr[data-drop="after"] { box-shadow: inset 0 -2px var(--ink); }
+.organizer[aria-busy="true"] .collection-drag-handle { cursor: wait; opacity: .5; }

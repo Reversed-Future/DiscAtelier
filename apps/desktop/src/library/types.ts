@@ -30,6 +30,7 @@ export type CoverChange = { action: 'keep' } | { action: 'remove' } | { action: 
 export interface UpdateEdition { requestId: string; editionId: string; expectedRevision: number; edition: EditionDraft; cover: CoverChange; model: { action: 'keep' } | { action: 'remove' } | { action: 'replace'; text: string } | { action: 'prepared'; token: string } }
 export interface UpdateCopy { requestId: string; id: string; expectedRevision: number; copy: CopyDraft }
 export interface LibraryGateway {
+  move(copyId: string, beforeId: string | null): Promise<void>;
   content(editionId: string): Promise<import('../metadata/gateway').EditionContent | null>;
   backups(): Promise<BackupEntry[]>;
   prepareRestore(path: string): Promise<RestorePreview>;

@@ -1,3 +1,5 @@
+import type { VideoMetadata } from '../video/gateway';
+import { VideoPartCards } from '../video/VideoPartCards';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ModelHandle } from '../../../../packages/atelier-model-runtime';
@@ -7,7 +9,7 @@ import { ModelPreview } from '../models/ModelPreview';
 import { Cover } from './Cover';
 import { createArtworkMotion } from './artwork-motion';
 
-export function useCollectionArtwork(item: LibraryCopy | undefined, active: boolean, inspecting: boolean) {
+export function useCollectionArtwork(item: LibraryCopy | undefined, active: boolean, inspecting: boolean, metadata: VideoMetadata | null, partId: string, instantFlip: boolean) {
   const [container] = useState(() => { const node = document.createElement('div'); node.className = 'shared-artwork'; return node; });
   const [shelf, shelfRef] = useState<HTMLDivElement | null>(null);
   const [inspection, inspectionRef] = useState<HTMLDivElement | null>(null);
@@ -52,7 +54,7 @@ export function useCollectionArtwork(item: LibraryCopy | undefined, active: bool
   // Browsing uses persistent sleeve images. Only inspection needs the moving
   // portal, so changing selection cannot replace a visible decoded cover.
   const portal = active && item && inspecting ? createPortal(
-    item.modelAssetId
+    metadata?.parts?.length === 2 ? <VideoPartCards item={item} metadata={metadata} activeId={partId} instant={instantFlip}/> : item.modelAssetId
       ? <ModelView assetId={item.modelAssetId} enabled={inspecting} visible={inspecting && phase === 'inspection'} interactive={inspecting && phase === 'inspection'} onReady={ready} onBusy={setBusy} fallback={
         <ModelPreview assetId={item.modelAssetId} authored={!item.coverAssetId} fallback={<Cover edition={item.edition} assetId={item.coverAssetId}/>}/>}/>
       : <div className="physical-case"><Cover edition={item.edition} assetId={item.coverAssetId}/></div>,

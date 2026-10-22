@@ -2,14 +2,14 @@ import { useState, type ReactNode } from 'react';
 import type { LibraryCopy } from '../library/types';
 import { errorMessage } from '../library/gateway';
 import { video, type VideoMetadata, type VideoWork } from './gateway';
-import { putVideoWork, videoWorks } from './sources';
+import { putVideoWork, videoWorks, workKey } from './sources';
 import { useSourceData, type SourceDataKind } from './useSourceData';
 
-export function CollectionSourceData({item, metadata, kind, enabled = true, onSaved, onBusy, children}: {
-  item:LibraryCopy; metadata:VideoMetadata; kind:SourceDataKind; enabled?:boolean;
+export function CollectionSourceData({item, metadata, kind, enabled = true, onSaved, onBusy, children, sourceKeys}: {
+  sourceKeys?:string[]; item:LibraryCopy; metadata:VideoMetadata; kind:SourceDataKind; enabled?:boolean;
   onSaved():Promise<void>; onBusy(value:boolean):void; children(works:VideoWork[]):ReactNode;
 }) {
-  const data = useSourceData(videoWorks(metadata),kind,enabled), [saving,setSaving] = useState(false), [error,setError] = useState('');
+  const data = useSourceData(videoWorks(metadata).filter(w => !sourceKeys || sourceKeys.includes(workKey(w))),kind,enabled), [saving,setSaving] = useState(false), [error,setError] = useState('');
   const label = {chapters:'章节', images:'图库', characters:'角色资料'}[kind];
   async function save() {
     if (saving || data.busy || !data.drafts.length) return;

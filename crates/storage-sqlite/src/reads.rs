@@ -52,12 +52,13 @@ fn read(
          FROM copies c JOIN editions e ON e.id=c.edition_id JOIN works w ON w.id=e.work_id
          JOIN purchases p ON p.copy_id=c.id
          LEFT JOIN edition_sources s ON s.edition_id=e.id
+         LEFT JOIN collection_order o ON o.copy_id=c.id
          WHERE ((?4 IS NULL AND w.category_id=?1) OR (?4 IS NOT NULL AND e.id=?4)) AND (?2 IS NULL OR c.status=?2)
            AND (?3='' OR instr(w.title,?3)>0 OR instr(w.creator,?3)>0 OR instr(e.barcode,?3)>0
              OR instr(e.catalog_number,?3)>0 OR instr(e.edition_label,?3)>0
              OR instr(p.seller,?3)>0 OR instr(c.notes,?3)>0 OR instr(c.storage_location,?3)>0
              OR EXISTS(SELECT 1 FROM imported_identifiers i WHERE i.edition_id=e.id AND instr(i.value,?3)>0))
-         ORDER BY c.added_at DESC, c.id",
+         ORDER BY COALESCE(o.position,-1), c.added_at DESC, c.id",
         )
         .map_err(db_error)?;
     let rows = statement

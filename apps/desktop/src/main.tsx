@@ -3,6 +3,8 @@ import { App } from './App';
 import { ExchangeProvider } from './exchange/ExchangeContext';
 import './styles/exchange.css';
 import './video/video.css';
+import './video/parts.css';
+import './collection/list.css';
 import './styles/shell.css';
 import './styles/store.css';
 import './styles/inspection.css';
@@ -16,5 +18,6 @@ import './styles/catalog.css';
 import './styles/settings.css';
 import './styles/integrations.css';
 import './styles/music-dock.css';
+import './styles/window-chrome.css';
 
 createRoot(document.getElementById('root')!).render(<ExchangeProvider><App/></ExchangeProvider>);
