@@ -122,6 +122,13 @@ pub async fn discogs_release(
     .await
 }
 #[tauri::command]
+pub fn discogs_open_token_page(app: tauri::AppHandle) -> Result<(), AppError> {
+    use tauri_plugin_opener::OpenerExt;
+    app.opener()
+        .open_url("https://www.discogs.com/settings/developers", None::<&str>)
+        .map_err(|_| AppError::new("browser", "无法打开系统浏览器。"))
+}
+#[tauri::command]
 pub fn discogs_open_release(app: tauri::AppHandle, id: u64) -> Result<(), AppError> {
     use tauri_plugin_opener::OpenerExt;
     if id == 0 || id > 9_007_199_254_740_991 {

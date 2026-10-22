@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod assistant;
 mod backups;
+mod bluray;
 mod cd_metadata;
 mod commands;
 mod credentials;
@@ -105,6 +106,7 @@ fn main() {
             mobile_bridge::mobile_stop,
             purchase_recognition::purchase_recognize,
             video_metadata::video_open_source,
+            video_metadata::video_open_bangumi_token,
             video_metadata::links::video_open_reference,
             video_metadata::artwork::video_cover,
             video_metadata::video_search,
@@ -176,6 +178,9 @@ fn main() {
             optical::optical_probe,
             optical::playback_settings_get,
             optical::playback_settings_save,
+            bluray::bluray_key_status,
+            bluray::bluray_key_import,
+            bluray::bluray_key_download,
             models::model_choose,
             models::model_release,
             commands::library_list,
@@ -198,6 +203,7 @@ fn main() {
             discogs::discogs_search,
             discogs::discogs_release,
             discogs::discogs_open_release,
+            discogs::discogs_open_token_page,
             discogs::imports::discogs_prepare_import,
             discogs::imports::discogs_import
         ])

@@ -6,6 +6,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
 };
+use tauri::Manager;
 
 pub struct OpticalService {
     pub(crate) directory: PathBuf,
@@ -24,6 +25,31 @@ impl OpticalService {
     }
 }
 pub type OpticalState = Arc<OpticalService>;
+pub(crate) fn bluray_libraries(
+    window: &tauri::WebviewWindow,
+) -> Result<(PathBuf, PathBuf), AppError> {
+    let packaged = window
+        .path()
+        .resource_dir()
+        .map_err(|_| AppError::new("player", "无法定位应用资源目录。"))?
+        .join("aacs");
+    let directory = if packaged.join("libaacs.dll").is_file() {
+        packaged
+    } else {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("aacs")
+    };
+    let aacs = directory.join("libaacs.dll");
+    let bdplus = directory.join("libbdplus.dll");
+    if !aacs.is_file() || !bdplus.is_file() {
+        return Err(AppError::new(
+            "player",
+            "安装包缺少 libaacs/libbdplus，无法使用本地蓝光解密。",
+        ));
+    }
+    Ok((aacs, bdplus))
+}
 pub(crate) async fn run<T: Send + 'static>(
     state: OpticalState,
     action: impl FnOnce(&Path) -> Result<T, AppError> + Send + 'static,
@@ -49,6 +75,7 @@ pub async fn optical_list(
 }
 #[tauri::command]
 pub async fn optical_probe(
+    window: tauri::WebviewWindow,
     state: tauri::State<'_, OpticalState>,
     playback: tauri::State<'_, crate::playback::PlaybackState>,
     mount_point: String,
@@ -56,6 +83,7 @@ pub async fn optical_probe(
     playlist: String,
 ) -> Result<PlaybackDiagnostic, AppError> {
     let playback = playback.inner().clone();
+    let (libaacs, libbdplus) = bluray_libraries(&window)?;
     run(state.inner().clone(), move |directory| {
         if crate::playback::active(&playback)? {
             return Err(AppError::new("player", "请先停止播放再运行诊断。"));
@@ -63,6 +91,7 @@ pub async fn optical_probe(
         verify_disc(&mount_point, &token, &playlist)?;
         let settings = crate::playback_settings::read(directory)?;
         let result = discatelier_player_mpv::MpvProbe::configured(&settings)?
+            .with_bluray_libraries(libaacs, libbdplus)?
             .probe(&mount_point, &playlist)?;
         verify_disc(&mount_point, &token, &playlist)?;
         Ok(result)

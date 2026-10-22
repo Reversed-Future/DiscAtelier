@@ -68,6 +68,7 @@ pub fn inspect(
         tracks: Vec::new(),
         // Directory presence is not a claim of successful decryption or BD-J support.
         aacs_directory: root.join("AACS").is_dir(),
+        bdplus_directory: root.join("BDSVM").is_dir(),
         java_directory: root.join("BDMV").join("JAR").is_dir(),
     })
 }

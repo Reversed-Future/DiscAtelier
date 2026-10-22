@@ -64,10 +64,13 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .metadata-results article { padding: 14px 0; border-bottom: 1px solid var(--line); }
 .metadata-results article > button { padding: 0; text-align: left; width: 100%; display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 14px; }
 .metadata-result-text { min-width: 0; display: grid; gap: 6px; overflow-wrap: anywhere; }
-.search-cover { display: block; width: 64px; height: 64px; background: #ffffff08; box-shadow: 0 2px 5px #0003; }
-.search-cover img { width: 100%; height: 100%; object-fit: contain; display: block; animation: cover-appear 160ms ease-out; }
+.search-cover { display: block; position: relative; overflow: hidden; width: 64px; height: 64px; background: linear-gradient(135deg, #1b1b1b, #2b2b2b 52%, #202020); box-shadow: 0 2px 5px #0003; }
+.search-cover::before { content: ""; position: absolute; z-index: 2; inset: -65%; pointer-events: none; background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.38) 50%, transparent 62%); opacity: 0; }
+.search-cover[data-loading="true"]::before { opacity: 1; animation: cover-scan 2.8s cubic-bezier(.45,.05,.25,1) infinite; }
+.search-cover img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; display: block; opacity: 0; transition: opacity 280ms ease; }
+.search-cover[data-loaded="true"] img { opacity: 1; }
 .search-cover-empty { display: block; width: 100%; height: 100%; border: 1px solid var(--line); background: linear-gradient(90deg, transparent 5px, var(--line) 6px, transparent 7px); }
-@keyframes cover-appear { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .search-cover[data-loading="true"]::before { animation: none; } .search-cover img { transition: none; } }
 .metadata-search-body > .metadata-pagination { flex-shrink: 0; margin-bottom: 0; }
 .metadata-results strong { font-weight: 400; font-size: 14px; color: var(--ink); }
 .metadata-results span, .metadata-results a, .source-attribution { color: var(--muted); font-size: 11px; line-height: 1.7; }

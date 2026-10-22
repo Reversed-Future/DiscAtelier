@@ -56,6 +56,13 @@ pub struct AudioTrack {
     pub channels: Option<u64>,
     pub selected: bool,
 }
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PlaybackMode {
+    #[default]
+    LocalAacs,
+    MakeMkvFallback,
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaybackSnapshot {
@@ -82,6 +89,8 @@ pub struct PlaybackSnapshot {
     pub dvd_title: Option<i32>,
     #[serde(default)]
     pub dvd_menu: bool,
+    #[serde(default)]
+    pub playback_mode: PlaybackMode,
     pub error: Option<String>,
 }
 fn default_volume() -> u16 {
@@ -127,6 +136,8 @@ pub struct PlaybackRecord {
     pub selected_audio: Option<i64>,
     #[serde(default)]
     pub dvd_title: Option<i32>,
+    #[serde(default)]
+    pub playback_mode: PlaybackMode,
 }
 impl From<&PlaybackSnapshot> for PlaybackRecord {
     fn from(s: &PlaybackSnapshot) -> Self {
@@ -143,6 +154,7 @@ impl From<&PlaybackSnapshot> for PlaybackRecord {
             completed: s.completed,
             selected_audio: s.selected_audio,
             dvd_title: s.dvd_title,
+            playback_mode: s.playback_mode,
         }
     }
 }

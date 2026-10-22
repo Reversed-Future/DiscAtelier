@@ -29,6 +29,7 @@ export const discogs = {
   prepareImport: (id: number, categoryId: string) => invoke<ImportPreview>('discogs_prepare_import', { id, categoryId }),
   importCopy: (request: ImportCopyRequest) => invoke<string>('discogs_import', { request }),
   openRelease: (id: number) => invoke<void>('discogs_open_release', { id }),
+  openTokenPage: () => invoke<void>('discogs_open_token_page'),
   configured: () => invoke<boolean>('discogs_configured'),
   saveToken: (token: string) => invoke<void>('discogs_save_token', { token }),
   forgetToken: () => invoke<void>('discogs_forget_token'),

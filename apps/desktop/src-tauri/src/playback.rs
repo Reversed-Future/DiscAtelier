@@ -44,6 +44,7 @@ pub async fn playback_start(
     let video_window = window
         .state::<crate::video_surface::VideoSurface>()
         .handle();
+    let resources = window.clone();
     crate::optical::run(optical.inner().clone(), move |directory| {
         let mut current = player
             .lock()
@@ -112,7 +113,10 @@ pub async fn playback_start(
             if resume_title.is_some() {
                 return Err(AppError::new("validation", "BD 不使用 DVD 标题编号。"));
             }
-            let config = MpvProbe::configured(&settings)?.embedded(video_window)?;
+            let (libaacs, libbdplus) = crate::optical::bluray_libraries(&resources)?;
+            let config = MpvProbe::configured(&settings)?
+                .with_bluray_libraries(libaacs, libbdplus)?
+                .embedded(video_window)?;
             #[cfg(feature = "performance-harness")]
             let config = match fixture {
                 Some((_, file)) => config.with_fixture(file)?,

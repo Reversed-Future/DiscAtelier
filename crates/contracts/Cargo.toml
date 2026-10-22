@@ -7,3 +7,6 @@ edition.workspace = true
 chrono.workspace = true
 serde.workspace = true
 discatelier-domain.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

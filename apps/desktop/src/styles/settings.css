@@ -28,6 +28,27 @@
 @media (prefers-reduced-motion: reduce) { .netease-qr-image img { animation: none; transition: none; } .netease-account-avatar img { transition: none; } }
 .data-path { margin: 8px 0 10px; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; user-select: text; }
 .setting-hint { color: var(--muted); font-size: 11px; line-height: 1.8; margin: 8px 0; }
+.bangumi-expiry { margin: 4px 0 10px; }
+.token-expiry { color: var(--ink); }
+.token-expiry.expired { color: #e6a0a0; }
+.discogs-token-row { margin-top: 4px; }
+.discogs-token-input { margin: 0 0 8px; }
+.bluray-key-row { margin-top: 4px; }
+.bluray-download { display: grid; gap: 7px; margin: 4px 0 12px; }
+.bluray-download-line { display: flex; justify-content: space-between; gap: 14px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.bluray-download-track { height: 2px; overflow: hidden; background: var(--line); }
+.bluray-download-track span { display: block; height: 100%; background: var(--ink); transition: width 140ms linear; }
+.bluray-download-track[data-indeterminate="true"] span { width: 35%; animation: bluray-download-pulse 900ms ease-in-out infinite alternate; }
+@keyframes bluray-download-pulse { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+@media (prefers-reduced-motion: reduce) { .bluray-download-track span { transition: none; animation: none; } }
+.bluray-key-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 14px; }
+.bluray-key-actions .text-button { padding-right: 0; }
+.bluray-key-message { color: var(--ink); }
+.bluray-key-sources { color: var(--ink); margin-top: -2px; }
+.make-mkv-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin: 17px 0; }
+.make-mkv-row > label:first-child { flex: 1; min-width: 0; margin: 0; }
+.bluray-fallback { display: flex; flex-direction: row; align-items: center; flex: none; gap: 7px; margin: 0 0 10px; font-size: 11px; white-space: nowrap; }
+.bluray-fallback input { appearance: auto; -webkit-appearance: checkbox; width: 14px; height: 14px; margin: 0; padding: 0; accent-color: var(--ink); }
 .settings-actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-top: 22px; }
 .settings-feedback { min-height: 36px; color: var(--muted); font-size: 11px; line-height: 1.8; margin-top: 18px; }
 .settings-feedback > * { animation: settings-feedback-in 160ms var(--ease); }

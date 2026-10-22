@@ -59,6 +59,7 @@ pub fn decode(bytes: &[u8]) -> Option<OpticalMedium> {
             .collect(),
         tracks,
         aacs_directory: false,
+        bdplus_directory: false,
         java_directory: false,
     })
 }

@@ -1,17 +1,20 @@
 use crate::{
+    bluray,
     job::PlayerJob,
     protocol::PlaybackState,
     session::{Checkpoint, Request},
     transport::Ipc,
-    MpvProbe,
+    Decryptor, MpvProbe,
 };
 use discatelier_application::PlaybackProgress;
-use discatelier_contracts::{AppError, PlaybackControl, PlaybackPhase, PlaybackSnapshot};
+use discatelier_contracts::{
+    AppError, PlaybackControl, PlaybackMode, PlaybackPhase, PlaybackSnapshot,
+};
 use serde_json::{json, Value};
 use std::{
     collections::BTreeMap,
     os::windows::process::CommandExt,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -38,26 +41,84 @@ pub fn run(
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build();
+    let context = PlayContext {
+        directory: &directory,
+        shared: &shared,
+        receiver: &receiver,
+        checkpoint: &checkpoint,
+        cancelled: &cancelled,
+    };
     let result = match runtime {
-        Ok(runtime) => runtime.block_on(play(
-            &config,
-            &directory,
-            &mut state,
-            &shared,
-            &receiver,
-            &checkpoint,
-            &cancelled,
-        )),
+        Ok(runtime) => {
+            let mut result =
+                runtime.block_on(play(&config, Decryptor::LocalAacs, &mut state, &context));
+            if let Err(error) = &result {
+                if !cancelled.load(Ordering::Acquire) {
+                    if let Some(failure) = bluray::classify_decryption(
+                        &error.message,
+                        &read_log(&directory, &state.snapshot.session_id, Decryptor::LocalAacs),
+                    ) {
+                        if config.fallback_library().is_some() {
+                            state.snapshot.playback_mode = PlaybackMode::MakeMkvFallback;
+                            state.snapshot.phase = PlaybackPhase::Loading;
+                            state.snapshot.error = None;
+                            state.snapshot.duration_seconds = None;
+                            state.snapshot.seekable = false;
+                            state.snapshot.audio_tracks.clear();
+                            state.snapshot.selected_audio = None;
+                            state.loaded = false;
+                            state.core_idle = true;
+                            state.progress.reset_sample();
+                            publish(&mut state, &shared, &checkpoint, false);
+                            result = runtime.block_on(play(
+                                &config,
+                                Decryptor::MakeMkv,
+                                &mut state,
+                                &context,
+                            ));
+                            if let Err(fallback_error) = &result {
+                                state.snapshot.error = Some(format!(
+                                    "本地解密失败：{}；兼容模式也未能播放：{}",
+                                    failure.message(),
+                                    fallback_error.message
+                                ));
+                            }
+                        } else {
+                            let reason = if !config.fallback_enabled() {
+                                "MakeMKV 兼容兜底已在播放设置中关闭，未启动兼容模式。"
+                            } else {
+                                "未配置可用的 MakeMKV libmmbd64.dll，未启动兼容模式。"
+                            };
+                            state.snapshot.error = Some(format!(
+                                "{} {reason} 请导入适用的 KEYDB.cfg 后重试。",
+                                failure.message()
+                            ));
+                        }
+                    } else if let Some(report) = bluray::report(
+                        &error.message,
+                        &read_log(&directory, &state.snapshot.session_id, Decryptor::LocalAacs),
+                    ) {
+                        state.snapshot.error = Some(report.into());
+                    }
+                }
+            }
+            result
+        }
         Err(_) => Err(AppError::new("player", "无法启动播放线程。")),
     };
     if let Err(error) = result {
         if state.snapshot.phase != PlaybackPhase::Stopping {
             state.snapshot.phase = PlaybackPhase::Failed;
-            state.snapshot.error = Some(error.message);
+            if state.snapshot.error.is_none() {
+                state.snapshot.error = Some(error.message);
+            }
         }
     }
     if state.snapshot.phase.active() {
         state.snapshot.phase = PlaybackPhase::Stopped;
+    }
+    for decryptor in [Decryptor::LocalAacs, Decryptor::MakeMkv] {
+        let _ = std::fs::remove_file(log_path(&directory, &state.snapshot.session_id, decryptor));
     }
     publish(&mut state, &shared, &checkpoint, true);
 }
@@ -130,17 +191,43 @@ fn command(state: &mut PlaybackState, control: &PlaybackControl) -> Result<Value
         PlaybackControl::Stop => unreachable!(),
     }
 }
+fn log_path(directory: &Path, session_id: &str, decryptor: Decryptor) -> PathBuf {
+    let suffix = match decryptor {
+        Decryptor::LocalAacs => "aacs",
+        Decryptor::MakeMkv => "compat",
+    };
+    directory.join(format!("mpv-{session_id}-{suffix}.log"))
+}
+fn read_log(directory: &Path, session_id: &str, decryptor: Decryptor) -> String {
+    let path = log_path(directory, session_id, decryptor);
+    let bytes = std::fs::read(path).unwrap_or_default();
+    let start = bytes.len().saturating_sub(64 * 1024);
+    String::from_utf8_lossy(&bytes[start..]).into_owned()
+}
+struct PlayContext<'a> {
+    directory: &'a Path,
+    shared: &'a Arc<Mutex<PlaybackSnapshot>>,
+    receiver: &'a mpsc::Receiver<Request>,
+    checkpoint: &'a Checkpoint,
+    cancelled: &'a AtomicBool,
+}
 async fn play(
     config: &MpvProbe,
-    directory: &std::path::Path,
+    decryptor: Decryptor,
     state: &mut PlaybackState,
-    shared: &Arc<Mutex<PlaybackSnapshot>>,
-    receiver: &mpsc::Receiver<Request>,
-    checkpoint: &Checkpoint,
-    cancelled: &AtomicBool,
+    context: &PlayContext<'_>,
 ) -> Result<(), AppError> {
+    let PlayContext {
+        directory,
+        shared,
+        receiver,
+        checkpoint,
+        cancelled,
+    } = context;
     let pipe = format!(r"\\.\pipe\discatelier-{}", state.snapshot.session_id);
     let bindings = directory.join("player-bindings.conf");
+    let log = log_path(directory, &state.snapshot.session_id, decryptor);
+    let _ = std::fs::remove_file(&log);
     std::fs::write(&bindings,"SPACE cycle pause\nLEFT seek -5 relative\nRIGHT seek 5 relative\nf cycle fullscreen\nESC quit\nq quit\n")
         .map_err(|_|AppError::new("player","无法保存播放快捷键。"))?;
     let mut process = Command::new(&config.executable);
@@ -170,6 +257,8 @@ async fn play(
         ])
         .arg(format!("--input-conf={}", bindings.display()))
         .arg(format!("--input-ipc-server={pipe}"))
+        .arg(format!("--log-file={}", log.display()))
+        .arg("--msg-level=all=error")
         .arg(format!(
             "--bluray-device={}",
             state.snapshot.source.mount_point
@@ -179,12 +268,7 @@ async fn play(
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
-    if let Some(path) = &config.make_mkv_library {
-        let stem = path.with_extension("");
-        process
-            .env("LIBAACS_PATH", &stem)
-            .env("LIBBDPLUS_PATH", &stem);
-    }
+    config.decryptor_env(&mut process, decryptor);
     let mut child = process
         .spawn()
         .map_err(|_| AppError::new("player", "无法启动 MPV。"))?;

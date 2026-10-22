@@ -76,6 +76,8 @@ packages/category-contracts/ 品类描述与 UI 扩展契约
 | DiscIdentifier | fingerprint、resolveBindings | 返回证据和多个匹配，不猜版本 |
 | DiscStructureReader | listTitles、listStreams、listChapters | 各盘种实现，原始标识带后端版本 |
 | PlaybackBackend | capabilities、open、play、pause、seek、stop、events | UI 不依赖具体播放器句柄 |
+
+蓝光播放的默认解密适配器是随包 libaacs/libbdplus，MPV 的 libbluray 直接读取 `bd://` 播放列表；KEYDB.cfg 位于 libaacs 标准 `%APPDATA%\aacs` 目录。只有明确分类为 AACS／BD+／密钥能力不足且用户开启兜底时，播放工作线程才在终止前一 MPV Job 后，用 `libmmbd64.dll` 作为兼容 AES/BD+ 提供者重启会话；读盘错误、停止、区域和 BD-J 不进入兜底。AACS/BD+/BD-J 只报告结构检测，区域保持未确认。
 | ModelRenderer | validate、preview、mount、dispose | 数据包受检，不执行包内代码 |
 | PriceProvider | inspectUrl | 未来扩展，不接受任意网络代理任务 |
 | AssistantModelProvider | streamTurn、cancel | 厂商协议在适配器内处理 |

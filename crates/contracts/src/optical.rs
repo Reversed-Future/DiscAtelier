@@ -29,6 +29,8 @@ pub struct OpticalMedium {
     #[serde(default)]
     pub tracks: Vec<CdTrack>,
     pub aacs_directory: bool,
+    #[serde(default)]
+    pub bdplus_directory: bool,
     pub java_directory: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,11 +55,39 @@ pub struct PlaybackDiagnostic {
     pub details: String,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PlaybackSettings {
     pub mpv_executable: String,
     pub make_mkv_library: String,
     #[serde(default)]
     pub vlc_library: String,
+    #[serde(default = "default_make_mkv_fallback")]
+    pub make_mkv_fallback: bool,
+}
+fn default_make_mkv_fallback() -> bool {
+    true
+}
+impl Default for PlaybackSettings {
+    fn default() -> Self {
+        Self {
+            mpv_executable: String::new(),
+            make_mkv_library: String::new(),
+            vlc_library: String::new(),
+            make_mkv_fallback: true,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PlaybackSettings;
+
+    #[test]
+    fn old_settings_default_to_fallback_enabled() {
+        let value: PlaybackSettings =
+            serde_json::from_str(r#"{"mpvExecutable":"","makeMkvLibrary":"","vlcLibrary":""}"#)
+                .unwrap();
+        assert!(value.make_mkv_fallback);
+    }
 }

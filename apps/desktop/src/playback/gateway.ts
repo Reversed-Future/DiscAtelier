@@ -5,7 +5,7 @@ export interface AudioTrack { id: number; title: string; language: string; codec
 export interface PlaybackRecord {
   sessionId: string; source: Source; title: string; startedAt: string; updatedAt: string; phase: Phase;
   positionSeconds: number; durationSeconds: number | null; watchedSeconds: number; completed: boolean; selectedAudio: number | null;
-  dvdTitle: number | null;
+  dvdTitle: number | null; playbackMode: 'localAacs' | 'makeMkvFallback';
 }
 export interface Snapshot extends PlaybackRecord {
   paused: boolean; seeking: boolean; seekable: boolean; audioTracks: AudioTrack[]; volume: number; rate: number; error: string | null; dvdMenu: boolean;

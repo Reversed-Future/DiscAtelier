@@ -21,8 +21,10 @@
 .netease-result-text { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .netease-result-text strong { font-size: 14px; font-weight: 500; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .netease-result-text > span { color: var(--muted); font-size: 12px; }
-.netease-cover { display: block; position: relative; flex: 0 0 64px; width: 64px; height: 64px; background: #ffffff08; box-shadow: 0 2px 5px #0003; }
-.netease-cover img { display: block; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 160ms ease-out; }
+.netease-cover { display: block; position: relative; overflow: hidden; flex: 0 0 64px; width: 64px; height: 64px; background: linear-gradient(135deg, #1b1b1b, #2b2b2b 52%, #202020); box-shadow: 0 2px 5px #0003; }
+.netease-cover::before { content: ""; position: absolute; z-index: 2; inset: -65%; pointer-events: none; background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.38) 50%, transparent 62%); opacity: 0; }
+.netease-cover[data-loading="true"]::before { opacity: 1; animation: cover-scan 2.8s cubic-bezier(.45,.05,.25,1) infinite; }
+.netease-cover img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 280ms ease-out; }
 .netease-cover img[data-loaded="true"] { opacity: 1; }
 .netease-cover.large { width: min(100%, 240px); height: auto; aspect-ratio: 1; margin-bottom: 24px; }
 .netease-pagination { display: flex; align-items: center; gap: 20px; font-size: 12px; }

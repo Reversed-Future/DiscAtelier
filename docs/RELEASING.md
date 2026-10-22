@@ -1,6 +1,6 @@
 # Windows 发布
 
-当前版本：0.1.17。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
+当前版本：0.1.18。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
 
 ## 0.1.4 发布记录
 

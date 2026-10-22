@@ -65,7 +65,10 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
         {medium?.kind === 'bluray' && <>
           <dl className="optical-facts">
             <div><dt>播放列表</dt><dd>{medium.playlists.length}</dd></div>
-            <div><dt>区域</dt><dd>未确认</dd></div>
+            <div><dt>区域</dt><dd>未确认（不修改光驱区域）</dd></div>
+            <div><dt>AACS</dt><dd>{medium.aacsDirectory ? '检测到' : '未检测到'}</dd></div>
+            <div><dt>BD+</dt><dd>{medium.bdplusDirectory ? '检测到' : '未检测到'}</dd></div>
+            <div><dt>BD-J</dt><dd>{medium.javaDirectory ? '检测到，未提供菜单导航' : '未检测到'}</dd></div>
           </dl>
           <div className="optical-actions">
             <Select label="播放列表" value={playlist} options={medium.playlists.map(name => ({ id: name, label: name }))} disabled={busy || player.active || player.busy}

@@ -16,6 +16,13 @@ fn error(message: impl Into<String>) -> AppError {
     AppError::new("video_metadata", message)
 }
 #[tauri::command]
+pub fn video_open_bangumi_token(app: tauri::AppHandle) -> Result<(), AppError> {
+    use tauri_plugin_opener::OpenerExt;
+    app.opener()
+        .open_url("https://next.bgm.tv/demo/access-token/create", None::<&str>)
+        .map_err(|_| error("无法打开系统浏览器。"))
+}
+#[tauri::command]
 pub fn video_open_source(app: tauri::AppHandle, url: String) -> Result<(), AppError> {
     use tauri_plugin_opener::OpenerExt;
     if url != "https://www.themoviedb.org/settings/api" && providers::parse_link(&url)?.is_none() {

@@ -63,6 +63,7 @@ impl MpvSession {
             rate: 1.0,
             dvd_title: None,
             dvd_menu: false,
+            playback_mode: discatelier_contracts::PlaybackMode::LocalAacs,
             error: None,
         };
         checkpoint(&initial)?;

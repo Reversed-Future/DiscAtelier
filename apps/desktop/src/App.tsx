@@ -1,5 +1,6 @@
 import { useVideoMetadata } from './video/useVideoMetadata';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import type { LibraryCopy, LibraryQuery, LibrarySnapshot } from './library/types';
 import { library, desktopAvailable, errorMessage } from './library/gateway';
 import { Icon } from './ui/Icon';
@@ -48,11 +49,37 @@ export function App() {
   const searchTrigger = useRef<HTMLButtonElement>(null);
   const scene = useRef<HTMLElement>(null);
   const generation = useRef(0);
+  const expiryNotice = useRef('');
   const notifyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const notify = (message: string) => {
     clearTimeout(notifyTimer.current); setNotice(message);
     notifyTimer.current = setTimeout(() => setNotice(''), 3000);
   };
+  useEffect(() => {
+    if (!desktopAvailable()) return;
+    let live = true;
+    async function checkExpiry() {
+      try {
+        const settings = await invoke<{
+          bangumiConfigured: boolean; bangumiExpiresAt: string | null;
+          bangumiExpired: boolean; bangumiDaysRemaining: number | null;
+        }>('video_settings_get');
+        if (!live || !settings.bangumiConfigured || !settings.bangumiExpiresAt) return;
+        const key = `${settings.bangumiExpired ? 'expired' : 'soon'}:${settings.bangumiExpiresAt}`;
+        if (expiryNotice.current === key) return;
+        if (settings.bangumiExpired) {
+          expiryNotice.current = key;
+          notify('Bangumi 令牌已过期，请在设置 → 影像资料中更新');
+        } else if (settings.bangumiDaysRemaining !== null && settings.bangumiDaysRemaining <= 7) {
+          expiryNotice.current = key;
+          notify(`Bangumi 令牌将在 ${settings.bangumiDaysRemaining} 天后过期`);
+        }
+      } catch { /* 凭据不可用时保持静默，设置页会显示错误。 */ }
+    }
+    void checkExpiry();
+    const timer = setInterval(() => void checkExpiry(), 30 * 60 * 1000);
+    return () => { live = false; clearInterval(timer); };
+  }, []);
   const refresh = useCallback(async (filter: LibraryQuery) => {
     const version = ++generation.current;
     if (!desktopAvailable()) { setError('请在 DiscAtelier 桌面窗口中打开收藏库。'); setLoading(false); return; }

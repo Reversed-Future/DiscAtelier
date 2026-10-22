@@ -1,5 +1,5 @@
 use discatelier_application::LibraryService;
-use discatelier_contracts::{PlaybackPhase, PlaybackRecord, PlaybackSource};
+use discatelier_contracts::{PlaybackMode, PlaybackPhase, PlaybackRecord, PlaybackSource};
 use discatelier_storage::SqliteLibrary;
 
 fn record() -> PlaybackRecord {
@@ -21,6 +21,7 @@ fn record() -> PlaybackRecord {
         completed: false,
         selected_audio: Some(2),
         dvd_title: None,
+        playback_mode: PlaybackMode::LocalAacs,
     }
 }
 

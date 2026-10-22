@@ -10,9 +10,11 @@ function imageUrl(value: string): string | undefined {
 
 export function SearchCover({ thumb, cover }: { thumb: string; cover: string }) {
   const [failed, setFailed] = useState<string[]>([]);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const src = [imageUrl(thumb), imageUrl(cover)].find(url => url && !failed.includes(url));
-  return <span className="search-cover" aria-hidden="true">
+  const loaded = !!src && loadedSrc === src;
+  return <span className="search-cover" data-loading={!!src && !loaded} data-loaded={loaded} aria-hidden="true">
     {src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer"
-      onError={() => setFailed(values => [...values, src])}/> : <span className="search-cover-empty"/>}
+      onLoad={() => setLoadedSrc(src)} onError={() => setFailed(values => [...values, src])}/> : <span className="search-cover-empty"/>}
   </span>;
 }

@@ -32,6 +32,7 @@ input.playback-volume-range:focus, input.playback-volume-range:focus-visible { b
 .player-view { position: fixed; inset: 0; z-index: 100; background: #090909; display: grid; grid-template-rows: 54px minmax(0, 1fr) 170px; padding: 0 32px; opacity: 1; transition: opacity 160ms cubic-bezier(.23,1,.32,1); @starting-style { opacity: 0; } }
 .player-header { display: flex; align-items: center; justify-content: flex-start; gap: 16px; min-width: 0; }
 .player-heading { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; font-weight: 400; }
+.playback-mode { margin-left: auto; padding: 2px 7px; border: 1px solid #ffffff26; border-radius: 999px; color: var(--muted); font-size: 10px; white-space: nowrap; }
 .player-picture { background: #000; min-height: 0; outline: none; display: grid; place-items: center; }
 .player-picture > span { font-size: 12px; color: var(--muted); }
 .player-footer { width: min(100%, 1100px); margin: auto; align-self: stretch; }

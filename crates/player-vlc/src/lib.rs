@@ -136,6 +136,7 @@ impl VlcSession {
             rate: 1.0,
             dvd_title: None,
             dvd_menu: start.dvd,
+            playback_mode: discatelier_contracts::PlaybackMode::LocalAacs,
             error: None,
         };
         checkpoint(&initial)?;

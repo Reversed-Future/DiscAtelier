@@ -1,0 +1,27 @@
+DiscAtelier bundles the following unmodified Windows x64 libraries:
+
+libaacs 0.12.0
+libbdplus 0.2.0
+
+Source:
+https://code.videolan.org/videolan/libaacs
+https://code.videolan.org/videolan/libbdplus
+
+Prebuilt binaries:
+https://github.com/KnugiHK/libaacs-libbdplus-windows
+release 0.12.0-0.2.0-20260715, asset libaacs_libbdplus.zip
+SHA-256 99d5711aa8a221ecefdaa0158845a5ef5f4bf2d167d33b8f1bc9991328a71401
+
+libaacs.dll SHA-256:
+f701f19cbc9828573f65f0b9392d25a593ab6b9b30cce5b1a32b89d29cadb816
+
+libbdplus.dll SHA-256:
+eb828111783cb4d03c2adcccc1b50f07a860e74b43591c4689d3e50b5e6579ef
+
+The binaries were verified with:
+gh attestation verify <file> -R KnugiHK/libaacs-libbdplus-windows
+
+Both libraries are licensed under the GNU Lesser General Public License,
+version 2.1 or later. See COPYING.LGPL-2.1. The corresponding source is
+available at the VideoLAN repositories above. No KEYDB.cfg or key material is
+included in this directory or in the application package.

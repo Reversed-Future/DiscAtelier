@@ -79,6 +79,7 @@ export function PlayerView({ player }: { player: PlaybackController }) {
     <header className="player-header" ref={header} inert={!chrome.visible}>
       <button className="text-button" ref={back} onClick={() => void close()} disabled={closing || player.busy}><Icon name="back"/>返回</button>
       <strong className="player-heading">{player.snapshot?.title || '内置播放器'}</strong>
+      {player.snapshot?.playbackMode === 'makeMkvFallback' && <span className="playback-mode" title="本地解密不足，已切换到 MakeMKV 兼容 DLL">正在使用兼容模式</span>}
     </header>
     <div className="player-picture" ref={surface} tabIndex={0} aria-label="视频画面">
       {!player.active && <span>{player.snapshot?.phase === 'failed' ? '无法播放' : '已停止'}</span>}

@@ -48,9 +48,18 @@ button:active { transform: scale(.98); }
 .menu-totals { display: flex; flex-direction: column; gap: 9px; margin: 8px 10px 0; padding-top: 15px; border-top: 1px solid var(--line); font-size: 11px; color: #aaa; }
 .prototype-note { color: #777; font-size: 9px; padding: 12px 10px 1px; margin: 0; }
 #scene { min-height: calc(100svh - 100px); }
-.cover-art { width: 100%; height: 100%; overflow: hidden; background: #d8d8d8; }
-.cover-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover-art { position: relative; width: 100%; height: 100%; overflow: hidden; background: linear-gradient(135deg, #1b1b1b 0%, #2b2b2b 52%, #202020 100%); }
+.cover-art::before { content: ""; position: absolute; z-index: 2; inset: -65%; pointer-events: none; background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.38) 50%, transparent 62%); transform: translate3d(-72%, -72%, 0); animation: cover-scan 2.8s cubic-bezier(.45,.05,.25,1) infinite; }
+.cover-art img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity 280ms ease; }
+.cover-art[data-loaded="true"] img { opacity: 1; }
+.cover-art[data-loaded="true"]::before { opacity: 0; animation: none; transition: opacity 200ms ease; }
 .empty-cover { display: flex; flex-direction: column; justify-content: space-between; background: #eae7df; color: #333; padding: 18px; text-align: left; }
+.empty-cover::before { display: none; }
+@keyframes cover-scan { from { transform: translate3d(-72%, -72%, 0); } to { transform: translate3d(72%, 72%, 0); } }
+@media (prefers-reduced-motion: reduce) {
+  .cover-art::before { animation: none; opacity: .25; }
+  .cover-art img { transition: none; }
+}
 .empty-cover span { font-size: 9px; letter-spacing: 2px; }
 .empty-cover strong { font-size: 24px; font-weight: 400; overflow-wrap: anywhere; }
 .empty-cover small { font-size: 10px; }
