@@ -1,6 +1,6 @@
 # DiscAtelier 更新路线
 
-**2026-10-22 0.1.17 已发布**：助手 Markdown 显示、即时发送与重试，网易云 15 MiB 封面与 schema 14 迁移，小米 MiMo 空 `tool_calls` 兼容，更新安装自动停播与说明完整显示，视频音量／倍速与底部控制条，收藏删除，章节／图库确认按钮上移、空简介显示及详情封面侧面按钮移除，均纳入正式发行。110 项脚本测试、139 项 Rust 测试（排除桌面 crate，5 项按环境忽略）、严格 Clippy、格式检查、TypeScript／Vite 与签名 NSIS 构建通过；草稿和正式发布五项资产完整回读一致，实际私有更新下载与签名验证通过，篡改包被拒绝。发布后逐个删除 56,638 个预览程序和构建缓存文件，失败 0，文件大小统计约减少 18.87 GiB；保留源码、签名密钥、主程序、`netease-runtime` 资源、收藏与备份。详见 [0.1.17 发布校验](docs/releases/v0.1.17-verification.md)。
+**2026-10-22 0.1.17 已发布**：助手 Markdown 显示、即时发送与重试，网易云 15 MiB 封面与 schema 14 迁移，小米 MiMo 空 `tool_calls` 兼容，更新安装自动停播与说明完整显示，视频音量／倍速与底部控制条，收藏删除，章节／图库确认按钮上移、空简介显示及详情封面侧面按钮移除，均纳入正式发行。110 项脚本测试、139 项 Rust 测试（排除桌面 crate，5 项按环境忽略）、严格 Clippy、格式检查、TypeScript／Vite 与签名 NSIS 构建通过；草稿和正式发布五项资产完整回读一致，实际私有更新下载与签名验证通过，篡改包被拒绝。发布后逐个删除 56,646 个预览程序和构建缓存文件，失败 0，文件大小统计约减少 18.88 GiB；保留源码、签名密钥、主程序、`netease-runtime` 资源、收藏与备份。详见 [0.1.17 发布校验](docs/releases/v0.1.17-verification.md)。
 
 **2026-10-22 详情封面侧面按钮移除（未发行）**：收藏详情中没有模型的封面不再显示“侧面／正面”切换按钮，封面保持默认正视角；两编版本的“翻面”按钮保留。同步删除 `data-side` 状态、侧面旋转样式和相关旧 `side` 选择器。110 项脚本测试、TypeScript／Vite、全工作区 139 项 Rust 测试（排除桌面 crate，5 项按环境忽略）、严格 Clippy 与格式检查通过。Tauri Release 预览 `target/release/DiscAtelier-netease-cover-15mb-preview.exe` 已重建，SHA-256 `9bf2c350ce25a03ebdfcc3eadb2ad368cc79245ca40aab17bb4e1931a516dbfd`，与构建主程序一致；`DiscAtelier-assistant-preview.exe` 同步为同一构建；同目录保留 4,831 个 `netease-runtime` 运行资源。未打包安装包；实际详情封面显示由用户验收。
 
