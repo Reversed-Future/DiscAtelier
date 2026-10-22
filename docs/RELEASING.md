@@ -1,6 +1,6 @@
 # Windows 发布
 
-当前版本：0.1.12。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
+当前版本：0.1.17。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
 
 ## 0.1.4 发布记录
 
@@ -78,6 +78,10 @@ npm run release:build
 ## 0.1.8 发布记录
 
 升级备份修复和网易云手动入库已发布到私有仓库并设为 Latest。五项远端资产回读一致，本地及实际私有更新下载验签通过，篡改包被拒绝。已分别删除本次安装包及 `DiscAtelier-update-music-preview.exe`，保留收藏和备份。详见 [0.1.8 发布校验](releases/v0.1.8-verification.md)。已被较新数据库拦截的旧版首次仍需手动覆盖安装。
+
+## 0.1.17 发布记录
+
+2026-10-22：助手 Markdown、即时发送与重试，网易云 15 MiB 封面及 schema 14，流式 `tool_calls: null`，更新安装自动停播，视频音量／倍速，收藏删除和多项界面修正已发布私有正式版并设为 Latest。五项资产完整回读，实际私有更新验签通过，篡改包被拒绝；本地安装包、预览程序和构建缓存逐个清理，失败 0。详见 [0.1.17 发布校验](releases/v0.1.17-verification.md)。
 
 ## 0.1.12 发布记录
 
