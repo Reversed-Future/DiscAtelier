@@ -67,6 +67,20 @@ pub fn decode(bytes: &[u8]) -> Option<OpticalMedium> {
 mod tests {
     use super::*;
     #[test]
+    fn optiarc_three_track_cd_provides_all_playback_routes() {
+        // Read-only capture from Optiarc BC-5500S: 36-byte, three-track TOC.
+        let bytes = [
+            0, 34, 1, 3, 0, 0x10, 1, 0, 0, 0, 2, 0, 0, 0x10, 2, 0, 0, 4, 18, 8, 0, 0x10, 3, 0, 0,
+            7, 48, 49, 0, 0x10, 0xaa, 0, 0, 12, 24, 4,
+        ];
+        let disc = decode(&bytes).unwrap();
+        assert_eq!(disc.playlists, ["cd-track:1", "cd-track:2", "cd-track:3"]);
+        assert_eq!(disc.tracks.len(), 3);
+        assert_eq!(disc.tracks[0].duration_seconds, 19208.0 / 75.0);
+        assert_eq!(disc.tracks[1].duration_seconds, 15791.0 / 75.0);
+        assert_eq!(disc.tracks[2].duration_seconds, 20655.0 / 75.0);
+    }
+    #[test]
     fn audio_toc_keeps_physical_numbers_rejects_data_and_truncation() {
         let mut bytes = vec![
             0, 26, 1, 2, 0, 0x10, 1, 0, 0, 0, 2, 0, 0, 0x14, 2, 0, 0, 3, 2, 0, 0, 0x10, 0xaa, 0, 0,

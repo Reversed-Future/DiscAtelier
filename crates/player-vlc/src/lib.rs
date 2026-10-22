@@ -1,5 +1,7 @@
 mod audio_cd;
+mod cd_metadata;
 pub use audio_cd::cd_track;
+pub use cd_metadata::read_cd_metadata;
 mod ffi;
 mod player;
 mod stream;

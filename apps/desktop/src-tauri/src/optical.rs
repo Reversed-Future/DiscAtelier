@@ -8,14 +8,18 @@ use std::{
 };
 
 pub struct OpticalService {
-    directory: PathBuf,
+    pub(crate) directory: PathBuf,
     gate: Mutex<()>,
+    pub(crate) cd_metadata: Mutex<crate::cd_metadata::Cache>,
+    pub(crate) cd_metadata_gate: Mutex<()>,
 }
 impl OpticalService {
     pub fn new(directory: PathBuf) -> Self {
         Self {
             directory,
             gate: Mutex::new(()),
+            cd_metadata: Mutex::default(),
+            cd_metadata_gate: Mutex::default(),
         }
     }
 }

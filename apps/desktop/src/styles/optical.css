@@ -11,6 +11,16 @@
 .optical-facts dt { color: var(--muted); }
 .optical-facts dd { margin: 0; }
 .optical-actions { display: flex; align-items: center; gap: 20px; }
+.cd-drive-controls .select-control { min-width: 0; flex: 1; }
+.cd-metadata-facts { display: grid; gap: 8px 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 20px 0; font-size: 12px; line-height: 1.6; }
+.cd-metadata-facts > div { display: flex; gap: 14px; min-width: 0; }
+.cd-metadata-facts dt { color: var(--muted); flex-shrink: 0; }
+.cd-metadata-facts dd { margin: 0; overflow-wrap: anywhere; }
+.cd-metadata-status { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 16px; margin-top: 16px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.cd-metadata-status .text-button { font-size: inherit; }
+.audio-cd-content { min-width: 0; }
+.audio-cd-content .audio-track-list strong { min-width: 0; text-align: left; overflow-wrap: anywhere; }
+.audio-cd-content .audio-track-list time { flex-shrink: 0; }
 .optical-diagnostic { margin-top: 18px; }
 .optical-log { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 180ms ease-out, opacity 150ms ease-out; }
 .optical-log[data-open="true"] { grid-template-rows: 1fr; opacity: 1; }

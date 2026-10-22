@@ -21,6 +21,8 @@ mod imports;
 pub use imports::*;
 mod optical;
 pub use optical::*;
+mod cd_metadata;
+pub use cd_metadata::*;
 mod playback;
 pub use playback::*;
 

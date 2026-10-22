@@ -1,8 +1,8 @@
-use discatelier_contracts::{AppError, OpticalDrive, OpticalStatus};
+use discatelier_contracts::{AppError, OpticalDrive, OpticalKind, OpticalMedium, OpticalStatus};
 use std::{mem::size_of, path::Path, ptr};
 use windows_sys::Win32::{
     Foundation::{
-        CloseHandle, GetLastError, ERROR_NOT_READY, ERROR_NO_MEDIA_IN_DRIVE, HANDLE,
+        CloseHandle, GetLastError, ERROR_NOT_READY, ERROR_NO_MEDIA_IN_DRIVE, GENERIC_READ, HANDLE,
         INVALID_HANDLE_VALUE,
     },
     Storage::FileSystem::{
@@ -79,6 +79,47 @@ fn name(device: &Device) -> Option<String> {
     (!parts.is_empty()).then(|| parts.join(" "))
 }
 
+fn read_audio_toc(path: &[u16]) -> Result<Option<OpticalMedium>, u32> {
+    // READ_TOC requires FILE_READ_ACCESS. The metadata-only handle has no access
+    // rights and returns ERROR_ACCESS_DENIED on real CD drives. Open a separate
+    // read-only handle for this bounded query; never request GENERIC_WRITE.
+    let raw = unsafe {
+        CreateFileW(
+            path.as_ptr(),
+            GENERIC_READ,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            ptr::null(),
+            OPEN_EXISTING,
+            0,
+            ptr::null_mut(),
+        )
+    };
+    if raw == INVALID_HANDLE_VALUE {
+        return Err(unsafe { GetLastError() });
+    }
+    let device = Device(raw);
+    let mut toc = [0u8; 804];
+    let mut returned = 0;
+    let ok = unsafe {
+        DeviceIoControl(
+            device.0,
+            windows_sys::Win32::Devices::Cdrom::IOCTL_CDROM_READ_TOC,
+            ptr::null(),
+            0,
+            toc.as_mut_ptr() as _,
+            toc.len() as u32,
+            &mut returned,
+            ptr::null_mut(),
+        )
+    };
+    if ok == 0 {
+        return Err(unsafe { GetLastError() });
+    }
+    Ok(toc
+        .get(..returned as usize)
+        .and_then(crate::audio_cd::decode))
+}
+
 pub fn enumerate() -> Result<Vec<OpticalDrive>, AppError> {
     let drives = unsafe { GetLogicalDrives() };
     if drives == 0 {
@@ -148,25 +189,8 @@ pub fn enumerate() -> Result<Vec<OpticalDrive>, AppError> {
             result.push(drive);
             continue;
         }
-        let mut toc = [0u8; 804];
-        let mut toc_bytes = 0;
-        let toc_ok = unsafe {
-            DeviceIoControl(
-                device.0,
-                windows_sys::Win32::Devices::Cdrom::IOCTL_CDROM_READ_TOC,
-                ptr::null(),
-                0,
-                toc.as_mut_ptr() as _,
-                toc.len() as u32,
-                &mut toc_bytes,
-                ptr::null_mut(),
-            )
-        };
-        if toc_ok != 0 {
-            if let Some(medium) = toc
-                .get(..toc_bytes as usize)
-                .and_then(crate::audio_cd::decode)
-            {
+        let toc_error = match read_audio_toc(&path) {
+            Ok(Some(medium)) => {
                 drive.status = OpticalStatus::Ready;
                 if medium.playlists.is_empty() {
                     drive.error = Some("已识别音轨；混合模式或非标准起始曲号暂不支持播放。".into());
@@ -175,7 +199,9 @@ pub fn enumerate() -> Result<Vec<OpticalDrive>, AppError> {
                 result.push(drive);
                 continue;
             }
-        }
+            Ok(None) => None,
+            Err(code) => Some(code),
+        };
         let mut label = [0u16; 261];
         let mut fs = [0u16; 261];
         let mut serial = 0;
@@ -200,6 +226,12 @@ pub fn enumerate() -> Result<Vec<OpticalDrive>, AppError> {
             match crate::structure::inspect(Path::new(&root), text(&label), text(&fs), serial) {
                 Ok(medium) => {
                     drive.status = OpticalStatus::Ready;
+                    if matches!(medium.kind, OpticalKind::Other) {
+                        if let Some(code) = toc_error {
+                            drive.error =
+                                Some(format!("光盘曲目目录读取失败（{code}），请刷新后重试。"));
+                        }
+                    }
                     drive.medium = Some(medium);
                 }
                 Err(error) => {

@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod assistant;
 mod backups;
+mod cd_metadata;
 mod commands;
 mod credentials;
 mod data_location;
@@ -170,6 +171,7 @@ fn main() {
             playback::playback_control,
             playback::playback_history,
             optical::optical_list,
+            cd_metadata::optical_cd_metadata,
             optical::optical_probe,
             optical::playback_settings_get,
             optical::playback_settings_save,

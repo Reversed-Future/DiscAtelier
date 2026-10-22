@@ -40,6 +40,7 @@ pub async fn playback_start(
     }
     let player = window.state::<PlaybackState>().inner().clone();
     let library = window.state::<LibraryState>().inner().clone();
+    let cd_metadata = optical.inner().clone();
     let video_window = window
         .state::<crate::video_surface::VideoSurface>()
         .handle();
@@ -73,14 +74,19 @@ pub async fn playback_start(
         };
         #[cfg(not(feature = "performance-harness"))]
         let source = verify_disc(&mount_point, &token, &playlist)?;
+        let cd_history = cd_metadata.clone();
         let checkpoint: Checkpoint = Arc::new(move |snapshot| {
+            let record = PlaybackRecord::from(&crate::cd_metadata::decorate_snapshot(
+                &cd_history,
+                snapshot.clone(),
+            ));
             let mut library = library
                 .lock()
                 .map_err(|_| AppError::new("history", "收藏库不可访问。"))?;
             library
                 .as_mut()
                 .map_err(|e| e.clone())?
-                .save_playback(&PlaybackRecord::from(snapshot))
+                .save_playback(&record)
         });
         let vlc = source.playlist == discatelier_player_vlc::DVD_MENU
             || discatelier_player_vlc::cd_track(&source.playlist).is_some();
@@ -120,7 +126,7 @@ pub async fn playback_start(
                 checkpoint,
             )?)
         };
-        let snapshot = session.snapshot()?;
+        let snapshot = crate::cd_metadata::decorate_snapshot(&cd_metadata, session.snapshot()?);
         *current = Some(session);
         Ok(snapshot)
     })
@@ -129,14 +135,19 @@ pub async fn playback_start(
 #[tauri::command]
 pub async fn playback_snapshot(
     playback: tauri::State<'_, PlaybackState>,
+    optical: tauri::State<'_, OpticalState>,
 ) -> Result<Option<PlaybackSnapshot>, AppError> {
     let playback = playback.inner().clone();
+    let optical = optical.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         playback
             .lock()
             .map_err(|_| AppError::new("player", "播放服务不可用。"))?
             .as_ref()
-            .map(|s| s.snapshot())
+            .map(|s| {
+                s.snapshot()
+                    .map(|snapshot| crate::cd_metadata::decorate_snapshot(&optical, snapshot))
+            })
             .transpose()
     })
     .await

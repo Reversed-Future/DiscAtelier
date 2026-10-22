@@ -5,6 +5,7 @@ import { errorMessage } from '../library/gateway';
 import { optical, type OpticalDrive, type PlaybackDiagnostic } from './gateway';
 import { PlaybackHistory } from '../playback/PlaybackHistory';
 import type { PlaybackController } from '../playback/usePlayback';
+import { CdDriveControls } from './CdDriveControls';
 
 export function OpticalPanel({ onClose, player }: { onClose(): void; player: PlaybackController }) {
   const [drives, setDrives] = useState<OpticalDrive[]>([]);
@@ -56,10 +57,8 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
       return <section className="optical-drive" key={drive.mountPoint}>
         <div className="optical-heading"><strong>{drive.name}</strong><span>{drive.mountPoint}</span></div>
         <p>{drive.status === 'empty' ? '未放入光盘' : !medium ? '暂不可读取' : medium.kind === 'audioCd' ? `CD · ${medium.tracks.length} 首` : medium.kind === 'bluray' ? `BD · ${medium.label}` : medium.kind === 'dvdVideo' ? `DVD · ${medium.label}` : medium.label || '光盘'}</p>
-        {medium?.kind === 'audioCd' && medium.playlists.length > 0 && <div className="optical-actions">
-          <Select label="CD 曲目" value={playlist} options={medium.tracks.map(t => ({ id: `cd-track:${t.number}`, label: `曲目 ${t.number}` }))} disabled={busy || player.busy} onChange={value => setSelected(current => ({ ...current, [selectionKey]: value }))}/>
-          <button className="text-button" disabled={busy || player.active || player.busy || !playlist} onClick={() => void player.start(drive.mountPoint, medium.token, playlist)}>播放</button>
-        </div>}
+        {medium?.kind === 'audioCd' && medium.playlists.length > 0 && <CdDriveControls key={selectionKey} mount={drive.mountPoint} medium={medium} playlist={playlist}
+          busy={busy} player={player} onSelect={value => setSelected(current => ({ ...current, [selectionKey]: value }))}/>}
         {medium?.kind === 'dvdVideo'  && <div className="optical-actions">
           <button className="text-button" disabled={busy || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, 'dvd-menu')}>播放</button>
         </div>}

@@ -3,7 +3,7 @@ import { Select } from '../ui/Select';
 import { time } from './gateway';
 import type { PlaybackController } from './usePlayback';
 
-export function PlaybackControls({ player, onMenu }: { player: PlaybackController; onMenu?(): void }) {
+export function PlaybackControls({ player, onMenu, title }: { player: PlaybackController; onMenu?(): void; title?: string | null }) {
   const s = player.snapshot;
   const [draft, setDraft] = useState<number | null>(null);
   const latest = useRef<number | null>(null);
@@ -19,7 +19,7 @@ export function PlaybackControls({ player, onMenu }: { player: PlaybackControlle
     setDraft(null);
   }
   return <section className="playback-controls" aria-label="播放控制">
-    <div className="playback-title"><strong>{s.title}</strong><span>{s.source.playlist === 'dvd-menu' ? s.dvdMenu ? 'DVD' : `DVD · ${s.dvdTitle}` : s.source.playlist.startsWith('cd-track:') ? 'CD' : s.source.playlist.startsWith('netease-song:') ? '网易云' : s.source.playlist}</span></div>
+    <div className="playback-title"><strong>{title || s.title}</strong><span>{s.source.playlist === 'dvd-menu' ? s.dvdMenu ? 'DVD' : `DVD · ${s.dvdTitle}` : s.source.playlist.startsWith('cd-track:') ? 'CD' : s.source.playlist.startsWith('netease-song:') ? '网易云' : s.source.playlist}</span></div>
     <input className="playback-seek" type="range" aria-label="播放进度" min="0" max={duration || 1} step="0.1"
       value={Math.min(position, duration)} disabled={!player.active || !s.seekable || !duration || loading || stopping || player.busy}
       aria-valuetext={`${time(position)} / ${time(duration)}`}
