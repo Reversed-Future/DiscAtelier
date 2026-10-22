@@ -34,7 +34,7 @@ function update() {
 function thumbnails() {
   element('thumbnails').replaceChildren(...images.map((image,index) => {
     const wrapper = document.createElement('div'), img = document.createElement('img'), remove = document.createElement('button');
-    img.src = image.dataUrl; img.alt = `购物截图 ${index+1}`;
+    img.src = image.dataUrl; img.alt = `图片 ${index+1}`;
     remove.type = 'button'; remove.textContent = '移除'; remove.setAttribute('aria-label',`移除截图 ${index+1}`);
     remove.onclick = () => { images = images.filter(entry=>entry.id!==image.id); thumbnails(); update(); };
     wrapper.append(img,remove); return wrapper;
@@ -97,7 +97,7 @@ async function connect(){
     if(!/^[a-f0-9]{64}$/.test(token))throw Error('请使用电脑显示的完整二维码打开本页');
     info=await request('/api/session');
     if(!info)throw Error('连接信息缺失');
-    element('connection').textContent='已连接';element('title').textContent=info.mode==='barcode'?'把条码带回收藏':'把购物截图传到电脑';
+    element('connection').textContent='已连接';element('title').textContent=info.mode==='barcode'?'把条码带回收藏':'把图片传到电脑';
     element('subtitle').textContent=info.mode==='barcode'?'拍清条码，核对数字，再交给电脑搜索。':`本次可传 ${info.maxImages} 张，AI 识别由你在电脑上确认。`;
     element(info.mode==='barcode'?'barcode-panel':'images-panel').hidden=false;
   }catch(e){element('connection').textContent='未连接';status(e instanceof Error?e.message:'无法连接，请确认同一 Wi-Fi 并重新扫码');}

@@ -4,6 +4,7 @@ import { readCover } from '../library/artwork';
 import { errorMessage } from '../library/gateway';
 import { Cover } from '../collection/Cover';
 import { enter } from '../ui/motion';
+import { portraitCover } from '../library/coverShape';
 
 export function CoverField({ edition, assetId, value, onChange, onBusy, remoteCover }: {
   edition: EditionDraft; assetId?: string | null; value: CoverChange; onChange(value: CoverChange): void; onBusy(value: boolean): void;
@@ -21,7 +22,7 @@ export function CoverField({ edition, assetId, value, onChange, onBusy, remoteCo
     finally { pending.current = false; setReading(null); onBusy(false); }
   }
   return <div className="cover-field">
-    <div className="cover-preview">{value.action === 'replace'
+    <div className="cover-preview" data-portrait={portraitCover(edition)}>{value.action === 'replace'
       ? <img src={value.dataUrl} alt="新封面预览" onLoad={event => enter(event.currentTarget, 0)}/>
       : <Cover edition={edition} assetId={value.action === 'keep' ? assetId : null}/>}</div>
     <div className="cover-controls">

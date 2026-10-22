@@ -4,7 +4,7 @@ use rusqlite::Connection;
 use sha2::{Digest, Sha256};
 use std::path::Path;
 
-const MIGRATIONS: [&str; 10] = [
+const MIGRATIONS: [&str; 11] = [
     include_str!("../migrations/001_library.sql"),
     include_str!("../migrations/002_edition_assets.sql"),
     include_str!("../migrations/003_sources.sql"),
@@ -15,6 +15,7 @@ const MIGRATIONS: [&str; 10] = [
     include_str!("../migrations/008_catalog_details.sql"),
     include_str!("../migrations/009_song_links.sql"),
     include_str!("../migrations/010_music_albums.sql"),
+    include_str!("../migrations/011_video_metadata.sql"),
 ];
 pub fn apply(connection: &mut Connection, directory: &Path) -> Result<(), AppError> {
     let version: i64 = connection

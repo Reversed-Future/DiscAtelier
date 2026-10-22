@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { ExchangeProvider } from './exchange/ExchangeContext';
 import './styles/exchange.css';
+import './video/video.css';
 import './styles/shell.css';
 import './styles/store.css';
 import './styles/inspection.css';

@@ -27,5 +27,5 @@ export function CollectionTracks({ rows, albums, links, bindings, item, player }
       else void player.startNetease(item.editionId, song.id);
     } };
   }
-  return pages.length ? <div className="collection-tracks"><DiscTabs pages={pages} page={index} onChange={setPage}/><DiscTrackPanel disc={pages[index]} index={index} playback={playback} positionLabel={trackLeaves(rows).length ? undefined : row => albumRowLabel(row, albums)}/></div> : <p className="utility-copy">暂无曲目</p>;
+  return pages.length ? <div className="collection-tracks"><DiscTabs pages={pages} page={index} onChange={setPage}/><DiscTrackPanel disc={pages[index]} index={index} playback={playback} positionLabel={trackLeaves(rows).length ? undefined : row => albumRowLabel(row, albums)}/></div> : <p className="utility-copy">{item.edition.categoryId === 'video' ? '暂无本版章节资料' : '暂无曲目'}</p>;
 }

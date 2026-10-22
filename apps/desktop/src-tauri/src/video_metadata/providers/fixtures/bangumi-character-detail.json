@@ -1,0 +1,62 @@
+{
+  "birth_mon": 2,
+  "gender": "female",
+  "birth_day": 5,
+  "birth_year": null,
+  "blood_type": 4,
+  "images": {
+    "small": "https://lain.bgm.tv/r/100/pic/crt/l/2c/78/1152_crt_Unim8.jpg",
+    "grid": "https://lain.bgm.tv/pic/crt/g/2c/78/1152_crt_Unim8.jpg",
+    "large": "https://lain.bgm.tv/pic/crt/l/2c/78/1152_crt_Unim8.jpg",
+    "medium": "https://lain.bgm.tv/r/400/pic/crt/l/2c/78/1152_crt_Unim8.jpg"
+  },
+  "summary": "主人公春日野悠的孪生妹妹。沉默寡言，弱不禁风，深居简出。\r\n家务无能，麻烦的事情完全推给了哥哥悠。\r\n那犹如人偶一般的脸色，十分引人注目。\r\n或许是因为病弱，时常会住进医院，和悠的体格存在鲜明的反差。\r\n喜欢除了泡面之外的全部无营养食品，如果不注意她，可能一会就会全部吃光。\r\n同时，还有着很强的网络依存症。",
+  "name": "春日野穹",
+  "infobox": [
+    {
+      "key": "简体中文名",
+      "value": "春日野穹"
+    },
+    {
+      "key": "别名",
+      "value": [
+        {
+          "k": "纯假名",
+          "v": "かすがの そら"
+        },
+        {
+          "k": "罗马字",
+          "v": "Kasugano Sora"
+        },
+        {
+          "k": "昵称",
+          "v": "穹妹"
+        }
+      ]
+    },
+    {
+      "key": "性别",
+      "value": "女"
+    },
+    {
+      "key": "生日",
+      "value": "2月5日"
+    },
+    {
+      "key": "血型",
+      "value": "O"
+    },
+    {
+      "key": "身高",
+      "value": "152cm"
+    }
+  ],
+  "stat": {
+    "comments": 184,
+    "collects": 1392
+  },
+  "id": 1152,
+  "locked": false,
+  "type": 1,
+  "nsfw": false
+}

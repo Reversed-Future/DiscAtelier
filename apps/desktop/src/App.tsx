@@ -41,6 +41,7 @@ export function App() {
   const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [metadataOpen, setMetadataOpen] = useState(false);
+  const [videoDiscogs, setVideoDiscogs] = useState(false);
   const search = useRef<HTMLInputElement>(null);
   const searchTrigger = useRef<HTMLButtonElement>(null);
   const scene = useRef<HTMLElement>(null);
@@ -127,10 +128,12 @@ export function App() {
     {restoring && <RestoreLibrary onClose={() => setRestoring(false)} onRestored={() => {
       setInspected(null); setSelectedId(''); setQuery({ categoryId: 'music', status: null, query: '' }); notify('收藏已恢复');
     }}/>}
-    {metadataOpen && snapshot && <DiscogsBrowser categoryId={query.categoryId} categories={snapshot.categories} carriers={snapshot.carriers}
+    {metadataOpen && snapshot && query.categoryId === 'video' && !videoDiscogs && <AddCopy categoryId="video" onDiscogs={() => setVideoDiscogs(true)} categories={snapshot.categories} carriers={snapshot.carriers} onClose={() => { setMetadataOpen(false); setVideoDiscogs(false); }}
+      onSaved={async (id, categoryId) => { setSelectedId(id); setQuery({ categoryId, query: '', status: null }); notify('已加入收藏'); }}/>}
+    {metadataOpen && snapshot && (query.categoryId !== 'video' || videoDiscogs) && <DiscogsBrowser categoryId={query.categoryId} categories={snapshot.categories} carriers={snapshot.carriers}
       onSettings={() => setSettingsPage('discogs')}
-      onManual={() => { setMetadataOpen(false); setAdd({}); }}
-      onClose={() => setMetadataOpen(false)}
+      onManual={() => { setMetadataOpen(false); setVideoDiscogs(false); setAdd({}); }}
+      onClose={() => { setMetadataOpen(false); setVideoDiscogs(false); }}
       onSaved={async (id, categoryId) => { setSelectedId(id); setQuery({ categoryId, query: '', status: null }); notify('已加入收藏'); }}/>}
     {settingsPage && <Settings initialPage={settingsPage} libraryAvailable={!!snapshot} playing={player.active}
       onClose={() => setSettingsPage(null)}

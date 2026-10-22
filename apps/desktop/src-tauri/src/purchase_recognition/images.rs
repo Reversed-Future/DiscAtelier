@@ -6,27 +6,27 @@ use std::io::Cursor;
 
 pub fn validate(images: &[String]) -> Result<(), AppError> {
     if images.is_empty() || images.len() > 6 {
-        return Err(error("每次请选择 1–6 张购物截图。"));
+        return Err(error("每次请选择 1–6 张图片。"));
     }
     if images.iter().map(String::len).sum::<usize>() > 24 * 1024 * 1024 {
-        return Err(error("截图总大小超出限制，请减少图片。"));
+        return Err(error("图片总大小超出限制，请减少图片。"));
     }
     for data_url in images {
         if data_url.len() > 7 * 1024 * 1024 {
-            return Err(error("单张截图超出大小限制。"));
+            return Err(error("单张图片超出大小限制。"));
         }
         let (prefix, data) = data_url
             .split_once(',')
-            .ok_or_else(|| error("截图编码无效。"))?;
+            .ok_or_else(|| error("图片编码无效。"))?;
         let format = match prefix {
             "data:image/png;base64" => ImageFormat::Png,
             "data:image/jpeg;base64" => ImageFormat::Jpeg,
             "data:image/webp;base64" => ImageFormat::WebP,
-            _ => return Err(error("截图仅支持 PNG、JPEG、WebP。")),
+            _ => return Err(error("图片仅支持 PNG、JPEG、WebP。")),
         };
-        let bytes = STANDARD.decode(data).map_err(|_| error("截图编码无效。"))?;
+        let bytes = STANDARD.decode(data).map_err(|_| error("图片编码无效。"))?;
         if bytes.len() > 5 * 1024 * 1024 || image::guess_format(&bytes).ok() != Some(format) {
-            return Err(error("截图内容与格式不一致，或文件过大。"));
+            return Err(error("图片内容与格式不一致，或文件过大。"));
         }
         let mut reader = ImageReader::with_format(Cursor::new(&bytes), format);
         let mut limits = Limits::default();
@@ -36,7 +36,7 @@ pub fn validate(images: &[String]) -> Result<(), AppError> {
         reader.limits(limits);
         reader
             .decode()
-            .map_err(|_| error("截图损坏或尺寸超出 4096 像素。"))?;
+            .map_err(|_| error("图片损坏或尺寸超出 4096 像素。"))?;
     }
     Ok(())
 }

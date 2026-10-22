@@ -25,9 +25,8 @@
 .inspection-tracks-page { height: 100%; min-height: 0; }
 .edition-contents[data-section="tracks"] { height: 100%; min-height: 0; display: flex; flex-direction: column; }
 .object-info .object-actions { margin-top: 22px; padding-top: 18px; min-height: 36px; }
-.object-info .object-actions > button[hidden] { display: none; }
-.object-info .object-actions:has(> button[hidden]) { display: none; }
-.object-info .object-actions:has(> button[hidden]) + .detail-sources { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+/* Preserve the same footer height and divider position across every detail tab. */
+.object-info .object-actions > button[data-hidden="true"] { visibility: hidden; pointer-events: none; }
 .object-info > .collection-source { margin: 18px 0 0; }
 
 .release-preview { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(210px, .85fr) minmax(0, 1.65fr); column-gap: 30px; row-gap: 16px; grid-template-rows: 46px minmax(0, 1fr); }

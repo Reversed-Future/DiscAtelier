@@ -1,0 +1,127 @@
+{
+  "data": [
+    {
+      "id": 52323,
+      "name": "ハルカナキオク",
+      "name_cn": "悠远的记忆",
+      "sort": 1,
+      "airdate": "2010-10-04",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52324,
+      "name": "アキラハズカシ",
+      "name_cn": "瑛好难为情",
+      "sort": 2,
+      "airdate": "2010-10-11",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52325,
+      "name": "ツカズハナレズ",
+      "name_cn": "若即若离",
+      "sort": 3,
+      "airdate": "2010-10-18",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52326,
+      "name": "ハルカズハート",
+      "name_cn": "悠之心",
+      "sort": 4,
+      "airdate": "2010-10-25",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52327,
+      "name": "ヤミアキラカニ",
+      "name_cn": "暗影显现",
+      "sort": 5,
+      "airdate": "2010-11-01",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52328,
+      "name": "アキラメナイヨ",
+      "name_cn": "瑛不言弃",
+      "sort": 6,
+      "airdate": "2010-11-08",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52329,
+      "name": "ツミナオトメラ",
+      "name_cn": "罪孽的少女们",
+      "sort": 7,
+      "airdate": "2010-11-15",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52330,
+      "name": "ナオクラキソラ",
+      "name_cn": "更暗的苍穹",
+      "sort": 8,
+      "airdate": "2010-11-22",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52331,
+      "name": "ハルカナオモイ",
+      "name_cn": "遥远的思念",
+      "sort": 9,
+      "airdate": "2010-11-29",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52332,
+      "name": "トリノソラネハ",
+      "name_cn": "鸟之穹呜",
+      "sort": 10,
+      "airdate": "2010-12-06",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52333,
+      "name": "ソラメクフタリ",
+      "name_cn": "飘渺的二人",
+      "sort": 11,
+      "airdate": "2010-12-13",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    },
+    {
+      "id": 52334,
+      "name": "ハルカナソラヘ",
+      "name_cn": "向着悠远的天穹",
+      "sort": 12,
+      "airdate": "2010-12-20",
+      "duration": "00:26:00",
+      "type": 0,
+      "subject_id": 7157
+    }
+  ],
+  "total": 12,
+  "limit": 100,
+  "offset": 0
+}

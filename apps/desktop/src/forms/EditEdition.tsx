@@ -1,3 +1,5 @@
+import { video, emptyVideo } from '../video/gateway';
+import { VideoFields } from '../video/VideoFields';
 import { leave } from '../ui/motion';
 import { measureAsync, measureSync } from '../models/timing';
 import { useEffect, useRef, useState } from 'react';
@@ -15,6 +17,13 @@ import { netease, type LinkedMusicAlbum } from '../integrations/gateway';
 export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   item: LibraryCopy; categories: Descriptor[]; carriers: Descriptor[]; onClose(): void; onSaved(categoryId: string): void;
 }) {
+  const [videoDraft, setVideoDraft] = useState(emptyVideo);
+  const [videoLoaded, setVideoLoaded] = useState(item.edition.categoryId !== 'video');
+  useEffect(() => {
+    let live = true;
+    if (item.edition.categoryId === 'video') void video.metadata(item.editionId).then(value => { if (live) { setVideoDraft(value || emptyVideo()); setVideoLoaded(true); } }).catch(cause => { if (live) setError(errorMessage(cause)); });
+    return () => { live = false; };
+  }, [item.editionId]);
   const [albums, setAlbums] = useState<LinkedMusicAlbum[]>([]), [coverAlbum, setCoverAlbum] = useState('');
   useEffect(() => {
     let live = true;
@@ -31,30 +40,32 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   return <Modal title="编辑版本" onClose={onClose} busy={busy || reading} wide>
     <form className="editor-form" noValidate onSubmit={async event => {
       const dialog = event.currentTarget.closest('dialog');
-      event.preventDefault(); if (busy || reading) return;
-      const payload = measureSync('draft_encode', () => JSON.stringify({ edition, cover, model }));
+      event.preventDefault(); if (busy || reading || !videoLoaded) return;
+      const payload = measureSync('draft_encode', () => JSON.stringify({ edition, cover, model, videoDraft }));
       if (payload !== attempt.current.payload) attempt.current = { payload, requestId: crypto.randomUUID() };
       setBusy(true); setError('');
       try {
-        await measureAsync('save_ipc', () => library.updateEdition({ requestId: attempt.current.requestId, editionId: item.editionId, expectedRevision: item.editionRevision, edition, cover, model: modelChangeRequest(model) }));
+        const request = { requestId: attempt.current.requestId, editionId: item.editionId, expectedRevision: item.editionRevision, edition, cover, model: modelChangeRequest(model) };
+        await measureAsync('save_ipc', () => edition.categoryId === 'video' ? video.update(request, videoDraft) : library.updateEdition(request));
         onSaved(edition.categoryId);
         dialog?.setAttribute('data-closing', 'true'); await leave(dialog); onClose();
       } catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
     }}>
       {item.editionCopyCount > 1 && <p className="form-note">本版本共 {item.editionCopyCount} 套，资料、封面与模型会同步更新。</p>}
-      <fieldset disabled={busy || reading}>
+      <fieldset disabled={busy || reading || !videoLoaded}>
+        {edition.categoryId === 'video' && videoLoaded && <VideoFields value={videoDraft} onChange={setVideoDraft} edition={edition} onEdition={setEdition} onCover={setCover} cover={cover} assetId={item.coverAssetId} onBusy={setReading}/>}
         {albums.length > 1 && <label className="cover-album-choice">网易云封面来源<Select label="网易云封面来源" value={coverAlbum} options={albums.map(a => ({id:String(a.album.albumId),label:a.album.title}))} onChange={setCoverAlbum}/></label>}
-        <CoverField edition={edition} assetId={item.coverAssetId} value={cover} onChange={setCover} onBusy={setReading}
+        {edition.categoryId !== 'video' && <CoverField edition={edition} assetId={item.coverAssetId} value={cover} onChange={setCover} onBusy={setReading}
           remoteCover={item.edition.categoryId === 'music' ? { label: '使用网易云封面', load: async () => {
             const album = albums.find(a => String(a.album.albumId) === coverAlbum)?.album ?? (await netease.albums(item.editionId))[0]?.album;
             if (!album) throw new Error('请先在网易云资料中关联专辑。');
             return netease.albumCover(album.albumId);
-          } } : undefined}/>
+          } } : videoDraft.work ? { label: '使用作品封面', load: () => video.cover(videoDraft.work!) } : undefined}/>}
         <ModelField value={model} title={item.modelTitle} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
         <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
       </fieldset>
       <p className="form-error" role="alert">{error}</p>
-      <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading}>{busy ? '保存中' : '保存版本'}</button></footer>
+      <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading || !videoLoaded}>{busy ? '保存中' : '保存版本'}</button></footer>
     </form>
   </Modal>;
 }

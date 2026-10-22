@@ -97,7 +97,7 @@ fn schema_seven_gets_a_backup_before_expanded_json_contracts() {
     let dir = directory();
     drop(SqliteLibrary::open(&dir).unwrap());
     let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
-    conn.execute_batch("DROP TRIGGER music_album_import_insert; DROP TRIGGER music_album_import_update; DROP TABLE edition_disc_albums; DROP TABLE edition_music_albums; DROP TABLE edition_song_links;").unwrap();
+    conn.execute_batch("DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DROP TRIGGER music_album_import_insert; DROP TRIGGER music_album_import_update; DROP TABLE edition_disc_albums; DROP TABLE edition_music_albums; DROP TABLE edition_song_links;").unwrap();
     conn.execute("DELETE FROM schema_migrations WHERE version>=8", [])
         .unwrap();
     conn.pragma_update(None, "user_version", 7).unwrap();
@@ -115,7 +115,7 @@ fn schema_seven_gets_a_backup_before_expanded_json_contracts() {
     assert_eq!(
         new.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
             .unwrap(),
-        10
+        11
     );
 }
 #[test]
@@ -160,6 +160,6 @@ fn schema_six_is_backed_up_before_extensions_are_added() {
     assert_eq!(
         new.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
             .unwrap(),
-        10
+        11
     );
 }

@@ -1,0 +1,881 @@
+[
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/2c/78/1152_crt_Unim8.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/2c/78/1152_crt_Unim8.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/2c/78/1152_crt_Unim8.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/2c/78/1152_crt_Unim8.jpg"
+    },
+    "name": "春日野穹",
+    "summary": "主人公春日野悠的孪生妹妹。沉默寡言，弱不禁风，深居简出。\r\n家务无能，麻烦的事情完全推给了哥哥悠。\r\n那犹如人偶一般的脸色，十分引人注目。\r\n或许是因为病弱，时常会住进医院，和悠的体格存在鲜明的反差。\r\n喜欢除了泡面之外的全部无营养食品，如果不注意她，可能一会就会全部吃光。\r\n同时，还有着很强的网络依存症。",
+    "relation": "主角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/8c/3a/5020_prsn_tP7Ll.jpg?r=1636505739",
+          "grid": "https://lain.bgm.tv/pic/crt/g/8c/3a/5020_prsn_tP7Ll.jpg?r=1636505739",
+          "large": "https://lain.bgm.tv/pic/crt/l/8c/3a/5020_prsn_tP7Ll.jpg?r=1636505739",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/8c/3a/5020_prsn_tP7Ll.jpg?r=1636505739"
+        },
+        "name": "田口宏子",
+        "short_summary": "田口 宏子（たぐち ひろこ、1974年3月29日 - ）は、日本の女性声優。東京俳優生活協同組合所属。俳協ボイスアクターズスタジオ第8期生（同期に諏訪部順一）。神奈川県出身。おひつじ座。\r\n\r\n夏野 こおり（なつの こおり）は、日本の女性声優。主にアダルトゲームで活動している。\r\n\r\n芸名の由来は、名字は「夏が好き」、名前は「他の人が付けなさそうなのにしたかった」とのこと。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 5020,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 1152
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/dd/0b/10642_crt_btlPm.jpg?r=1581148391",
+      "grid": "https://lain.bgm.tv/pic/crt/g/dd/0b/10642_crt_btlPm.jpg?r=1581148391",
+      "large": "https://lain.bgm.tv/pic/crt/l/dd/0b/10642_crt_btlPm.jpg?r=1581148391",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/dd/0b/10642_crt_btlPm.jpg?r=1581148391"
+    },
+    "name": "春日野悠",
+    "summary": "",
+    "relation": "主角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/d0/62/4262_prsn_tbC5r.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/d0/62/4262_prsn_tbC5r.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/d0/62/4262_prsn_tbC5r.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/d0/62/4262_prsn_tbC5r.jpg"
+        },
+        "name": "下野紘",
+        "short_summary": "下野 紘は、日本の男性声優。アイムエンタープライズ所属。",
+        "career": [
+          "artist",
+          "seiyu"
+        ],
+        "id": 4262,
+        "type": 1,
+        "locked": false
+      },
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/bf/56/4515_seiyu_anidb.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/bf/56/4515_seiyu_anidb.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/bf/56/4515_seiyu_anidb.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/bf/56/4515_seiyu_anidb.jpg"
+        },
+        "name": "松元恵",
+        "short_summary": "",
+        "career": [
+          "seiyu"
+        ],
+        "id": 4515,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 10642
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/72/5e/14329_crt_FtF8H.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/72/5e/14329_crt_FtF8H.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/72/5e/14329_crt_FtF8H.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/72/5e/14329_crt_FtF8H.jpg"
+    },
+    "name": "天女目瑛",
+    "summary": "本作女主角之一，当地神社的女巫，悠的同班同学，是个非常开朗活力十足的少女，绝大部分的时间脸上都保持着微笑，也因此有时候让人搞不懂心里在想什么。小时候和悠在神社的山林间玩过，当神主的祖父过世后代替其职位，和渚一叶是关系非常亲昵的朋友，经常当一叶拉中提琴时的听众，但每次都会睡着。有着不输给一般人的力气，运动方面也很擅长。养著一只名为“师匠”的猫。",
+    "relation": "主角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/36/67/5133_prsn_fAHRy.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/36/67/5133_prsn_fAHRy.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/36/67/5133_prsn_fAHRy.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/36/67/5133_prsn_fAHRy.jpg"
+        },
+        "name": "阪田佳代",
+        "short_summary": "阪田 佳代（さかた かよ、3月23日 - ）は、日本の女性声優。所属事務所はシグマ・セブン。\r\n大阪府出身。身長は147cmで血液型はO型。\r\n\r\n「阪田」は「さかた」と読むが、ごくたまに「はんだ」と読まれることがある。\r\nシグマ・セブンの野球部スコアラーをしている。\r\n身長は147cmだが本人いわく、「せめて150cmはほしい」とのこと。\r\n四万温泉、熱海などいろいろな温泉郷に行きたいと言っていたことがある。\r\n\r\nたこ焼きが好きで、お気に入りは難波の「わなか」のたこ焼き。\r\n週1回ペースでバドミントンをしている。\r\n\r\n母親が大のプーさん好きで、誕生日にはプーさんのぬいぐるみをプレゼントしていた。だが、ぬいぐるみばかりでは限界があったらしく「違うものがいい」と言われた。\r\n子供の頃、吉本興業のテレビ番組に出演したことがある。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 5133,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 14329
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/68/51/14330_crt_fb40t.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/68/51/14330_crt_fb40t.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/68/51/14330_crt_fb40t.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/68/51/14330_crt_fb40t.jpg"
+    },
+    "name": "依媛奈緒",
+    "summary": "穗见学园高中二年级，在悠小时候照顾过他的邻居的大姐姐。与悠分别后一直处于闷闷不乐的状态。擅长料理、裁缝等家事，借着参加学校的游泳部，不返家在学校看书。",
+    "relation": "主角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/7d/35/4490_prsn_Zv7Oa.jpg?r=1626720884",
+          "grid": "https://lain.bgm.tv/pic/crt/g/7d/35/4490_prsn_Zv7Oa.jpg?r=1626720884",
+          "large": "https://lain.bgm.tv/pic/crt/l/7d/35/4490_prsn_Zv7Oa.jpg?r=1626720884",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/7d/35/4490_prsn_Zv7Oa.jpg?r=1626720884"
+        },
+        "name": "いのくちゆか",
+        "short_summary": "いのくち ゆか（1978年6月5日 - ）は、日本の女性声優。賢プロダクション所属。福岡県久留米市出身。血液型はO型。旧芸名は猪口 有佳（読みは同じ）。既婚、一児の母。\r\n\r\n賢プロ養成所（スクールデュオ）に入所する前には、日本ナレーション演技研究所の養成所生の傍ら、1999年から2000年にかけては、kirakira☆メロディ学園」の1期生として活動していた（その他のメンバーに門脇舞以など）。また2002年にはコズミックレイによるユニット「Cherry's」（その他のメンバーに、落合祐里香・吉田真弓・門脇舞以など）として活動。河原木志穂、池田ひかるとの声優ユニット「カチューシャ2ND」のメンバーの1人でもある。\r\n\r\n趣味・特技は九州弁（福岡弁）で喋ることと、ピアノを弾くこと。ら行の発音が不得意。2人姉妹の妹であり、2人でよく料理をしていたというエピソードもある。\r\n\r\nお酒好きでそれなりに強い。酔っ払ったエピソードとして、ファミレスのアルバイト時代に忘年会で行われた罰ゲームでピッチャーの一気飲みを3回連続でやって（つまり3連敗）、気がついたときには忘年会が終わり店の外に出されていたというものがある。また、声優の先輩などと飲んだ際、日本酒を八合（約1.44リットル）飲んで、意識は保っていたがまともに歩けず転んでしまったという話も。このあたりで自分の酒量の限界を悟ったという。\r\n\r\n『まじかるぷちぴーち』という公式Webサイトを持っていたが、閉鎖した。後に日記のみを生天目仁美のWebサイト内で『ゆか』という項目で間借り状態にて継続していた（『ゆかたんのおへや』）が、2006年9月14日には、アニメイトTVのWebサイト内の『ゆかたんしぉ♥』へ引っ越した。この日記・ブログでは独特の文体を披露しており、この理由には「雰囲気が良く伝わるいのくちの発明」説と「携帯からの入力が面倒だから」説があるが、この両方ともいのくち自身が語っていたことである。\r\n\r\n間借り時代のブログを読むとしばしば体調を崩していることが書かれている。このことにより体は丈夫でないといわれるが、後述のようにオンラインゲームに没頭したり酒を多量に飲んだりしているため、単に健康管理をあまりしていないだけという可能性もある。時折ブログの更新が滞るが、内容を溜めて一気に公開するのはいのくちによく見られることである。生傷も絶えず、事務所の後輩にして親友の伊藤静と初めて会った時は車椅子姿だった。\r\n\r\nなお、新ブログは暖かいコメントに支えられ、毎日の様に更新されている。\r\n\r\n家でメス猫を飼っている。名前はいのくち命名の「まぐろ」である。以前は我儘三昧で、傷だらけにされたいのくちが収録で他の声優に確認されたこともある。\r\n\r\n自他共に認めるネトゲ廃人。ジャンルは、もっぱらオンラインゲームのロールプレイングゲームで、現在は『ファイナルファンタジーXI』をメインにプレイし、ゲーム内のグループリーダーを務める。メインのキャラクターは金髪タルタル♀。\r\n\r\n『藍より青し』に声をあてた際、博多弁を喋る米国人女子大生・ティナ役を担当した事務所の先輩の雪野五月への方言指導も行っていた。\r\n\r\n2007年10月15日付で、芸名を「猪口有佳」から、以前より個人活動で使用していた「いのくちゆか」に統一することを公式ブログで発表した。猪口有佳だと、同じ声優の井口裕香と名前が似ていることもあり、よく混同されることがあったということも、改名の理由の一つであった（『春香とやよいの弥生式らじお』より）。\r\n\r\n2005年12月10日に幕張メッセのイベントホールで行われた「大麻帆良祭」で「出席番号のうた」の自分のパートを歌おうとして歌詞を全部忘れるというハプニングがあった。\r\n\r\n2008年12月31日、自身のブログにおいて、2009年年明け直後に入籍した上で春に出産することを公表し、翌2009年1月1日、同ブログにて、同日をもって入籍したことを報告した。次いで、2009年3月31日無事出産したことを発表。産休・育休を取っていたが、2010年には復帰した。",
+        "career": [
+          "artist",
+          "seiyu"
+        ],
+        "id": 4490,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 14330
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/94/e7/14331_crt_v8f5g.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/94/e7/14331_crt_v8f5g.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/94/e7/14331_crt_v8f5g.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/94/e7/14331_crt_v8f5g.jpg"
+    },
+    "name": "渚一葉",
+    "summary": "当地议员的女儿，悠的同班同学，每天都搭轿车上下学，途中看到瑛会把她硬拉上车；每天午餐的便当也非常豪华，让周围的人感到惊叹。会演奏中提琴，但长大后不知为何不再喜欢，会拉给瑛听但瑛每次都会睡着。在学校表现非常强气，常常对着常逗弄她的中里亮平与天真的天女目瑛发火，但私底下对天女目瑛非常温柔。与父亲关系有些距离。",
+    "relation": "主角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/41/0c/4727_prsn_JwAc3.jpg?r=1467306426",
+          "grid": "https://lain.bgm.tv/pic/crt/g/41/0c/4727_prsn_JwAc3.jpg?r=1467306426",
+          "large": "https://lain.bgm.tv/pic/crt/l/41/0c/4727_prsn_JwAc3.jpg?r=1467306426",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/41/0c/4727_prsn_JwAc3.jpg?r=1467306426"
+        },
+        "name": "小野涼子",
+        "short_summary": "小野 涼子（おの りょうこ、1977年6月22日 - ）は、日本の声優、舞台女優。\r\n\r\n神奈川県出身。東京アナウンスアカデミー、映像テクノアカデミア卒業。パワー・ライズ所属。\r\n\r\nデビュー当初のレギュラー出演作『ブラック・ジャック』では、共演者である当時は同じ事務所の先輩だった大塚明夫の隣に座らされて付きっきりで指導され、本番中でも「違う！」と熱のこもった指導を受けた事もある。\r\n\r\n2010年3月31日付けで、6年間所属していたマウスプロモーションを離れ、フリーランス期間を経て2011年11月から2013年5月31日までピアレスガーベラに所属。その後、再びフリーランスとなる。\r\n\r\n趣味は楽器全般、特技は華道（古流松藤会）。\r\n\r\n地元・神奈川県の横浜DeNAベイスターズのファンであり、自らのTwitterやブログでも横浜スタジアムに行き撮影した写真などを投稿している。\r\n\r\n2015年6月14日、入籍および妊娠をブログで発表した。\r\n\r\n五行 なずな（ごぎょう なずな）は、日本の女性声優。主にアダルトゲームに声をあてている。芸名は、春の七草である「ごぎょう」（ハハコグサ）と「ナズナ」を組み合わせて決定した。\r\n\r\n北見 六花（きたみ りっか）は日本の女性声優。主にアダルトゲームに声をあてている。",
+        "career": [
+          "artist",
+          "seiyu",
+          "actor"
+        ],
+        "id": 4727,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 14331
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/87/90/14346_crt_opg4p.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/87/90/14346_crt_opg4p.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/87/90/14346_crt_opg4p.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/87/90/14346_crt_opg4p.jpg"
+    },
+    "name": "乃木坂初佳",
+    "summary": "　　一叶家任职的女仆，短大毕业期间没能找到工作，通过父母的关系，来到了渚家工作。\r\n　　因为工作时候的女仆装而十分害羞。\r\n　　慢性子加上大大咧咧的性格，完全不适合进行细致的工作。因此常常是在工作方面被管家责骂。\r\n　　排解压力的方法是，到好友八寻的家中饮酒。\r\n　　一直在参加男女搭对的联谊活动，但是每次都是惨败。\r\n　　虽然酒量很差，但是却十分贪杯。\r\n　　总是装出一副很成熟的样子，但是自身的行为却完全不搭调，只是其自己没有发觉这一点。",
+    "relation": "主角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/03/64/4646_prsn_C18wL.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/03/64/4646_prsn_C18wL.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/03/64/4646_prsn_C18wL.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/03/64/4646_prsn_C18wL.jpg"
+        },
+        "name": "岡嶋妙",
+        "short_summary": "岡嶋 妙（おかじま たえ、10月2日 - ）は、日本の女性声優。ケンユウオフィス所属。香川県出身。血液型はB型。\r\n代表作は『School Days』の桂言葉、『D.C.II 〜ダ・カーポII〜』の雪村杏、『はぴはぴクローバー』のメル、『ヨスガノソラ』の乃木坂初佳など。\r\n\r\n東京アナウンスアカデミー、マウスプロモーション付属養成所、talk back卒業。2008年ケンユウオフィスの準所属メンバーから所属メンバーとなった。テレビアニメ版『School Days』の桂言葉役を演じ、注目を集める。また、同時期には『School Days』とは正反対の子供向けアニメ『はぴはぴクローバー』で全く異なる役柄を演じ分けた。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 4646,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 14346
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/cc/80/14347_crt_IxXg8.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/cc/80/14347_crt_IxXg8.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/cc/80/14347_crt_IxXg8.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/cc/80/14347_crt_IxXg8.jpg"
+    },
+    "name": "伊福部八寻",
+    "summary": "　　乃木坂初佳的好友。\r\n　　现在，继承了祖母所经营的点心铺。附近孩子们的零花钱是其主要收入。\r\n　　十分害怕麻烦，举止也很大条。\r\n　　本来就职于东京一家一流的企业，但是因为疲于那里如同电视剧中一般的复杂人际关系而辞职回到了老家。\r\n　　每到店中生意繁忙的时候，就把店务推给瑛，自己跑去上网或者睡觉。\r\n　　时常对自家贩卖的点心出手，常常看到她在那里大吃大喝。",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/0a/93/4832_seiyu_anidb.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/0a/93/4832_seiyu_anidb.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/0a/93/4832_seiyu_anidb.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/0a/93/4832_seiyu_anidb.jpg"
+        },
+        "name": "田中涼子",
+        "short_summary": "田中凉子（7月28日－）是一名日本女性声优。东京都出身。以前是ARTSVISION、Office森（预备）所属。日本播音演技研究所出身。\r\n\r\n辛いものとラッキョウが苦手。\r\n据本人说，萝莉系的角色很难应付，而豪爽的姐姐系的角色和她本性相似。 \r\n与樱井浩美关系亲近。\r\n父母拥有寿司店，小的时候好像用吃过咖喱醋饭。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 4832,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 14347
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/94/78/14348_crt_F4oSd.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/94/78/14348_crt_F4oSd.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/94/78/14348_crt_F4oSd.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/94/78/14348_crt_F4oSd.jpg"
+    },
+    "name": "倉永梢",
+    "summary": "　　春日野悠所在班级的班长。 有着很强的责任感，做事认真，性格刚强。\r\n　　总是很关照悠。其实心理喜欢着悠，一旦被周围那这点来开玩笑的话，就会显出很害羞的可爱表情。\r\n　　意外地很在意长相，憧憬着都市的生活。\r\n　　擅长幻想，在《悠之空》里成为主角之一，和春日野悠有恋爱关系。",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/4c/d3/5939_prsn_v74gZ.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/4c/d3/5939_prsn_v74gZ.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/4c/d3/5939_prsn_v74gZ.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/4c/d3/5939_prsn_v74gZ.jpg"
+        },
+        "name": "峰岸由香里",
+        "short_summary": "峰岸 由香里（みねぎし ゆかり、1984年1月21日 - ）は、日本の女性声優。ベストポジション所属。新潟県出身。血液型はAB型。\r\n\r\n以前はメディアフォースに所属していた。\r\n\r\n姫川 あいり（ひめかわ あいり）は、日本の女性声優。アダルトゲームに声をあてている。\r\n\r\nさくらテイルらじおにゲスト出演した際に「ありんこ」という愛称をつけてもらっている。「定着はしていないが可愛くて気に入ってる」とのこと。\r\n雷を非常に苦手にしている。本物の雷の音や光はもちろん、アニメやゲーム、映画、ＴＶなどに出てくる雷も苦手とのこと。",
+        "career": [
+          "artist",
+          "seiyu"
+        ],
+        "id": 5939,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 14348
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/25/8c/14349_crt_DNk2H.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/25/8c/14349_crt_DNk2H.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/25/8c/14349_crt_DNk2H.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/25/8c/14349_crt_DNk2H.jpg"
+    },
+    "name": "中里亮平",
+    "summary": "　　春日野悠的同班同学，也是第一个好友。\r\n　　自来熟，总是得意忘形地开着玩笑，是个轻浮的人。\r\n　　不过为人很体贴，平时是个如大哥哥般的存在，总是为大家打气。\r\n　　虽然一直过着很失败的人生，不过其本人对其毫不在意，仍悠然自得的过活。\r\n　　和瑛是青梅竹马，也常常捉弄她。\r\n　　因为其名字中的“亮”字和瑛的名字的读音是一样的（都是あきら），所以当他们两人在一起的时候，常被人叫“双亮”。",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/c9/39/4606_prsn_Cy4hY.jpg?r=1489214953",
+          "grid": "https://lain.bgm.tv/pic/crt/g/c9/39/4606_prsn_Cy4hY.jpg?r=1489214953",
+          "large": "https://lain.bgm.tv/pic/crt/l/c9/39/4606_prsn_Cy4hY.jpg?r=1489214953",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/c9/39/4606_prsn_Cy4hY.jpg?r=1489214953"
+        },
+        "name": "中國卓郎",
+        "short_summary": "日本の男性声優。アプトプロ所属。神奈川県出身。\r\n\r\n声優養成所『CHK声優センター』から、上位事務所である「オフィスCHK」に昇格所属してデビューした同事務所生え抜き声優の一人。作詞を特技・趣味としておりマエストロを自称しているが、CHK・アプト両所属において音楽活動による事務所への登録はされていない。（ただ、しつこい自称が功を奏し、最近はファンから実際にマエストロと呼ばれる事がある ）他の特技として青汁一気飲みや遅寝早起きなどが挙げられている。\r\n2006年7月より開始された、壱智村小真、櫻井浩美、浅井晴美による自主制作インターネットラジオ『studio TeaParty』に出演。各回のゲストと共に番組の乗っ取りを幾度となく強行した。そのため、番組内では異様に警戒されているようである。また、前述の「マエストロ」のしつこい自称も、主にはこの番組を通じて行われたもので、パーソナリティの3人からも悪ノリを兼ねてそう呼ばれる。\r\nなお『studio TeaParty』の姉妹番組『studio TeaParty 轟け!』にて、前述の3人によってマエストロの自称が実は『のだめカンタービレ』からの影響によるものであった事が『轟け!』の第1回放送にてバラされた。\r\nまた、初期出演作品においては同じCHK出身者である笹島かほる（現・アーツビジョン）などとの共演が目立つ。笹島と共に大宮三郎プロデュース作品の常連の一人。同作品群において脇を固める次世代バイプレーヤーの一人として知られる。\r\n2011年3月1日を以てオフィスCHKを離籍し、フリー期間を経て、同年4月よりアプトプロ所属。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 4606,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 14349
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/4b/83/14468_crt_bxPKG.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/4b/83/14468_crt_bxPKG.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/4b/83/14468_crt_bxPKG.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/4b/83/14468_crt_bxPKG.jpg"
+    },
+    "name": "圣光君",
+    "summary": "各种既不能列入H动画也不能列入一般向的动画中，当出场角色脱衣或者裸衣时(或者出现了比较血腥猎奇的R-18G场面时)，从天而降，遮挡住关键部位的不明光线。动画迷们戏称之为天之光或者圣光 。例如「圣痕炼金士」中的撕衣高光圣光(和「Total Eclipse」第二话&「BLOOD-C」(TV)最终话中人类被虐杀的暗黑圣光)。\r\n\r\n圣光(Holy Light)：在团队赛中可以对友军英雄使用圣光。只要向友军提出圣光的要求在他们需要时。通常用“HL or Heal”来发出要求。\r\n\r\n-----------\r\n注：建议关联圣光前进行确认圣光是否为作品本身具有而非第三方添加。",
+    "relation": "客串",
+    "actors": [],
+    "type": 4,
+    "id": 14468
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/68/a8/34143_crt_Z34RP.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/68/a8/34143_crt_Z34RP.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/68/a8/34143_crt_Z34RP.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/68/a8/34143_crt_Z34RP.jpg"
+    },
+    "name": "女子生徒",
+    "summary": "",
+    "relation": "闲角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/03/64/4646_prsn_C18wL.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/03/64/4646_prsn_C18wL.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/03/64/4646_prsn_C18wL.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/03/64/4646_prsn_C18wL.jpg"
+        },
+        "name": "岡嶋妙",
+        "short_summary": "岡嶋 妙（おかじま たえ、10月2日 - ）は、日本の女性声優。ケンユウオフィス所属。香川県出身。血液型はB型。\r\n代表作は『School Days』の桂言葉、『D.C.II 〜ダ・カーポII〜』の雪村杏、『はぴはぴクローバー』のメル、『ヨスガノソラ』の乃木坂初佳など。\r\n\r\n東京アナウンスアカデミー、マウスプロモーション付属養成所、talk back卒業。2008年ケンユウオフィスの準所属メンバーから所属メンバーとなった。テレビアニメ版『School Days』の桂言葉役を演じ、注目を集める。また、同時期には『School Days』とは正反対の子供向けアニメ『はぴはぴクローバー』で全く異なる役柄を演じ分けた。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 4646,
+        "type": 1,
+        "locked": false
+      },
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/73/30/15327_prsn_r7f2z.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/73/30/15327_prsn_r7f2z.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/73/30/15327_prsn_r7f2z.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/73/30/15327_prsn_r7f2z.jpg"
+        },
+        "name": "古木のぞみ",
+        "short_summary": "古木 のぞみ（ふるき のぞみ、1月12日 - ）は、日本の女性声優。マウスプロモーション所属。\r\n長崎県五島列島出身。血液型はB型。\r\n\r\n専門学校ESPエンタテインメント卒業後、マウスプロモーション附属養成所に入所、2011年8月、『声優バラエティー SAY!YOU!SAY!ME!』内のコーナー「声優アイドルユニット企画」で新人声優ユニットのメンバーとして抜擢され、『ワンリルキス』のメンバーとしての活動を開始。\r\n2012年4月よりマウスプロモーション所属となった。\r\n2017年1月12日、自身の誕生日にオフィシャルブログにて入籍したことを発表した。",
+        "career": [
+          "artist",
+          "seiyu"
+        ],
+        "id": 15327,
+        "type": 1,
+        "locked": false
+      },
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/6b/e6/16223_prsn_AAAza.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/6b/e6/16223_prsn_AAAza.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/6b/e6/16223_prsn_AAAza.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/6b/e6/16223_prsn_AAAza.jpg"
+        },
+        "name": "佐々木彩夏",
+        "short_summary": "桃色幸运草Z成员。",
+        "career": [
+          "artist"
+        ],
+        "id": 16223,
+        "type": 1,
+        "locked": false
+      },
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/e3/8c/22792_prsn_R5K8N.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/e3/8c/22792_prsn_R5K8N.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/e3/8c/22792_prsn_R5K8N.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/e3/8c/22792_prsn_R5K8N.jpg"
+        },
+        "name": "早見あかり",
+        "short_summary": "日本的女演员、时装模特儿。过去曾为偶像团体“桃色幸运草”成员。\r\n东京都出身。Stardust Promotion所属。\r\n\r\n兴趣是健美操、电子邮件、大头贴、指甲彩绘、交换信。特技是健美操、单轮车、厚垫运动、东亚书法、动画声、変颜。\r\n持有健美操6级的资格。\r\n憧憬的艺人是柴咲幸。",
+        "career": [
+          "actor"
+        ],
+        "id": 22792,
+        "type": 1,
+        "locked": false
+      },
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/af/0e/39206_prsn_wS52H.jpg?r=1597716068",
+          "grid": "https://lain.bgm.tv/pic/crt/g/af/0e/39206_prsn_wS52H.jpg?r=1597716068",
+          "large": "https://lain.bgm.tv/pic/crt/l/af/0e/39206_prsn_wS52H.jpg?r=1597716068",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/af/0e/39206_prsn_wS52H.jpg?r=1597716068"
+        },
+        "name": "百田夏菜子",
+        "short_summary": "百田 夏菜子（ももた かなこ、1994年7月12日 - ）は、ももいろクローバーZのリーダー、女優である。イメージカラーは赤で、ボーカル・ギター・キーボード担当。\r\n\r\n2015年の青春映画『幕が上がる』において、第70回毎日映画コンクールのスポニチグランプリ新人賞（女性）にノミネートされる。2016年にNHK連続テレビ小説『べっぴんさん』のメインキャストを演じ、2018年にNHK『プラスティック・スマイル』でドラマ初主演。アニメ『かいけつゾロリ』や、ディズニー配給の映画『ブラックパンサー』日本版の声優も担当した。\r\n\r\n静岡県出身で、『ラグビーワールドカップ2019』の開催都市特別サポーター・静岡代表を務めた。また、県の選定により東京オリンピックの聖火ランナーを担当することが発表されている。",
+        "career": [
+          "artist",
+          "actor"
+        ],
+        "id": 39206,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 34143
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/31/7c/35639_crt_6V5dn.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/31/7c/35639_crt_6V5dn.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/31/7c/35639_crt_6V5dn.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/31/7c/35639_crt_6V5dn.jpg"
+    },
+    "name": "男子生徒",
+    "summary": "",
+    "relation": "闲角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/80/8e/5216_seiyu_anidb.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/80/8e/5216_seiyu_anidb.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/80/8e/5216_seiyu_anidb.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/80/8e/5216_seiyu_anidb.jpg"
+        },
+        "name": "成家義哉",
+        "short_summary": "",
+        "career": [
+          "seiyu"
+        ],
+        "id": 5216,
+        "type": 1,
+        "locked": false
+      },
+      {
+        "images": {
+          "small": "",
+          "grid": "",
+          "large": "",
+          "medium": ""
+        },
+        "name": "水谷直樹",
+        "short_summary": "日本の男性声優。三重県出身。2014年10月よりワンダースペースに所属。2012年3月までマウスプロモーションに所属。2012年10月14日より、自主企画ラジオ『スリーオン○○!』を放送していた。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 33290,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 35639
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/cf/7d/130669_crt_CUqOM.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/cf/7d/130669_crt_CUqOM.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/cf/7d/130669_crt_CUqOM.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/cf/7d/130669_crt_CUqOM.jpg"
+    },
+    "name": "悠の母",
+    "summary": "",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/71/71/3859_seiyu_anidb.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/71/71/3859_seiyu_anidb.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/71/71/3859_seiyu_anidb.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/71/71/3859_seiyu_anidb.jpg"
+        },
+        "name": "氷上恭子",
+        "short_summary": "日本の女性声優。マウスプロモーション（Mausu Promotion）所属。\r\n高中时代搬到了同县神户市。初中生的时候，知道有声优这个职业，高中时代开始去培养所。高中毕业后想要正式成为声优，却受到父母的强烈反对。于是先到园田学园女子短期大学部幼儿教育学系就读，同时入住东映演员培养所的大阪校。毕业后说服父母后，移住到东京。之后从东京广播学院声优科毕业，江崎Promotion(现Mausu Promotion)附属演员培养所毕业，后江崎Promotion(现Mausu Promotion)所属。1992年声优出道。\r\n1997年与同事务所的小岛幸子、增田由纪组成声优组合Chiffons。\r\n2018年7月，与演员桥本祯之结婚。\r\n特长是演奏钢琴。\r\n高中时代加入合唱部。负责女中音声部。\r\n有普通的汽车执照和保育员、幼儿园教师执照。\r\n与雪野五月是东京广播学院时代的同期生。",
+        "career": [
+          "artist",
+          "seiyu"
+        ],
+        "id": 3859,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130669
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/53/1e/130670_crt_0Dm07.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/53/1e/130670_crt_0Dm07.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/53/1e/130670_crt_0Dm07.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/53/1e/130670_crt_0Dm07.jpg"
+    },
+    "name": "悠の父",
+    "summary": "",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/f8/4b/4621_prsn_NtHCW.jpg?r=1737200558",
+          "grid": "https://lain.bgm.tv/pic/crt/g/f8/4b/4621_prsn_NtHCW.jpg?r=1737200558",
+          "large": "https://lain.bgm.tv/pic/crt/l/f8/4b/4621_prsn_NtHCW.jpg?r=1737200558",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/f8/4b/4621_prsn_NtHCW.jpg?r=1737200558"
+        },
+        "name": "伊丸岡篤",
+        "short_summary": "日本の男性声優。マウスプロモーション所属。群馬県伊勢崎市出身。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 4621,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130670
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/fd/f2/130671_crt_h3HJ5.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/fd/f2/130671_crt_h3HJ5.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/fd/f2/130671_crt_h3HJ5.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/fd/f2/130671_crt_h3HJ5.jpg"
+    },
+    "name": "奈緒の母",
+    "summary": "",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/60/98/4122_seiyu_anidb.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/60/98/4122_seiyu_anidb.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/60/98/4122_seiyu_anidb.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/60/98/4122_seiyu_anidb.jpg"
+        },
+        "name": "夏樹リオ",
+        "short_summary": "日本の女性声優。東京俳優生活協同組合（俳協）所属。\r\n\r\n東京都出身。身長158cm、体重48kg、血液型はA型。スリーサイズはB80cm W59cm H85cm。公式プロフィールによれば、声域はメゾソプラノ。\r\n\r\n1991年よりシグマ・セブンに所属。1993年3月26日に発売されたPCエンジン用アクションゲーム『フォーセットアムール』のコルク・ランス役で初主演を果たした。1997年から俳協所属。",
+        "career": [
+          "artist",
+          "seiyu"
+        ],
+        "id": 4122,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130671
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/e0/32/130672_crt_n53F9.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/e0/32/130672_crt_n53F9.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/e0/32/130672_crt_n53F9.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/e0/32/130672_crt_n53F9.jpg"
+    },
+    "name": "店員",
+    "summary": "",
+    "relation": "闲角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/0a/93/4832_seiyu_anidb.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/0a/93/4832_seiyu_anidb.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/0a/93/4832_seiyu_anidb.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/0a/93/4832_seiyu_anidb.jpg"
+        },
+        "name": "田中涼子",
+        "short_summary": "田中凉子（7月28日－）是一名日本女性声优。东京都出身。以前是ARTSVISION、Office森（预备）所属。日本播音演技研究所出身。\r\n\r\n辛いものとラッキョウが苦手。\r\n据本人说，萝莉系的角色很难应付，而豪爽的姐姐系的角色和她本性相似。 \r\n与樱井浩美关系亲近。\r\n父母拥有寿司店，小的时候好像用吃过咖喱醋饭。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 4832,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130672
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/72/12/130673_crt_9Grfv.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/72/12/130673_crt_9Grfv.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/72/12/130673_crt_9Grfv.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/72/12/130673_crt_9Grfv.jpg"
+    },
+    "name": "担任",
+    "summary": "",
+    "relation": "闲角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/c6/ed/4881_seiyu_anidb.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/c6/ed/4881_seiyu_anidb.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/c6/ed/4881_seiyu_anidb.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/c6/ed/4881_seiyu_anidb.jpg"
+        },
+        "name": "松尾大亮",
+        "short_summary": "",
+        "career": [
+          "seiyu"
+        ],
+        "id": 4881,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130673
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/37/a7/130674_crt_QNYNZ.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/37/a7/130674_crt_QNYNZ.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/37/a7/130674_crt_QNYNZ.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/37/a7/130674_crt_QNYNZ.jpg"
+    },
+    "name": "月見山",
+    "summary": "",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/2d/3c/17424_prsn_98i72.jpg?r=1491322228",
+          "grid": "https://lain.bgm.tv/pic/crt/g/2d/3c/17424_prsn_98i72.jpg?r=1491322228",
+          "large": "https://lain.bgm.tv/pic/crt/l/2d/3c/17424_prsn_98i72.jpg?r=1491322228",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/2d/3c/17424_prsn_98i72.jpg?r=1491322228"
+        },
+        "name": "江川大輔",
+        "short_summary": "日本の男性声優。マウスプロモーション所属。愛知県出身。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 17424,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130674
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/47/d4/130675_crt_kdS3m.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/47/d4/130675_crt_kdS3m.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/47/d4/130675_crt_kdS3m.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/47/d4/130675_crt_kdS3m.jpg"
+    },
+    "name": "一葉の父",
+    "summary": "",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/8e/8e/4806_prsn_33RZA.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/8e/8e/4806_prsn_33RZA.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/8e/8e/4806_prsn_33RZA.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/8e/8e/4806_prsn_33RZA.jpg"
+        },
+        "name": "宝亀克寿",
+        "short_summary": "日本の俳優、声優、ナレーター。ケンユウオフィス所属。\r\n\r\n旧芸名に箒 克朗（ほうき かつあき）がある。",
+        "career": [
+          "seiyu",
+          "actor"
+        ],
+        "id": 4806,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130675
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/27/7a/130676_crt_HDi4S.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/27/7a/130676_crt_HDi4S.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/27/7a/130676_crt_HDi4S.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/27/7a/130676_crt_HDi4S.jpg"
+    },
+    "name": "一葉の母",
+    "summary": "",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/5e/fb/5069_prsn_qL7l5.jpg?r=1590341699",
+          "grid": "https://lain.bgm.tv/pic/crt/g/5e/fb/5069_prsn_qL7l5.jpg?r=1590341699",
+          "large": "https://lain.bgm.tv/pic/crt/l/5e/fb/5069_prsn_qL7l5.jpg?r=1590341699",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/5e/fb/5069_prsn_qL7l5.jpg?r=1590341699"
+        },
+        "name": "村井かずさ",
+        "short_summary": "村井每早（1975年12月28日－）是日本女性声优，属于东京俳优生活协同组合。爱知县名古屋市出身。毕业于圣心女子大学。\r\n代表作是‘哈姆太郎’中的リボンちゃん等。\r\n2003年和声优高野直子组成“Waffle☆ら・めーる”单元。CD由Konami发行。",
+        "career": [
+          "artist",
+          "seiyu"
+        ],
+        "id": 5069,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130676
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/88/b8/130677_crt_fofKF.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/88/b8/130677_crt_fofKF.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/88/b8/130677_crt_fofKF.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/88/b8/130677_crt_fofKF.jpg"
+    },
+    "name": "瑛のおば",
+    "summary": "",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/d9/56/16277_prsn_j7qg7.jpg?r=1419431111",
+          "grid": "https://lain.bgm.tv/pic/crt/g/d9/56/16277_prsn_j7qg7.jpg?r=1419431111",
+          "large": "https://lain.bgm.tv/pic/crt/l/d9/56/16277_prsn_j7qg7.jpg?r=1419431111",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/d9/56/16277_prsn_j7qg7.jpg?r=1419431111"
+        },
+        "name": "神田みか",
+        "short_summary": "日本の女性声優。マウスプロモーション所属。千葉県出身。旧芸名は、宮武 みか（2007年12月19日改名）。\r\n2013年から、元劇団6番シードの太田真由美（現在フリー）と演劇ユニット「マミカ」を結成。2018年解散。MENSA 会員。\r\n趣味・特技は天然石アクセサリー作り、ウィンドウショッピング。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 16277,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130677
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/48/20/130678_crt_33uF5.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/48/20/130678_crt_33uF5.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/48/20/130678_crt_33uF5.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/48/20/130678_crt_33uF5.jpg"
+    },
+    "name": "瑛の祖父",
+    "summary": "",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/bd/3e/4012_seiyu_anidb.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/bd/3e/4012_seiyu_anidb.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/bd/3e/4012_seiyu_anidb.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/bd/3e/4012_seiyu_anidb.jpg"
+        },
+        "name": "納谷六朗",
+        "short_summary": "",
+        "career": [
+          "seiyu"
+        ],
+        "id": 4012,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130678
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/f3/9f/130679_crt_3D92z.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/f3/9f/130679_crt_3D92z.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/f3/9f/130679_crt_3D92z.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/f3/9f/130679_crt_3D92z.jpg"
+    },
+    "name": "用務員",
+    "summary": "",
+    "relation": "闲角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/8a/91/5687_prsn_1II9z.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/8a/91/5687_prsn_1II9z.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/8a/91/5687_prsn_1II9z.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/8a/91/5687_prsn_1II9z.jpg"
+        },
+        "name": "菊本平",
+        "short_summary": "菊本 平（きくもと たいら、1979年6月11日 - ）は、日本の男性声優。茨城県出身。マウスプロモーション所属。",
+        "career": [
+          "seiyu"
+        ],
+        "id": 5687,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130679
+  },
+  {
+    "images": {
+      "small": "",
+      "grid": "",
+      "large": "",
+      "medium": ""
+    },
+    "name": "春日野操",
+    "summary": "",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/06/56/5647_seiyu_anidb.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/06/56/5647_seiyu_anidb.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/06/56/5647_seiyu_anidb.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/06/56/5647_seiyu_anidb.jpg"
+        },
+        "name": "羽鳥靖子",
+        "short_summary": "",
+        "career": [
+          "seiyu"
+        ],
+        "id": 5647,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130680
+  },
+  {
+    "images": {
+      "small": "",
+      "grid": "",
+      "large": "",
+      "medium": ""
+    },
+    "name": "奈緒の父",
+    "summary": "",
+    "relation": "配角",
+    "actors": [
+      {
+        "images": {
+          "small": "https://lain.bgm.tv/r/100/pic/crt/l/bf/49/4485_seiyu_anidb.jpg",
+          "grid": "https://lain.bgm.tv/pic/crt/g/bf/49/4485_seiyu_anidb.jpg",
+          "large": "https://lain.bgm.tv/pic/crt/l/bf/49/4485_seiyu_anidb.jpg",
+          "medium": "https://lain.bgm.tv/r/400/pic/crt/l/bf/49/4485_seiyu_anidb.jpg"
+        },
+        "name": "木村拓",
+        "short_summary": "",
+        "career": [
+          "seiyu"
+        ],
+        "id": 4485,
+        "type": 1,
+        "locked": false
+      }
+    ],
+    "type": 1,
+    "id": 130681
+  },
+  {
+    "images": {
+      "small": "https://lain.bgm.tv/r/100/pic/crt/l/e6/7f/166968_crt_l9lpH.jpg",
+      "grid": "https://lain.bgm.tv/pic/crt/g/e6/7f/166968_crt_l9lpH.jpg",
+      "large": "https://lain.bgm.tv/pic/crt/l/e6/7f/166968_crt_l9lpH.jpg",
+      "medium": "https://lain.bgm.tv/r/400/pic/crt/l/e6/7f/166968_crt_l9lpH.jpg"
+    },
+    "name": "穂見学園",
+    "summary": "",
+    "relation": "客串",
+    "actors": [],
+    "type": 4,
+    "id": 166968
+  }
+]

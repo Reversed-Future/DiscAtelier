@@ -1,6 +1,9 @@
+import { useVideoMetadata } from '../video/useVideoMetadata';
+import { workTitles } from '../video/titles';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { LibraryCopy } from '../library/types';
 import { Cover } from './Cover';
+import { portraitCover } from '../library/coverShape';
 import { ModelPreview } from '../models/ModelPreview';
 import { enter } from '../ui/motion';
 import { ConvertedPrice } from '../exchange/ConvertedPrice';
@@ -11,6 +14,9 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
   items: LibraryCopy[]; selectedId: string; select(id: string): void; inspect(item: LibraryCopy): void; organize: boolean; modelActive: boolean; takenId?: string; artworkSlot(node: HTMLDivElement | null): void;
 }) {
   const index = Math.max(0, items.findIndex(item => item.id === selectedId));
+  const selected = items[index];
+  const selectedVideo = useVideoMetadata(selected?.editionId || '', selected?.editionRevision || 0, selected?.edition.categoryId === 'video');
+  const titles = selected?.edition.categoryId === 'video' ? workTitles(selectedVideo.value?.work, selected.edition.title, selected.edition.creator) : { title: selected?.edition.title, subtitle: selected?.edition.creator };
   const caption = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
   const startX = useRef<number | undefined>(undefined);
@@ -38,7 +44,7 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
       {items.map((item, itemIndex) => {
         const distance = itemIndex - index;
         if (Math.abs(distance) > 3) return null;
-        return <button key={item.id} className={`record-sleeve${item.modelAssetId ? ' has-model' : ''}`} data-category={item.edition.categoryId} data-current={distance === 0} data-offstage={Math.abs(distance) > 2} inert={Math.abs(distance) > 2}
+        return <button key={item.id} className={`record-sleeve${item.modelAssetId ? ' has-model' : ''}`} data-portrait={!item.modelAssetId && portraitCover(item.edition)} data-category={item.edition.categoryId} data-current={distance === 0} data-offstage={Math.abs(distance) > 2} inert={Math.abs(distance) > 2}
           aria-label={`${distance === 0 ? '取出' : '选择'} ${item.edition.title}`} tabIndex={distance === 0 ? 0 : -1}
           style={{ '--distance': distance, '--abs-distance': Math.abs(distance), '--direction': Math.sign(distance) } as CSSProperties}
           onClick={() => { if (dragged.current) { dragged.current = false; return; } setKeyNavigation(false); distance === 0 ? inspect(item) : select(item.id); }}>
@@ -49,6 +55,6 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
         </button>;
       })}
     </div>
-    <div className="record-caption" ref={caption}><span className="record-counter">{String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}</span><h1>{items[index]?.edition.title}</h1><p>{items[index]?.edition.creator}</p></div>
+    <div className="record-caption" ref={caption}><span className="record-counter">{String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}</span><h1>{titles.title}</h1><p>{titles.subtitle}</p></div>
   </div>;
 }

@@ -9,6 +9,7 @@ discatelier-contracts.workspace = true
 discatelier-application.workspace = true
 rusqlite = { version = "0.40.2", features = ["bundled", "backup"] }
 serde_json.workspace = true
+serde.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 sha2.workspace = true

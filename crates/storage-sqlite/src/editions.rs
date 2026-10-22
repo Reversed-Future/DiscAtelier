@@ -12,14 +12,26 @@ pub fn update(
     request: &UpdateEdition,
     prepared: &crate::models::prepared::PreparedModels,
 ) -> Result<String, AppError> {
+    update_with_video(connection, request, prepared, None)
+}
+pub fn update_with_video(
+    connection: &mut Connection,
+    request: &UpdateEdition,
+    prepared: &crate::models::prepared::PreparedModels,
+    video: Option<&discatelier_contracts::VideoMetadata>,
+) -> Result<String, AppError> {
     let _total = crate::profiling::Span::new("edition.total");
     let payload =
         crate::profiling::measure("edition.request_hash", || -> Result<String, AppError> {
             Ok(format!(
                 "edition:{:x}",
                 Sha256::digest(
-                    serde_json::to_vec(request)
-                        .map_err(|_| AppError::new("validation", "数据编码失败"))?
+                    if video.is_some() {
+                        serde_json::to_vec(&(request, video))
+                    } else {
+                        serde_json::to_vec(request)
+                    }
+                    .map_err(|_| AppError::new("validation", "数据编码失败"))?
                 )
             ))
         })?;
@@ -101,6 +113,9 @@ pub fn update(
             params![request.edition_id, edition.media.len() as i64],
         )
         .map_err(db_error)?;
+    if let Some(value) = video {
+        crate::video::save(&transaction, &request.edition_id, value)?;
+    }
     save_receipt(
         &transaction,
         &request.request_id,

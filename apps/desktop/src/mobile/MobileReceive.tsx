@@ -83,7 +83,7 @@ export function MobileReceive({ mode, maxImages = 6, onReceive, onClose }: {
       {connection && <div className="mobile-connection">
         <img className="mobile-qr" src={connection.qrDataUrl} alt="手机连接二维码"/>
         <strong role="status">{connected ? '手机已连接' : '等待手机连接'}</strong>
-        <p className="utility-copy">{mode === 'barcode' ? '手机拍照识别条码，核对后发送到搜索框。' : `选择或拍摄最多 ${maxImages} 张截图，发送后在电脑确认识别。`}</p>
+        <p className="utility-copy">{mode === 'barcode' ? '手机拍照识别条码，核对后发送到搜索框。' : `选择或拍摄最多 ${maxImages} 张图片，发送后在电脑确认识别。`}</p>
         <div className="mobile-connection-actions"><button type="button" className="text-button" onClick={() => {
           void navigator.clipboard.writeText(connection.url).then(() => setCopied(true)).catch(() => setError('复制失败，请使用二维码连接。'));
         }}>{copied ? '已复制' : '复制连接'}</button><button type="button" className="text-button" onClick={() => {

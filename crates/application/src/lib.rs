@@ -1,11 +1,12 @@
 use discatelier_contracts::*;
+pub mod video;
 use discatelier_domain::{carriers, categories, validate_copy, validate_edition};
 use std::collections::BTreeMap;
 mod song_links;
 pub use song_links::SongLinkRepository;
+mod disc_albums;
 mod extensions;
 mod music_albums;
-mod disc_albums;
 pub use extensions::ExtensionRepository;
 mod metadata;
 pub use metadata::MetadataProvider;

@@ -5,20 +5,20 @@ mod commands;
 mod credentials;
 mod data_location;
 mod discogs;
-mod integration_settings;
 mod exchange;
+mod integration_settings;
+mod mobile_bridge;
 mod model_picker;
 mod model_stream;
 mod models;
-mod mobile_bridge;
 mod netease;
 mod netease_albums;
-mod netease_queue;
 mod netease_artwork;
 mod netease_auth;
 mod netease_create;
-mod netease_playback;
 mod netease_links;
+mod netease_playback;
+mod netease_queue;
 mod optical;
 mod playback;
 mod playback_backend;
@@ -29,6 +29,7 @@ mod playback_settings;
 mod purchase_recognition;
 mod updates;
 mod video_input;
+mod video_metadata;
 mod video_surface;
 mod window_layout;
 
@@ -51,6 +52,10 @@ fn main() {
                     .map_err(|error| error.message)?,
             );
             let directory = app.path().app_local_data_dir()?;
+            // Feature-only test build: never migrate the installed application's library.
+            #[cfg(feature = "isolated-preview")]
+            let directory =
+                directory.with_file_name("com.reversedfuture.discatelier.video-preview");
             // Ordinary Release never redirects the user's collection via test env.
             #[cfg(any(debug_assertions, feature = "performance-harness"))]
             let directory = std::env::var_os("DISCATELIER_TEST_DATA_DIR")
@@ -98,6 +103,19 @@ fn main() {
             mobile_bridge::mobile_poll,
             mobile_bridge::mobile_stop,
             purchase_recognition::purchase_recognize,
+            video_metadata::video_open_source,
+            video_metadata::links::video_open_reference,
+            video_metadata::artwork::video_cover,
+            video_metadata::video_search,
+            video_metadata::video_work,
+            video_metadata::video_chapters,
+            video_metadata::video_images,
+            video_metadata::video_metadata,
+            video_metadata::video_create,
+            video_metadata::video_update,
+            video_metadata::recognition::video_recognize,
+            video_metadata::settings::video_settings_get,
+            video_metadata::settings::video_settings_save,
             exchange::exchange_status,
             exchange::exchange_open_docs,
             exchange::exchange_save,
