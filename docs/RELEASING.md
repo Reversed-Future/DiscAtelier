@@ -79,6 +79,10 @@ npm run release:build
 
 升级备份修复和网易云手动入库已发布到私有仓库并设为 Latest。五项远端资产回读一致，本地及实际私有更新下载验签通过，篡改包被拒绝。已分别删除本次安装包及 `DiscAtelier-update-music-preview.exe`，保留收藏和备份。详见 [0.1.8 发布校验](releases/v0.1.8-verification.md)。已被较新数据库拦截的旧版首次仍需手动覆盖安装。
 
+## 0.1.18 发布记录
+
+2026-10-22：蓝光 libaacs／libbdplus 本地解密与 FindVUK KEYDB 自动下载、日语优先合并、下载进度和来源显示，MakeMKV 兼容兜底；Bangumi Token 链接与过期提醒；Discogs Token 链接；封面扫描淡入动效已发布私有正式版并设为 Latest。五项资产完整回读，实际私有更新验签通过，篡改包被拒绝；本地安装包、预览程序和构建缓存逐个清理，失败 0。详见 [0.1.18 发布校验](releases/v0.1.18-verification.md)。
+
 ## 0.1.17 发布记录
 
 2026-10-22：助手 Markdown、即时发送与重试，网易云 15 MiB 封面及 schema 14，流式 `tool_calls: null`，更新安装自动停播，视频音量／倍速，收藏删除和多项界面修正已发布私有正式版并设为 Latest。五项资产完整回读，实际私有更新验签通过，篡改包被拒绝；本地安装包、预览程序和构建缓存逐个清理，失败 0。详见 [0.1.17 发布校验](releases/v0.1.17-verification.md)。
