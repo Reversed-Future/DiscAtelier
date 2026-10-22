@@ -74,11 +74,21 @@ pub struct PlaybackSnapshot {
     pub seekable: bool,
     pub audio_tracks: Vec<AudioTrack>,
     pub selected_audio: Option<i64>,
+    #[serde(default = "default_volume")]
+    pub volume: u16,
+    #[serde(default = "default_rate")]
+    pub rate: f64,
     #[serde(default)]
     pub dvd_title: Option<i32>,
     #[serde(default)]
     pub dvd_menu: bool,
     pub error: Option<String>,
+}
+fn default_volume() -> u16 {
+    100
+}
+fn default_rate() -> f64 {
+    1.0
 }
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -95,6 +105,8 @@ pub enum MenuDirection {
 pub enum PlaybackControl {
     Pause { paused: bool },
     Seek { seconds: f64 },
+    Volume { volume: u16 },
+    Rate { rate: f64 },
     Audio { id: i64 },
     Menu { direction: MenuDirection },
     Stop,

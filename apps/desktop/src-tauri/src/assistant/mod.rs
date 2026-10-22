@@ -66,11 +66,10 @@ pub async fn assistant_snapshot(
     .await
     .map_err(|_| error("会话不可读取。"))?
 }
-#[tauri::command]
-pub async fn assistant_send(
+async fn execute(
     window: tauri::WebviewWindow,
     on_event: tauri::ipc::Channel<Session>,
-    text: String,
+    text: Option<String>,
 ) -> Result<Session, AppError> {
     let state = window.state::<Arc<AgentState>>();
     let lease = acquire(state.inner())?;
@@ -97,21 +96,45 @@ pub async fn assistant_send(
             discogs,
             settings: settings.clone(),
         };
-        discatelier_agent_harness::run(
-            &mut session,
-            &text,
-            Model {
-                base: &settings.ai_base_url,
-                name: &settings.ai_model,
-                key: key.as_deref(),
-            },
-            &mut host,
-            &lease.0.cancelled,
-        )?;
+        let model = Model {
+            base: &settings.ai_base_url,
+            name: &settings.ai_model,
+            key: key.as_deref(),
+        };
+        match text {
+            Some(text) => discatelier_agent_harness::run(
+                &mut session,
+                &text,
+                model,
+                &mut host,
+                &lease.0.cancelled,
+            )?,
+            None => discatelier_agent_harness::retry(
+                &mut session,
+                model,
+                &mut host,
+                &lease.0.cancelled,
+            )?,
+        }
         Ok(session)
     })
     .await
     .map_err(|_| error("助手运行中断。"))?
+}
+#[tauri::command]
+pub async fn assistant_send(
+    window: tauri::WebviewWindow,
+    on_event: tauri::ipc::Channel<Session>,
+    text: String,
+) -> Result<Session, AppError> {
+    execute(window, on_event, Some(text)).await
+}
+#[tauri::command]
+pub async fn assistant_retry(
+    window: tauri::WebviewWindow,
+    on_event: tauri::ipc::Channel<Session>,
+) -> Result<Session, AppError> {
+    execute(window, on_event, None).await
 }
 #[tauri::command]
 pub fn assistant_cancel(state: tauri::State<'_, Arc<AgentState>>) {

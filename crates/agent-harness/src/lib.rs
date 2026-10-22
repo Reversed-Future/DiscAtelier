@@ -69,6 +69,36 @@ pub fn run(
         return Err(error("消息为空、过长或会话已满，请新建会话。"));
     }
     session.messages.push(Message::text("user", text));
+    execute_turn(session, model, host, cancelled)
+}
+pub fn retry(
+    session: &mut Session,
+    model: Model<'_>,
+    host: &mut impl Host,
+    cancelled: &AtomicBool,
+) -> Result<(), AppError> {
+    if session.pending.is_some() || session.action.is_some() {
+        return Err(error("请先处理待确认的修改。"));
+    }
+    if session.phase == "running" {
+        return Err(error("助手正在处理，请稍后重试。"));
+    }
+    let index = session
+        .messages
+        .iter()
+        .rposition(|message| message.role == "user")
+        .ok_or_else(|| error("没有可重试的消息。"))?;
+    // Discard the interrupted answer and any tool messages so the same user
+    // turn is sent again without duplicating the prompt.
+    session.messages.truncate(index + 1);
+    execute_turn(session, model, host, cancelled)
+}
+fn execute_turn(
+    session: &mut Session,
+    model: Model<'_>,
+    host: &mut impl Host,
+    cancelled: &AtomicBool,
+) -> Result<(), AppError> {
     session.phase = "running".into();
     session.error = None;
     host.checkpoint(session)?;
@@ -197,6 +227,31 @@ fn turn(
 #[cfg(test)]
 mod tests {
     use super::*;
+    struct Noop;
+    impl Host for Noop {
+        fn execute(&mut self, _: &str, _: &str) -> Result<ToolResult, AppError> {
+            unreachable!()
+        }
+        fn checkpoint(&mut self, _: &Session) -> Result<(), AppError> {
+            Ok(())
+        }
+    }
+    #[test]
+    fn retry_requires_an_existing_user_message_before_calling_a_model() {
+        let mut session = Session::default();
+        let result = retry(
+            &mut session,
+            Model {
+                base: "https://example.test/v1",
+                name: "test",
+                key: None,
+            },
+            &mut Noop,
+            &AtomicBool::new(false),
+        );
+        assert!(result.is_err());
+        assert!(session.messages.is_empty());
+    }
     #[test]
     fn malformed_or_truncated_model_responses_cannot_run_tools() {
         assert!(reply(json!({"choices":[{"message":{"role":"assistant","content":"Hello"},"finish_reason":"stop"}]})).is_ok());

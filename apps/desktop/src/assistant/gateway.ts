@@ -3,12 +3,16 @@ import type { CopyDraft } from '../library/types';
 export interface Proposal { title: string; before: CopyDraft; request: { requestId: string; id: string; expectedRevision: number; copy: CopyDraft } }
 export interface ActionPreview { id: string; title: string; kind: 'add' | 'supplement' | 'cover'; changes: { label: string; before: string; after: string }[]; hasImages: boolean }
 export interface AgentSession { id: string; phase: string; messages: { role: string; content: string | null }[]; events: string[]; pending: Proposal | null; action: ActionPreview | null; undo: Proposal | null; error: string | null }
+function channel(progress: (session: AgentSession) => void) {
+  const onEvent = new Channel<AgentSession>(); onEvent.onmessage = progress;
+  return onEvent;
+}
 export const assistant = {
   snapshot: () => invoke<AgentSession>('assistant_snapshot'),
-  send: (text: string, progress: (session: AgentSession) => void) => {
-    const onEvent = new Channel<AgentSession>(); onEvent.onmessage = progress;
-    return invoke<AgentSession>('assistant_send', { text, onEvent });
-  },
+  send: (text: string, progress: (session: AgentSession) => void) =>
+    invoke<AgentSession>('assistant_send', { text, onEvent: channel(progress) }),
+  retry: (progress: (session: AgentSession) => void) =>
+    invoke<AgentSession>('assistant_retry', { onEvent: channel(progress) }),
   images: (proposalId: string) => invoke<{ before: string | null; after: string | null }>('assistant_preview_images', { proposalId }),
   cancel: () => invoke<void>('assistant_cancel'),
   newSession: () => invoke<AgentSession>('assistant_new'),

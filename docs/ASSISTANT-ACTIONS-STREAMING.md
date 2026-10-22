@@ -28,9 +28,12 @@
 - 兼容 Chat Completions 请求使用 `stream: true`，SSE 文本分段传到 Tauri Channel；界面展示逐步到达的文字。
 - 按工具索引累积函数名和 JSON 参数，必须收到完整结束标记和有效完成原因才执行；不执行断流或截断的工具参数。
 - 支持 UTF-8 跨网络包、CRLF、注释行、使用量空 choices 及兼容服务返回普通 JSON。普通 JSON 服务可以正常回答，但只能一次显示回复。
+- 兼容 `delta.tool_calls: null`（小米 MiMo 等 OpenAI 兼容服务会在无工具的文本和推理分片中显式返回）与 `reasoning_content`；空值按空数组处理，不中断流式回答。
 - 网络等待支持取消：停止会丢弃进行中的 HTTP 请求，保留已显示的部分文字；已经执行完的工具操作不会因此回滚。正在执行的独立资料查询需要等待其自身返回后停止。
 - 限制单次传输 2 MiB、事件／行 64 KiB、回答 32 KiB、工具参数 4 KiB；维持每轮最多 8 次工具调用和原有上下文上限。
 - 关闭浮窗不会取消对话。消息滚动到上方时，文字增量不强制拉回底部。
+- 助手回复以安全的轻量 Markdown 渲染（标题、列表、引用、代码块、强调和 http/https 链接），原始 HTML 只按文本显示。
+- 发送后输入框立即清空并显示带动效的用户消息；发送／停止按钮位于输入框内右下角。最后一条用户消息可在空闲状态重试，重试会丢弃中断的回答和工具消息后重新请求，不重复用户消息。
 
 字段依据 [OpenAI Chat Completions 官方协议](https://platform.openai.com/docs/api-reference/chat/object?lang=ruby)，测试使用本地隔离 HTTP 服务，没有请求真实 AI 接口。
 

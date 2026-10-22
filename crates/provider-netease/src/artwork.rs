@@ -1,6 +1,6 @@
 use super::{checked, cover_url};
 use base64::{engine::general_purpose::STANDARD, Engine};
-use discatelier_contracts::AppError;
+use discatelier_contracts::{AppError, MAX_COVER_BYTES};
 use discatelier_integration_http::{error, request};
 use image::{ImageFormat, ImageReader, Limits};
 use serde::Deserialize;
@@ -10,7 +10,6 @@ use std::{
     time::Duration,
 };
 
-const MAX_BYTES: u64 = 8 * 1024 * 1024;
 #[derive(Deserialize)]
 struct CoverAlbum {
     id: u64,
@@ -53,20 +52,26 @@ pub fn download_album_cover(value: Value, id: u64) -> Result<String, AppError> {
     }
     if response
         .content_length()
-        .is_some_and(|size| size > MAX_BYTES)
+        .is_some_and(|size| size > MAX_COVER_BYTES)
     {
-        return Err(error("封面超过 8 MB。"));
+        return Err(too_large());
     }
     let mut bytes = Vec::new();
     response
-        .take(MAX_BYTES + 1)
+        .take(MAX_COVER_BYTES + 1)
         .read_to_end(&mut bytes)
         .map_err(|_| error("封面下载未完成。"))?;
     image_data(&bytes)
 }
+fn too_large() -> AppError {
+    error(format!("封面超过 {} MB。", MAX_COVER_BYTES / (1024 * 1024)))
+}
 fn image_data(bytes: &[u8]) -> Result<String, AppError> {
-    if bytes.is_empty() || bytes.len() as u64 > MAX_BYTES {
-        return Err(error("封面为空或超过 8 MB。"));
+    if bytes.is_empty() {
+        return Err(error("封面为空。"));
+    }
+    if bytes.len() as u64 > MAX_COVER_BYTES {
+        return Err(too_large());
     }
     let format = image::guess_format(bytes).map_err(|_| error("封面图片格式无效。"))?;
     let mime = match format {
@@ -118,6 +123,20 @@ mod tests {
             .starts_with("data:image/png;base64,"));
         assert!(image_data(&png.get_ref()[..10]).is_err());
         assert!(image_data(b"<html>error</html>").is_err());
-        assert!(image_data(&vec![0; MAX_BYTES as usize + 1]).is_err());
+        assert!(image_data(&vec![0; MAX_COVER_BYTES as usize + 1]).is_err());
+    }
+    #[test]
+    fn covers_up_to_15_mb_are_accepted_before_storage() {
+        let mut png = Cursor::new(Vec::new());
+        image::DynamicImage::new_rgb8(2, 2)
+            .write_to(&mut png, ImageFormat::Png)
+            .unwrap();
+        let mut bytes = png.into_inner();
+        bytes.resize(MAX_COVER_BYTES as usize, 0);
+        assert!(image_data(&bytes)
+            .unwrap()
+            .starts_with("data:image/png;base64,"));
+        bytes.resize(MAX_COVER_BYTES as usize + 1, 0);
+        assert!(image_data(&bytes).is_err());
     }
 }

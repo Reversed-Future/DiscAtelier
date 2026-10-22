@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { errorMessage } from '../library/gateway';
 import { updates, type DownloadProgress, type UpdateStatus } from './gateway';
 
-export function UpdateSettings({ onBusy, playing }: { onBusy(value: boolean): void; playing: boolean }) {
+export function UpdateSettings({ onBusy }: { onBusy(value: boolean): void }) {
   const [status, setStatus] = useState<UpdateStatus | null>(null);
   const [credentialsOpen, setCredentialsOpen] = useState(false);
   const [token, setToken] = useState('');
@@ -55,8 +55,8 @@ export function UpdateSettings({ onBusy, playing }: { onBusy(value: boolean): vo
     </div>
     <footer className="update-footer">
       {available?.ready ? <>
-        <p className="setting-hint">{playing ? '请先停止播放。' : '安装前自动备份收藏，随后重启。'}</p>
-        <button className="solid-button" disabled={busy || playing} onClick={() => void run('installing', updates.install)}>安装并重启</button>
+        <p className="setting-hint">安装前自动停止播放并备份收藏，随后重启。</p>
+        <button className="solid-button" disabled={busy} onClick={() => void run('installing', updates.install)}>安装并重启</button>
       </> : available ? <button className="solid-button" disabled={busy} onClick={() => void run('downloading', async () => {
         setProgress({ received: 0, total: null }); setStatus(await updates.download(setProgress));
       })}>{phase === 'downloading' ? '下载中' : '下载更新'}</button>

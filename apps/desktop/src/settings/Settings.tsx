@@ -13,8 +13,8 @@ import { UpdateSettings } from './UpdateSettings';
 
 const pages = [{ id: 'data', label: '数据' }, { id: 'exchange', label: '汇率' }, { id: 'video', label: '影像资料' }, { id: 'discogs', label: 'Discogs' }, { id: 'netease', label: '网易云' }, { id: 'assistant', label: '助手' }, { id: 'playback', label: '播放' }, { id: 'updates', label: '更新' }] as const;
 type Page = typeof pages[number]['id'];
-export function Settings({ initialPage, libraryAvailable, onRestore, onClose, playing }: {
-  initialPage: 'home' | 'discogs'; libraryAvailable: boolean; onRestore(): void; onClose(): void; playing: boolean;
+export function Settings({ initialPage, libraryAvailable, onRestore, onClose }: {
+  initialPage: 'home' | 'discogs'; libraryAvailable: boolean; onRestore(): void; onClose(): void;
 }) {
   const [page, setPage] = useState<Page>(initialPage === 'home' ? 'data' : initialPage);
   const [configured, setConfigured] = useState(false);
@@ -38,7 +38,7 @@ export function Settings({ initialPage, libraryAvailable, onRestore, onClose, pl
           onClick={() => { setError(''); setPage(item.id); }}>{item.label}</button>)}
         <span className="settings-brand">DiscAtelier</span>
       </nav>
-      <section ref={content} className="settings-content" aria-label={pages.find(item => item.id === page)?.label}>
+      <section ref={content} className="settings-content" data-long-scroll aria-label={pages.find(item => item.id === page)?.label}>
         <h3>{pages.find(item => item.id === page)?.label}</h3>
         {page === 'data' && <DataSettings libraryAvailable={libraryAvailable} onRestore={onRestore} onBusy={setBusy}/>}
         {page === 'discogs' && <DiscogsSettings configured={configured} onConfigured={setConfigured} onBusy={setBusy} disabled={busy}/>}
@@ -46,7 +46,7 @@ export function Settings({ initialPage, libraryAvailable, onRestore, onClose, pl
         {page === 'video' && <VideoSettings onBusy={setBusy}/>}
         {page === 'exchange' && <ExchangeSettings onBusy={setBusy}/>}
         {page === 'playback' && <PlaybackSettings onBusy={setBusy}/>}
-        {page === 'updates' && <UpdateSettings onBusy={setBusy} playing={playing}/>}
+        {page === 'updates' && <UpdateSettings onBusy={setBusy}/>}
         {error && <p className="form-error" role="alert">{error}</p>}
       </section>
     </div>

@@ -3,7 +3,7 @@ use discatelier_application::LibraryService;
 use discatelier_contracts::{CoverChange, CreateCopy, LibraryQuery, UpdateEdition};
 use discatelier_domain::{CopyDraft, EditionDraft, MediumDraft};
 use discatelier_storage::SqliteLibrary;
-use rusqlite::Connection;
+use rusqlite::{params, Connection};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
@@ -28,6 +28,11 @@ fn cover() -> String {
             "../../../apps/desktop/src-tauri/icons/32x32.png"
         ))
     )
+}
+fn large_cover() -> String {
+    let mut bytes = include_bytes!("../../../apps/desktop/src-tauri/icons/32x32.png").to_vec();
+    bytes.resize(10 * 1024 * 1024, 0);
+    format!("data:image/png;base64,{}", STANDARD.encode(bytes))
 }
 fn draft() -> CreateCopy {
     CreateCopy {
@@ -334,6 +339,88 @@ fn restore_rejects_stale_preview_corrupt_assets_and_foreign_schema() {
         .unwrap();
     assert!(service.prepare_restore(second).is_err());
     assert_eq!(service.list(query()).unwrap().copies.len(), 2);
+}
+
+#[test]
+fn schema_thirteen_migrates_asset_limit_and_accepts_large_covers() {
+    let dir = directory();
+    let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, checksum TEXT NOT NULL);",
+        )
+        .unwrap();
+    let migrations = [
+        include_str!("../migrations/001_library.sql"),
+        include_str!("../migrations/002_edition_assets.sql"),
+        include_str!("../migrations/003_sources.sql"),
+        include_str!("../migrations/004_models.sql"),
+        include_str!("../migrations/005_playback.sql"),
+        include_str!("../migrations/006_edition_content.sql"),
+        include_str!("../migrations/007_supplements_assistant.sql"),
+        include_str!("../migrations/008_catalog_details.sql"),
+        include_str!("../migrations/009_song_links.sql"),
+        include_str!("../migrations/010_music_albums.sql"),
+        include_str!("../migrations/011_video_metadata.sql"),
+        include_str!("../migrations/012_video_parts.sql"),
+        include_str!("../migrations/013_collection_order.sql"),
+    ];
+    for (index, sql) in migrations.iter().enumerate() {
+        connection.execute_batch(sql).unwrap();
+        connection
+            .execute(
+                "INSERT INTO schema_migrations VALUES (?1,?2)",
+                params![
+                    (index + 1) as i64,
+                    format!("{:x}", Sha256::digest(sql.as_bytes()))
+                ],
+            )
+            .unwrap();
+    }
+    connection.pragma_update(None, "user_version", 13).unwrap();
+    let legacy = include_bytes!("../../../apps/desktop/src-tauri/icons/32x32.png");
+    let legacy_id = format!("{:x}", Sha256::digest(legacy.as_slice()));
+    connection
+        .execute(
+            "INSERT INTO assets VALUES (?1,'image/png',?2,?3)",
+            params![legacy_id, legacy.len() as i64, legacy],
+        )
+        .unwrap();
+    drop(connection);
+
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    assert!(service
+        .cover(legacy_id)
+        .unwrap()
+        .starts_with("data:image/png;base64,"));
+    let mut request = draft();
+    request.cover = Some(large_cover());
+    let id = service.create(request).unwrap();
+    let copy = service
+        .list(query())
+        .unwrap()
+        .copies
+        .into_iter()
+        .find(|copy| copy.id == id)
+        .unwrap();
+    assert!(service.cover(copy.cover_asset_id.unwrap()).unwrap().len() > 10 * 1024 * 1024);
+    assert_eq!(std::fs::read_dir(dir.join("backups")).unwrap().count(), 1);
+
+    let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
+    assert_eq!(
+        connection
+            .pragma_query_value::<i64, _>(None, "user_version", |row| row.get(0))
+            .unwrap(),
+        14
+    );
+    assert_eq!(
+        connection
+            .query_row::<i64, _, _>("SELECT count(*) FROM pragma_foreign_key_check", [], |row| {
+                row.get(0)
+            })
+            .unwrap(),
+        0
+    );
 }
 
 #[test]

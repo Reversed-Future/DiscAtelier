@@ -224,13 +224,15 @@ pub async fn update_install(
     // The shared optical gate prevents playback starting between the check and
     // installation. Hold the library lock through backup and installer launch.
     let result = crate::optical::run(optical.inner().clone(), move |_| {
-        if crate::playback::active(&playback)? {
-            return Err(error("请先停止播放再安装更新。"));
-        }
         update
             .verify(&bytes)
             .map_err(|_| error("更新签名校验失败，已拒绝安装。"))?;
+        // Stop playback first so its final history checkpoint is written before
+        // the library lock and update backup.
         crate::playback::shutdown(&playback);
+        if crate::playback::active(&playback)? {
+            return Err(error("无法停止当前播放，请稍后重试。"));
+        }
         // Retain the write gate even when LibraryService failed to open a newer
         // schema. Backup uses SQLite's read-only snapshot API independently.
         let _library = library.lock().map_err(|_| error("收藏库不可访问。"))?;

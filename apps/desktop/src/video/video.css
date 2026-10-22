@@ -28,6 +28,8 @@
 .video-source { color: var(--muted); }
 .video-draft { padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
 .video-section-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.video-heading-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 18px; }
+.video-heading-actions button:not(.solid-button) { padding: 8px 0; }
 .video-draft h3, .video-details h3 { margin: 20px 0 16px; font-size: 14px; }
 .video-draft .date-field { margin: 16px 0; }
 .video-draft > label { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }

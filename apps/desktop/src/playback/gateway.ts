@@ -8,10 +8,10 @@ export interface PlaybackRecord {
   dvdTitle: number | null;
 }
 export interface Snapshot extends PlaybackRecord {
-  paused: boolean; seeking: boolean; seekable: boolean; audioTracks: AudioTrack[]; error: string | null; dvdMenu: boolean;
+  paused: boolean; seeking: boolean; seekable: boolean; audioTracks: AudioTrack[]; volume: number; rate: number; error: string | null; dvdMenu: boolean;
 }
 export type MenuDirection = 'activate' | 'up' | 'down' | 'left' | 'right' | 'root';
-export type Control = { action: 'pause'; paused: boolean } | { action: 'seek'; seconds: number } | { action: 'audio'; id: number } | { action: 'stop' } | { action: 'menu'; direction: MenuDirection };
+export type Control = { action: 'pause'; paused: boolean } | { action: 'seek'; seconds: number } | { action: 'volume'; volume: number } | { action: 'rate'; rate: number } | { action: 'audio'; id: number } | { action: 'stop' } | { action: 'menu'; direction: MenuDirection };
 export const isActive = (phase?: Phase) => !!phase && ['loading', 'playing', 'paused', 'buffering', 'stopping'].includes(phase);
 let viewportQueue: Promise<void> = Promise.resolve();
 export const playback = {

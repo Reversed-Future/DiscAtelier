@@ -11,6 +11,7 @@ export const library: LibraryGateway = {
   list: query => invoke('library_list', { query }),
   create: request => invoke('library_create', { request }),
   update: request => invoke('library_update', { request }),
+  delete: request => invoke('library_delete', { request }),
   updateEdition: request => invoke('library_update_edition', { request }),
   model: (assetId, preview) => invoke('library_model', { assetId, preview }),
   cover: assetId => invoke('library_cover', { assetId }),

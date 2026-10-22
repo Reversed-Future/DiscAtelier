@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Descriptor, LibraryCopy } from '../library/types';
 import { mediumLabel } from '../library/mediumLabel';
 import { statuses } from '../library/types';
+import { errorMessage, library } from '../library/gateway';
 import { ConvertedPrice } from '../exchange/ConvertedPrice';
 import { formatPrice } from '../library/money';
 import { Modal } from '../ui/Modal';
@@ -25,16 +26,24 @@ import { CollectionSource } from '../metadata/CollectionSource';
 import { useMusicSupplement } from './useMusicSupplement';
 import type { PlaybackController } from '../playback/usePlayback';
 
-export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot, prepareClose, modelBusy, player, metadata, metadataError, partId, onPart }: {
-  item: LibraryCopy; carriers: Descriptor[]; onClose(): void; onSaved(): Promise<void>; edit(): void;
+export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, artworkSlot, prepareClose, modelBusy, player, metadata, metadataError, partId, onPart }: {
+  item: LibraryCopy; carriers: Descriptor[]; onClose(): void; onSaved(): Promise<void>; onDeleted(): Promise<void>; edit(): void;
   artworkSlot(node: HTMLDivElement | null): void; prepareClose(): Promise<void>; modelBusy: boolean;
   player: PlaybackController; metadata:VideoMetadata|null; metadataError:string; partId:string; onPart(id:string,instant:boolean):void;
 }) {
   const [neteaseOpen, setNeteaseOpen] = useState(false);
   const [chapterBusy, setChapterBusy] = useState(false);
   const [tab, setTab] = useState('metadata');
-  const [side, setSide] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false), [deleting, setDeleting] = useState(false), [deleteError, setDeleteError] = useState('');
+  async function remove() {
+    if (deleting) return;
+    setDeleting(true); setDeleteError('');
+    try {
+      await library.delete({ requestId: crypto.randomUUID(), id: item.id, expectedRevision: item.revision });
+      await onDeleted();
+    } catch (cause) { setDeleting(false); setDeleteError(errorMessage(cause)); }
+  }
   const editionContent = useEditionContent(item);
   const isVideo = item.edition.categoryId === 'video';
   const parts = metadata?.parts || [], part = parts.find(p => p.id === partId) || parts[0];
@@ -59,9 +68,9 @@ export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot
   return <><Modal title="收藏详情" onClose={onClose} busy={modelBusy || chapterBusy} beforeClose={prepareClose} inspection shared>
     <div className="inspection-layout">
       <div className="object-stage">
-        <div className={`inspection-artwork-slot${item.modelAssetId && !part ? ' has-model' : ''}`} data-side={side} data-portrait={(!!part || !item.modelAssetId) && portraitCover(item.edition)} ref={artworkSlot}/>
+        <div className={`inspection-artwork-slot${item.modelAssetId && !part ? ' has-model' : ''}`} data-portrait={(!!part || !item.modelAssetId) && portraitCover(item.edition)} ref={artworkSlot}/>
         <div className="object-floor"/>
-        {parts.length === 2 ? <button className="rotate-button" disabled={modelBusy || chapterBusy} onClick={event => onPart(parts.find(p => p.id !== part?.id)!.id,event.detail === 0)}><Icon name="rotate"/>翻面 · {parts.find(p => p.id !== part?.id)?.label}</button> : !item.modelAssetId && <button className="rotate-button" onClick={() => setSide(!side)}><Icon name="rotate"/>{side ? '正面' : '侧面'}</button>}
+        {parts.length === 2 && <button className="rotate-button" disabled={modelBusy || chapterBusy} onClick={event => onPart(parts.find(p => p.id !== part?.id)!.id,event.detail === 0)}><Icon name="rotate"/>翻面 · {parts.find(p => p.id !== part?.id)?.label}</button>}
       </div>
       <section className="object-info">
         {part && <p className="video-part-caption" role="status">{part.label} · {parts.indexOf(part) + 1} / {parts.length}</p>}
@@ -82,9 +91,26 @@ export function Inspection({ item, carriers, onClose, onSaved, edit, artworkSlot
         </div>
         {metadataError && <p className="form-error" role="alert">{metadataError}</p>}
         {supplement.error && <p className="form-error" role="alert">{supplement.error}</p>}
-        <div className="object-actions"><button data-hidden={tab === 'tracks'} aria-hidden={tab === 'tracks'} tabIndex={tab === 'tracks' ? -1 : undefined} onClick={tab === 'purchase' ? () => setEditingPurchase(true) : edit} disabled={modelBusy || chapterBusy}>{tab === 'purchase' ? '编辑购入' : '编辑版本'}</button></div>
+        <div className="object-actions">
+          <button type="button" className="text-button delete-collection" onClick={() => { setDeleteError(''); setConfirmDelete(true); }} disabled={modelBusy || chapterBusy || deleting}>删除收藏</button>
+          <button type="button" data-hidden={tab === 'tracks'} aria-hidden={tab === 'tracks'} tabIndex={tab === 'tracks' ? -1 : undefined} onClick={tab === 'purchase' ? () => setEditingPurchase(true) : edit} disabled={modelBusy || chapterBusy || deleting}>{tab === 'purchase' ? '编辑购入' : '编辑版本'}</button>
+        </div>
         <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}<span className="detail-status">{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
       </section>
     </div>
-  </Modal>{neteaseOpen && <NeteasePanel rows={editionContent.content?.tracks || []} item={item} onClose={() => setNeteaseOpen(false)} onSaved={onSaved}/>} {editingPurchase && <EditPurchase item={item} onClose={() => setEditingPurchase(false)} onSaved={onSaved}/>}</>;
+  </Modal>
+    {confirmDelete && <Modal title="删除收藏" onClose={() => setConfirmDelete(false)} busy={deleting} className="confirm-dialog">
+      <div className="confirm-copy">
+        <h3>删除收藏</h3>
+        <p>{item.editionCopyCount > 1
+          ? `将删除这一套收藏。同版本还有 ${item.editionCopyCount - 1} 套，版本资料、封面和模型会保留。`
+          : '这是该版本最后一套收藏。删除后，版本资料、来源资料及不再被其他版本使用的封面或模型会一并删除；播放历史保留。'}</p>
+        {deleteError && <p className="form-error" role="alert">{deleteError}</p>}
+      </div>
+      <div className="confirm-actions">
+        <button type="button" className="text-button" disabled={deleting} autoFocus onClick={() => setConfirmDelete(false)}>取消</button>
+        <button type="button" className="solid-button" disabled={deleting} onClick={() => void remove()}>{deleting ? '删除中…' : '确认删除'}</button>
+      </div>
+    </Modal>}
+    {neteaseOpen && <NeteasePanel rows={editionContent.content?.tracks || []} item={item} onClose={() => setNeteaseOpen(false)} onSaved={onSaved}/>} {editingPurchase && <EditPurchase item={item} onClose={() => setEditingPurchase(false)} onSaved={onSaved}/>}</>;
 }

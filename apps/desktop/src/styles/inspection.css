@@ -22,7 +22,6 @@
 .physical-case .case-edge { display: none; }
 .physical-case::after { content: ""; position: absolute; inset: 0; border: 3px solid #ffffff16; pointer-events: none; }
 #inspection-cover .physical-case { transform: perspective(1400px) rotateY(-8deg); box-shadow: 18px 28px 32px -20px #0000005e, 4px 1px 0 #888, 6px 2px 0 #ddd; }
-#inspection-cover.side .physical-case { transform: perspective(1400px) rotateY(-62deg); }
 .object-floor { position: absolute; bottom: 17%; height: 30px; width: 70%; border-radius: 50%; background: #00000030; filter: blur(18px); }
 .rotate-button { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); color: var(--muted); display: flex; align-items: center; gap: 9px; padding: 10px; font-size: 11px; }
 .rotate-button:active { transform: translateX(-50%) scale(.98); }
@@ -40,6 +39,19 @@
 .object-actions { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 22px; display: flex; justify-content: space-between; align-items: center; }
 .object-actions button { display: flex; gap: 9px; align-items: center; font-size: 12px; padding: 0; }
 .object-actions .icon { width: 16px; height: 16px; }
+.window-modal > .panel-dialog.confirm-dialog { width: min(460px, calc(100vw - 36px)); height: auto; max-height: calc(100svh - 48px); padding: 0; }
+.confirm-dialog .panel-heading { display: none; }
+.confirm-dialog .panel-body { display: block; padding: 18px 20px 16px; overflow: visible; }
+.confirm-copy h3 { margin: 0 0 8px; font-size: 13px; font-weight: 500; }
+.confirm-copy p { margin: 0; font-size: 12px; line-height: 1.7; color: var(--muted); }
+.confirm-copy .form-error { margin: 8px 0 0; }
+.confirm-actions { display: flex; align-items: center; justify-content: flex-end; gap: 20px; margin-top: 16px; }
+.confirm-actions .text-button { padding: 6px 0; }
+.window-modal:has(> .panel-dialog.confirm-dialog)::backdrop { background: #00000080; backdrop-filter: blur(7px); transition: opacity 120ms ease; }
+.window-modal:has(> .panel-dialog.confirm-dialog)[data-closing="true"]::backdrop { opacity: 0; }
+@starting-style { .window-modal:has(> .panel-dialog.confirm-dialog)[open]::backdrop { opacity: 0; } }
+@media (max-width: 650px) { .window-modal > .panel-dialog.confirm-dialog { width: calc(100vw - 28px); } }
+@media (prefers-reduced-motion: reduce) { .window-modal:has(> .panel-dialog.confirm-dialog)::backdrop { transition: none; } }
 #object-status { color: var(--muted); font-size: 10px; }
 .panel-dialog { width: 420px; max-width: calc(100vw - 36px); max-height: 88vh; border: 1px solid var(--line); border-radius: 3px; padding: 30px; color: var(--ink); background: var(--surface); box-shadow: 0 25px 100px #00000066; }
 .panel-dialog::backdrop { background: #00000070; }

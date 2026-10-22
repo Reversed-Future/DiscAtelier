@@ -40,7 +40,7 @@
 .settings-disclosure > div { min-height: 0; overflow: hidden; }
 .settings-disclosure form { padding-bottom: 6px; }
 .update-release { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
-.update-notes { max-height: 150px; overflow: auto; overscroll-behavior: contain; white-space: pre-wrap; font-size: 12px; line-height: 1.8; color: var(--muted); }
+.update-notes { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.8; color: var(--muted); }
 .update-footer { display: flex; align-items: center; justify-content: flex-end; gap: 20px; padding-top: 16px; }
 .update-footer .setting-hint { margin-right: auto; }
 .update-progress { height: 2px; background: var(--line); margin-top: 12px; overflow: hidden; }

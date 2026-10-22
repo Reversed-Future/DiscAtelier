@@ -16,7 +16,6 @@
 .shared-artwork .model-fallback { inset: 10%; }
 .inspection-artwork-slot { position: relative; width: min(100%, 65svh, 450px); aspect-ratio: 1; }
 .inspection-artwork-slot.has-model { width: min(100%, 65svh, 570px); }
-.inspection-artwork-slot[data-side="true"] .physical-case { transform: perspective(1400px) rotateY(-62deg); }
 .inspection-dialog { background: #121212; transition: background-color 240ms ease; }
 @starting-style { .inspection-dialog { background-color: #12121200; } }
 .inspection-dialog .object-info, .inspection-dialog .return-button, .inspection-dialog .rotate-button {

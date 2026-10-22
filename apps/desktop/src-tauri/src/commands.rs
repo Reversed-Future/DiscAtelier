@@ -68,6 +68,16 @@ pub async fn library_update(
     .await
 }
 #[tauri::command]
+pub async fn library_delete(
+    state: tauri::State<'_, LibraryState>,
+    request: DeleteCopy,
+) -> Result<String, AppError> {
+    run(state.inner().clone(), move |service| {
+        service.delete(request)
+    })
+    .await
+}
+#[tauri::command]
 pub async fn library_backup(state: tauri::State<'_, LibraryState>) -> Result<String, AppError> {
     run(state.inner().clone(), |service| service.backup()).await
 }

@@ -132,6 +132,8 @@ impl VlcSession {
             seekable: false,
             audio_tracks: Vec::new(),
             selected_audio: None,
+            volume: 100,
+            rate: 1.0,
             dvd_title: None,
             dvd_menu: start.dvd,
             error: None,

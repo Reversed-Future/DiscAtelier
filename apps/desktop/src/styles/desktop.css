@@ -24,7 +24,6 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .inspection-dialog::backdrop { background: transparent; }
 .inspection-cover { width: min(100%, 450px); aspect-ratio: 1; transform-origin: center; z-index: 2; }
 .inspection-cover .physical-case { transform: perspective(1400px) rotateY(-8deg); box-shadow: 18px 28px 32px -20px #0009, 4px 1px 0 #888, 6px 2px 0 #ddd; }
-.inspection-cover.side .physical-case { transform: perspective(1400px) rotateY(-62deg); }
 .object-creator { margin: 13px 0 38px; color: var(--muted); font-size: 14px; }
 .metadata { margin: 0; font-size: 12px; display: grid; gap: 17px; }
 .metadata > div { display: grid; grid-template-columns: 85px 1fr; gap: 15px; }

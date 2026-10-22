@@ -36,7 +36,7 @@ struct Album {
     name: String,
     artists: Vec<Artist>,
     #[serde(default)]
-    description: String,
+    description: Option<String>,
     #[serde(default)]
     company: Option<String>,
     #[serde(rename = "publishTime")]
@@ -155,7 +155,7 @@ pub fn parse_album(value: Value, id: u64) -> Result<MusicSupplement, AppError> {
         album_id: id,
         title: r.album.name,
         artists: r.album.artists.into_iter().map(|v| v.name).collect(),
-        description: r.album.description,
+        description: r.album.description.unwrap_or_default(),
         company: r.album.company.unwrap_or_default(),
         published_at: r.album.published_at,
         links: Vec::new(),
@@ -210,6 +210,16 @@ mod tests {
         ] {
             assert!(cover_url(Some(value)).is_none());
         }
+    }
+    #[test]
+    fn album_allows_null_description_and_maps_tracks() {
+        let raw = serde_json::json!({"code":200,"album":{"id":42,"name":"Album","artists":[{"name":"Artist"}],"description":null,"company":"","publishTime":1},"songs":[{"id":99,"name":"Track","ar":[{"name":"Artist"}],"cd":"1","no":1,"dt":1000}]});
+        let value = parse_album(raw, 42).unwrap();
+        assert_eq!(value.description, "");
+        assert_eq!(value.tracks.len(), 1);
+        assert_eq!(value.tracks[0].duration_ms, 1000);
+        let missing = serde_json::json!({"code":200,"album":{"id":42,"name":"Album","artists":[],"company":null,"publishTime":1},"songs":[]});
+        assert_eq!(parse_album(missing, 42).unwrap().description, "");
     }
     #[test]
     fn mapping_preserves_disc_numbers_and_refuses_wrong_album() {

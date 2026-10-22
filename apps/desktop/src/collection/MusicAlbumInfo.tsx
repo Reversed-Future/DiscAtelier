@@ -15,7 +15,7 @@ export function MusicAlbumInfo({ albums, title }: { albums: LinkedMusicAlbum[]; 
       {album.title !== title && <div><dt>网易云专辑</dt><dd>{album.title}</dd></div>}
       {(album.company || album.publishedAt > 0) && <div><dt>数字发行</dt><dd>{[album.company, album.publishedAt > 0 ? new Date(album.publishedAt).toLocaleDateString('zh-CN') : ''].filter(Boolean).join(' · ')}</dd></div>}
     </dl>
-    {album.description ? <section className="edition-introduction"><h4>简介 <small>网易云</small></h4><p>{album.description}</p></section> : <p className="setting-hint">该数字专辑暂无简介</p>}
+    <section className="edition-introduction"><h4>简介 <small>网易云</small></h4><p>{album.description?.trim() || '无'}</p></section>
     </div>
   </section>;
 }

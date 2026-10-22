@@ -2,6 +2,7 @@ mod artwork;
 pub mod backup_management;
 mod content;
 mod create_music;
+mod deletes;
 mod disc_albums;
 mod editions;
 mod extensions;
@@ -97,6 +98,9 @@ impl LibraryRepository for SqliteLibrary {
     }
     fn update(&mut self, request: &UpdateCopy) -> Result<String, AppError> {
         writes::update(&mut self.connection, request)
+    }
+    fn delete(&mut self, request: &DeleteCopy) -> Result<String, AppError> {
+        deletes::delete(&mut self.connection, request)
     }
     fn update_edition(&mut self, request: &UpdateEdition) -> Result<String, AppError> {
         editions::update(&mut self.connection, request, &self.prepared_models)

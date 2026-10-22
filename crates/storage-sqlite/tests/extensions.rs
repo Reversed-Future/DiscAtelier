@@ -115,7 +115,7 @@ fn schema_seven_gets_a_backup_before_expanded_json_contracts() {
     assert_eq!(
         new.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
             .unwrap(),
-        13
+        14
     );
 }
 #[test]
@@ -160,6 +160,6 @@ fn schema_six_is_backed_up_before_extensions_are_added() {
     assert_eq!(
         new.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
             .unwrap(),
-        13
+        14
     );
 }

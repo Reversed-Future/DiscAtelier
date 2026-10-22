@@ -3,7 +3,7 @@
 use discatelier_contracts::AppError;
 use libloading::Library;
 use std::{
-    ffi::{c_char, c_int, c_uint, c_void, CStr},
+    ffi::{c_char, c_float, c_int, c_uint, c_void, CStr},
     path::Path,
 };
 
@@ -83,6 +83,8 @@ api! {
     libvlc_media_player_set_time: unsafe extern "C" fn(Handle, i64),
     libvlc_media_player_get_length: unsafe extern "C" fn(Handle) -> i64,
     libvlc_media_player_is_seekable: unsafe extern "C" fn(Handle) -> c_int,
+    libvlc_media_player_set_rate: unsafe extern "C" fn(Handle, c_float) -> c_int,
+    libvlc_audio_set_volume: unsafe extern "C" fn(Handle, c_int) -> c_int,
     libvlc_media_player_get_title: unsafe extern "C" fn(Handle) -> c_int,
     libvlc_media_player_set_title: unsafe extern "C" fn(Handle, c_int),
     libvlc_media_player_get_full_title_descriptions: unsafe extern "C" fn(Handle, *mut *mut *mut Title) -> c_int,

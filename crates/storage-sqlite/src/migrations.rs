@@ -4,7 +4,7 @@ use rusqlite::Connection;
 use sha2::{Digest, Sha256};
 use std::path::Path;
 
-const MIGRATIONS: [&str; 13] = [
+const MIGRATIONS: [&str; 14] = [
     include_str!("../migrations/001_library.sql"),
     include_str!("../migrations/002_edition_assets.sql"),
     include_str!("../migrations/003_sources.sql"),
@@ -18,6 +18,7 @@ const MIGRATIONS: [&str; 13] = [
     include_str!("../migrations/011_video_metadata.sql"),
     include_str!("../migrations/012_video_parts.sql"),
     include_str!("../migrations/013_collection_order.sql"),
+    include_str!("../migrations/014_cover_size.sql"),
 ];
 pub fn apply(connection: &mut Connection, directory: &Path) -> Result<(), AppError> {
     let version: i64 = connection
@@ -64,6 +65,19 @@ pub fn apply(connection: &mut Connection, directory: &Path) -> Result<(), AppErr
             .backup(rusqlite::MAIN_DB, path, None)
             .map_err(db_error)?;
     }
+    // Rebuilding a referenced table (cover assets) needs foreign-key checks
+    // paused; every pending migration runs in one transaction and the result
+    // is checked before commit.
+    connection
+        .pragma_update(None, "foreign_keys", "OFF")
+        .map_err(db_error)?;
+    let result = migrate(connection, version);
+    connection
+        .pragma_update(None, "foreign_keys", "ON")
+        .map_err(db_error)?;
+    result
+}
+fn migrate(connection: &mut Connection, version: i64) -> Result<(), AppError> {
     let transaction = connection.transaction().map_err(db_error)?;
     transaction.execute_batch("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, checksum TEXT NOT NULL);").map_err(db_error)?;
     for (index, sql) in MIGRATIONS.iter().enumerate().skip(version as usize) {
@@ -79,6 +93,14 @@ pub fn apply(connection: &mut Connection, directory: &Path) -> Result<(), AppErr
         transaction
             .pragma_update(None, "user_version", number)
             .map_err(db_error)?;
+    }
+    let violations: i64 = transaction
+        .query_row("SELECT count(*) FROM pragma_foreign_key_check", [], |row| {
+            row.get(0)
+        })
+        .map_err(db_error)?;
+    if violations != 0 {
+        return Err(AppError::new("schema", "数据库外键校验失败，迁移已回滚。"));
     }
     transaction.commit().map_err(db_error)
 }

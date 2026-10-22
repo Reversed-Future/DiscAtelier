@@ -125,6 +125,7 @@ export function App() {
       {player.snapshot?.paused ? '已暂停' : player.snapshot?.phase === 'loading' ? '读取中' : '播放中'} · {player.snapshot?.title}
     </button>}
     {inspected && <Inspection metadata={currentVideo.value} metadataError={currentVideo.error} partId={partId} onPart={(id,instant) => {setPartId(id);setInstantFlip(instant);}} key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
+      onDeleted={async () => { setInspected(null); setSelectedId(''); const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已删除'); }}
       edit={() => setEditing(inspected)}/>}
     {editing && snapshot && <EditEdition item={editing} categories={snapshot.categories} carriers={snapshot.carriers}
       onClose={() => setEditing(null)}
@@ -141,7 +142,7 @@ export function App() {
       onManual={() => { setMetadataOpen(false); setVideoDiscogs(false); setAdd({}); }}
       onClose={() => { setMetadataOpen(false); setVideoDiscogs(false); }}
       onSaved={async (id, categoryId) => { setSelectedId(id); setQuery({ categoryId, query: '', status: null }); notify('已加入收藏'); }}/>}
-    {settingsPage && <Settings initialPage={settingsPage} libraryAvailable={!!snapshot} playing={player.active}
+    {settingsPage && <Settings initialPage={settingsPage} libraryAvailable={!!snapshot}
       onClose={() => setSettingsPage(null)}
       onRestore={() => { setSettingsPage(null); setMetadataOpen(false); setRestoring(true); }}/>}
     <div className={`toast${notice ? ' visible' : ''}`} role="status">{notice}</div>

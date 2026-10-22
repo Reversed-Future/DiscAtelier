@@ -20,7 +20,7 @@ struct Delta {
     role: Option<String>,
     content: Option<String>,
     #[serde(default)]
-    tool_calls: Vec<Call>,
+    tool_calls: Option<Vec<Call>>,
 }
 #[derive(Deserialize)]
 struct Call {
@@ -60,7 +60,7 @@ impl Assembly {
         if let Some(text) = c.delta.content {
             self.text.push_str(&text);
         }
-        for call in c.delta.tool_calls {
+        for call in c.delta.tool_calls.unwrap_or_default() {
             if call.index != 0 || call.r#type.as_deref().is_some_and(|s| s != "function") {
                 return Err(error("每次只支持一个函数工具。"));
             }
@@ -137,6 +137,14 @@ mod tests {
             "{\"query\":\"音乐\"}"
         );
         assert!(Assembly::default().finish().is_err());
+    }
+    #[test]
+    fn null_tool_calls_and_reasoning_chunks_are_accepted() {
+        let mut a = Assembly::default();
+        a.push(json!({"choices":[{"delta":{"content":"","reasoning_content":null,"role":"assistant","tool_calls":null},"finish_reason":null,"index":0}]})).unwrap();
+        a.push(json!({"choices":[{"delta":{"content":null,"reasoning_content":"思考","role":null,"tool_calls":null},"finish_reason":null,"index":0}]})).unwrap();
+        a.push(json!({"choices":[{"delta":{"content":"你好","reasoning_content":null,"role":null,"tool_calls":null},"finish_reason":"stop","index":0}]})).unwrap();
+        assert_eq!(a.finish().unwrap().content.as_deref(), Some("你好"));
     }
     #[test]
     fn truncated_and_parallel_tools_are_rejected() {

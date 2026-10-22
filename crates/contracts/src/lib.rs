@@ -26,6 +26,12 @@ pub use cd_metadata::*;
 mod playback;
 pub use playback::*;
 
+/// Largest cover image, in bytes, accepted for an asset, shared by providers and storage.
+///
+/// NetEase artwork may use the full limit; the manual picker and other providers
+/// keep smaller limits of their own.
+pub const MAX_COVER_BYTES: u64 = 15 * 1024 * 1024;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CreateCopy {
@@ -60,6 +66,13 @@ pub struct UpdateEdition {
     pub cover: CoverChange,
     #[serde(default)]
     pub model: ModelChange,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DeleteCopy {
+    pub request_id: String,
+    pub id: String,
+    pub expected_revision: i64,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

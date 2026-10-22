@@ -100,6 +100,24 @@ fn command(state: &mut PlaybackState, control: &PlaybackControl) -> Result<Value
             state.progress.reset_sample();
             Ok(json!(["seek", seconds, "absolute+exact"]))
         }
+        PlaybackControl::Volume { volume } => {
+            if *volume > 100 {
+                return Err(AppError::new("validation", "音量必须在 0–100 之间。"));
+            }
+            state.snapshot.volume = *volume;
+            Ok(json!(["set_property", "volume", volume]))
+        }
+        PlaybackControl::Rate { rate } => {
+            if !rate.is_finite() || !(0.25..=4.0).contains(rate) {
+                return Err(AppError::new(
+                    "validation",
+                    "播放速度必须在 0.25–4 倍之间。",
+                ));
+            }
+            state.snapshot.rate = *rate;
+            state.progress.reset_sample();
+            Ok(json!(["set_property", "speed", rate]))
+        }
         PlaybackControl::Audio { id } => {
             if !state.snapshot.audio_tracks.iter().any(|t| t.id == *id) {
                 return Err(AppError::new("validation", "音轨不存在。"));

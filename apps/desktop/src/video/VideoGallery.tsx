@@ -23,14 +23,27 @@ export function VideoGallery({ work, enabled = true, onChange, onSave }: { work:
   for (const chapter of work.chapters || []) if (chapter.imageUrl) pictures.push({key: `episode:${chapter.id}`, kind: 'episode', url: chapter.imageUrl, previewUrl: chapter.imageUrl, label: `${chapter.group} · ${chapter.number} · ${chapter.originalTitle || chapter.title}`});
   const kinds = [{id:'poster', label:'海报'}, {id:'backdrop', label:'剧照'}, {id:'episode', label:'分集图片'}].filter(k => pictures.some(p => p.kind === k.id));
   const active = kinds.some(k => k.id === filter) ? filter : kinds[0]?.id;
+  async function save() {
+    if (!onSave || !rows || saving) return;
+    setSaving(true); setError('');
+    try { await onSave(rows); if (live.current) setChanged(false); }
+    catch (cause) { if (live.current) setError(errorMessage(cause)); }
+    finally { if (live.current) setSaving(false); }
+  }
   return <section className="video-gallery" aria-busy={busy || saving}>
-    <div className="video-section-heading"><span className="setting-hint">{changed && onSave ? '图库预览 · 尚未保存' : '作品图库'}</span>{work.source !== 'bangumi' && <button type="button" className="text-button" disabled={busy || saving} onClick={() => void load()}>{busy ? '读取图片中…' : '刷新图库'}</button>}</div>
+    <div className="video-section-heading">
+      <span className="setting-hint">{changed && onSave ? '图库预览 · 尚未保存' : '作品图库'}</span>
+      <div className="video-heading-actions">
+        {onSave && changed && rows && !saving && <button type="button" className="text-button" disabled={busy} onClick={() => void save()}>确认保存此图库</button>}
+        {saving && <span className="setting-hint">保存中…</span>}
+        {work.source !== 'bangumi' && <button type="button" className="text-button" disabled={busy || saving} onClick={() => void load()}>{busy ? '读取图片中…' : '刷新图库'}</button>}
+      </div>
+    </div>
     <nav className="disc-tabs" aria-label="图片分类">{kinds.map(kind => <button type="button" key={kind.id} aria-selected={active === kind.id} onClick={() => setFilter(kind.id)}>{kind.label} · {pictures.filter(p => p.kind === kind.id).length}</button>)}</nav>
     <div className={`video-gallery-grid ${active === 'poster' ? 'posters' : ''}`}>{pictures.filter(p => p.kind === active).map(picture => <button type="button" key={picture.key} onClick={() => setViewing(picture)} aria-label={`查看${picture.label}`}><VideoPicture key={picture.previewUrl} src={picture.previewUrl} alt={picture.label}/><small>{picture.label}</small></button>)}</div>
     {!pictures.length && !busy && <p className="utility-copy">此来源暂无图片。</p>}
     {work.source === 'tmdbTv' && !work.chapters && <p className="setting-hint">在章节页获取分集后，可同时浏览分集图片。</p>}
     {error && <p className="form-error" role="alert">{error}</p>}
-    {onSave && changed && rows && <button type="button" className="text-button" disabled={busy || saving} onClick={async () => {setSaving(true); setError(''); try {await onSave(rows); if (live.current) setChanged(false);} catch (cause) {if (live.current) setError(errorMessage(cause));} finally {if (live.current) setSaving(false);}}}>{saving ? '保存中…' : '确认保存此图库'}</button>}
     {viewing && <VideoPictureViewer url={viewing.url} title={viewing.label} onClose={() => setViewing(null)}/>}
   </section>;
 }

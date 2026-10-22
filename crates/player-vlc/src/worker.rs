@@ -230,9 +230,20 @@ fn playing(
         }
         match receiver.recv_timeout(Duration::from_millis(100)) {
             Ok(request) => {
+                let volume = if let PlaybackControl::Volume { volume } = &request.control {
+                    Some(*volume)
+                } else {
+                    None
+                };
+                let rate = if let PlaybackControl::Rate { rate } = &request.control {
+                    Some(*rate)
+                } else {
+                    None
+                };
                 let resets = matches!(
                     request.control,
                     PlaybackControl::Seek { .. }
+                        | PlaybackControl::Rate { .. }
                         | PlaybackControl::Menu { .. }
                         | PlaybackControl::Pause { .. }
                 );
@@ -241,8 +252,16 @@ fn playing(
                 } else {
                     player.control(request.control, snapshot)
                 };
-                if result.is_ok() && resets {
-                    progress.reset_sample();
+                if result.is_ok() {
+                    if let Some(volume) = volume {
+                        snapshot.volume = volume;
+                    }
+                    if let Some(rate) = rate {
+                        snapshot.rate = rate;
+                    }
+                    if resets {
+                        progress.reset_sample();
+                    }
                 }
                 let _ = request.reply.send(result);
             }

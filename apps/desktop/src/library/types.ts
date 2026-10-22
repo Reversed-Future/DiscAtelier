@@ -29,6 +29,7 @@ export interface CreateCopy {
 export type CoverChange = { action: 'keep' } | { action: 'remove' } | { action: 'replace'; dataUrl: string };
 export interface UpdateEdition { requestId: string; editionId: string; expectedRevision: number; edition: EditionDraft; cover: CoverChange; model: { action: 'keep' } | { action: 'remove' } | { action: 'replace'; text: string } | { action: 'prepared'; token: string } }
 export interface UpdateCopy { requestId: string; id: string; expectedRevision: number; copy: CopyDraft }
+export interface DeleteCopy { requestId: string; id: string; expectedRevision: number }
 export interface LibraryGateway {
   move(copyId: string, beforeId: string | null): Promise<void>;
   content(editionId: string): Promise<import('../metadata/gateway').EditionContent | null>;
@@ -38,6 +39,7 @@ export interface LibraryGateway {
   list(query: LibraryQuery): Promise<LibrarySnapshot>;
   create(request: CreateCopy): Promise<string>;
   update(request: UpdateCopy): Promise<string>;
+  delete(request: DeleteCopy): Promise<string>;
   updateEdition(request: UpdateEdition): Promise<string>;
   model(assetId: string, preview: boolean): Promise<string>;
   cover(assetId: string): Promise<string>;

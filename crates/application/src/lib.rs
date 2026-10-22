@@ -37,6 +37,7 @@ pub trait LibraryRepository: Send {
     fn list(&self, query: &LibraryQuery) -> Result<Vec<LibraryCopy>, AppError>;
     fn create(&mut self, request: &CreateCopy) -> Result<String, AppError>;
     fn update(&mut self, request: &UpdateCopy) -> Result<String, AppError>;
+    fn delete(&mut self, request: &DeleteCopy) -> Result<String, AppError>;
     fn update_edition(&mut self, request: &UpdateEdition) -> Result<String, AppError>;
     fn model(&self, asset_id: &str, preview: bool) -> Result<String, AppError>;
     fn cover(&self, asset_id: &str) -> Result<String, AppError>;
@@ -164,6 +165,14 @@ impl<R: LibraryRepository> LibraryService<R> {
         }
         validate_copy(&request.copy).map_err(validation)?;
         self.repository.update(&request)
+    }
+    pub fn delete(&mut self, request: DeleteCopy) -> Result<String, AppError> {
+        request_id(&request.request_id)?;
+        request_id(&request.id)?;
+        if request.expected_revision < 1 {
+            return Err(validation("记录版本无效".into()));
+        }
+        self.repository.delete(&request)
     }
     pub fn backup(&self) -> Result<String, AppError> {
         self.repository.backup()

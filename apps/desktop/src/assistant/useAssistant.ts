@@ -5,6 +5,7 @@ import { assistant, type AgentSession } from './gateway';
 export function useAssistant(open: boolean, onChanged: () => void) {
   const [session, setSession] = useState<AgentSession | null>(null);
   const [text, setText] = useState('');
+  const [sending, setSending] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [logs, setLogs] = useState(false);
@@ -40,18 +41,32 @@ export function useAssistant(open: boolean, onChanged: () => void) {
     } catch (cause) { if (live.current) setError(errorMessage(cause)); return false; }
     finally { pending.current = false; revision.current++; if (live.current) { setBusy(false); setCancelling(false); } }
   }
+  function listener(version: number) {
+    return (update: AgentSession) => { if (live.current && pending.current && version === revision.current) setSession(update); };
+  }
   async function send() {
     if (!text.trim() || running || !session || session.pending || session.action) return;
     const value = text;
-    if (await run(() => {
+    setText('');
+    setSending(value);
+    try {
+      await run(() => {
+        const version = revision.current;
+        return assistant.send(value, listener(version));
+      });
+    } finally { if (live.current) setSending(''); }
+  }
+  async function retry() {
+    if (running || !session || session.pending || session.action) return;
+    await run(() => {
       const version = revision.current;
-      return assistant.send(value, update => { if (live.current && pending.current && version === revision.current) setSession(update); });
-    })) setText(current => current === value ? '' : current);
+      return assistant.retry(listener(version));
+    });
   }
   function cancel() {
     setCancelling(true);
     void assistant.cancel().catch(cause => { if (live.current) { setError(errorMessage(cause)); setCancelling(false); } });
   }
-  return { session, text, setText, running, error, logs, setLogs, cancelling, run, send, cancel };
+  return { session, text, setText, sending, running, error, logs, setLogs, cancelling, run, send, retry, cancel };
 }
 export type AssistantController = ReturnType<typeof useAssistant>;

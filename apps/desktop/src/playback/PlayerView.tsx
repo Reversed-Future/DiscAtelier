@@ -78,13 +78,13 @@ export function PlayerView({ player }: { player: PlaybackController }) {
   return <section className="player-view" aria-label="内置播放器" aria-busy={closing} data-fullscreen={fullscreen} data-controls={chrome.visible}>
     <header className="player-header" ref={header} inert={!chrome.visible}>
       <button className="text-button" ref={back} onClick={() => void close()} disabled={closing || player.busy}><Icon name="back"/>返回</button>
-      <button className="text-button" onClick={() => void toggleFullscreen()}>{fullscreen ? '退出全屏' : '全屏'}</button>
+      <strong className="player-heading">{player.snapshot?.title || '内置播放器'}</strong>
     </header>
     <div className="player-picture" ref={surface} tabIndex={0} aria-label="视频画面">
       {!player.active && <span>{player.snapshot?.phase === 'failed' ? '无法播放' : '已停止'}</span>}
     </div>
     <footer className="player-footer" ref={footer} inert={!chrome.visible}>
-      <PlaybackControls player={player} onMenu={() => surface.current?.focus()}/>
+      <PlaybackControls player={player} extended showTitle={false} fullscreen={fullscreen} onToggleFullscreen={() => void toggleFullscreen()} onMenu={() => surface.current?.focus()}/>
       {(error || surfaceError || player.error) && <p className="form-error" role="alert">{error || surfaceError || player.error}</p>}
     </footer>
   </section>;

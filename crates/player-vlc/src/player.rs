@@ -124,6 +124,22 @@ impl Player {
                     validate_seek(snapshot, seconds)?;
                     (self.api.libvlc_media_player_set_time)(self.handle, (seconds * 1000.0) as i64);
                 }
+                PlaybackControl::Volume { volume } => {
+                    if volume > 100 {
+                        return Err(ffi::error("音量必须在 0–100 之间。"));
+                    }
+                    if (self.api.libvlc_audio_set_volume)(self.handle, volume as i32) != 0 {
+                        return Err(ffi::error("音量调整失败。"));
+                    }
+                }
+                PlaybackControl::Rate { rate } => {
+                    if !rate.is_finite() || !(0.25..=4.0).contains(&rate) {
+                        return Err(ffi::error("播放速度必须在 0.25–4 倍之间。"));
+                    }
+                    if (self.api.libvlc_media_player_set_rate)(self.handle, rate as f32) != 0 {
+                        return Err(ffi::error("播放速度调整失败。"));
+                    }
+                }
                 PlaybackControl::Audio { id } => {
                     if !snapshot.audio_tracks.iter().any(|track| track.id == id)
                         || (self.api.libvlc_audio_set_track)(self.handle, id as i32) != 0

@@ -22,9 +22,18 @@ export function CollectionSourceData({item, metadata, kind, enabled = true, onSa
     finally {setSaving(false); onBusy(false);}
   }
   return <section className={`video-source-data ${kind === 'chapters' ? 'video-chapters' : ''}`} aria-busy={data.busy || saving}>
-    <div className="video-section-heading"><span className="setting-hint">{data.drafts.length ? `${label}预览 · 尚未保存` : label}</span>{data.supported && <button type="button" className="text-button" disabled={data.busy || saving} onClick={() => void data.refresh()}>{data.busy ? '读取中…' : `刷新${label}`}</button>}</div>
+    <div className="video-section-heading">
+      <span className="setting-hint">{data.drafts.length ? `${label}预览 · 尚未保存` : label}</span>
+      <div className="video-heading-actions">
+        {!!data.drafts.length && !saving && <>
+          <button type="button" className="text-button" disabled={data.busy} onClick={() => void save()}>{`确认保存这些${label}`}</button>
+          <button type="button" className="text-button" disabled={data.busy} onClick={data.reset}>取消</button>
+        </>}
+        {saving && <span className="setting-hint">保存中…</span>}
+        {data.supported && <button type="button" className="text-button" disabled={data.busy || saving} onClick={() => void data.refresh()}>{data.busy ? '读取中…' : `刷新${label}`}</button>}
+      </div>
+    </div>
     {children(data.works)}
     {(data.error || error) && <p className="form-error" role="alert">{data.error || error}</p>}
-    {!!data.drafts.length && <div className="video-actions"><button type="button" className="text-button" disabled={data.busy || saving} onClick={() => void save()}>{saving ? '保存中…' : `确认保存这些${label}`}</button><button type="button" className="text-button" disabled={data.busy || saving} onClick={data.reset}>取消</button></div>}
   </section>;
 }
