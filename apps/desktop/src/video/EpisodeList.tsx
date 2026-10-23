@@ -5,7 +5,7 @@ import { VideoPicture, VideoPictureViewer } from './VideoPicture';
 export function EpisodeList({groups}: {groups: MergedEpisodeGroup[]}) {
   const [picture, setPicture] = useState<{url:string;title:string}|null>(null);
   return <><div className="video-chapter-scroll">{groups.map(group => <section key={group.key}>
-    {groups.length > 1 && <h4 className="video-episode-group">{group.label}</h4>}
+    {groups.length > 1 && !!group.label.trim() && <h4 className="video-episode-group">{group.label}</h4>}
     <ol className="video-chapter-list">{group.rows.map(row => <li key={row.key}>
       <span>{row.number}</span><div className="video-episode-copy"><strong>{row.originalTitle || row.title || `第 ${row.number} 集`}</strong>
         {row.title && row.title !== row.originalTitle && <small>{row.title}</small>}

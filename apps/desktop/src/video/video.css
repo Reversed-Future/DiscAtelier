@@ -30,6 +30,11 @@
 .video-section-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .video-heading-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 18px; }
 .video-heading-actions button:not(.solid-button) { padding: 8px 0; }
+/* Detail tabs share the same baseline for section titles and their actions. */
+.inspection-tab-content .video-section-heading { align-items: baseline; }
+.inspection-tab-content .video-section-heading .setting-hint { margin: 0; }
+.inspection-tab-content .video-heading-actions { align-items: baseline; }
+.inspection-tab-content .video-heading-actions button:not(.solid-button) { padding: 0; line-height: 1.7; }
 .video-draft h3, .video-details h3 { margin: 20px 0 16px; font-size: 14px; }
 .video-draft .date-field { margin: 16px 0; }
 .video-draft > label { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
@@ -59,12 +64,16 @@
 .organizer .cover-art[data-portrait="true"] { width: 30px; height: 42px; margin-inline: 6px; }
 .video-work details > .metadata { margin-top: 16px; }
 .video-work .video-facts { margin: 0 0 20px; }
+.video-details .video-facts { margin-bottom: 17px; }
+.video-details .video-actions { margin-top: 0; }
+.video-details .video-actions button:not(.solid-button) { padding: 0; line-height: 1.7; }
 .video-facts dd > span { display: block; }
 .video-facts dd > span + span { margin-top: 5px; }
 .video-reference { color: inherit; font: inherit; text-align: left; padding: 0; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .video-reference:hover { color: var(--muted); }
-.video-characters { list-style: none; padding: 0; margin: 0; font-size: 12px; }
-.video-characters li { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.video-characters { list-style: none; padding: 0; margin: 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.video-characters li { padding: 14px 0; }
+.video-characters li:not(:last-child) { border-bottom: 1px solid var(--line); }
 .video-characters li:first-child { padding-top: 0; }
 .video-characters li > div { display: flex; align-items: baseline; gap: 16px; }
 .video-characters strong { font-weight: 500; }
@@ -79,8 +88,9 @@
 .video-chapters > :not(.video-chapter-scroll) { flex-shrink: 0; }
 .video-chapters .setting-hint { margin: 0 0 10px; }
 .video-chapter-scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; }
-.video-chapter-list { list-style: none; padding: 0; margin: 8px 0 0; }
-.video-chapter-list li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.video-chapter-list { list-style: none; padding: 0; margin: 8px 0 0; border-bottom: 1px solid var(--line); }
+.video-chapter-list li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 16px; padding: 14px 0; font-size: 12px; }
+.video-chapter-list li:not(:last-child) { border-bottom: 1px solid var(--line); }
 .video-chapter-list strong { font-weight: 500; }
 .video-chapter-list small { display: block; margin-top: 5px; font-size: 11px; line-height: 1.7; color: var(--muted); }
 .video-chapter-list li > span { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; }
@@ -138,6 +148,11 @@
 .video-source-data > .form-error { white-space: pre-wrap; }
 .video-episode-group { margin: 22px 0 10px; font-size: 12px; font-weight: 500; }
 .video-chapter-list li { grid-template-columns: 28px minmax(0, 1fr); gap: 14px; padding: 20px 0; }
+/* Keep the chapter action row close to the first episode. */
+.video-source-data.video-chapters > .video-section-heading { margin-bottom: 2px; }
+.video-source-data.video-chapters .video-chapter-list { margin-top: 0; }
+.video-source-data.video-chapters .video-chapter-list li:first-child { padding-top: 4px; }
+.video-source-data.video-chapters .video-episode-group { margin: 2px 0; }
 .video-episode-copy { min-width: 0; }
 .video-episode-details { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
 .video-episode-details p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.9; }

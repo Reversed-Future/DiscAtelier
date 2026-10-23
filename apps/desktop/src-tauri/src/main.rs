@@ -13,6 +13,7 @@ mod mobile_bridge;
 mod model_picker;
 mod model_stream;
 mod models;
+mod musicbrainz;
 mod netease;
 mod netease_albums;
 mod netease_artwork;
@@ -22,6 +23,7 @@ mod netease_links;
 mod netease_playback;
 mod netease_queue;
 mod optical;
+mod optical_match;
 mod playback;
 mod playback_backend;
 mod playback_exit;
@@ -43,6 +45,7 @@ use tauri::Manager;
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .register_uri_scheme_protocol("prepared-model", models::protocol)
         .register_asynchronous_uri_scheme_protocol("collection-model", model_stream::protocol)
@@ -174,8 +177,15 @@ fn main() {
             playback::playback_control,
             playback::playback_history,
             optical::optical_list,
+            optical::optical_eject,
+            musicbrainz::musicbrainz_disc,
             cd_metadata::optical_cd_metadata,
             optical::optical_probe,
+            optical::optical_candidates,
+            optical::optical_associate,
+            optical::optical_unbind,
+            optical::optical_dvd_chapters,
+            optical::optical_presence,
             optical::playback_settings_get,
             optical::playback_settings_save,
             bluray::bluray_key_status,

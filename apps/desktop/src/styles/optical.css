@@ -1,16 +1,40 @@
 .optical-panel { width: 720px; }
-.optical-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin: 0; padding-block: 6px; }
+.optical-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding-block: 6px; }
+.optical-toolbar-group { display: flex; align-items: center; gap: 12px; }
+.optical-toolbar-group:last-child { margin-left: auto; }
 .optical-drive { padding: 20px 0; border-bottom: 1px solid var(--line); }
 .optical-drive:last-of-type { border-bottom: 0; padding-bottom: 0; }
 .optical-heading { display: flex; align-items: baseline; gap: 14px; justify-content: space-between; }
 .optical-heading strong { font-size: 13px; font-weight: 400; }
 .optical-heading span, .optical-empty { color: var(--muted); font-size: 12px; }
+.optical-heading-right { display: flex; align-items: center; gap: 12px; }
+.optical-eject { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.optical-eject .icon { width: 13px; height: 13px; }
 .optical-drive p { font-size: 12px; line-height: 1.7; }
 .optical-facts { display: flex; gap: 32px; margin: 20px 0; font-size: 12px; }
 .optical-facts div { display: flex; gap: 12px; }
 .optical-facts dt { color: var(--muted); }
 .optical-facts dd { margin: 0; }
-.optical-actions { display: flex; align-items: center; gap: 20px; }
+.optical-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; }
+.optical-drive > .optical-actions { margin-top: 16px; padding-top: 16px; border-top: 1px solid #ffffff0d; }
+.optical-actions .select-control { min-width: 180px; }
+.optical-link { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+.optical-link > span { min-width: 0; }
+.optical-link-actions { display: flex; align-items: center; flex: none; gap: 14px; }
+.optical-link strong { color: var(--ink); font-weight: 400; }
+.optical-link .text-button { font-size: inherit; }
+.optical-musicbrainz { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 8px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.optical-musicbrainz code { font: inherit; color: var(--ink); overflow-wrap: anywhere; }
+.panel-dialog.optical-associate-panel { width: min(560px, calc(100vw - 36px)); height: auto; max-height: calc(100svh - 36px); }
+.optical-candidate-search { display: flex; gap: 10px; margin: 16px 0; }
+.optical-candidate-search input { flex: 1; min-width: 0; }
+.optical-candidates { display: grid; gap: 1px; max-height: min(420px, calc(100svh - 300px)); overflow: auto; }
+.optical-candidate { display: flex; align-items: center; justify-content: space-between; gap: 18px; width: 100%; padding: 11px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+.optical-candidate:hover { background: #ffffff08; }
+.optical-candidate > span:first-child { flex: 1; display: grid; gap: 4px; min-width: 0; }
+.optical-candidate strong { font-size: 13px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.optical-candidate small, .optical-candidate-score { color: var(--muted); font-size: 10px; }
+.optical-candidate-score { flex: none; }
 .cd-drive-controls .select-control { min-width: 0; flex: 1; }
 .cd-metadata-facts { display: grid; gap: 8px 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 20px 0; font-size: 12px; line-height: 1.6; }
 .cd-metadata-facts > div { display: flex; gap: 14px; min-width: 0; }

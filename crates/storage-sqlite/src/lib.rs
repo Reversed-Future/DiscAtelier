@@ -10,6 +10,7 @@ mod imports;
 mod migrations;
 mod models;
 mod music_albums;
+mod optical;
 mod ordering;
 mod song_links;
 mod video;
@@ -18,6 +19,7 @@ mod playback;
 pub mod profiling;
 mod reads;
 mod recovery;
+mod search;
 mod update_backup;
 mod writes;
 pub use update_backup::backup_for_update;
@@ -110,6 +112,20 @@ impl LibraryRepository for SqliteLibrary {
     }
     fn cover(&self, asset_id: &str) -> Result<String, AppError> {
         artwork::read(&self.connection, asset_id)
+    }
+    fn optical_binding(&self, media_token: &str) -> Result<Option<OpticalBinding>, AppError> {
+        optical::binding(&self.connection, media_token)
+    }
+    fn save_optical_binding(
+        &mut self,
+        media_token: &str,
+        copy_id: &str,
+        label: &str,
+    ) -> Result<(), AppError> {
+        optical::save(&self.connection, media_token, copy_id, label)
+    }
+    fn remove_optical_binding(&mut self, media_token: &str) -> Result<(), AppError> {
+        optical::remove(&self.connection, media_token)
     }
     fn backup(&self) -> Result<String, AppError> {
         let directory = self.directory.join("backups");

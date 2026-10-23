@@ -69,9 +69,9 @@ button:active { transform: scale(.98); }
 .empty-state button { border-bottom: 1px solid var(--line); padding: 6px 0; font-size: 12px; }
 .organizer { margin: 25px 56px 60px; }
 .organizer table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
-.organizer th { font-weight: 400; color: var(--muted); height: 45px; }
-.organizer td { padding: 13px 0; border-top: 1px solid var(--line); }
-.organizer td:first-child { display: flex; align-items: center; gap: 20px; }
+.organizer th { font-weight: 400; color: var(--muted); height: 45px; padding: 0; text-align: left; }
+.organizer td { padding: 13px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+.organizer-title-cell { display: flex; align-items: center; gap: 20px; min-width: 0; }
 .organizer .cover-art { width: 42px; height: 42px; }
 .organizer .row-title { text-align: left; }
 .organizer .row-title span { display: block; color: var(--muted); font-size: 10px; margin-top: 5px; }

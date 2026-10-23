@@ -5,6 +5,7 @@ import { library, errorMessage } from '../library/gateway';
 import { parsePrice, priceInput } from '../library/money';
 import { Modal } from '../ui/Modal';
 import { PurchaseFields } from './PurchaseFields';
+import { BundlePicker, applyBundlePurchase } from './BundlePicker';
 
 export function EditPurchase({ item, onClose, onSaved }: { item: LibraryCopy; onClose(): void; onSaved(): Promise<void> }) {
   const [copy, setCopy] = useState(item.copy);
@@ -12,6 +13,7 @@ export function EditPurchase({ item, onClose, onSaved }: { item: LibraryCopy; on
   const [busy, setBusy] = useState(false);
   const [reading, setReading] = useState(false);
   const [error, setError] = useState('');
+  const [bundle, setBundle] = useState<LibraryCopy[]>([]);
   const attempt = useRef({ payload: '', requestId: crypto.randomUUID() });
   return <Modal title="编辑购入" onClose={onClose} busy={busy || reading} wide>
     <form className="editor-form" noValidate onSubmit={async event => {
@@ -19,15 +21,18 @@ export function EditPurchase({ item, onClose, onSaved }: { item: LibraryCopy; on
       event.preventDefault(); if (busy || reading) return;
       try {
         const value = { ...copy, amountMinor: parsePrice(amount, copy.currency) };
-        const payload = JSON.stringify({ value, revision: item.revision });
+        const payload = JSON.stringify({ value, revision: item.revision, bundle: bundle.map(entry => entry.id) });
         if (payload !== attempt.current.payload) attempt.current = { payload, requestId: crypto.randomUUID() };
         setBusy(true); setError('');
         await library.update({ requestId: attempt.current.requestId, id: item.id, expectedRevision: item.revision, copy: value });
+        await applyBundlePurchase(value, bundle);
         await onSaved();
         dialog?.setAttribute('data-closing', 'true'); await leave(dialog); onClose();
       } catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
     }}>
-      <fieldset disabled={busy || reading}><PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy} title={item.edition.title} creator={item.edition.creator} onBusy={setReading}/></fieldset>
+      <fieldset disabled={busy || reading}><PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy} title={item.edition.title} creator={item.edition.creator} onBusy={setReading}
+        afterDate={<BundlePicker excludeId={item.id} value={bundle} onChange={setBundle}/>}/>
+      </fieldset>
       <p className="form-error" role="alert">{error}</p>
       <footer className="form-footer"><button className="solid-button" type="submit" disabled={busy || reading}>{busy ? '保存中' : '保存购入'}</button></footer>
     </form>

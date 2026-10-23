@@ -45,6 +45,9 @@
 .bluray-key-actions .text-button { padding-right: 0; }
 .bluray-key-message { color: var(--ink); }
 .bluray-key-sources { color: var(--ink); margin-top: -2px; }
+.path-input { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
+.path-input input { flex: 1; min-width: 0; }
+.path-input .text-button { flex: none; padding: 0 10px; border: 1px solid var(--line); font-size: 11px; }
 .make-mkv-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin: 17px 0; }
 .make-mkv-row > label:first-child { flex: 1; min-width: 0; margin: 0; }
 .bluray-fallback { display: flex; flex-direction: row; align-items: center; flex: none; gap: 7px; margin: 0 0 10px; font-size: 11px; white-space: nowrap; }

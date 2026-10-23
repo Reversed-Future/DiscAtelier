@@ -9,6 +9,7 @@ import { parsePrice } from '../library/money';
 import { Modal } from '../ui/Modal';
 import { enter } from '../ui/motion';
 import { PurchaseFields } from './PurchaseFields';
+import { BundlePicker, applyBundlePurchase } from './BundlePicker';
 import { EditionFields } from './EditionFields';
 import { CoverField } from './CoverField';
 import { useModelDraft } from '../models/useModelDraft';
@@ -35,6 +36,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
   const [music, setMusic] = useState<MusicSupplement | null>(null);
   const [musicOpen, setMusicOpen] = useState(false);
   const [amount, setAmount] = useState('');
+  const [bundle, setBundle] = useState<LibraryCopy[]>([]);
   const [tab, setTab] = useState(existing ? 'purchase' : 'edition');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -75,7 +77,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
         const coverData = !existing && cover.action === 'replace' ? cover.dataUrl : null;
         const modelToken = !existing && model.action === 'prepared' ? model.token : null;
         const neteaseAlbumId = edition.categoryId === 'music' ? music?.albumId || null : null;
-        const payload = JSON.stringify({ edition, purchase, coverData, modelToken, existingEditionId: existing?.editionId, token: imported?.token, neteaseAlbumId, videoDraft });
+        const payload = JSON.stringify({ edition, purchase, coverData, modelToken, existingEditionId: existing?.editionId, token: imported?.token, neteaseAlbumId, videoDraft, bundle: bundle.map(entry => entry.id) });
         if (payload !== attempt.current.payload) attempt.current = { payload, requestId: crypto.randomUUID() };
         setBusy(true); setError('');
         const manualRequest = { requestId: attempt.current.requestId, edition: existing ? null : edition, existingEditionId: existing?.editionId || null, copy: purchase, cover: coverData, model: null, modelToken };
@@ -84,6 +86,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
             existingEditionId: existing?.editionId || null, expectedRevision: existing?.editionRevision || null, neteaseAlbumId })
           : edition.categoryId === 'video' && !existing ? await video.create(manualRequest, videoDraft)
           : neteaseAlbumId && !existing ? await netease.createCopy(manualRequest, neteaseAlbumId) : await library.create(manualRequest);
+        await applyBundlePurchase(purchase, bundle);
         await onSaved(id, edition.categoryId);
         onClose();
       } catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
@@ -108,7 +111,8 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
         <ModelField value={model} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
         {imported && edition.categoryId === 'music' && <ImportMusicField tracks={importTracks} value={music} onChange={setMusic} onPick={() => setMusicOpen(true)}/>}
         <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
-      </> : <PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy} title={edition.title} creator={edition.creator} onBusy={setReading}/>}
+      </> : <PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy} title={edition.title} creator={edition.creator} onBusy={setReading}
+        afterDate={<BundlePicker value={bundle} onChange={setBundle}/>}/>}
       </fieldset>
       <p className="form-error" role="alert">{error}</p>
       <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading}>{busy ? '保存中' : tab === 'edition' ? '下一步' : '加入收藏'}</button></footer>

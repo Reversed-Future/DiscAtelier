@@ -16,7 +16,7 @@ export function CdDriveControls({ mount, medium, playlist, onSelect, busy, playe
     <div className="optical-actions">
       <Select label="CD 曲目" value={playlist} options={medium.tracks.map(item => ({ id: `cd-track:${item.number}`, label: `${item.number}. ${metadata.tracks.find(info => info.number === item.number)?.title || `曲目 ${item.number}`} · ${time(item.durationSeconds)}` }))}
         disabled={busy || player.busy} onChange={onSelect}/>
-      <button className="text-button" disabled={busy || player.active || player.busy || !playlist} onClick={() => void player.start(mount, medium.token, playlist)}>播放</button>
+      <button className="solid-button" disabled={busy || player.active || player.busy || !playlist} onClick={() => void player.start(mount, medium.token, playlist)}>播放</button>
     </div>
     <CdMetadataFacts track={track} number={selected?.number} total={medium.tracks.length}/>
     <div className="cd-metadata-status">

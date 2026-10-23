@@ -12,7 +12,7 @@
 .shelf-standin .model-preview { object-fit: contain; }
 .has-model .shelf-standin { filter: drop-shadow(0 18px 14px #0008); }
 .shared-artwork { position: absolute; inset: 0; transform-origin: 0 0; }
-.shared-artwork > .physical-case { position: absolute; inset: 0; width: 100%; height: 100%; box-shadow: 3px 0 #53514d, 5px 1px #242321, 0 4px 8px #0007; }
+.shared-artwork > .physical-case { position: absolute; inset: 0; width: 100%; height: 100%; box-shadow: 0 10px 22px #0008; }
 .shared-artwork .model-fallback { inset: 10%; }
 .inspection-artwork-slot { position: relative; width: min(100%, 65svh, 450px); aspect-ratio: 1; }
 .inspection-artwork-slot.has-model { width: min(100%, 65svh, 570px); }

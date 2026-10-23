@@ -11,14 +11,14 @@ function AccountAvatar({ url }: { url: string | null }) {
 }
 
 export function NeteaseAccount({ enabled }: { enabled: boolean }) {
-  const { account, qr, error, busy, begin, cancel, logout } = useNeteaseAccount(enabled);
+  const { account, checking, qr, error, busy, begin, cancel, logout } = useNeteaseAccount(enabled);
   const invalid = qr?.phase === 'expired' || qr?.phase === 'error';
   return <section className="netease-account settings-section" aria-label="网易云账号">
     <h4>账号</h4>
-    <div className="setting-row"><div className="netease-account-identity"><AccountAvatar url={account?.state === 'loggedIn' ? account.avatarUrl : null}/><span>{account?.state === 'loggedIn' ? account.nickname : account?.state === 'expired' ? '登录已失效' : '未登录'}</span></div>
-      {account?.state === 'expired' && <button type="button" className="text-button" disabled={busy} onClick={() => void logout()}>退出</button>}
-      {account?.state === 'loggedIn' ? <button type="button" className="text-button" disabled={busy} onClick={() => void logout()}>{busy ? '退出中' : '退出'}</button>
-        : <button type="button" className="text-button" disabled={!enabled || busy} onClick={() => qr ? cancel() : void begin()}>{qr ? '取消' : '登录'}</button>}
+    <div className="setting-row"><div className="netease-account-identity"><AccountAvatar url={account?.state === 'loggedIn' ? account.avatarUrl : null}/><span>{checking && !account ? '检查中…' : account?.state === 'loggedIn' ? account.nickname : account?.state === 'expired' ? '登录已失效' : '未登录'}</span></div>
+      {account?.state === 'expired' && <button type="button" className="text-button" disabled={busy || checking} onClick={() => void logout()}>退出</button>}
+      {account?.state === 'loggedIn' ? <button type="button" className="text-button" disabled={busy || checking} onClick={() => void logout()}>{busy ? '退出中' : '退出'}</button>
+        : <button type="button" className="text-button" disabled={!enabled || busy || checking} onClick={() => qr ? cancel() : void begin()}>{checking ? '检查中' : qr ? '取消' : '登录'}</button>}
     </div>
     {!enabled && <p className="setting-hint">保存服务设置后可登录。</p>}
     <div className="settings-disclosure" data-open={!!qr} inert={!qr}><div>

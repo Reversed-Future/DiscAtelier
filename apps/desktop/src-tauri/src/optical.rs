@@ -1,6 +1,7 @@
 use discatelier_application::{OpticalDeviceProvider, OpticalPlaybackProbe};
 use discatelier_contracts::{
-    AppError, OpticalDrive, OpticalKind, PlaybackDiagnostic, PlaybackSettings, PlaybackSource,
+    AppError, DvdChapter, LibraryQuery, OpticalBinding, OpticalCandidate, OpticalDrive,
+    OpticalKind, OpticalPresence, PlaybackDiagnostic, PlaybackSettings, PlaybackSource,
 };
 use std::{
     path::{Path, PathBuf},
@@ -74,6 +75,20 @@ pub async fn optical_list(
     .await
 }
 #[tauri::command]
+pub async fn optical_eject(
+    state: tauri::State<'_, OpticalState>,
+    playback: tauri::State<'_, crate::playback::PlaybackState>,
+    mount_point: String,
+) -> Result<(), AppError> {
+    if crate::playback::active(&playback)? {
+        return Err(AppError::new("player", "请先停止播放再弹出光驱。"));
+    }
+    run(state.inner().clone(), move |_| {
+        discatelier_optical_windows::eject(&mount_point)
+    })
+    .await
+}
+#[tauri::command]
 pub async fn optical_probe(
     window: tauri::WebviewWindow,
     state: tauri::State<'_, OpticalState>,
@@ -143,6 +158,126 @@ pub async fn playback_settings_save(
 ) -> Result<(), AppError> {
     run(state.inner().clone(), move |directory| {
         crate::playback_settings::save(directory, &settings)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn optical_candidates(
+    library: tauri::State<'_, crate::commands::LibraryState>,
+    label: String,
+    query: String,
+) -> Result<Vec<OpticalCandidate>, AppError> {
+    if label.len() > 512 || query.len() > 1000 {
+        return Err(AppError::new("validation", "光盘标题查询条件无效。"));
+    }
+    let query = query.trim().to_string();
+    crate::commands::run(library.inner().clone(), move |service| {
+        let mut copies = Vec::new();
+        for category in ["music", "video"] {
+            copies.extend(
+                service
+                    .list(LibraryQuery {
+                        category_id: category.into(),
+                        status: Some("owned".into()),
+                        query: query.clone(),
+                    })?
+                    .copies,
+            );
+        }
+        Ok(crate::optical_match::candidates(copies, &label))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn optical_associate(
+    library: tauri::State<'_, crate::commands::LibraryState>,
+    media_token: String,
+    copy_id: String,
+    label: String,
+) -> Result<OpticalBinding, AppError> {
+    crate::commands::run(library.inner().clone(), move |service| {
+        service.save_optical_binding(&media_token, &copy_id, &label)?;
+        service
+            .optical_binding(&media_token)?
+            .ok_or_else(|| AppError::new("storage", "光盘关联未保存。"))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn optical_dvd_chapters(
+    state: tauri::State<'_, OpticalState>,
+    mount_point: String,
+    token: String,
+    title: u32,
+) -> Result<Vec<DvdChapter>, AppError> {
+    if !(1..=9999).contains(&title) {
+        return Err(AppError::new("validation", "DVD 标题号无效。"));
+    }
+    run(state.inner().clone(), move |_| {
+        let source = verify_disc(&mount_point, &token, discatelier_player_vlc::DVD_MENU)?;
+        let root = PathBuf::from(format!("{}\\", source.mount_point));
+        discatelier_optical_windows::dvd::chapters(&root, title)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn optical_unbind(
+    library: tauri::State<'_, crate::commands::LibraryState>,
+    media_token: String,
+) -> Result<(), AppError> {
+    crate::commands::run(library.inner().clone(), move |service| {
+        service.remove_optical_binding(&media_token)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn optical_presence(
+    library: tauri::State<'_, crate::commands::LibraryState>,
+    playback: tauri::State<'_, crate::playback::PlaybackState>,
+) -> Result<Vec<OpticalPresence>, AppError> {
+    let drives = tauri::async_runtime::spawn_blocking(|| {
+        discatelier_optical_windows::WindowsOptical.enumerate()
+    })
+    .await
+    .map_err(|_| AppError::new("device", "光驱读取未完成。"))??;
+    let playing = playback
+        .lock()
+        .map_err(|_| AppError::new("player", "播放服务不可用。"))?
+        .as_ref()
+        .and_then(|session| session.snapshot().ok())
+        .filter(|snapshot| snapshot.phase.active())
+        .map(|snapshot| snapshot.source.media_token);
+    let media = drives
+        .into_iter()
+        .filter_map(|drive| {
+            drive
+                .medium
+                .map(|medium| (drive.name, drive.mount_point, medium))
+        })
+        .collect::<Vec<_>>();
+    crate::commands::run(library.inner().clone(), move |service| {
+        let mut result = Vec::new();
+        for (drive, mount_point, medium) in media {
+            let Some(binding) = service.optical_binding(&medium.token)? else {
+                continue;
+            };
+            result.push(OpticalPresence {
+                copy_id: binding.copy_id,
+                title: binding.title,
+                creator: binding.creator,
+                drive,
+                mount_point,
+                media_token: medium.token.clone(),
+                label: medium.label,
+                playing: playing.as_deref() == Some(medium.token.as_str()),
+            });
+        }
+        Ok(result)
     })
     .await
 }

@@ -3,7 +3,7 @@ members = ["crates/netease-runtime", "crates/agent-harness", "crates/integration
 resolver = "2"
 
 [workspace.package]
-version = "0.1.18"
+version = "0.1.19"
 edition = "2021"
 license = "LicenseRef-Private"
 
@@ -17,6 +17,8 @@ serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4"] }
 sha2 = "0.10"
+sha1 = "0.10"
+base64 = "0.22"
 discatelier-domain = { path = "crates/domain" }
 discatelier-contracts = { path = "crates/contracts" }
 discatelier-application = { path = "crates/application" }

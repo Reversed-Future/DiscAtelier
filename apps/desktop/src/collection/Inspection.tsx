@@ -8,7 +8,7 @@ import { CollectionVideoGallery } from '../video/CollectionVideoGallery';
 import type { VideoMetadata } from '../video/gateway';
 import { partView } from '../video/parts';
 import { portraitCover } from '../library/coverShape';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Descriptor, LibraryCopy } from '../library/types';
 import { mediumLabel } from '../library/mediumLabel';
 import { statuses } from '../library/types';
@@ -25,6 +25,8 @@ import { NeteasePanel } from '../integrations/NeteasePanel';
 import { CollectionSource } from '../metadata/CollectionSource';
 import { useMusicSupplement } from './useMusicSupplement';
 import type { PlaybackController } from '../playback/usePlayback';
+import { useOpticalPresence } from '../optical/useOpticalPresence';
+import { useCoverTilt } from './useCoverTilt';
 
 export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, artworkSlot, prepareClose, modelBusy, player, metadata, metadataError, partId, onPart }: {
   item: LibraryCopy; carriers: Descriptor[]; onClose(): void; onSaved(): Promise<void>; onDeleted(): Promise<void>; edit(): void;
@@ -45,8 +47,16 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
     } catch (cause) { setDeleting(false); setDeleteError(errorMessage(cause)); }
   }
   const editionContent = useEditionContent(item);
+  const optical = useOpticalPresence().find(value => value.copyId === item.id);
   const isVideo = item.edition.categoryId === 'video';
   const parts = metadata?.parts || [], part = parts.find(p => p.id === partId) || parts[0];
+  const [tiltNode, setTiltNode] = useState<HTMLDivElement | null>(null);
+  const [tiltSurface, setTiltSurface] = useState<HTMLDivElement | null>(null);
+  const coverTilt = useCoverTilt(!item.modelAssetId && parts.length !== 2, tiltSurface, tiltNode);
+  const attachArtwork = useCallback((node: HTMLDivElement | null) => {
+    setTiltNode(node);
+    artworkSlot(node);
+  }, [artworkSlot]);
   const view = partView(metadata,part);
   const supplement = useMusicSupplement(item);
   const works = videoWorks(view);
@@ -67,8 +77,9 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
   ].filter(([, value]) => value);
   return <><Modal title="收藏详情" onClose={onClose} busy={modelBusy || chapterBusy} beforeClose={prepareClose} inspection shared>
     <div className="inspection-layout">
-      <div className="object-stage">
-        <div className={`inspection-artwork-slot${item.modelAssetId && !part ? ' has-model' : ''}`} data-portrait={(!!part || !item.modelAssetId) && portraitCover(item.edition)} ref={artworkSlot}/>
+      <div className="object-stage" ref={setTiltSurface}>
+        <div className={`inspection-artwork-slot${item.modelAssetId && !part ? ' has-model' : ''}`} data-portrait={(!!part || !item.modelAssetId) && portraitCover(item.edition)}
+          data-tilt={coverTilt ? 'true' : undefined} ref={attachArtwork}/>
         <div className="object-floor"/>
         {parts.length === 2 && <button className="rotate-button" disabled={modelBusy || chapterBusy} onClick={event => onPart(parts.find(p => p.id !== part?.id)!.id,event.detail === 0)}><Icon name="rotate"/>翻面 · {parts.find(p => p.id !== part?.id)?.label}</button>}
       </div>
@@ -95,7 +106,7 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
           <button type="button" className="text-button delete-collection" onClick={() => { setDeleteError(''); setConfirmDelete(true); }} disabled={modelBusy || chapterBusy || deleting}>删除收藏</button>
           <button type="button" data-hidden={tab === 'tracks'} aria-hidden={tab === 'tracks'} tabIndex={tab === 'tracks' ? -1 : undefined} onClick={tab === 'purchase' ? () => setEditingPurchase(true) : edit} disabled={modelBusy || chapterBusy || deleting}>{tab === 'purchase' ? '编辑购入' : '编辑版本'}</button>
         </div>
-        <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}<span className="detail-status">{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
+        <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}{optical && <span className={`detail-optical${optical.playing ? ' playing' : ''}`}><Icon name="disc"/>{optical.playing ? '光驱播放中' : '在光驱中'} · {optical.drive}</span>}<span className="detail-status">{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
       </section>
     </div>
   </Modal>

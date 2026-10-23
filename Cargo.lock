@@ -933,7 +933,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-agent-harness"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "discatelier-contracts",
  "discatelier-domain",
@@ -945,7 +945,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-application"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "discatelier-contracts",
  "discatelier-domain",
@@ -955,7 +955,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-contracts"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "chrono",
  "discatelier-domain",
@@ -965,7 +965,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-desktop"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -993,6 +993,7 @@ dependencies = [
  "sha2",
  "tauri",
  "tauri-build",
+ "tauri-plugin-dialog",
  "tauri-plugin-opener",
  "tauri-plugin-updater",
  "tokio",
@@ -1004,7 +1005,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-domain"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "chrono",
  "serde",
@@ -1013,7 +1014,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-integration-http"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "discatelier-contracts",
  "reqwest",
@@ -1023,7 +1024,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-netease-runtime"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "discatelier-contracts",
  "dunce",
@@ -1034,18 +1035,20 @@ dependencies = [
 
 [[package]]
 name = "discatelier-optical-windows"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
+ "base64 0.22.1",
  "discatelier-application",
  "discatelier-contracts",
  "serde_json",
+ "sha1",
  "sha2",
  "windows-sys 0.61.2",
 ]
 
 [[package]]
 name = "discatelier-player-mpv"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "chrono",
  "discatelier-application",
@@ -1059,7 +1062,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-player-vlc"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "chrono",
  "discatelier-application",
@@ -1073,7 +1076,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-provider-discogs"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "base64 0.22.1",
  "discatelier-application",
@@ -1087,7 +1090,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-provider-netease"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "base64 0.22.1",
  "discatelier-contracts",
@@ -1101,7 +1104,7 @@ dependencies = [
 
 [[package]]
 name = "discatelier-storage"
-version = "0.1.18"
+version = "0.1.19"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -1115,6 +1118,7 @@ dependencies = [
  "sha2",
  "tempfile",
  "uuid",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3482,6 +3486,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "rfd"
+version = "0.16.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4fe518b6db89699d59862e4d1e3a0226316090f4e4ec09f7dd686be25634c7c"
+dependencies = [
+ "block2",
+ "dispatch2",
+ "glib-sys",
+ "gobject-sys",
+ "gtk-sys",
+ "js-sys",
+ "log",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-core-foundation",
+ "objc2-foundation",
+ "raw-window-handle",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "windows-sys 0.60.2",
+]
+
+[[package]]
 name = "rsqlite-vfs"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3862,6 +3890,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "170fb83ab34de17dc69aa7c67482b22218ddb85da56546f9bd6b929e32a05930"
 dependencies = [
  "stable_deref_trait",
+]
+
+[[package]]
+name = "sha1"
+version = "0.10.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a978451301f4db1d02937a4ab3ccce137717b81826e79b7d49ffe3244a13c3b8"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "digest",
 ]
 
 [[package]]
@@ -4321,6 +4360,48 @@ dependencies = [
  "serde_json",
  "tauri-utils",
  "walkdir",
+]
+
+[[package]]
+name = "tauri-plugin-dialog"
+version = "2.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7461aaacf1901915ea7b9f5cd74f8224a351ed96af0a62c07fce934003cb34b"
+dependencies = [
+ "log",
+ "raw-window-handle",
+ "rfd",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-plugin",
+ "tauri-plugin-fs",
+ "thiserror 2.0.21",
+ "url",
+]
+
+[[package]]
+name = "tauri-plugin-fs"
+version = "2.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d58eb1d4984e535f47a642ffec09a2da6f5c18a12b5902d12126cb7626d628b"
+dependencies = [
+ "anyhow",
+ "dunce",
+ "glob",
+ "log",
+ "objc2-foundation",
+ "percent-encoding",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "tauri",
+ "tauri-plugin",
+ "tauri-utils",
+ "thiserror 2.0.21",
+ "toml 1.1.8+spec-1.1.0",
+ "url",
 ]
 
 [[package]]

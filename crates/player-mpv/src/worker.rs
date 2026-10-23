@@ -179,6 +179,10 @@ fn command(state: &mut PlaybackState, control: &PlaybackControl) -> Result<Value
             state.progress.reset_sample();
             Ok(json!(["set_property", "speed", rate]))
         }
+        PlaybackControl::Chapter { .. } => Err(AppError::new(
+            "unsupported",
+            "当前播放后端不支持 DVD 章节。",
+        )),
         PlaybackControl::Audio { id } => {
             if !state.snapshot.audio_tracks.iter().any(|t| t.id == *id) {
                 return Err(AppError::new("validation", "音轨不存在。"));

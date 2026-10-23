@@ -7,6 +7,8 @@ edition.workspace = true
 discatelier-application.workspace = true
 discatelier-contracts.workspace = true
 sha2.workspace = true
+sha1.workspace = true
+base64.workspace = true
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_Devices_Cdrom", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_System_Ioctl", "Win32_System_WindowsProgramming"] }

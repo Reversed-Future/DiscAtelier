@@ -85,6 +85,8 @@ api! {
     libvlc_media_player_is_seekable: unsafe extern "C" fn(Handle) -> c_int,
     libvlc_media_player_set_rate: unsafe extern "C" fn(Handle, c_float) -> c_int,
     libvlc_audio_set_volume: unsafe extern "C" fn(Handle, c_int) -> c_int,
+    libvlc_media_player_get_chapter_count: unsafe extern "C" fn(Handle) -> c_int,
+    libvlc_media_player_set_chapter: unsafe extern "C" fn(Handle, c_int),
     libvlc_media_player_get_title: unsafe extern "C" fn(Handle) -> c_int,
     libvlc_media_player_set_title: unsafe extern "C" fn(Handle, c_int),
     libvlc_media_player_get_full_title_descriptions: unsafe extern "C" fn(Handle, *mut *mut *mut Title) -> c_int,

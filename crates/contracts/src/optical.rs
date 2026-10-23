@@ -28,6 +28,9 @@ pub struct OpticalMedium {
     pub playlists: Vec<String>,
     #[serde(default)]
     pub tracks: Vec<CdTrack>,
+    /// MusicBrainz Disc ID for audio CDs; absent for data media.
+    #[serde(default)]
+    pub disc_id: Option<String>,
     pub aacs_directory: bool,
     #[serde(default)]
     pub bdplus_directory: bool,
@@ -53,6 +56,47 @@ pub struct PlaybackDiagnostic {
     pub status: String,
     pub message: String,
     pub details: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DvdChapter {
+    pub index: u32,
+    pub start_seconds: f64,
+    pub duration_seconds: f64,
+}
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpticalBinding {
+    pub media_token: String,
+    pub copy_id: String,
+    pub title: String,
+    pub creator: String,
+    pub label: String,
+}
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpticalPresence {
+    pub copy_id: String,
+    pub title: String,
+    pub creator: String,
+    pub drive: String,
+    pub mount_point: String,
+    pub media_token: String,
+    pub label: String,
+    pub playing: bool,
+}
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpticalCandidate {
+    pub copy_id: String,
+    pub edition_id: String,
+    pub title: String,
+    pub creator: String,
+    pub edition_label: String,
+    pub category_id: String,
+    pub score: u32,
+    pub match_kind: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

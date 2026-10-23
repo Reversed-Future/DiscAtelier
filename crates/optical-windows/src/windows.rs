@@ -2,8 +2,8 @@ use discatelier_contracts::{AppError, OpticalDrive, OpticalKind, OpticalMedium, 
 use std::{mem::size_of, path::Path, ptr};
 use windows_sys::Win32::{
     Foundation::{
-        CloseHandle, GetLastError, ERROR_NOT_READY, ERROR_NO_MEDIA_IN_DRIVE, GENERIC_READ, HANDLE,
-        INVALID_HANDLE_VALUE,
+        CloseHandle, GetLastError, ERROR_NOT_READY, ERROR_NO_MEDIA_IN_DRIVE, GENERIC_READ,
+        GENERIC_WRITE, HANDLE, INVALID_HANDLE_VALUE,
     },
     Storage::FileSystem::{
         CreateFileW, GetDriveTypeW, GetLogicalDrives, GetVolumeInformationW, FILE_SHARE_READ,
@@ -12,7 +12,8 @@ use windows_sys::Win32::{
     System::{
         Ioctl::{
             PropertyStandardQuery, StorageDeviceProperty, IOCTL_STORAGE_CHECK_VERIFY2,
-            IOCTL_STORAGE_QUERY_PROPERTY, STORAGE_DEVICE_DESCRIPTOR, STORAGE_PROPERTY_QUERY,
+            IOCTL_STORAGE_EJECT_MEDIA, IOCTL_STORAGE_QUERY_PROPERTY, STORAGE_DEVICE_DESCRIPTOR,
+            STORAGE_PROPERTY_QUERY,
         },
         WindowsProgramming::DRIVE_CDROM,
         IO::DeviceIoControl,
@@ -118,6 +119,65 @@ fn read_audio_toc(path: &[u16]) -> Result<Option<OpticalMedium>, u32> {
     Ok(toc
         .get(..returned as usize)
         .and_then(crate::audio_cd::decode))
+}
+
+pub fn eject(mount_point: &str) -> Result<(), AppError> {
+    let mount = mount_point.trim().trim_end_matches('\\');
+    let mut chars = mount.chars();
+    let valid = mount.len() == 2
+        && chars
+            .next()
+            .is_some_and(|value| value.is_ascii_alphabetic())
+        && chars.next() == Some(':');
+    if !valid {
+        return Err(AppError::new("device", "光驱盘符无效。"));
+    }
+    let path = wide(&format!("\\\\.\\{mount}"));
+    let open = |access| unsafe {
+        CreateFileW(
+            path.as_ptr(),
+            access,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            ptr::null(),
+            OPEN_EXISTING,
+            0,
+            ptr::null_mut(),
+        )
+    };
+    let mut raw = open(GENERIC_READ | GENERIC_WRITE);
+    if raw == INVALID_HANDLE_VALUE {
+        raw = open(GENERIC_READ);
+    }
+    if raw == INVALID_HANDLE_VALUE {
+        raw = open(0);
+    }
+    if raw == INVALID_HANDLE_VALUE {
+        return Err(AppError::new(
+            "device",
+            format!("无法打开光驱 {mount}，可能正被其他程序占用。"),
+        ));
+    }
+    let device = Device(raw);
+    let mut returned = 0;
+    let ok = unsafe {
+        DeviceIoControl(
+            device.0,
+            IOCTL_STORAGE_EJECT_MEDIA,
+            ptr::null(),
+            0,
+            ptr::null_mut(),
+            0,
+            &mut returned,
+            ptr::null_mut(),
+        )
+    };
+    if ok == 0 {
+        return Err(AppError::new(
+            "device",
+            format!("光驱 {mount} 弹出失败，托盘可能已打开或设备不支持。"),
+        ));
+    }
+    Ok(())
 }
 
 pub fn enumerate() -> Result<Vec<OpticalDrive>, AppError> {

@@ -17,6 +17,7 @@ import { DiscogsBrowser } from './metadata/DiscogsBrowser';
 import { useScrollbars } from './ui/useScrollbars';
 import { Settings } from './settings/Settings';
 import { useCollectionArtwork } from './collection/useCollectionArtwork';
+import { prefetchVideoMetadata } from './video/useVideoMetadata';
 import { OpticalPanel } from './optical/OpticalPanel';
 import { usePlayback } from './playback/usePlayback';
 import { AssistantDock } from './assistant/AssistantDock';
@@ -28,11 +29,12 @@ export function App() {
   const player = usePlayback();
   useZoom();
   useScrollbars();
+  const snapshots = useRef(new Map<string, LibrarySnapshot>());
+  const prefetched = useRef(new Set<string>());
   const [query, setQuery] = useState<LibraryQuery>({ categoryId: 'music', status: null, query: '' });
   const [snapshot, setSnapshot] = useState<LibrarySnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
   const [organize, setOrganize] = useState(false);
   const [selectedId, setSelectedId] = useState('');
   const [inspected, setInspected] = useState<LibraryCopy | null>(null);
@@ -87,22 +89,38 @@ export function App() {
     try {
       const result = await library.list(filter);
       if (version !== generation.current) return;
+      snapshots.current.set(`${filter.categoryId}|${filter.status || ''}|${filter.query}`, result);
       setSnapshot(result); setError('');
       setInspected(previous => previous ? result.copies.find(item => item.id === previous.id) || null : null);
     } catch (cause) { if (version === generation.current) setError(errorMessage(cause)); }
     finally { if (version === generation.current) setLoading(false); }
   }, []);
   useEffect(() => { void refresh(query); }, [query, refresh]);
+  useEffect(() => {
+    if (!snapshot) return;
+    const categoryId = query.categoryId === 'music' ? 'video' : 'music';
+    const filter: LibraryQuery = { categoryId, status: query.status, query: '' };
+    const key = `${filter.categoryId}|${filter.status || ''}|`;
+    if (snapshots.current.has(key) || prefetched.current.has(key)) return;
+    prefetched.current.add(key);
+    void library.list(filter).then(value => {
+      snapshots.current.set(key, value);
+      if (filter.categoryId === 'video') value.copies.slice(0, 8).forEach(copy => prefetchVideoMetadata(copy.editionId, copy.editionRevision));
+    }).catch(() => prefetched.current.delete(key));
+  }, [snapshot?.ownedCount, query.categoryId, query.status]);
   useEffect(() => { if (player.open) setOpticalOpen(false); }, [player.open]);
   useEffect(() => { if (player.open || player.musicQueue.open) setAssistantOpen(false); }, [player.open, player.musicQueue.open]);
-  useEffect(() => { enter(scene.current, 0); }, [query.categoryId, query.status, organize]);
-  useEffect(() => {
-    if (searchOpen) { enter(search.current); search.current?.focus(); }
-  }, [searchOpen]);
+  useEffect(() => { enter(scene.current, 0); }, [organize]);
+  function switchCategory(categoryId: string) {
+    const next = { ...query, categoryId, query: '' };
+    const cached = snapshots.current.get(`${next.categoryId}|${next.status || ''}|`);
+    if (cached) { setSnapshot(cached); setSelectedId(''); }
+    setQuery(next);
+  }
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if (event.key === '/' && !document.querySelector('.player-view, dialog[open]') && !['INPUT', 'TEXTAREA'].includes((event.target as HTMLElement).tagName)) {
-        event.preventDefault(); setSearchOpen(true); search.current?.focus();
+        event.preventDefault(); search.current?.focus();
       }
     };
     document.addEventListener('keydown', shortcut);
@@ -115,20 +133,20 @@ export function App() {
   const currentVideo = useVideoMetadata(current?.editionId || '',current?.editionRevision || 0,current?.edition.categoryId === 'video');
   const [partId,setPartId] = useState(''), [instantFlip,setInstantFlip] = useState(false);
   useEffect(() => {setPartId('');},[inspected?.id]);
-  const artwork = useCollectionArtwork(current, modelActive && (!organize || !!inspected), !!inspected, currentVideo.value, partId, instantFlip);
+  const artwork = useCollectionArtwork(current, modelActive, !!inspected, currentVideo.value, partId, instantFlip);
   return <div className="workspace" data-list={organize}>
     <WindowChrome/>
     <header className="topbar" inert={player.open} data-window-drag="true">
       <div className="wordmark"><span className="disc-mark"/>DiscAtelier<span className="wordmark-dot">.</span></div>
       <nav className="categories" aria-label="收藏分区">{snapshot?.categories.map(category =>
-        <button key={category.id} className={query.categoryId === category.id ? 'active' : ''} onClick={() => setQuery({ ...query, categoryId: category.id, query: '' })}>{category.label}</button>
+        <button key={category.id} className={query.categoryId === category.id ? 'active' : ''} onClick={() => switchCategory(category.id)}>{category.label}</button>
       )}</nav>
       <div className="top-actions">
-        <div className={`search-control${searchOpen ? ' search-open' : ''}`}>
-          <button ref={searchTrigger} className="icon-button" aria-label="搜索收藏" data-tooltip="搜索" aria-expanded={searchOpen} onClick={() => { if (searchOpen) setQuery({ ...query, query: '' }); setSearchOpen(value => !value); }}><Icon name="search"/></button>
-          {searchOpen && <input ref={search} type="search" aria-label="搜索关键词" placeholder="搜索" value={query.query}
+        <div className="search-control">
+          <button ref={searchTrigger} className="icon-button" aria-label="搜索收藏" data-tooltip="搜索" onClick={() => search.current?.focus()}><Icon name="search"/></button>
+          <input ref={search} type="search" aria-label="搜索关键词" placeholder="搜索" value={query.query}
             onChange={event => setQuery({ ...query, query: event.target.value })}
-            onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); setQuery({ ...query, query: '' }); setSearchOpen(false); searchTrigger.current?.focus(); } }}/>}
+            onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); setQuery({ ...query, query: '' }); search.current?.focus(); } }}/>
         </div>
         <button className="icon-button" aria-label="添加收藏" data-tooltip="添加" disabled={!snapshot} onClick={openAdd}><Icon name="plus"/></button>
         <button className={`icon-button${query.status || organize ? ' filtered' : ''}`} id="tools-toggle" popoverTarget="tools-popover" aria-label="更多" data-tooltip="更多"><Icon name="more"/></button>

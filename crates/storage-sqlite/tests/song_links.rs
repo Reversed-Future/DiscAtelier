@@ -125,7 +125,7 @@ fn migration_backs_up_schema_eight_and_preserves_legacy_links() {
         .unwrap();
     drop(service);
     let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
-    conn.execute_batch("DROP TABLE collection_order; DROP TABLE video_edition_parts; DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DROP TRIGGER music_album_import_insert; DROP TRIGGER music_album_import_update; DROP TABLE edition_disc_albums; DROP TABLE edition_music_albums; DROP TABLE edition_song_links; DELETE FROM schema_migrations WHERE version>=9; PRAGMA user_version=8;").unwrap();
+    conn.execute_batch("DROP TABLE optical_bindings; DROP TABLE collection_order; DROP TABLE video_edition_parts; DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DROP TRIGGER music_album_import_insert; DROP TRIGGER music_album_import_update; DROP TABLE edition_disc_albums; DROP TABLE edition_music_albums; DROP TABLE edition_song_links; DELETE FROM schema_migrations WHERE version>=9; PRAGMA user_version=8;").unwrap();
     drop(conn);
     let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
     conn.execute(

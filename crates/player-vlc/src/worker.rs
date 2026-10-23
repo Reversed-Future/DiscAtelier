@@ -243,6 +243,7 @@ fn playing(
                 let resets = matches!(
                     request.control,
                     PlaybackControl::Seek { .. }
+                        | PlaybackControl::Chapter { .. }
                         | PlaybackControl::Rate { .. }
                         | PlaybackControl::Menu { .. }
                         | PlaybackControl::Pause { .. }

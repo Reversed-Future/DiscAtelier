@@ -305,7 +305,7 @@ fn import_is_atomic_idempotent_and_reuses_only_the_same_release() {
     assert_eq!(service.import_copy(first.clone()).unwrap(), id);
     assert_eq!(service.list(query("0 00123")).unwrap().copies.len(), 1);
     assert_eq!(service.list(query("bB-02")).unwrap().copies.len(), 1);
-    assert_eq!(service.list(query("BB-02")).unwrap().copies.len(), 0);
+    assert_eq!(service.list(query("BB-02")).unwrap().copies.len(), 1);
     let existing = service.source_copy("discogs", "249504").unwrap().unwrap();
     let mut duplicate = first.clone();
     duplicate.request.request_id = Uuid::new_v4().to_string();

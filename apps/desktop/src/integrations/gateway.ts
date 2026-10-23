@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-export interface IntegrationSettings { neteaseMode: 'builtin' | 'custom'; neteaseBaseUrl: string; aiBaseUrl: string; aiModel: string }
+export interface IntegrationSettings { neteaseMode: 'builtin' | 'custom'; neteaseBaseUrl: string; aiBaseUrl: string; aiModel: string; musicbrainzBaseUrl: string }
 export interface IntegrationStatus { settings: IntegrationSettings; hasKey: boolean }
 export interface MusicSupplement {
   albumId: number; title: string; artists: string[]; description: string; company: string; publishedAt: number;

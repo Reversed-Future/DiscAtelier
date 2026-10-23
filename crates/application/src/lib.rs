@@ -41,6 +41,14 @@ pub trait LibraryRepository: Send {
     fn update_edition(&mut self, request: &UpdateEdition) -> Result<String, AppError>;
     fn model(&self, asset_id: &str, preview: bool) -> Result<String, AppError>;
     fn cover(&self, asset_id: &str) -> Result<String, AppError>;
+    fn optical_binding(&self, media_token: &str) -> Result<Option<OpticalBinding>, AppError>;
+    fn save_optical_binding(
+        &mut self,
+        media_token: &str,
+        copy_id: &str,
+        label: &str,
+    ) -> Result<(), AppError>;
+    fn remove_optical_binding(&mut self, media_token: &str) -> Result<(), AppError>;
     fn backup(&self) -> Result<String, AppError>;
     fn backups(&self) -> Result<Vec<BackupEntry>, AppError>;
     fn prepare_restore(&mut self, path: &str) -> Result<RestorePreview, AppError>;
@@ -152,6 +160,30 @@ impl<R: LibraryRepository> LibraryService<R> {
             medium_count,
             unpriced_count,
         })
+    }
+    pub fn optical_binding(&self, media_token: &str) -> Result<Option<OpticalBinding>, AppError> {
+        if media_token.is_empty() || media_token.len() > 256 {
+            return Err(AppError::new("validation", "光盘标识无效。"));
+        }
+        self.repository.optical_binding(media_token)
+    }
+    pub fn save_optical_binding(
+        &mut self,
+        media_token: &str,
+        copy_id: &str,
+        label: &str,
+    ) -> Result<(), AppError> {
+        if media_token.is_empty() || media_token.len() > 256 || copy_id.is_empty() {
+            return Err(AppError::new("validation", "光盘关联参数无效。"));
+        }
+        self.repository
+            .save_optical_binding(media_token, copy_id, label)
+    }
+    pub fn remove_optical_binding(&mut self, media_token: &str) -> Result<(), AppError> {
+        if media_token.is_empty() || media_token.len() > 256 {
+            return Err(AppError::new("validation", "光盘标识无效。"));
+        }
+        self.repository.remove_optical_binding(media_token)
     }
     pub fn create(&mut self, request: CreateCopy) -> Result<String, AppError> {
         validate_create(&request)?;

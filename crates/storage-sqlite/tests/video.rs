@@ -99,7 +99,7 @@ fn schema_ten_gets_backup_and_existing_collection_is_unchanged() {
     let before = service.list(query()).unwrap().copies.remove(0);
     drop(service);
     let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
-    conn.execute_batch("DROP TABLE collection_order; DROP TABLE video_edition_parts; DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DELETE FROM schema_migrations WHERE version>=11; PRAGMA user_version=10;").unwrap();
+    conn.execute_batch("DROP TABLE optical_bindings; DROP TABLE collection_order; DROP TABLE video_edition_parts; DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DELETE FROM schema_migrations WHERE version>=11; PRAGMA user_version=10;").unwrap();
     drop(conn);
     let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
     let after = service.list(query()).unwrap().copies.remove(0);
@@ -359,7 +359,7 @@ fn schema_eleven_migrates_with_backup_and_no_automatic_parts() {
     let before = service.list(query()).unwrap().copies.remove(0);
     drop(service);
     let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
-    connection.execute_batch("DROP TABLE collection_order; DROP TABLE video_edition_parts; DELETE FROM schema_migrations WHERE version>=12; PRAGMA user_version=11;").unwrap();
+    connection.execute_batch("DROP TABLE optical_bindings; DROP TABLE collection_order; DROP TABLE video_edition_parts; DELETE FROM schema_migrations WHERE version>=12; PRAGMA user_version=11;").unwrap();
     drop(connection);
     let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
     assert!(service

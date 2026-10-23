@@ -66,6 +66,7 @@ pub fn inspect(
         },
         playlists,
         tracks: Vec::new(),
+        disc_id: None,
         // Directory presence is not a claim of successful decryption or BD-J support.
         aacs_directory: root.join("AACS").is_dir(),
         bdplus_directory: root.join("BDSVM").is_dir(),

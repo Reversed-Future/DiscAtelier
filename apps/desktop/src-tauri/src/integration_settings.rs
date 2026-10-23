@@ -12,6 +12,9 @@ pub struct Settings {
     pub netease_base_url: String,
     pub ai_base_url: String,
     pub ai_model: String,
+    /// MusicBrainz web service root; empty means the public endpoint.
+    #[serde(default)]
+    pub musicbrainz_base_url: String,
 }
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -94,6 +97,9 @@ pub fn integration_settings_save(
     }
     if !settings.ai_base_url.is_empty() {
         endpoint(&settings.ai_base_url, "chat/completions")?;
+    }
+    if !settings.musicbrainz_base_url.is_empty() {
+        endpoint(&settings.musicbrainz_base_url, "discid/X")?;
     }
     if settings.ai_model.len() > 200 || settings.ai_model.chars().any(char::is_control) {
         return Err(error("模型名称无效。"));

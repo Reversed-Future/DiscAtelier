@@ -167,7 +167,7 @@ fn status_price_and_exact_search_rules() {
             .unwrap()
             .copies
             .len(),
-        0
+        4
     );
     assert_eq!(
         service

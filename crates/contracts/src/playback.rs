@@ -117,6 +117,7 @@ pub enum PlaybackControl {
     Volume { volume: u16 },
     Rate { rate: f64 },
     Audio { id: i64 },
+    Chapter { index: u32 },
     Menu { direction: MenuDirection },
     Stop,
 }

@@ -1,6 +1,21 @@
 //! Bounded IOCTL_CDROM_READ_TOC decoding; no sector writes or drive configuration.
+use base64::Engine;
 use discatelier_contracts::{CdTrack, OpticalKind, OpticalMedium};
+use sha1::Sha1;
 use sha2::{Digest, Sha256};
+
+fn musicbrainz_disc_id(first: u8, last: u8, offsets: &[u32; 100], leadout: u32) -> String {
+    let mut payload = format!("{first:02X}{last:02X}{leadout:08X}");
+    for offset in &offsets[1..=99] {
+        payload.push_str(&format!("{offset:08X}"));
+    }
+    let digest = Sha1::digest(payload.as_bytes());
+    base64::engine::general_purpose::STANDARD
+        .encode(digest)
+        .replace('+', ".")
+        .replace('/', "_")
+        .replace('=', "-")
+}
 
 pub fn decode(bytes: &[u8]) -> Option<OpticalMedium> {
     let header = bytes.get(..4)?;
@@ -23,16 +38,19 @@ pub fn decode(bytes: &[u8]) -> Option<OpticalMedium> {
         (s < 60 && f < 75).then_some((m * 60 + s) * 75 + f)
     };
     let mut tracks = Vec::new();
+    let mut offsets = [0u32; 100];
     for i in 0..count {
         let entry = entries[i];
         if entry[2] != first + i as u8 {
             return None;
         }
+        let number = usize::from(entry[2]);
         let start = frames(entry)?;
         let end = frames(entries[i + 1])?;
         if start < 150 || end <= start {
             return None;
         }
+        offsets[number] = start;
         // TRACK_DATA.Control is the low nibble; AUDIO_DATA_TRACK is bit 2.
         if entry[1] & 4 == 0 {
             tracks.push(CdTrack {
@@ -41,6 +59,11 @@ pub fn decode(bytes: &[u8]) -> Option<OpticalMedium> {
             });
         }
     }
+    let leadout = frames(entries[count])?;
+    // MusicBrainz excludes data tracks; mixed-mode TOCs need an audio-session
+    // lead-out adjustment that this read-only path does not perform.
+    let disc_id =
+        (tracks.len() == count).then(|| musicbrainz_disc_id(first, last, &offsets, leadout));
     if tracks.is_empty() {
         return None;
     }
@@ -58,6 +81,7 @@ pub fn decode(bytes: &[u8]) -> Option<OpticalMedium> {
             .map(|t| format!("cd-track:{}", t.number))
             .collect(),
         tracks,
+        disc_id,
         aacs_directory: false,
         bdplus_directory: false,
         java_directory: false,
@@ -67,6 +91,15 @@ pub fn decode(bytes: &[u8]) -> Option<OpticalMedium> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn musicbrainz_disc_id_matches_documented_toc() {
+        let mut offsets = [0u32; 100];
+        offsets[1..=6].copy_from_slice(&[150, 15363, 32314, 46592, 63414, 80489]);
+        assert_eq!(
+            musicbrainz_disc_id(1, 6, &offsets, 95462),
+            "49HHV7Eb8UKF3aQiNmu1GR8vKTY-"
+        );
+    }
     #[test]
     fn optiarc_three_track_cd_provides_all_playback_routes() {
         // Read-only capture from Optiarc BC-5500S: 36-byte, three-track TOC.

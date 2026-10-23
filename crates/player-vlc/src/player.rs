@@ -140,6 +140,16 @@ impl Player {
                         return Err(ffi::error("播放速度调整失败。"));
                     }
                 }
+                PlaybackControl::Chapter { index } => {
+                    if snapshot.dvd_menu || snapshot.dvd_title.is_none() {
+                        return Err(ffi::error("当前 DVD 画面没有章节。"));
+                    }
+                    let count = (self.api.libvlc_media_player_get_chapter_count)(self.handle);
+                    if index == 0 || index as i32 > count {
+                        return Err(ffi::error("DVD 章节不存在。"));
+                    }
+                    (self.api.libvlc_media_player_set_chapter)(self.handle, index as i32 - 1);
+                }
                 PlaybackControl::Audio { id } => {
                     if !snapshot.audio_tracks.iter().any(|track| track.id == id)
                         || (self.api.libvlc_audio_set_track)(self.handle, id as i32) != 0

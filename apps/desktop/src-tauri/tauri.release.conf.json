@@ -1,7 +1,7 @@
 {
   "build": {
     "beforeBuildCommand": "npm run build:release",
-    "frontendDist": "../dist-release/0.1.18"
+    "frontendDist": "../dist-release/0.1.19"
   },
   "bundle": {
     "active": true,
@@ -10,7 +10,7 @@
     ],
     "publisher": "Reversed-Future",
     "homepage": "https://github.com/Reversed-Future/DiscAtelier",
-    "shortDescription": "个人实体音像收藏",
+    "shortDescription": "涓汉瀹炰綋闊冲儚鏀惰棌",
     "resources": {
       "../public/legal/": "legal/",
       "../../../artifacts/netease-runtime/": "netease-runtime/",

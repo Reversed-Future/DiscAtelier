@@ -1,4 +1,4 @@
-use crate::db_error;
+use crate::{db_error, search};
 use discatelier_contracts::*;
 use discatelier_domain::*;
 use rusqlite::{params, Connection};
@@ -53,17 +53,13 @@ fn read(
          JOIN purchases p ON p.copy_id=c.id
          LEFT JOIN edition_sources s ON s.edition_id=e.id
          LEFT JOIN collection_order o ON o.copy_id=c.id
-         WHERE ((?4 IS NULL AND w.category_id=?1) OR (?4 IS NOT NULL AND e.id=?4)) AND (?2 IS NULL OR c.status=?2)
-           AND (?3='' OR instr(w.title,?3)>0 OR instr(w.creator,?3)>0 OR instr(e.barcode,?3)>0
-             OR instr(e.catalog_number,?3)>0 OR instr(e.edition_label,?3)>0
-             OR instr(p.seller,?3)>0 OR instr(c.notes,?3)>0 OR instr(c.storage_location,?3)>0
-             OR EXISTS(SELECT 1 FROM imported_identifiers i WHERE i.edition_id=e.id AND instr(i.value,?3)>0))
+         WHERE ((?3 IS NULL AND w.category_id=?1) OR (?3 IS NOT NULL AND e.id=?3)) AND (?2 IS NULL OR c.status=?2)
          ORDER BY COALESCE(o.position,-1), c.added_at DESC, c.id",
         )
         .map_err(db_error)?;
     let rows = statement
         .query_map(
-            params![query.category_id, query.status, query.query, edition_id],
+            params![query.category_id, query.status, edition_id],
             |row| {
                 let edition_id: String = row.get(1)?;
                 Ok(LibraryCopy {
@@ -109,5 +105,52 @@ fn read(
             },
         )
         .map_err(db_error)?;
-    rows.map(|row| row.map_err(db_error)).collect()
+    let mut copies = rows
+        .map(|row| row.map_err(db_error))
+        .collect::<Result<Vec<_>, AppError>>()?;
+    let needle = query.query.trim();
+    if needle.is_empty() {
+        return Ok(copies);
+    }
+    let mut identifiers_statement = connection
+        .prepare("SELECT edition_id, value FROM imported_identifiers")
+        .map_err(db_error)?;
+    let identifiers = identifiers_statement
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(db_error)?;
+    let mut values: HashMap<String, Vec<String>> = HashMap::new();
+    for row in identifiers {
+        let (edition_id, value) = row.map_err(db_error)?;
+        values.entry(edition_id).or_default().push(value);
+    }
+    copies.retain(|copy| {
+        let mut fields = vec![
+            copy.edition.title.as_str(),
+            copy.edition.creator.as_str(),
+            copy.edition.edition_label.as_str(),
+            copy.edition.barcode.as_str(),
+            copy.edition.catalog_number.as_str(),
+            copy.copy.seller.as_str(),
+            copy.copy.storage_location.as_str(),
+            copy.copy.notes.as_str(),
+        ];
+        fields.extend(
+            copy.edition
+                .media
+                .iter()
+                .map(|medium| medium.label.as_str()),
+        );
+        if let Some(source) = &copy.source {
+            fields.push(source.provider_id.as_str());
+            fields.push(source.external_id.as_str());
+        }
+        let ids = values
+            .get(&copy.edition_id)
+            .map(Vec::as_slice)
+            .unwrap_or(&[]);
+        search::matches(needle, &fields, ids)
+    });
+    Ok(copies)
 }

@@ -10,6 +10,17 @@ const paths = {
   list: <path d="M8 6h12M8 12h12M8 18h12M3 6h.1M3 12h.1M3 18h.1"/>,
   rotate: <path d="M20 11a8 8 0 1 0-2 6M20 4v7h-7"/>,
   archive: <><rect x="4" y="6" width="16" height="15" rx="1"/><path d="M3 3h18v4H3zM9 11h6"/></>,
+  play: <path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/>,
+  pause: <path d="M8 5v14M16 5v14"/>,
+  stop: <rect x="6" y="6" width="12" height="12" rx="1"/>,
+  volume: <><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9a4 4 0 0 1 0 6"/></>,
+  mute: <><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="m16 9 5 6M21 9l-5 6"/></>,
+  fullscreen: <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/>,
+  fullscreenExit: <path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5"/>,
+  menu: <path d="M4 6h16M4 12h16M4 18h16"/>,
+  audio: <><path d="M4 10v4h3l4 3V7l-4 3H4Z"/><path d="M15 9a4 4 0 0 1 0 6M18 7a7 7 0 0 1 0 10"/></>,
+  speed: <><path d="M4 16a8 8 0 1 1 16 0"/><path d="m12 16 4-4"/><path d="M4 16h2M18 16h2"/></>,
+  eject: <><path d="m5 13 7-9 7 9H5Z"/><path d="M5 18h14"/></>,
 };
 export function Icon({ name }: { name: keyof typeof paths }) {
   return <span className="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg></span>;
