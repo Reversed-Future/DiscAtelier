@@ -1,5 +1,7 @@
 # DiscAtelier 更新路线
 
+**2026-10-24 0.1.19 已发布**：光驱关联／弹出、MusicBrainz CD 识别、DVD 章节一体化进度条、播放器图标控制、搜索与分区流畅度、同捆购入、影像前后编编辑布局、窗口最大化布局、封面立体查看等改进纳入正式发行。225 项工作区 Rust 测试（9 项按环境忽略）、两项显式发行验证、110 项脚本测试、严格 Clippy、格式检查、TypeScript／Vite 和签名 NSIS 构建通过；五项资产草稿／正式回读一致，实际私有更新下载验签通过、篡改包拒绝。安装包 SHA-256 `30878ce182ccc964b1aaca731964bd453fe870a6148ddfcfc808d19dc9a550a0`。schema 15 首次打开前自动备份。详见 [0.1.19 发布校验](docs/releases/v0.1.19-verification.md)。实际安装、覆盖升级和下一版本端到端更新仍待用户手动验收。
+
 **2026-10-23 编辑版本窗口与分编布局重构（测试版，未发行）**：影像编辑的“分编卡片”由松散的表单行改成独立分区：标题／说明在左，交换前后顺序／取消分编或设置前后编在右；前后两张卡片改为等宽双列卡，每张卡内是卡片名称与封面来源，标题和顺序在卡头显示；作品归属改为独立列表，左侧作品标题／来源、右侧固定 190px 的选择器，窄屏自动单列。设置分编后自动隐藏无意义的全局封面区，分编区直接接在作品资料之后；未设置分编时仍显示全局封面。CDP 验证设置前后编后全局封面消失、两张卡片出现，卡片头和作品归属布局生效。110 项脚本测试、TypeScript／Vite 构建通过。测试预览 `target/release/DiscAtelier-edit-edition2-preview.exe`，SHA-256 `882ad4ae7dc777c1aec7883e72928ca0685abafdf9735de242b75a2bb561eb0d`，58,229,248 bytes；未发布 GitHub Release。
 
 **2026-10-23 同捆行距与 Blue 搜索修复（测试版，未发行）**：同捆行距从约 64px 收紧到 30px；原因是通用 `form label` 的 14px 上下外边距覆盖了行样式，现用 `.panel-dialog form .bundle-row { margin: 0 }` 精确覆盖，并把网格 gap 从 6 改为 4、行内边距从 7 改为 5。搜索 `blue` 无结果的原因是候选查询限制了 `status: "owned"`，而库里 Blue Archive 条目不是 owned；现改为不限制状态，仍调用首页 `library_list` 模糊搜索。CDP 验证 `blue` 返回 Vol.5／4／3／2／1，行 top 依次 678／708／738（30px 间距）。110 项脚本测试、TypeScript／Vite 构建通过。测试预览 `target/release/DiscAtelier-bundle-fix-preview.exe`，SHA-256 `3a9e3c0581fca559cb2288c1cf48e05615120124f7c7ec42ec53967f0ca01398`，57,737,216 bytes；未发布 GitHub Release。

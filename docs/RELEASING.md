@@ -2,6 +2,10 @@
 
 当前版本：0.1.19。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
 
+## 0.1.19 发布记录
+
+2026-10-24：光驱关联／弹出、MusicBrainz CD 识别、DVD 章节分段进度条、播放器图标控制、搜索与分区流畅度、同捆购入、影像前后编编辑布局、窗口最大化布局、封面立体查看等改进已发布私有正式版并设为 Latest。安装包 58,225,540 bytes，SHA-256 `30878ce182ccc964b1aaca731964bd453fe870a6148ddfcfc808d19dc9a550a0`；五项资产完整回读，本地及实际私有更新验签通过，篡改包被拒绝。schema 15 首次打开前自动备份。详见 [0.1.19 发布校验](releases/v0.1.19-verification.md)。
+
 ## 0.1.4 发布记录
 
 - [v0.1.4 Release](https://github.com/Reversed-Future/DiscAtelier/releases/tag/v0.1.4)，Release ID `418765867`，源码提交 `263639fe91b0979e5cc5c47242d7088b3d32d931`。仓库复核为私有。
