@@ -4,7 +4,7 @@
 
 ## 0.1.21 发布记录
 
-2026-10-24：内置 VLC 3.0.22 与 Temurin JRE、蓝光菜单播放和 BD-J 运行链路发布为私有正式版。详见 [0.1.21 发布校验](releases/v0.1.21-verification.md)。
+2026-10-24：内置 VLC 3.0.22 与 Temurin JRE、蓝光菜单播放和 BD-J 运行链路已发布私有正式版并设为 Latest，Release ID `422585567`，标签对应源码提交 `51a7789e94b01cb1cf2ab16809605d9e86909e0f`。安装包 131,079,168 bytes，SHA-256 `51338e8e94cdeaa75049ddd69142282a68bdd48cc6ca27a80e471acab65c846f`；五项资产完整回读，本地及实际私有更新验签通过，篡改包被拒绝。蓝光菜单/BD-J 仍待真实样盘验收。详见 [0.1.21 发布校验](releases/v0.1.21-verification.md)。
 
 ## 0.1.20 发布记录
 
