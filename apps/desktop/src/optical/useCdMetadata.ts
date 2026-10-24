@@ -3,6 +3,8 @@ import { errorMessage } from '../library/gateway';
 import { optical, type CdTrackMetadata } from './gateway';
 
 const pending = new Map<string, Promise<CdTrackMetadata[]>>();
+const cache = new Map<string, CdTrackMetadata[]>();
+const sameTracks = (left: CdTrackMetadata[], right: CdTrackMetadata[]) => JSON.stringify(left) === JSON.stringify(right);
 function request(mount: string, token: string, refresh: boolean) {
   const key = JSON.stringify([mount, token]);
   let promise = pending.get(key);
@@ -16,13 +18,25 @@ function request(mount: string, token: string, refresh: boolean) {
 export function useCdMetadata(mount?: string, token?: string) {
   const key = JSON.stringify([mount, token]);
   const [revision, setRevision] = useState(0);
-  const [result, setResult] = useState<{ key: string; tracks: CdTrackMetadata[]; loading: boolean; error: string }>({ key: '', tracks: [], loading: false, error: '' });
+  const cached = cache.get(key);
+  const [result, setResult] = useState<{ key: string; tracks: CdTrackMetadata[]; loading: boolean; error: string }>(() =>
+    cached ? { key, tracks: cached, loading: false, error: '' } : { key: '', tracks: [], loading: false, error: '' });
   useEffect(() => {
     if (!mount || !token) return;
     let active = true;
-    setResult(previous => ({ key, tracks: previous.key === key ? previous.tracks : [], loading: true, error: '' }));
+    const known = cache.get(key);
+    setResult(previous => ({
+      key,
+      tracks: known || (previous.key === key ? previous.tracks : []),
+      loading: !known,
+      error: '',
+    }));
     void request(mount, token, revision > 0).then(tracks => {
-      if (active) setResult({ key, tracks, loading: false, error: '' });
+      if (!active) return;
+      cache.set(key, tracks);
+      setResult(previous => previous.key === key && sameTracks(previous.tracks, tracks)
+        ? { ...previous, loading: false, error: '' }
+        : { key, tracks, loading: false, error: '' });
     }).catch(cause => {
       if (active) setResult(previous => ({ ...previous, key, loading: false, error: errorMessage(cause) }));
     });

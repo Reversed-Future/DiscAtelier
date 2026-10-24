@@ -9,14 +9,21 @@ export function Cover({ edition, assetId, preloadedUrl }: { edition: EditionDraf
   const cached = assetId ? peekStaticArtwork('cover', assetId) : undefined;
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false);
   const image = useRef<HTMLImageElement>(null);
   useEffect(() => {
     if (image.current?.complete && image.current.naturalWidth > 0) setLoadedUrl(source);
   }, [source]);
+  useEffect(() => {
+    if (!source) { setRevealed(false); return; }
+    setRevealed(false);
+    const timer = setTimeout(() => setRevealed(true), 260);
+    return () => clearTimeout(timer);
+  }, [source]);
   // The detail view renders a second Cover into the shared artwork portal.
   // If the shelf already decoded this asset, show it immediately instead of
   // replaying the loading scan/fade when the same image is mounted again.
-  const loaded = !!source && (loadedUrl === source || cached?.url === source || preloadedUrl === source);
+  const loaded = !!source && revealed && (loadedUrl === source || cached?.url === source || preloadedUrl === source);
   if (source && failedUrl !== source) return <div className="cover-art" data-portrait={portraitCover(edition)} data-loaded={loaded}>
     <img ref={image} src={source} alt={`${edition.title} 封面`} draggable={false}
       onLoad={() => setLoadedUrl(source)} onError={() => setFailedUrl(source)}/>

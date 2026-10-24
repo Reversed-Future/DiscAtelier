@@ -1,6 +1,10 @@
 # Windows 发布
 
-当前版本：0.1.19。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
+当前版本：0.1.20。仓库固定为私有的 `Reversed-Future/DiscAtelier`。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、私有更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
+
+## 0.1.20 发布记录
+
+2026-10-24：光驱标题标记与识别缓存、CD 播放器导航／关联封面／音量／居中曲目列表、连续播放进度、220ms 播放器转场、首页与 CD 封面扫描缓加载等改进发布为私有正式版。详见 [0.1.20 发布校验](releases/v0.1.20-verification.md)。
 
 ## 0.1.19 发布记录
 

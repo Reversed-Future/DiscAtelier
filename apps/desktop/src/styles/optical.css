@@ -23,8 +23,7 @@
 .optical-link-actions { display: flex; align-items: center; flex: none; gap: 14px; }
 .optical-link strong { color: var(--ink); font-weight: 400; }
 .optical-link .text-button { font-size: inherit; }
-.optical-musicbrainz { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 8px; color: var(--muted); font-size: 10px; line-height: 1.6; }
-.optical-musicbrainz code { font: inherit; color: var(--ink); overflow-wrap: anywhere; }
+
 .panel-dialog.optical-associate-panel { width: min(560px, calc(100vw - 36px)); height: auto; max-height: calc(100svh - 36px); }
 .optical-candidate-search { display: flex; gap: 10px; margin: 16px 0; }
 .optical-candidate-search input { flex: 1; min-width: 0; }
@@ -35,13 +34,14 @@
 .optical-candidate strong { font-size: 13px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .optical-candidate small, .optical-candidate-score { color: var(--muted); font-size: 10px; }
 .optical-candidate-score { flex: none; }
+.cd-drive-controls { display: grid; gap: 12px; margin-top: 14px; }
 .cd-drive-controls .select-control { min-width: 0; flex: 1; }
-.cd-metadata-facts { display: grid; gap: 8px 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 20px 0; font-size: 12px; line-height: 1.6; }
-.cd-metadata-facts > div { display: flex; gap: 14px; min-width: 0; }
+.cd-metadata-facts { display: grid; gap: 9px 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 14px 0 4px; font-size: 12px; line-height: 1.6; }
+.cd-metadata-facts > div { display: flex; gap: 12px; min-width: 0; }
 .cd-metadata-facts dt { color: var(--muted); flex-shrink: 0; }
 .cd-metadata-facts dd { margin: 0; overflow-wrap: anywhere; }
-.cd-metadata-status { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 16px; margin-top: 16px; color: var(--muted); font-size: 12px; line-height: 1.6; }
-.cd-metadata-status .text-button { font-size: inherit; }
+.cd-metadata-status { display: flex; align-items: baseline; justify-content: flex-end; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.cd-metadata-status .text-button { margin-left: auto; font-size: inherit; }
 .audio-cd-content { min-width: 0; }
 .audio-cd-content .audio-track-list strong { min-width: 0; text-align: left; overflow-wrap: anywhere; }
 .audio-cd-content .audio-track-list time { flex-shrink: 0; }

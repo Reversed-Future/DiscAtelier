@@ -20,8 +20,8 @@ export function CdDriveControls({ mount, medium, playlist, onSelect, busy, playe
     </div>
     <CdMetadataFacts track={track} number={selected?.number} total={medium.tracks.length}/>
     <div className="cd-metadata-status">
-      {metadata.loading ? <span role="status">正在识别曲目资料…</span> : <button className="text-button" onClick={metadata.refresh}>重新识别</button>}
       {metadata.error && <span role="status">{metadata.error} 仍可按曲号播放。</span>}
+      {metadata.loading ? <span role="status">正在识别曲目资料…</span> : <button className="text-button" onClick={metadata.refresh}>重新识别</button>}
     </div>
   </div>;
 }

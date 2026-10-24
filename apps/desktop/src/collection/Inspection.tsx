@@ -26,6 +26,7 @@ import { CollectionSource } from '../metadata/CollectionSource';
 import { useMusicSupplement } from './useMusicSupplement';
 import type { PlaybackController } from '../playback/usePlayback';
 import { useOpticalPresence } from '../optical/useOpticalPresence';
+import { OpticalTitleBadge } from '../optical/OpticalTitleBadge';
 import { useCoverTilt } from './useCoverTilt';
 
 export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, artworkSlot, prepareClose, modelBusy, player, metadata, metadataError, partId, onPart }: {
@@ -85,7 +86,8 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
       </div>
       <section className="object-info">
         {part && <p className="video-part-caption" role="status">{part.label} · {parts.indexOf(part) + 1} / {parts.length}</p>}
-        <h1 title={titles.title}>{titles.title}</h1><p className="object-creator">{titles.subtitle}</p>
+        <div className="object-title-line"><h1 title={titles.title}>{titles.title}</h1>{optical && <OpticalTitleBadge playing={optical.playing} drive={optical.drive}/>}</div>
+        <p className="object-creator">{titles.subtitle}</p>
         <nav className="detail-tabs" aria-label="详情内容">
           <button className={tab === 'metadata' ? 'active' : ''} onClick={() => setTab('metadata')}>资料</button>
           <button className={tab === 'tracks' ? 'active' : ''} onClick={() => setTab('tracks')}>{isVideo ? '章节' : '曲目'}</button>
@@ -106,7 +108,7 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
           <button type="button" className="text-button delete-collection" onClick={() => { setDeleteError(''); setConfirmDelete(true); }} disabled={modelBusy || chapterBusy || deleting}>删除收藏</button>
           <button type="button" data-hidden={tab === 'tracks'} aria-hidden={tab === 'tracks'} tabIndex={tab === 'tracks' ? -1 : undefined} onClick={tab === 'purchase' ? () => setEditingPurchase(true) : edit} disabled={modelBusy || chapterBusy || deleting}>{tab === 'purchase' ? '编辑购入' : '编辑版本'}</button>
         </div>
-        <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}{optical && <span className={`detail-optical${optical.playing ? ' playing' : ''}`}><Icon name="disc"/>{optical.playing ? '光驱播放中' : '在光驱中'} · {optical.drive}</span>}<span className="detail-status">{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
+        <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}<span className="detail-status">{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
       </section>
     </div>
   </Modal>

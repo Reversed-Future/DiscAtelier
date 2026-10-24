@@ -8,10 +8,55 @@ import type { PlaybackController } from './usePlayback';
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => ({ id: String(rate), label: `${rate}×` }));
 const chapterCache = new Map<string, DvdChapter[]>();
 
-export function PlaybackControls({ player, onMenu, title, extended = false, showTitle = true, fullscreen = false, onToggleFullscreen }: {
-  player: PlaybackController; onMenu?(): void; title?: string | null; extended?: boolean; showTitle?: boolean; fullscreen?: boolean; onToggleFullscreen?(): void;
+function useSmoothPosition(s: PlaybackController['snapshot'], active: boolean) {
+  const [position, setPosition] = useState(0);
+  const clock = useRef({ display: 0, last: 0, rate: 0, targetRate: 0, base: 0, baseAt: 0, playing: false, session: '' });
+  useEffect(() => {
+    if (!s) { setPosition(0); return; }
+    const now = performance.now();
+    const c = clock.current;
+    const playing = active && !s.paused && (s.phase === 'playing' || s.phase === 'buffering');
+    if (!c.last || c.session !== s.sessionId) {
+      c.display = s.positionSeconds;
+      c.rate = playing ? 1 : 0;
+      c.session = s.sessionId;
+    } else if (Math.abs(c.display - s.positionSeconds) > 1.8) {
+      c.display = s.positionSeconds;
+    }
+    c.base = s.positionSeconds;
+    c.baseAt = now;
+    c.playing = playing;
+    c.targetRate = playing ? 1 : 0;
+    c.last = now;
+    let frame = 0;
+    const tick = () => {
+      const at = performance.now();
+      const dt = Math.min(0.05, Math.max(0, (at - c.last) / 1000));
+      c.last = at;
+      // Ease the clock rate in/out over 180ms on play/pause.
+      const step = dt / 0.18;
+      const difference = c.targetRate - c.rate;
+      c.rate += Math.sign(difference) * Math.min(Math.abs(difference), step);
+      c.display += dt * c.rate;
+      const expected = c.base + (c.playing ? (at - c.baseAt) / 1000 : 0);
+      const error = expected - c.display;
+      if (Math.abs(error) > 1.5) c.display = expected;
+      else c.display += error * Math.min(1, dt * 2.5);
+      setPosition(c.display);
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [s, active]);
+  return position;
+}
+
+export function PlaybackControls({ player, onMenu, title, extended = false, showVolume = false, showTitle = true, fullscreen = false, onToggleFullscreen, onPrevious, onNext, canPrevious = true, canNext = true }: {
+  player: PlaybackController; onMenu?(): void; title?: string | null; extended?: boolean; showVolume?: boolean; showTitle?: boolean; fullscreen?: boolean; onToggleFullscreen?(): void;
+  onPrevious?(): void; onNext?(): void; canPrevious?: boolean; canNext?: boolean;
 }) {
   const s = player.snapshot;
+  const smoothPosition = useSmoothPosition(s, player.active);
   const [draft, setDraft] = useState<number | null>(null);
   const [volume, setVolume] = useState<number | null>(null);
   const [rate, setRate] = useState<number | null>(null);
@@ -34,7 +79,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
   useEffect(() => { setDraft(null); latest.current = null; setVolume(null); setRate(null); latestVolume.current = null; setHoveredChapter(-1); seekStart.current = null; seekMoved.current = false; }, [s?.sessionId, s?.dvdTitle, s?.dvdMenu]);
   if (!s) return null;
   const duration = s.durationSeconds || 0;
-  const position = draft ?? s.positionSeconds;
+  const position = draft ?? smoothPosition;
   function chapterAt(seconds: number) {
     let index = -1;
     for (let at = 0; at < chapters.length; at++) if (seconds >= chapters[at].startSeconds) index = at;
@@ -70,7 +115,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
           return <span key={chapter.index} className={index === hoveredChapter ? 'active' : undefined} style={{ left: `${start}%`, width: `${end - start}%` }}/>;
         })}
       </div>}
-      <input className="playback-seek" type="range" aria-label="播放进度" min="0" max={duration || 1} step="0.1"
+      <input className="playback-seek" type="range" aria-label="播放进度" min="0" max={duration || 1} step="any"
         value={Math.min(position, duration)} disabled={!player.active || !s.seekable || !duration || loading || stopping || player.busy}
         aria-valuetext={`${time(position)} / ${time(duration)}`}
         style={{ '--progress': `${duration ? Math.min(100, position / duration * 100) : 0}%` } as CSSProperties}
@@ -106,17 +151,21 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
       <div className="playback-transport">
         <button type="button" className="player-icon-button" aria-label="停止" title="停止" disabled={stopping || player.busy}
           onClick={() => void player.control({ action: 'stop' })}><Icon name="stop"/></button>
+        {onPrevious && <button type="button" className="player-icon-button" aria-label="上一首" title="上一首"
+          disabled={loading || stopping || player.busy || !canPrevious} onClick={onPrevious}><Icon name="previous"/></button>}
         <button type="button" className={`player-icon-button${loading || stopping ? ' is-spinning' : ''}`}
           aria-label={loading ? '读取中' : stopping ? '停止中' : s.paused ? '继续' : '暂停'}
           title={loading ? '读取中' : stopping ? '停止中' : s.paused ? '继续' : '暂停'}
           disabled={loading || stopping || player.busy} onClick={() => void player.control({ action: 'pause', paused: !s.paused })}>
           <Icon name={loading || stopping ? 'disc' : s.paused ? 'play' : 'pause'}/>
         </button>
+        {onNext && <button type="button" className="player-icon-button" aria-label="下一首" title="下一首"
+          disabled={loading || stopping || player.busy || !canNext} onClick={onNext}><Icon name="next"/></button>}
       </div>
       <div className="playback-options">
         {s.source.playlist === 'dvd-menu' && <button type="button" className="player-icon-button" aria-label="菜单" title="菜单"
           disabled={loading || stopping || player.busy} onClick={async () => { if (await player.control({ action: 'menu', direction: 'root' })) onMenu?.(); }}><Icon name="menu"/></button>}
-        {extended && <div className="playback-volume">
+        {(extended || showVolume) && <div className="playback-volume">
           <button type="button" className="player-icon-button" aria-label={`音量 ${shownVolume}%`} title={`音量 ${shownVolume}%`}>
             <Icon name={shownVolume > 0 ? 'volume' : 'mute'}/>
           </button>

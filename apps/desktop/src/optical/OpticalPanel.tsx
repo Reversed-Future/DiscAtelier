@@ -8,21 +8,30 @@ import { PlaybackHistory } from '../playback/PlaybackHistory';
 import type { PlaybackController } from '../playback/usePlayback';
 import { CdDriveControls } from './CdDriveControls';
 
+type DiscLookup = 'loading' | 'ready' | 'error';
+let cachedDrives: OpticalDrive[] | null = null;
+let cachedPresence: OpticalPresence[] | null = null;
+let cachedSuggestions: Record<string, OpticalCandidate[]> = {};
+let cachedDiscReleases: Record<string, MusicBrainzRelease[]> = {};
+let cachedDiscLookup: Record<string, DiscLookup> = {};
+let cachedLoaded = false;
+const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
+
 export function OpticalPanel({ onClose, player }: { onClose(): void; player: PlaybackController }) {
-  const [drives, setDrives] = useState<OpticalDrive[]>([]);
-  const [presence, setPresence] = useState<OpticalPresence[]>([]);
-  const [suggestions, setSuggestions] = useState<Record<string, OpticalCandidate[]>>({});
-  const suggestionsRef = useRef<Record<string, OpticalCandidate[]>>({});
+  const [drives, setDrives] = useState<OpticalDrive[]>(() => cachedDrives || []);
+  const [presence, setPresence] = useState<OpticalPresence[]>(() => cachedPresence || []);
+  const [suggestions, setSuggestions] = useState<Record<string, OpticalCandidate[]>>(() => cachedSuggestions);
+  const suggestionsRef = useRef<Record<string, OpticalCandidate[]>>(cachedSuggestions);
   const [associate, setAssociate] = useState<{ drive: OpticalDrive; medium: OpticalMedium; label: string } | null>(null);
-  const [discReleases, setDiscReleases] = useState<Record<string, MusicBrainzRelease[]>>({});
-  const [discLookup, setDiscLookup] = useState<Record<string, 'loading' | 'ready' | 'error'>>({});
-  const discQueried = useRef(new Set<string>());
+  const [discReleases, setDiscReleases] = useState<Record<string, MusicBrainzRelease[]>>(() => cachedDiscReleases);
+  const [discLookup, setDiscLookup] = useState<Record<string, DiscLookup>>(() => cachedDiscLookup);
+  const discQueried = useRef(new Set(Object.entries(cachedDiscReleases).filter(([, value]) => value.length).map(([key]) => key)));
   const [candidateQuery, setCandidateQuery] = useState('');
   const [candidates, setCandidates] = useState<OpticalCandidate[]>([]);
   const [candidateBusy, setCandidateBusy] = useState(false);
   const [candidateError, setCandidateError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(cachedLoaded);
   const [error, setError] = useState('');
   const [report, setReport] = useState<{ mount: string; token: string; playlist: string; value: PlaybackDiagnostic } | null>(null);
   const [selected, setSelected] = useState<Record<string, string>>({});
@@ -44,7 +53,11 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
         catch { /* 单个光驱识别失败不影响其他光驱。 */ }
       }
       suggestionsRef.current = suggested;
-      if (mounted.current) { setDrives(value); setPresence(links); setSuggestions(suggested); setError(''); setLoaded(true); }
+      if (!same(cachedDrives, value)) { cachedDrives = value; if (mounted.current) setDrives(value); }
+      if (!same(cachedPresence, links)) { cachedPresence = links; if (mounted.current) setPresence(links); }
+      if (!same(cachedSuggestions, suggested)) { cachedSuggestions = suggested; if (mounted.current) setSuggestions(suggested); }
+      cachedLoaded = true;
+      if (mounted.current) { setError(''); setLoaded(true); }
     } catch (cause) { if (mounted.current) setError(errorMessage(cause)); }
     finally { running.current = false; if (mounted.current) setBusy(false); }
   }, []);
@@ -60,19 +73,37 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
       const discId = medium?.kind === 'audioCd' ? medium.discId : null;
       if (!medium || !discId || discQueried.current.has(discId)) continue;
       discQueried.current.add(discId);
-      setDiscLookup(current => ({ ...current, [discId]: 'loading' }));
+      if (cachedDiscLookup[discId] !== 'loading') {
+        cachedDiscLookup = { ...cachedDiscLookup, [discId]: 'loading' };
+        if (mounted.current) setDiscLookup(current => ({ ...current, [discId]: 'loading' }));
+      }
       void optical.musicbrainz(discId).then(releases => {
         if (!mounted.current) return;
-        setDiscReleases(current => ({ ...current, [discId]: releases }));
-        setDiscLookup(current => ({ ...current, [discId]: 'ready' }));
+        const nextReleases = { ...cachedDiscReleases, [discId]: releases };
+        if (!same(cachedDiscReleases, nextReleases)) {
+          cachedDiscReleases = nextReleases;
+          setDiscReleases(nextReleases);
+        }
+        if (cachedDiscLookup[discId] !== 'ready') {
+          cachedDiscLookup = { ...cachedDiscLookup, [discId]: 'ready' };
+          setDiscLookup(current => ({ ...current, [discId]: 'ready' }));
+        }
         const release = releases[0];
         if (!release) return;
         void optical.candidates(release.title, '').then(rows => {
-          if (mounted.current) setSuggestions(current => ({ ...current, [medium.token]: rows }));
+          if (!mounted.current) return;
+          const nextSuggestions = { ...cachedSuggestions, [medium.token]: rows };
+          if (!same(cachedSuggestions, nextSuggestions)) {
+            cachedSuggestions = nextSuggestions;
+            suggestionsRef.current = nextSuggestions;
+            setSuggestions(nextSuggestions);
+          }
         }).catch(() => { /* 本地候选失败时仍可手动搜索关联。 */ });
       }).catch(() => {
         discQueried.current.delete(discId);
-        if (mounted.current) setDiscLookup(current => ({ ...current, [discId]: 'error' }));
+        if (!mounted.current) return;
+        cachedDiscLookup = { ...cachedDiscLookup, [discId]: 'error' };
+        setDiscLookup(current => ({ ...current, [discId]: 'error' }));
       });
     }
   }, [drives]);
@@ -162,21 +193,20 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
           ? <>CD · {release ? <><strong>{release.title}</strong>{release.artist ? ` · ${release.artist}` : ''}</> : `${medium.tracks.length} 首`}</>
           : medium.kind === 'bluray' ? `BD · ${medium.label}` : medium.kind === 'dvdVideo' ? `DVD · ${medium.label}` : medium.label || '光盘'}</p>
         {medium && <div className="optical-link">
-          <span>{linked
+          <span title={discId ? `MusicBrainz CD ID ${discId}` : undefined}>{linked
             ? <>已关联：<strong>{linked.title}</strong>{linked.playing ? ' · 正在播放' : ''}</>
             : suggested?.matchKind === 'creator'
               ? <>同作者：<strong>{suggested.creator}</strong> · 请选择</>
               : suggested && suggested.score >= 65
                 ? <>识别为：<strong>{suggested.title}</strong> · 未关联</>
-                : release ? <>MusicBrainz 已识别 · 未关联</> : '未关联收藏'}</span>
+                : release ? <>MusicBrainz 已识别 · 未关联</>
+                  : lookup === 'loading' ? 'MusicBrainz 识别中…'
+                    : lookup === 'error' ? 'MusicBrainz 查询失败'
+                      : '未关联收藏'}</span>
           <div className="optical-link-actions">
             <button type="button" className="text-button" disabled={busy} onClick={() => openAssociate(drive, medium, release?.title)}>{linked ? '更换关联' : '关联库'}</button>
             {linked && <button type="button" className="text-button" disabled={busy} onClick={() => void unbind(medium)}>取消关联</button>}
           </div>
-        </div>}
-        {medium?.kind === 'audioCd' && discId && <div className="optical-musicbrainz">
-          <span>MusicBrainz CD ID <code>{discId}</code></span>
-          <span>{lookup === 'loading' ? '识别中…' : lookup === 'error' ? '查询失败' : release ? '已识别' : '未识别'}</span>
         </div>}
         {medium?.kind === 'audioCd' && medium.playlists.length > 0 && <CdDriveControls key={selectionKey} mount={drive.mountPoint} medium={medium} playlist={playlist}
           busy={busy} player={player} onSelect={value => setSelected(current => ({ ...current, [selectionKey]: value }))}/>}

@@ -12,6 +12,8 @@ const paths = {
   archive: <><rect x="4" y="6" width="16" height="15" rx="1"/><path d="M3 3h18v4H3zM9 11h6"/></>,
   play: <path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/>,
   pause: <path d="M8 5v14M16 5v14"/>,
+  previous: <><path d="M6 5v14"/><path d="m18 5-9 7 9 7V5Z"/></>,
+  next: <><path d="M18 5v14"/><path d="m6 5 9 7-9 7V5Z"/></>,
   stop: <rect x="6" y="6" width="12" height="12" rx="1"/>,
   volume: <><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9a4 4 0 0 1 0 6"/></>,
   mute: <><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="m16 9 5 6M21 9l-5 6"/></>,

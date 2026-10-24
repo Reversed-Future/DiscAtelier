@@ -48,6 +48,8 @@ export function PlayerView({ player }: { player: PlaybackController }) {
       if (!await current.player.control({ action: 'stop' })) { setClosing(false); return; }
     }
     try {
+      const delay = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220;
+      if (delay) await new Promise(resolve => setTimeout(resolve, delay));
       await playback.viewport({ x: 0, y: 0, width: 0, height: 0, visible: false });
       if (current.fullscreen) await playback.fullscreen(false);
       current.player.hide();
@@ -75,7 +77,7 @@ export function PlayerView({ player }: { player: PlaybackController }) {
     document.addEventListener('keydown', keyboard);
     return () => document.removeEventListener('keydown', keyboard);
   }, []);
-  return <section className="player-view" aria-label="内置播放器" aria-busy={closing} data-fullscreen={fullscreen} data-controls={chrome.visible}>
+  return <section className="player-view" aria-label="内置播放器" aria-busy={closing} data-closing={closing} data-fullscreen={fullscreen} data-controls={chrome.visible}>
     <header className="player-header" ref={header} inert={!chrome.visible}>
       <button className="text-button" ref={back} onClick={() => void close()} disabled={closing || player.busy}><Icon name="back"/>返回</button>
       <strong className="player-heading">{player.snapshot?.title || '内置播放器'}</strong>

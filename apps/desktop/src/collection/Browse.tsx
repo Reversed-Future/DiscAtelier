@@ -3,6 +3,8 @@ import { VideoCollectionCover } from '../video/VideoCollectionCover';
 import { useVideoMetadata } from '../video/useVideoMetadata';
 import { workTitles } from '../video/titles';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useOpticalPresence } from '../optical/useOpticalPresence';
+import { OpticalTitleBadge } from '../optical/OpticalTitleBadge';
 import type { LibraryCopy } from '../library/types';
 import { portraitCover } from '../library/coverShape';
 import { enter } from '../ui/motion';
@@ -12,6 +14,7 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
 }) {
   const index = Math.max(0, items.findIndex(item => item.id === selectedId));
   const selected = items[index];
+  const optical = useOpticalPresence().find(value => value.copyId === selected?.id);
   const selectedVideo = useVideoMetadata(selected?.editionId || '', selected?.editionRevision || 0, selected?.edition.categoryId === 'video');
   const titles = selected?.edition.categoryId === 'video' ? selectedVideo.value?.parts?.length ? {title:selected.edition.title,subtitle:selected.edition.creator} : workTitles(selectedVideo.value?.work, selected.edition.title, selected.edition.creator) : { title: selected?.edition.title, subtitle: selected?.edition.creator };
   const caption = useRef<HTMLDivElement>(null);
@@ -48,6 +51,6 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
         </button>;
       })}
     </div>
-    <div className="record-caption" ref={caption}><span className="record-counter">{String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}</span><h1>{titles.title}</h1><p>{titles.subtitle}</p></div>
+    <div className="record-caption" ref={caption}><span className="record-counter">{String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}</span><div className="record-title-line"><h1>{titles.title}</h1>{optical && <OpticalTitleBadge playing={optical.playing} drive={optical.drive}/>}</div><p>{titles.subtitle}</p></div>
   </div>;
 }
