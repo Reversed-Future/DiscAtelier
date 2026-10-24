@@ -24,6 +24,13 @@
 .optical-link strong { color: var(--ink); font-weight: 400; }
 .optical-link .text-button { font-size: inherit; }
 
+.optical-recognition { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 14px; align-items: start; margin: 4px 0 16px; }
+.optical-recognition img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #000; border: 1px solid var(--line); }
+.optical-recognition strong { display: block; font-weight: 400; }
+.optical-recognition small { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }
+.optical-recognition p { margin: 8px 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.optical-recognition span { color: #aaa; font-size: 10px; }
+@media (max-width: 520px) { .optical-recognition { grid-template-columns: 1fr; } }
 .panel-dialog.optical-associate-panel { width: min(560px, calc(100vw - 36px)); height: auto; max-height: calc(100svh - 36px); }
 .optical-candidate-search { display: flex; gap: 10px; margin: 16px 0; }
 .optical-candidate-search input { flex: 1; min-width: 0; }

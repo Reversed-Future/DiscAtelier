@@ -145,7 +145,7 @@ pub fn mobile_poll(bridge: tauri::State<'_, Bridge>, id: String) -> Result<Poll,
         .map_err(|_| error("接收状态不可用。"))?
         .received
         .take();
-    if received.is_some() {
+    if received.is_some() && session.mode != Mode::Barcode {
         session.stop();
     }
     Ok(Poll {

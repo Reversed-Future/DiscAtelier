@@ -184,7 +184,6 @@ export function App() {
       onSaved={async (id, categoryId) => { setSelectedId(id); setQuery({ categoryId, query: '', status: null }); notify('已加入收藏'); }}/>}
     {metadataOpen && snapshot && (query.categoryId !== 'video' || videoDiscogs) && <DiscogsBrowser categoryId={query.categoryId} categories={snapshot.categories} carriers={snapshot.carriers}
       onSettings={() => setSettingsPage('discogs')}
-      onManual={() => { setMetadataOpen(false); setVideoDiscogs(false); setAdd({}); }}
       onClose={() => { setMetadataOpen(false); setVideoDiscogs(false); }}
       onSaved={async (id, categoryId) => { setSelectedId(id); setQuery({ categoryId, query: '', status: null }); notify('已加入收藏'); }}/>}
     {settingsPage && <Settings initialPage={settingsPage} libraryAvailable={!!snapshot}

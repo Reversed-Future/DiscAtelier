@@ -194,7 +194,7 @@ fn http_authentication_origin_host_and_surface_are_restricted() {
 }
 
 #[test]
-fn submission_is_one_shot_idempotent_and_strictly_validated() {
+fn barcode_submissions_are_idempotent_and_can_continue() {
     runtime().block_on(async {
     let (state,base,client)=server(Mode::Barcode).await;
     let valid=json!({"id":state.id,"payload":{"kind":"barcode","value":"036000291452"}});
@@ -207,12 +207,48 @@ fn submission_is_one_shot_idempotent_and_strictly_validated() {
     for _ in 0..2 {
         assert_eq!(client.post(format!("{base}/api/submit")).bearer_auth(&state.token).header("Content-Type","application/json").body(valid.to_string()).send().await.unwrap().status(),200);
     }
-    let different=json!({"id":state.id,"payload":{"kind":"barcode","value":"4006381333931"}});
-    assert_eq!(client.post(format!("{base}/api/submit")).bearer_auth(&state.token).header("Content-Type","application/json").body(different.to_string()).send().await.unwrap().status(),400);
     assert!(matches!(state.inbox.lock().unwrap().received.take(),Some(Payload::Barcode{value}) if value=="036000291452"));
-    assert!(state.inbox.lock().unwrap().received.is_none());
+    let different=json!({"id":state.id,"payload":{"kind":"barcode","value":"4006381333931"}});
+    assert_eq!(client.post(format!("{base}/api/submit")).bearer_auth(&state.token).header("Content-Type","application/json").body(different.to_string()).send().await.unwrap().status(),200);
+    assert!(matches!(state.inbox.lock().unwrap().received.take(),Some(Payload::Barcode{value}) if value=="4006381333931"));
+    assert!(state.live());
     state.stop();
 });
+}
+
+#[test]
+fn screenshot_submissions_remain_one_shot() {
+    runtime().block_on(async {
+        let (state, base, client) = server(Mode::Screenshots).await;
+        let first = json!({"id":state.id,"payload":{"kind":"screenshots","images":[picture()]}});
+        assert_eq!(
+            client
+                .post(format!("{base}/api/submit"))
+                .bearer_auth(&state.token)
+                .header("Content-Type", "application/json")
+                .body(first.to_string())
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            200
+        );
+        let second =
+            json!({"id":state.id,"payload":{"kind":"screenshots","images":[picture(),picture()]}});
+        assert_eq!(
+            client
+                .post(format!("{base}/api/submit"))
+                .bearer_auth(&state.token)
+                .header("Content-Type", "application/json")
+                .body(second.to_string())
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            400
+        );
+        state.stop();
+    });
 }
 
 #[test]

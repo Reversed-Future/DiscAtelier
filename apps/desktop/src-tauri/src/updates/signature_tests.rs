@@ -55,23 +55,15 @@ fn unsigned_payload_cannot_be_verified() {
 }
 
 #[test]
-#[ignore = "Explicit release verification: authenticated GitHub read, no installation or user-data access"]
-fn verify_published_private_release() {
-    // Use the already-authorized publishing CLI only inside this opt-in test.
-    // The credential stays in memory and is never saved to the application vault.
-    let output = std::process::Command::new("gh")
-        .args(["auth", "token", "--hostname", "github.com"])
-        .output()
-        .expect("GitHub CLI unavailable");
-    assert!(output.status.success(), "GitHub authentication unavailable");
-    let token = String::from_utf8(output.stdout).unwrap();
+#[ignore = "Explicit release verification: public GitHub read, no installation or user-data access"]
+fn verify_published_release() {
     tauri::async_runtime::block_on(async {
         let client = super::github::client().unwrap();
         let release: super::github::Release = serde_json::from_slice(
             &super::github::read(
                 &client,
                 super::github::LATEST,
-                token.trim(),
+                None,
                 2 * 1024 * 1024,
                 |_, _| {},
             )
@@ -82,7 +74,7 @@ fn verify_published_private_release() {
         assert_eq!(release.tag_name, format!("v{}", env!("CARGO_PKG_VERSION")));
         let asset = super::github::asset(&release, "latest.json", 256 * 1024).unwrap();
         let manifest = serde_json::from_slice(
-            &super::github::read(&client, &asset.url, token.trim(), asset.size, |_, _| {})
+            &super::github::read(&client, &asset.url, None, asset.size, |_, _| {})
                 .await
                 .unwrap(),
         )
@@ -92,7 +84,7 @@ fn verify_published_private_release() {
         let bytes = super::github::read(
             &client,
             update.download_url.as_str(),
-            token.trim(),
+            None,
             expected_size,
             |_, _| {},
         )
@@ -103,7 +95,7 @@ fn verify_published_private_release() {
         let mut damaged = bytes.clone();
         damaged[0] ^= 1;
         assert!(update.verify(&damaged).is_err());
-        println!("Verified private release {}: {} bytes; damaged package rejected; installer not executed", release.tag_name, bytes.len());
+        println!("Verified public release {}: {} bytes; damaged package rejected; installer not executed", release.tag_name, bytes.len());
     });
 }
 

@@ -14,6 +14,10 @@ export interface OpticalDrive {
   medium: OpticalMedium | null; error: string | null;
 }
 export interface PlaybackDiagnostic { status: string; message: string; details: string }
+export interface MenuRecognition {
+  title: string; creator: string; editionLabel: string; confidence: number;
+  reason: string; visibleText: string; image: string;
+}
 export interface MusicBrainzRelease { releaseId: string; title: string; artist: string; date: string; country: string }
 export interface KeydbStatus { configured: boolean; bytes: number; entries: number; sources: string[]; updatedAt: string | null }
 export interface KeydbImport { status: KeydbStatus; replacedExisting: boolean; englishSupplemented: boolean }
@@ -35,6 +39,8 @@ export const optical = {
   musicbrainz: (discId: string) => invoke<MusicBrainzRelease[]>('musicbrainz_disc', { discId }),
   cdMetadata: (mountPoint: string, token: string, refresh = false) => invoke<CdTrackMetadata[]>('optical_cd_metadata', { mountPoint, token, refresh }),
   probe: (mountPoint: string, token: string, playlist: string) => invoke<PlaybackDiagnostic>('optical_probe', { mountPoint, token, playlist }),
+  menuRecognize: (mountPoint: string, token: string, label: string, kind: 'dvd' | 'bluray') =>
+    invoke<MenuRecognition>('optical_menu_recognize', { request: { mountPoint, token, label, kind } }),
   settings: () => invoke<PlaybackSettings>('playback_settings_get'),
   saveSettings: (settings: PlaybackSettings) => invoke<void>('playback_settings_save', { settings }),
   keydbStatus: () => invoke<KeydbStatus>('bluray_key_status'),

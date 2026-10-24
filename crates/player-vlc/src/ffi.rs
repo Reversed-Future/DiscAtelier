@@ -94,6 +94,7 @@ api! {
     libvlc_media_player_navigate: unsafe extern "C" fn(Handle, c_uint),
     libvlc_video_set_mouse_input: unsafe extern "C" fn(Handle, c_uint),
     libvlc_video_set_key_input: unsafe extern "C" fn(Handle, c_uint),
+    libvlc_video_take_snapshot: unsafe extern "C" fn(Handle, c_uint, *const c_char, c_uint, c_uint) -> c_int,
     libvlc_media_player_set_video_title_display: unsafe extern "C" fn(Handle, c_int, c_uint),
     libvlc_audio_get_track: unsafe extern "C" fn(Handle) -> c_int,
     libvlc_audio_set_track: unsafe extern "C" fn(Handle, c_int) -> c_int,

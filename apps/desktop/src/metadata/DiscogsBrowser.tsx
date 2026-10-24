@@ -10,14 +10,28 @@ import { enter } from '../ui/motion';
 import { SourceLink } from './SourceLink';
 import { SearchCover } from './SearchCover';
 import { MobileReceive } from '../mobile/MobileReceive';
+import { NeteaseBrowser } from '../integrations/NeteaseBrowser';
+import type { MusicSupplement } from '../integrations/gateway';
 
-export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onClose, onManual, onSettings }: {
+type SearchMode = 'barcode' | 'catalog' | 'keyword' | 'release';
+function detectMode(value: string): SearchMode {
+  const query = value.trim();
+  if (/^\d{8,14}$/.test(query)) return 'barcode';
+  if (/^\d{1,7}$/.test(query)) return 'release';
+  if (/[A-Za-z]/.test(query) && /\d/.test(query) && /^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(query)) return 'catalog';
+  return 'keyword';
+}
+
+export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onClose, onSettings }: {
   categoryId: string; categories: Descriptor[]; carriers: Descriptor[];
-  onSaved(id: string, categoryId: string): Promise<void>; onClose(): void; onManual(): void; onSettings(): void;
+  onSaved(id: string, categoryId: string): Promise<void>; onClose(): void; onSettings(): void;
 }) {
-  const [mode, setMode] = useState('barcode');
   const [query, setQuery] = useState('');
+  const [mode, setMode] = useState<'auto' | SearchMode>('auto');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [neteaseOpen, setNeteaseOpen] = useState(false);
+  const [neteaseSeed, setNeteaseSeed] = useState<MusicSupplement | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
   const [submitted, setSubmitted] = useState<MetadataSearch | null>(null);
   const [results, setResults] = useState<MetadataResults | null>(null);
   const [release, setRelease] = useState<MetadataRelease | null>(null);
@@ -59,24 +73,32 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
   if (imported) return <AddCopy categoryId={categoryId} categories={categories} carriers={carriers} imported={imported}
     importTracks={release?.tracklist || []}
     onBack={() => setImported(null)} onClose={onClose} onSaved={onSaved}/>;
+  if (neteaseSeed) return <AddCopy categoryId={categoryId} categories={categories} carriers={carriers} initialMusic={neteaseSeed}
+    onBack={() => setNeteaseSeed(null)} onClose={onClose} onSaved={onSaved}/>;
   return <><Modal title="Discogs" onClose={onClose} wide busy={busy} className="metadata-browser-panel">
     <div className="metadata-toolbar">
       {release ? <button type="button" className="text-button" disabled={busy} onClick={() => setRelease(null)}>返回搜索</button> :
         <button type="button" className="text-button" disabled={busy} onClick={onSettings}>设置</button>}
-      {!release && <button type="button" className="text-button" disabled={busy} onClick={onManual}>手动录入</button>}
-      {!release && <button type="button" className="text-button" disabled={busy} onClick={() => setMobileOpen(true)}>手机扫条码</button>}
+      {!release && <div className="metadata-toolbar-actions">
+        <button type="button" className="text-button" disabled={busy} onClick={() => setManualOpen(true)}>手动录入</button>
+        {categoryId === 'music' && <button type="button" className="text-button" disabled={busy} onClick={() => setNeteaseOpen(true)}>从网易云添加</button>}
+        <button type="button" className="text-button" disabled={busy} onClick={() => setMobileOpen(true)}>手机扫条码</button>
+      </div>}
     </div>
     <>
       {!release && <form className="metadata-search" onSubmit={event => {
         event.preventDefault(); if (busy) return;
-        if (mode === 'release') {
-          if (!/^[1-9]\d*$/.test(query) || !Number.isSafeInteger(Number(query))) { setError('请输入数字发行 ID。'); return; }
+        const detected = mode === 'auto' ? detectMode(query) : mode;
+        if (detected === 'release') {
+          if (!/^[1-9]\d*$/.test(query) || !Number.isSafeInteger(Number(query))) { setError('请输入有效的发行 ID。'); return; }
           void load(Number(query));
-        } else { setResults(null); void search({ mode, query, page: 1 }); }
+        } else { setResults(null); void search({ mode: detected, query, page: 1 }); }
       }}>
-        <Select label="Discogs 搜索方式" value={mode} options={[{ id: 'barcode', label: '条码' }, { id: 'catalog', label: '品番' }, { id: 'keyword', label: '关键词' }, { id: 'release', label: '发行 ID' }]} onChange={setMode} disabled={busy}/>
-        <input aria-label="Discogs 搜索内容" value={query} onChange={event => setQuery(event.target.value)} disabled={busy} spellCheck={false}/>
-        <button className="solid-button" disabled={busy || !query}>{busy ? '查询中' : '查询'}</button>
+        <Select label="Discogs 搜索方式" value={mode} options={[{ id: 'auto', label: '自动' }, { id: 'barcode', label: '条码' }, { id: 'catalog', label: '品番' }, { id: 'keyword', label: '关键词' }, { id: 'release', label: '发行 ID' }]}
+          onChange={value => setMode(value as 'auto' | SearchMode)} disabled={busy}/>
+        <input aria-label="Discogs 搜索内容" value={query} onChange={event => setQuery(event.target.value)} disabled={busy} spellCheck={false}
+          placeholder="输入条码、品番、关键词或发行 ID"/>
+        <button className="solid-button" disabled={busy || !query.trim()}>{busy ? '查询中' : '查询'}</button>
       </form>}
       {(!release || error) && <p className="form-error" role="alert">{error}</p>}
       <div ref={content} className="metadata-search-body">{release ? <><ReleasePreview key={release.id} release={release}/>
@@ -102,6 +124,8 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
       </>}</div>
     </>
   </Modal>{mobileOpen && <MobileReceive mode="barcode" onClose={() => setMobileOpen(false)} onReceive={value => {
-    if (value.kind === 'barcode') { setMode('barcode'); setQuery(value.value); setError(''); }
-  }}/>}</>;
+    if (value.kind === 'barcode') { setQuery(value.value); setError(''); }
+  }}/>}{neteaseOpen && <NeteaseBrowser initialQuery={`${query}`.trim()} initialAlbum={null} onClose={() => setNeteaseOpen(false)}
+    onConfirm={async album => { setNeteaseOpen(false); setNeteaseSeed(album); }} confirmLabel="使用此资料"/>}{manualOpen && <AddCopy categoryId={categoryId} categories={categories} carriers={carriers}
+      onBack={() => setManualOpen(false)} onClose={onClose} onSaved={onSaved}/>}</>;
 }

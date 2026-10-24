@@ -20,20 +20,26 @@ import { netease, type MusicSupplement } from '../integrations/gateway';
 import { ImportMusicField } from '../integrations/ImportMusicField';
 import { NeteaseBrowser } from '../integrations/NeteaseBrowser';
 
-export function AddCopy({ categoryId, categories, carriers, existing: suppliedExisting, imported, importTracks = [], onBack, onDiscogs, onClose, onSaved }: {
+export function AddCopy({ categoryId, categories, carriers, existing: suppliedExisting, imported, importTracks = [], initialMusic = null, onBack, onDiscogs, onClose, onSaved }: {
   categoryId: string; categories: Descriptor[]; carriers: Descriptor[]; existing?: LibraryCopy; imported?: ImportPreview;
-  importTracks?: ReleaseTrack[];
+  importTracks?: ReleaseTrack[]; initialMusic?: MusicSupplement | null;
   onBack?(): void;
   onDiscogs?(): void;
   onClose(): void; onSaved(id: string, categoryId: string): Promise<void>;
 }) {
   const existing = imported?.existing || suppliedExisting;
   const [edition, setEdition] = useState<EditionDraft>(existing?.edition || imported?.edition || {
-    categoryId, title: '', creator: '', editionLabel: '', barcode: '', catalogNumber: '', media: [{ carrierId: categoryId === 'music' ? 'cd' : 'bd', label: '' }],
+    categoryId,
+    title: initialMusic?.title || '',
+    creator: initialMusic?.artists.join(' / ') || '',
+    editionLabel: '',
+    barcode: '',
+    catalogNumber: '',
+    media: [{ carrierId: categoryId === 'music' ? 'cd' : 'bd', label: '' }],
   });
   const [videoDraft, setVideoDraft] = useState(emptyVideo);
   const [copy, setCopy] = useState(emptyCopy);
-  const [music, setMusic] = useState<MusicSupplement | null>(null);
+  const [music, setMusic] = useState<MusicSupplement | null>(initialMusic);
   const [musicOpen, setMusicOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [bundle, setBundle] = useState<LibraryCopy[]>([]);
@@ -48,6 +54,16 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
   const automaticCover = useRef<string | null>(null);
   const fields = useRef<HTMLFieldSetElement>(null);
   useEffect(() => { fields.current?.scrollTo(0, 0); enter(fields.current, 0); }, [tab]);
+  useEffect(() => {
+    if (!initialMusic || existing || imported) return;
+    let active = true;
+    void netease.albumCover(initialMusic.albumId).then(dataUrl => {
+      if (!active) return;
+      automaticCover.current = dataUrl;
+      setCover({ action: 'replace', dataUrl });
+    }).catch(() => { /* The selected album still fills the text fields without a cover. */ });
+    return () => { active = false; };
+  }, []);
   async function selectMusic(album: MusicSupplement) {
     setError('');
     if (!imported) {

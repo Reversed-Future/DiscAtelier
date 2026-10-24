@@ -85,6 +85,25 @@ fn disc_location(source: &PlaybackSource) -> Result<String, AppError> {
     }
 }
 
+/// Start a muted menu in an off-screen VLC surface, let it settle, and take
+/// one video snapshot. The caller must not use this while another session owns
+/// the drive.
+pub fn capture_menu(
+    path: &Path,
+    window: usize,
+    source: &PlaybackSource,
+    output: &Path,
+    wait: Duration,
+) -> Result<(), AppError> {
+    if window == 0 {
+        return Err(ffi::error("静态菜单截图窗口尚未创建。"));
+    }
+    let location = disc_location(source)?;
+    let player = player::Player::open(path, &location, window, None, true, true)?;
+    std::thread::sleep(wait);
+    player.snapshot(output)
+}
+
 fn validate_resume(seconds: f64, title: Option<i32>) -> Result<(), AppError> {
     if !seconds.is_finite()
         || !(0.0..=604800.0).contains(&seconds)
@@ -127,6 +146,7 @@ impl VlcSession {
                 track,
                 dvd: track.is_none(),
                 bluray_menu: source.playlist == BD_MENU,
+                silent: false,
             },
             source,
             checkpoint,

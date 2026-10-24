@@ -19,6 +19,7 @@ pub struct Start {
     pub track: Option<u8>,
     pub dvd: bool,
     pub bluray_menu: bool,
+    pub silent: bool,
 }
 struct Publication {
     shared: Arc<Mutex<PlaybackSnapshot>>,
@@ -73,6 +74,7 @@ pub fn run(
         start.window,
         start.track,
         start.bluray_menu,
+        start.silent,
     )
     .and_then(|player| {
         let result = playing(

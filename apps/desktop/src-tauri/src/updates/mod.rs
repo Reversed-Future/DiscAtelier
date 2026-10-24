@@ -68,7 +68,7 @@ pub fn update_status(
         .map_err(|_| error("更新服务不可用。"))?;
     Ok(UpdateStatus {
         current_version: app.package_info().version.to_string(),
-        configured: credentials::read()?.is_some(),
+        configured: true,
         available: pending.as_ref().map(|p| Available {
             version: p.update.version.clone(),
             notes: p.update.body.clone().unwrap_or_default(),
@@ -109,16 +109,23 @@ pub async fn update_check(
         .pending
         .lock()
         .map_err(|_| error("更新服务不可用。"))? = None;
-    let token = credentials::read()?.ok_or_else(|| error("请先配置 GitHub Token。"))?;
+    let token = credentials::read()?;
     let client = github::client()?;
     let release: github::Release = serde_json::from_slice(
-        &github::read(&client, github::LATEST, &token, 2 * 1024 * 1024, |_, _| {}).await?,
+        &github::read(
+            &client,
+            github::LATEST,
+            token.as_deref(),
+            2 * 1024 * 1024,
+            |_, _| {},
+        )
+        .await?,
     )
     .map_err(|_| error("GitHub 发行信息无效。"))?;
     if github::version(&release)? > app.package_info().version {
         let asset = github::asset(&release, "latest.json", 256 * 1024)?;
         let manifest = serde_json::from_slice(
-            &github::read(&client, &asset.url, &token, asset.size, |_, _| {}).await?,
+            &github::read(&client, &asset.url, token.as_deref(), asset.size, |_, _| {}).await?,
         )
         .map_err(|_| error("更新清单无效。"))?;
         let size = github::validate_manifest(&release, &manifest)?;
@@ -156,12 +163,12 @@ pub async fn update_download(
         let p = pending.as_ref().ok_or_else(|| error("请先检查更新。"))?;
         (p.update.clone(), p.size)
     };
-    let token = credentials::read()?.ok_or_else(|| error("请先配置 GitHub Token。"))?;
+    let token = credentials::read()?;
     let mut last = std::time::Instant::now();
     let bytes = github::read(
         &github::client()?,
         update.download_url.as_str(),
-        &token,
+        token.as_deref(),
         size,
         |received, _| {
             if last.elapsed().as_millis() >= 100 || received == size {

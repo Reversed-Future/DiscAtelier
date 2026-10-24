@@ -92,7 +92,7 @@ pub fn client() -> Result<Client, AppError> {
 pub async fn read(
     client: &Client,
     url: &str,
-    token: &str,
+    token: Option<&str>,
     limit: u64,
     mut progress: impl FnMut(u64, Option<u64>),
 ) -> Result<Vec<u8>, AppError> {
@@ -104,15 +104,18 @@ pub async fn read(
     } else {
         "application/octet-stream"
     };
-    let mut response = client
+    let mut request = client
         .get(url)
         .timeout(Duration::from_secs(if limit <= 2 * 1024 * 1024 {
             30
         } else {
             300
         }))
-        .bearer_auth(token)
-        .header(header::ACCEPT, accept)
+        .header(header::ACCEPT, accept);
+    if let Some(token) = token {
+        request = request.bearer_auth(token);
+    }
+    let mut response = request
         .send()
         .await
         .map_err(|_| error("连接失败，请检查网络后重试。"))?;

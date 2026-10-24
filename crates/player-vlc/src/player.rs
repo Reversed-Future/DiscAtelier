@@ -16,14 +16,18 @@ impl Player {
         window: usize,
         track: Option<u8>,
         bluray_menu: bool,
+        silent: bool,
     ) -> Result<Self, AppError> {
         let api = Api::load(path)?;
         let location = CString::new(location).map_err(|_| ffi::error("光盘路径无效。"))?;
         // These flags are defined by VLC 3's src/libvlc-module.c.
-        let options = [
+        let mut options = vec![
             CString::new("--ignore-config").unwrap(),
             CString::new("--no-media-library").unwrap(),
         ];
+        if silent {
+            options.push(CString::new("--no-audio").unwrap());
+        }
         let args: Vec<_> = options.iter().map(|s| s.as_ptr()).collect();
         unsafe {
             let instance = (api.libvlc_new)(args.len() as i32, args.as_ptr());
@@ -66,6 +70,18 @@ impl Player {
             Ok(player)
         }
     }
+    pub fn snapshot(&self, path: &Path) -> Result<(), AppError> {
+        let path = CString::new(path.to_string_lossy().as_bytes())
+            .map_err(|_| ffi::error("截图路径无效。"))?;
+        if unsafe {
+            (self.api.libvlc_video_take_snapshot)(self.handle, 0, path.as_ptr(), 1280, 720)
+        } != 0
+        {
+            return Err(ffi::error("无法截取光盘菜单画面。"));
+        }
+        Ok(())
+    }
+
     pub fn titles(&self) -> Vec<(i32, bool)> {
         unsafe {
             let mut titles = ptr::null_mut();

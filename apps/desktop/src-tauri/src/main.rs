@@ -1,4 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+mod about;
 mod assistant;
 mod backups;
 mod bluray;
@@ -10,6 +11,7 @@ mod data_location;
 mod discogs;
 mod exchange;
 mod integration_settings;
+mod menu_surface;
 mod mobile_bridge;
 mod model_picker;
 mod model_stream;
@@ -25,6 +27,7 @@ mod netease_playback;
 mod netease_queue;
 mod optical;
 mod optical_match;
+mod optical_menu;
 mod playback;
 mod playback_backend;
 mod playback_exit;
@@ -101,10 +104,12 @@ fn main() {
             app.manage(Arc::new(optical::OpticalService::new(directory)));
             app.manage(Arc::new(Mutex::new(None)) as playback::PlaybackState);
             app.manage(video_input::VideoInput::default());
+            app.manage(menu_surface::MenuSurface::create().map_err(|error| error.message)?);
             app.manage(playback_exit::PlaybackExit::default());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            about::about_open_project,
             mobile_bridge::mobile_addresses,
             mobile_bridge::mobile_start,
             mobile_bridge::mobile_poll,
@@ -183,6 +188,7 @@ fn main() {
             musicbrainz::musicbrainz_disc,
             cd_metadata::optical_cd_metadata,
             optical::optical_probe,
+            optical_menu::optical_menu_recognize,
             optical::optical_candidates,
             optical::optical_associate,
             optical::optical_unbind,

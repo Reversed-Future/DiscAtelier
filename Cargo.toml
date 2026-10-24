@@ -3,9 +3,9 @@ members = ["crates/netease-runtime", "crates/agent-harness", "crates/integration
 resolver = "2"
 
 [workspace.package]
-version = "0.1.21"
+version = "0.1.22"
 edition = "2021"
-license = "LicenseRef-Private"
+license = "GPL-3.0-or-later"
 
 [workspace.dependencies]
 discatelier-netease-runtime = { path = "crates/netease-runtime" }

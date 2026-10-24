@@ -1,4 +1,4 @@
-use super::session::{Session, Submission, BODY_LIMIT};
+use super::session::{Mode, Session, Submission, BODY_LIMIT};
 use axum::{
     body::to_bytes,
     extract::{Request, State},
@@ -141,10 +141,12 @@ async fn submit(State(session): State<Arc<Session>>, request: Request) -> Respon
             return Err(super::session::error("连接已经结束。"));
         }
         if let Some(receipt) = &inbox.receipt {
-            if receipt == &(request.id, digest) {
+            if receipt.0 == request.id && receipt.1 == digest {
                 return Ok(());
             }
-            return Err(super::session::error("本次连接已经接收，请回到电脑确认。"));
+            if state.mode != Mode::Barcode {
+                return Err(super::session::error("本次连接已经接收，请回到电脑确认。"));
+            }
         }
         inbox.receipt = Some((request.id, digest));
         inbox.received = Some(request.payload);

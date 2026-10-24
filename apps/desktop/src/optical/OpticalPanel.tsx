@@ -3,7 +3,7 @@ import { Icon } from '../ui/Icon';
 import { Modal } from '../ui/Modal';
 import { Select } from '../ui/Select';
 import { errorMessage } from '../library/gateway';
-import { optical, type MusicBrainzRelease, type OpticalCandidate, type OpticalDrive, type OpticalMedium, type OpticalPresence, type PlaybackDiagnostic } from './gateway';
+import { optical, type MenuRecognition, type MusicBrainzRelease, type OpticalCandidate, type OpticalDrive, type OpticalMedium, type OpticalPresence, type PlaybackDiagnostic } from './gateway';
 import { PlaybackHistory } from '../playback/PlaybackHistory';
 import type { PlaybackController } from '../playback/usePlayback';
 import { CdDriveControls } from './CdDriveControls';
@@ -23,6 +23,8 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
   const [suggestions, setSuggestions] = useState<Record<string, OpticalCandidate[]>>(() => cachedSuggestions);
   const suggestionsRef = useRef<Record<string, OpticalCandidate[]>>(cachedSuggestions);
   const [associate, setAssociate] = useState<{ drive: OpticalDrive; medium: OpticalMedium; label: string } | null>(null);
+  const [recognized, setRecognized] = useState<MenuRecognition | null>(null);
+  const [recognizing, setRecognizing] = useState(false);
   const [discReleases, setDiscReleases] = useState<Record<string, MusicBrainzRelease[]>>(() => cachedDiscReleases);
   const [discLookup, setDiscLookup] = useState<Record<string, DiscLookup>>(() => cachedDiscLookup);
   const discQueried = useRef(new Set(Object.entries(cachedDiscReleases).filter(([, value]) => value.length).map(([key]) => key)));
@@ -115,9 +117,21 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
     } catch (cause) { if (mounted.current) setCandidateError(errorMessage(cause)); }
     finally { if (mounted.current) setCandidateBusy(false); }
   }
-  function openAssociate(drive: OpticalDrive, medium: OpticalMedium, label = medium.label) {
-    setAssociate({ drive, medium, label }); setCandidateQuery(''); setCandidates([]); setCandidateError('');
+  function openAssociate(drive: OpticalDrive, medium: OpticalMedium, label = medium.label, recognition: MenuRecognition | null = null) {
+    setAssociate({ drive, medium, label }); setRecognized(recognition); setCandidateQuery(''); setCandidates([]); setCandidateError('');
     void loadCandidates(medium, '', label);
+  }
+  async function recognizeMenu(drive: OpticalDrive, medium: OpticalMedium) {
+    if (recognizing || busy || !medium || player.active || player.busy) return;
+    setRecognizing(true); setError('');
+    try {
+      const result = await optical.menuRecognize(drive.mountPoint, medium.token, medium.label, medium.kind === 'dvdVideo' ? 'dvd' : 'bluray');
+      if (mounted.current) openAssociate(drive, medium, result.title, result);
+    } catch (cause) {
+      if (mounted.current) setError(errorMessage(cause));
+    } finally {
+      if (mounted.current) setRecognizing(false);
+    }
   }
   async function choose(candidate: OpticalCandidate) {
     if (!associate) return;
@@ -210,8 +224,9 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
         </div>}
         {medium?.kind === 'audioCd' && medium.playlists.length > 0 && <CdDriveControls key={selectionKey} mount={drive.mountPoint} medium={medium} playlist={playlist}
           busy={busy} player={player} onSelect={value => setSelected(current => ({ ...current, [selectionKey]: value }))}/>}
-        {medium?.kind === 'dvdVideo'  && <div className="optical-actions">
+        {medium?.kind === 'dvdVideo' && <div className="optical-actions">
           <button className="solid-button" disabled={busy || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, 'dvd-menu')}>播放</button>
+          <button className="text-button" disabled={busy || recognizing || player.active || player.busy} onClick={() => void recognizeMenu(drive, medium)}>{recognizing ? '识别中…' : '识别菜单'}</button>
         </div>}
         {medium?.kind === 'bluray' && <>
           <dl className="optical-facts">
@@ -226,9 +241,10 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
             <Select label="播放列表" value={playlist} options={medium.playlists.map(name => ({ id: name, label: name }))} disabled={busy || player.active || player.busy}
               onChange={value => { setSelected(current => ({ ...current, [selectionKey]: value })); setDetails(false); }}/>
             <button className="text-button" disabled={busy || !playlist || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, playlist)}>直接播放</button>
+            <button className="text-button" disabled={busy || recognizing || player.active || player.busy} onClick={() => void recognizeMenu(drive, medium)}>{recognizing ? '识别中…' : '识别菜单'}</button>
             <button className="text-button" disabled={busy || !playlist || player.active || player.busy} onClick={() => void probe(drive, playlist)}>检查播放</button>
           </div>
-          <p className="setting-hint">菜单播放使用 VLC；BD-J 菜单需要可用的 Java 运行时。</p>
+          <p className="setting-hint">菜单播放使用 VLC；BD-J 菜单需要可用的 Java 运行时。识别菜单会静默启动菜单并仅在点击后把截图发送到设置中的 AI 接口。</p>
         </>}
         {drive.error && <p className="form-error" role="alert">{drive.error}</p>}
         {diagnostic && <div className="optical-diagnostic">
@@ -243,7 +259,15 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
     </>}
     {player.error && <p className="form-error" role="alert">{player.error}</p>}
     {error && <p className="form-error" role="alert">{error}</p>}
-    {associate && <Modal title="关联光驱内容" onClose={() => setAssociate(null)} className="optical-associate-panel" busy={candidateBusy}>
+    {associate && <Modal title="关联光驱内容" onClose={() => { setAssociate(null); setRecognized(null); }} className="optical-associate-panel" busy={candidateBusy}>
+      {recognized && <div className="optical-recognition">
+        <img src={recognized.image} alt="光盘菜单截图"/>
+        <div><strong>{recognized.title}</strong>
+          <small>{[recognized.creator, recognized.editionLabel].filter(Boolean).join(' · ') || 'AI 未提供作者或版本'} · 置信度 {recognized.confidence}%</small>
+          <p>{recognized.reason}</p>
+          <span>AI 只提供候选；请核对后再选择收藏。</span>
+        </div>
+      </div>}
       <p className="form-note">光盘标题：<strong>{associate.label}</strong>。选择对应收藏后，条目详情会显示光驱状态。</p>
       <form className="optical-candidate-search" onSubmit={event => { event.preventDefault(); void loadCandidates(associate.medium, candidateQuery, associate.label); }}>
         <input aria-label="搜索收藏" value={candidateQuery} disabled={candidateBusy} placeholder="搜索标题、艺术家或编号"

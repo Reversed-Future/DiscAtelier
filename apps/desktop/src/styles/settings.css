@@ -55,6 +55,21 @@
 .settings-actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-top: 22px; }
 .settings-feedback { min-height: 36px; color: var(--muted); font-size: 11px; line-height: 1.8; margin-top: 18px; }
 .settings-feedback > * { animation: settings-feedback-in 160ms var(--ease); }
+.music-settings-tabs { display: flex; gap: 8px; margin: 0 0 26px; border-bottom: 1px solid var(--line); }
+.music-settings-tabs button { padding: 0 4px 13px; color: var(--muted); font-size: 12px; position: relative; }
+.music-settings-tabs button[aria-selected="true"] { color: var(--ink); }
+.music-settings-tabs button[aria-selected="true"]::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: -1px; height: 1px; background: var(--ink); }
+.music-settings-panel { min-width: 0; }
+.settings-subheading { margin: 28px 0 10px; border-top: 1px solid var(--line); padding-top: 18px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.about-copy { padding-bottom: 6px; }
+.about-copy > p { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+.about-facts { display: grid; gap: 11px; margin: 0; font-size: 12px; }
+.about-facts > div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 14px; }
+.about-facts dt { color: var(--muted); }
+.about-facts dd { margin: 0; overflow-wrap: anywhere; }
+.about-facts code { padding: 1px 4px; background: #ffffff0a; border-radius: 2px; }
+.about-actions { margin-top: 16px; }
+.about-actions .text-button { padding-left: 0; }
 .update-version { display: flex; gap: 16px; align-items: center; padding-bottom: 22px; }
 .update-version > div { font-size: 21px; }
 .update-version > div > span { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }

@@ -44,6 +44,7 @@ impl VlcSession {
                 track: None,
                 dvd: false,
                 bluray_menu: false,
+                silent: false,
             },
             source,
             checkpoint,

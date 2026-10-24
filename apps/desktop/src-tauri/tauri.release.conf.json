@@ -1,7 +1,7 @@
 {
   "build": {
     "beforeBuildCommand": "npm run build:release",
-    "frontendDist": "../dist-release/0.1.21"
+    "frontendDist": "../dist-release/0.1.22"
   },
   "bundle": {
     "active": true,
@@ -13,6 +13,7 @@
     "shortDescription": "涓汉瀹炰綋闊冲儚鏀惰棌",
     "resources": {
       "../public/legal/": "legal/",
+      "../../../LICENSE": "legal/LICENSE",
       "../../../artifacts/netease-runtime/": "netease-runtime/",
       "../../../artifacts/vlc-runtime-3.0.22/vlc-3.0.22/": "vlc/",
       "../../../artifacts/java-runtime-8u504b01/jdk8u504-b01-jre/": "jre/",
