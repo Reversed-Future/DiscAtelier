@@ -57,13 +57,17 @@ fn unsigned_payload_cannot_be_verified() {
 #[test]
 #[ignore = "Explicit release verification: public GitHub read, no installation or user-data access"]
 fn verify_published_release() {
+    let token = std::env::var("GITHUB_TOKEN")
+        .ok()
+        .or_else(|| std::env::var("GH_TOKEN").ok());
+    let token = token.as_deref();
     tauri::async_runtime::block_on(async {
         let client = super::github::client().unwrap();
         let release: super::github::Release = serde_json::from_slice(
             &super::github::read(
                 &client,
                 super::github::LATEST,
-                None,
+                token,
                 2 * 1024 * 1024,
                 |_, _| {},
             )
@@ -74,7 +78,7 @@ fn verify_published_release() {
         assert_eq!(release.tag_name, format!("v{}", env!("CARGO_PKG_VERSION")));
         let asset = super::github::asset(&release, "latest.json", 256 * 1024).unwrap();
         let manifest = serde_json::from_slice(
-            &super::github::read(&client, &asset.url, None, asset.size, |_, _| {})
+            &super::github::read(&client, &asset.url, token, asset.size, |_, _| {})
                 .await
                 .unwrap(),
         )
@@ -84,7 +88,7 @@ fn verify_published_release() {
         let bytes = super::github::read(
             &client,
             update.download_url.as_str(),
-            None,
+            token,
             expected_size,
             |_, _| {},
         )

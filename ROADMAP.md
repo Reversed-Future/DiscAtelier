@@ -1,5 +1,7 @@
 # DiscAtelier 更新路线
 
+**2026-10-24 0.1.22 已发布**：仓库已转为公开，项目采用 GPL-3.0-or-later；设置整合“音乐资料”与“关于”，Discogs 自动识别输入保留手动类型兜底，新增从网易云添加、连续手机扫码、手动录入叠层和实验性菜单截图识别；更新检查不再需要 GitHub Token。228 项工作区 Rust 测试（9 项忽略）、110 项 JavaScript 测试、严格 Clippy、格式检查、TypeScript／Vite 和签名 NSIS 构建通过；五项资产回读一致，公开 Latest 下载与更新验签通过，篡改包被拒绝。Release ID `422756896`，标签 `v0.1.22`，源码提交 `1d113837297a7d331b2ea86029e0172dff3311ca`；安装包 131,100,987 bytes，SHA-256 `f44466dccbc2c48fe959a951bdb876ac5c492569f50620a8589cdb5f1d78baee`。schema 保持 15，无迁移。真实 DVD／Blu-ray 菜单、BD-J 和菜单识别尚未实盘验收，因此本版不定义为 1.0；详见 [0.1.22 发布校验](docs/releases/v0.1.22-verification.md)。
+
 **2026-10-24 手动录入叠层（测试版，未发行）**：Discogs 添加页点击“手动录入”不再关闭 Discogs 窗口；手动添加表单作为叠层打开，Discogs 搜索状态保留，点击“返回版本”只关闭手动表单并回到原窗口。CDP 验证叠层打开时两个 dialog 同时存在，返回后仅剩原 Discogs 窗口。测试预览 `target/release/DiscAtelier-manual-add-preview.exe`，SHA-256 `16d5a1824c26664eb7ec52ca1a4801fa2b5908728ad6c0b5c52c9c7e08a30f26`，65,461,760 bytes；未发布 GitHub Release。
 
 **2026-10-24 添加页工具栏与连续扫码（测试版，未发行）**：Discogs 工具栏改为“设置”固定左侧，右侧依次为“手动录入”“从网易云添加”“手机扫条码”。新增“从网易云添加”：打开网易云专辑搜索，确认后直接进入添加表单，预先填入标题、作者、封面和网易云专辑关联。手机扫条码改为限时连续会话：同一条码连接内可连续接收多个条码，每次都更新电脑搜索框，关闭窗口或 15 分钟到期后结束；截图模式仍保持一次接收。后台同步允许条码会话重复提交，并继续使用请求幂等校验。移动端 7 项测试、110 项 JavaScript 测试、TypeScript／Vite 构建通过。测试预览 `target/release/DiscAtelier-mobile-toolbar-preview.exe`，SHA-256 `46d8bfd3043f1249bff5863aada2b394b67870b98180d2115caabe94e3e9cc76`，65,222,144 bytes；未发布 GitHub Release。
