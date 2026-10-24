@@ -1,5 +1,7 @@
 # DiscAtelier 更新路线
 
+**2026-10-24 0.1.20 已发布**：光驱标题标记与识别缓存、CD 播放器导航／关联封面／音量／平滑进度／220ms 转场／居中曲目列表、首页与 CD 封面扫描缓加载等改进纳入正式发行。225 项工作区 Rust 测试（9 项按环境忽略）、两项显式发行验证、110 项 JavaScript 测试、严格 Clippy、格式检查、TypeScript／Vite 和签名 NSIS 构建通过；五项资产草稿／正式回读一致，实际私有更新下载验签通过、篡改包拒绝。Release ID `422475496`，标签 `v0.1.20`，源码提交 `3bff4d982931dc186cae88c42db25cbd9b7b9fee`；安装包 SHA-256 `974c07c92e0771d2a72532d4fc04c89dd49a0082b80ea72669ef1d27b10b40af`。schema 保持 15，无迁移。详见 [0.1.20 发布校验](docs/releases/v0.1.20-verification.md)。实际安装、覆盖升级和下一版本端到端更新仍待用户手动验收。
+
 **2026-10-24 恢复首页封面扫描缓加载（测试版，未发行）**：首页封面此前命中 `peekStaticArtwork`／`preloadedUrl` 时直接标记 `data-loaded`，扫描动画被跳过。现在 `Cover` 在拿到来源后至少保留 260ms 扫描层，再以 280ms 淡入图片；缓存和预加载封面同样生效。CDP 实测首页封面扫描层从挂载持续约 500ms，`data-loaded` 从 false 变为 true 后图片开始淡入。CD 光盘封面也恢复同款扫描与 280ms 淡入。110 项脚本测试、TypeScript／Vite 构建通过。测试预览 `target/release/DiscAtelier-home-cover-scan-preview.exe`，SHA-256 `f972f957b9f2f0ba3bbc52a8aa19a7c7fa48c2f23c1e96efb6e2d41fd875f0c6`，63,205,376 bytes；未发布 GitHub Release。
 
 **2026-10-24 播放列表按整行高度收口（测试版，未发行）**：CD 曲目列表不再用固定的 `48vh` 作为可视高度，而是在布局阶段读取实际行高和到页脚的距离，把最大高度向下取整为整行倍数。实测行高 52.4px、列表高度 471.6px（9 行），可视区最后一行底部 715.96px 与容器底部 715.96px 完全对齐，不再在文字中间截断；列表中心 480.16px，仍保持纵向居中。110 项脚本测试、TypeScript／Vite 构建通过。测试预览 `target/release/DiscAtelier-row-aligned2-preview.exe`，SHA-256 `1228e40acba9c3596e411ae8a84a879ad603ef749a459cde2bc41d3ea9a070ea`，62,471,680 bytes；未发布 GitHub Release。
