@@ -159,7 +159,7 @@ export function PlaybackSettings({ onBusy }: { onBusy(value: boolean): void }) {
     </div>
     <p className="setting-hint">仅在 libaacs 确认属于解密能力不足时自动尝试，不启动独立 MakeMKV 实例；普通读盘错误、光盘取出或停止播放不会触发。</p>
     <label>MPV<div className="path-input"><input value={value.mpvExecutable} onChange={event => change('mpvExecutable', event.target.value)} disabled={busy} spellCheck={false} placeholder="mpv.exe 完整路径；留空自动检测"/><button type="button" className="text-button" disabled={busy} onClick={() => void choosePath('mpvExecutable', '选择 mpv.exe', ['exe'])}>浏览</button></div></label>
-    <label>VLC · CD / DVD<div className="path-input"><input value={value.vlcLibrary} onChange={event => change('vlcLibrary', event.target.value)} disabled={busy} spellCheck={false} placeholder="libvlc.dll 完整路径"/><button type="button" className="text-button" disabled={busy} onClick={() => void choosePath('vlcLibrary', '选择 libvlc.dll', ['dll'])}>浏览</button></div></label>
+    <label>VLC · CD / DVD / Blu-ray<div className="path-input"><input value={value.vlcLibrary} onChange={event => change('vlcLibrary', event.target.value)} disabled={busy} spellCheck={false} placeholder="留空使用内置 VLC；也可填写 libvlc.dll 完整路径"/><button type="button" className="text-button" disabled={busy} onClick={() => void choosePath('vlcLibrary', '选择 libvlc.dll', ['dll'])}>浏览</button></div></label>
     {error && <p className="form-error" role="alert">{error}</p>}
     <footer className="settings-actions"><button className="solid-button" disabled={busy}>{saved ? '已保存' : busy ? '读取中' : '保存'}</button></footer>
   </form>;

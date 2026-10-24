@@ -1,7 +1,7 @@
 {
   "build": {
     "beforeBuildCommand": "npm run build:release",
-    "frontendDist": "../dist-release/0.1.20"
+    "frontendDist": "../dist-release/0.1.21"
   },
   "bundle": {
     "active": true,
@@ -14,7 +14,11 @@
     "resources": {
       "../public/legal/": "legal/",
       "../../../artifacts/netease-runtime/": "netease-runtime/",
-      "resources/aacs/": "aacs/"
+      "../../../artifacts/vlc-runtime-3.0.22/vlc-3.0.22/": "vlc/",
+      "../../../artifacts/java-runtime-8u504b01/jdk8u504-b01-jre/": "jre/",
+      "resources/aacs/": "aacs/",
+      "resources/aacs/libaacs.dll": "vlc/libaacs.dll",
+      "resources/aacs/libbdplus.dll": "vlc/libbdplus.dll"
     },
     "windows": {
       "allowDowngrades": false,

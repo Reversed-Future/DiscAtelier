@@ -1,16 +1,16 @@
 {
   "name": "@discatelier/desktop",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "npm run build:mobile && vite --host 127.0.0.1 --port 1420 --strictPort",
     "build:mobile": "vite build --config vite.mobile.config.ts",
     "build": "tsc --noEmit && npm run build:mobile && vite build",
-    "build:release": "tsc --noEmit && npm run build:mobile && vite build --outDir dist-release/0.1.20",
-    "tauri:dev": "npm run prepare:netease --prefix ../.. && tauri dev",
-    "tauri:build": "npm run prepare:netease --prefix ../.. && tauri build --no-bundle",
-    "tauri:release": "npm run prepare:netease --prefix ../.. && tauri build --config src-tauri/tauri.release.conf.json --bundles nsis --ci -- --locked"
+    "build:release": "tsc --noEmit && npm run build:mobile && vite build --outDir dist-release/0.1.21",
+    "tauri:dev": "npm run prepare:netease --prefix ../.. && npm run prepare:vlc --prefix ../.. && tauri dev",
+    "tauri:build": "npm run prepare:netease --prefix ../.. && npm run prepare:vlc --prefix ../.. && tauri build --no-bundle",
+    "tauri:release": "npm run prepare:netease --prefix ../.. && npm run prepare:vlc --prefix ../.. && tauri build --config src-tauri/tauri.release.conf.json --bundles nsis --ci -- --locked"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

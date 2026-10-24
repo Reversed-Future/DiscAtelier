@@ -77,7 +77,7 @@ packages/category-contracts/ 品类描述与 UI 扩展契约
 | DiscStructureReader | listTitles、listStreams、listChapters | 各盘种实现，原始标识带后端版本 |
 | PlaybackBackend | capabilities、open、play、pause、seek、stop、events | UI 不依赖具体播放器句柄 |
 
-DVD 播放继续由 VLC/libdvdnav 负责；章节显示由只读 IFO 适配器解析 `VIDEO_TS.IFO` 的 title search pointer 和 `VTS_xx_0.IFO` 的 PGC program/cell 表，按 cell 播放时长生成章节起点，并只通过 libVLC 的章节接口跳转，不写光盘。非标准或多角度结构解析失败时退回普通进度条。KEYDB.cfg 位于 libaacs 标准 `%APPDATA%\aacs` 目录。只有明确分类为 AACS／BD+／密钥能力不足且用户开启兜底时，播放工作线程才在终止前一 MPV Job 后，用 `libmmbd64.dll` 作为兼容 AES/BD+ 提供者重启会话；读盘错误、停止、区域和 BD-J 不进入兜底。AACS/BD+/BD-J 只报告结构检测，区域保持未确认。
+DVD 播放继续由 VLC/libdvdnav 负责；蓝光“菜单播放”由 VLC 的 libbluray access（`bluray:///X:/`，`bluray-menu=1`）负责，HDMV／IG 菜单和可用的 BD-J 菜单都留在 VLC 输入线程；直接播放播放列表仍由 MPV 的 `bd://mpls/...` 处理。章节显示由只读 IFO 适配器解析 `VIDEO_TS.IFO` 的 title search pointer 和 `VTS_xx_0.IFO` 的 PGC program/cell 表，按 cell 播放时长生成章节起点，并只通过 libVLC 的章节接口跳转，不写光盘。非标准或多角度结构解析失败时退回普通进度条。KEYDB.cfg 位于 libaacs 标准 `%APPDATA%\aacs` 目录。只有明确分类为 AACS／BD+／密钥能力不足且用户开启兜底时，播放工作线程才在终止前一 MPV Job 后，用 `libmmbd64.dll` 作为兼容 AES/BD+ 提供者重启会话；读盘错误、停止、区域和 BD-J 不进入兜底。AACS/BD+/BD-J 只报告结构检测，区域保持未确认。
 | ModelRenderer | validate、preview、mount、dispose | 数据包受检，不执行包内代码 |
 | PriceProvider | inspectUrl | 未来扩展，不接受任意网络代理任务 |
 | AssistantModelProvider | streamTurn、cancel | 厂商协议在适配器内处理 |

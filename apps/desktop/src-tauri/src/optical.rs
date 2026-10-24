@@ -128,7 +128,10 @@ pub(crate) fn verify_disc(
             m.token == token
                 && match m.kind {
                     OpticalKind::AudioCd => m.playlists.iter().any(|p| p == playlist),
-                    OpticalKind::Bluray => m.playlists.iter().any(|p| p == playlist),
+                    OpticalKind::Bluray => {
+                        playlist == discatelier_player_vlc::BD_MENU
+                            || m.playlists.iter().any(|p| p == playlist)
+                    }
                     OpticalKind::DvdVideo => playlist == discatelier_player_vlc::DVD_MENU,
                     OpticalKind::Other => false,
                 }

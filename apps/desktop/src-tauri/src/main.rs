@@ -2,6 +2,7 @@
 mod assistant;
 mod backups;
 mod bluray;
+mod bundled_runtime;
 mod cd_metadata;
 mod commands;
 mod credentials;
@@ -50,6 +51,7 @@ fn main() {
         .register_uri_scheme_protocol("prepared-model", models::protocol)
         .register_asynchronous_uri_scheme_protocol("collection-model", model_stream::protocol)
         .setup(|app| {
+            bundled_runtime::configure(app.handle());
             let main = app.get_webview_window("main").ok_or("主窗口不可用")?;
             window_layout::fit(&main)?;
             app.manage(

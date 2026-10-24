@@ -18,6 +18,7 @@ pub struct Start {
     pub title: Option<i32>,
     pub track: Option<u8>,
     pub dvd: bool,
+    pub bluray_menu: bool,
 }
 struct Publication {
     shared: Arc<Mutex<PlaybackSnapshot>>,
@@ -66,24 +67,30 @@ pub fn run(
         checkpoint,
         bookmark: None,
     };
-    let result =
-        Player::open(&start.path, &start.location, start.window, start.track).and_then(|player| {
-            let result = playing(
-                &player,
-                &start,
-                &mut snapshot,
-                &mut publication,
-                receiver,
-                &cancelled,
-            );
-            let phase = snapshot.phase.clone();
-            snapshot.phase = PlaybackPhase::Stopping;
-            publication.publish(&mut snapshot, true);
-            // Blocking libVLC stop/release runs here, never on the UI thread.
-            drop(player);
-            snapshot.phase = phase;
-            result
-        });
+    let result = Player::open(
+        &start.path,
+        &start.location,
+        start.window,
+        start.track,
+        start.bluray_menu,
+    )
+    .and_then(|player| {
+        let result = playing(
+            &player,
+            &start,
+            &mut snapshot,
+            &mut publication,
+            receiver,
+            &cancelled,
+        );
+        let phase = snapshot.phase.clone();
+        snapshot.phase = PlaybackPhase::Stopping;
+        publication.publish(&mut snapshot, true);
+        // Blocking libVLC stop/release runs here, never on the UI thread.
+        drop(player);
+        snapshot.phase = phase;
+        result
+    });
     if let Err(error) = result {
         snapshot.phase = PlaybackPhase::Failed;
         snapshot.error = Some(error.message);

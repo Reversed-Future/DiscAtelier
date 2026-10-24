@@ -29,8 +29,9 @@ pub struct VlcSession {
     cancelled: Arc<AtomicBool>,
     worker: Option<thread::JoinHandle<()>>,
 }
-/// A deliberate app-defined route, never a caller-supplied media URL.
+/// Deliberate app-defined routes, never caller-supplied media URLs.
 pub const DVD_MENU: &str = "dvd-menu";
+pub const BD_MENU: &str = "bd-menu";
 
 pub fn configured(settings: &PlaybackSettings) -> Result<PathBuf, AppError> {
     let path = PathBuf::from(&settings.vlc_library);
@@ -61,13 +62,36 @@ pub fn dvd_location(source: &PlaybackSource) -> Result<String, AppError> {
     }
     Ok(format!("dvdnav:///{}/", source.mount_point))
 }
+
+/// VLC's libbluray access path. Menu support is requested through the
+/// `bluray-menu` media option; BD-J additionally needs a usable JVM.
+pub fn bluray_location(source: &PlaybackSource) -> Result<String, AppError> {
+    let mount = source.mount_point.as_bytes();
+    if source.playlist != BD_MENU
+        || mount.len() != 2
+        || !mount[0].is_ascii_uppercase()
+        || mount[1] != b':'
+    {
+        return Err(ffi::error("蓝光光驱路径无效。"));
+    }
+    Ok(format!("bluray:///{}/", source.mount_point))
+}
+
+fn disc_location(source: &PlaybackSource) -> Result<String, AppError> {
+    match source.playlist.as_str() {
+        DVD_MENU => dvd_location(source),
+        BD_MENU => bluray_location(source),
+        _ => Err(ffi::error("该光盘不接受菜单播放。")),
+    }
+}
+
 fn validate_resume(seconds: f64, title: Option<i32>) -> Result<(), AppError> {
     if !seconds.is_finite()
         || !(0.0..=604800.0).contains(&seconds)
         || title.is_some_and(|value| !(1..=9999).contains(&value))
         || (seconds > 0.0 && title.is_none())
     {
-        return Err(ffi::error("DVD 续播需要有效的标题编号和时间。"));
+        return Err(ffi::error("光盘续播需要有效的标题编号和时间。"));
     }
     Ok(())
 }
@@ -91,7 +115,7 @@ impl VlcSession {
             audio_cd::location(&source)?.0
         } else {
             validate_resume(seconds, title)?;
-            dvd_location(&source)?
+            disc_location(&source)?
         };
         Self::launch(
             worker::Start {
@@ -102,6 +126,7 @@ impl VlcSession {
                 title,
                 track,
                 dvd: track.is_none(),
+                bluray_menu: source.playlist == BD_MENU,
             },
             source,
             checkpoint,

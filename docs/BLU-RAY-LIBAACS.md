@@ -43,23 +43,27 @@ DiscAtelier 的蓝光默认路径现在使用随应用提供的 `libaacs`/`libbd
 - **AACS**：由 libaacs 尝试；成功导入 KEYDB 不等于所有 AACS 光盘都能播放，AACS2 仍可能不支持。
 - **BD+**：随包 libbdplus 可用时尝试；失败按解密能力不足处理。
 - **区域**：不修改光驱区域、固件或光盘；界面只显示“未确认（不修改光驱区域）”，区域不匹配不会兜底。
-- **BD-J 菜单**：检测 `BDMV/JAR` 并提示“检测到，未提供菜单导航”；当前直接播放主播放列表，不宣称支持完整 BD-J 菜单。
+- **蓝光菜单**：光驱页的“菜单播放”改走 VLC 的 libbluray access（`bluray:///X:/`，`bluray-menu=1`），HDMV／IG 菜单由 VLC 处理；原有播放列表按钮仍走 MPV 的 `bd://mpls/...` 直接播放。
+- **BD-J 菜单**：VLC／libbluray 需要可用的 JVM；检测到 `BDMV/JAR` 只表示光盘含 BD-J 内容，不代表本机 Java 一定可用。缺少 Java 时 VLC 会提示或退回无菜单播放，不能宣称完整 BD-J 菜单已通过实盘验证。
+- 蓝光菜单播放尚未在当前机器的真实蓝光样盘上完成人工验收；不能据代码接入宣称全区或所有 BD-J 菜单完成。
 - 不把本功能描述为“全区解锁完成”。
 
 ## 手动实盘测试步骤
 
-1. 退出正在运行的主程序，运行测试版 `target/release/DiscAtelier-bluray-libaacs-preview.exe`；确认任务管理器没有 `makemkv.exe`/`makemkvcon.exe`。
-2. 打开设置 → 播放，点击“从 FindVUK 自动下载”（默认日语，英语补齐），或导入一个包含目标光盘条目的本地 `KEYDB.cfg`；确认显示“已配置 · N 个条目”。使用本地文件时比较导入前后原文件的 SHA-256（应相同）。
-3. 插入蓝光，刷新光驱；选择播放列表并点击“播放”。确认使用内置播放器，没有另起 MakeMKV；检查暂停、拖动、音轨切换、音量、倍速、全屏和停止。
-4. 关闭程序或停止播放，检查 `%APPDATA%\aacs\KEYDB.cfg` 仍在，收藏数据库、封面和播放历史未受影响。
-5. 换一张 KEYDB 中没有条目的光盘，保持兜底开启并配置 `libmmbd64.dll`；确认出现“正在使用兼容模式”，且默认本地模式没有提前启动 MakeMKV。
-6. 关闭“MakeMKV 兼容兜底”，重复第 5 步；确认明确提示兜底已关闭，没有启动 MakeMKV。
-7. 播放中取出光盘或点击停止；确认不会切换兼容模式，错误只报告读盘／停止原因。
-8. 对带 BD-J 或 BD+ 的光盘查看光驱信息中的 AACS／BD+／BD-J 行；只按实际报告判断，不把检测到目录当作已支持菜单或全区。
+1. 退出正在运行的主程序，运行测试版 `target/release/DiscAtelier-bundled-vlc-preview.exe`（同目录需有 `vlc/` 和 `jre/` 资源）；确认任务管理器没有 `makemkv.exe`/`makemkvcon.exe`。
+2. 打开设置 → 播放，VLC 路径留空即使用安装包内置的 `vlc/libvlc.dll`；如需覆盖再填写自定义路径。打开设置 → 播放的蓝光密钥文件，点击“从 FindVUK 自动下载”（默认日语，英语补齐），或导入一个包含目标光盘条目的本地 `KEYDB.cfg`；确认显示“已配置 · N 个条目”。使用本地文件时比较导入前后原文件的 SHA-256（应相同）。
+3. 插入蓝光，刷新光驱；先点击“菜单播放”，确认 VLC 的蓝光菜单出现，方向键／回车可以操作；再停止并选择播放列表点击“直接播放”，确认 MPV 直接播放正片。检查暂停、拖动、音轨切换、音量、倍速、全屏和停止。
+4. 对带 BD-J 的光盘重复“菜单播放”；若本机没有可用 Java，记录 VLC 的提示或无菜单回退。只有实际菜单可用时才记为通过，不把检测到 `BDMV/JAR` 当作 BD-J 已支持。
+5. 关闭程序或停止播放，检查 `%APPDATA%\aacs\KEYDB.cfg` 仍在，收藏数据库、封面和播放历史未受影响。
+6. 换一张 KEYDB 中没有条目的光盘，保持兜底开启并配置 `libmmbd64.dll`；确认出现“正在使用兼容模式”，且默认本地模式没有提前启动 MakeMKV。
+7. 关闭“MakeMKV 兼容兜底”，重复第 6 步；确认明确提示兜底已关闭，没有启动 MakeMKV。
+8. 播放中取出光盘或点击停止；确认不会切换兼容模式，错误只报告读盘／停止原因。
+9. 对带 BD-J 或 BD+ 的光盘查看光驱信息中的 AACS／BD+／BD-J 行；只按实际报告判断，不把检测到目录当作已支持菜单或全区。
 
 ## 自动测试
 
 - `cargo test -p discatelier-player-mpv`：KEYDB 格式／大小／NUL 拒绝、原子导入与备份、AACS/BD+ 分类、读错误／区域不兜底、开关与库缺失时不兜底。
+- `cargo test -p discatelier-player-vlc`：VLC 蓝光菜单路由只接受内部 `bd-menu` 与盘符，拒绝媒体文件／网络 URL；DVD 菜单路由和导航控制保持原行为。
 - `cargo test -p discatelier-desktop bluray::tests`：FindVUK ZIP 中查找 `keydb.cfg`、拒绝不含 keydb 的压缩包；不访问真实网络。
 - `cargo test -p discatelier-desktop downloads_findvuk_keydb_into_temporary_appdata -- --ignored --nocapture`：可选的真实网络测试；下载日语和英语 ZIP、合并后写入临时 APPDATA，验证条目数与大小后清理，不触碰用户配置。
 - 合并测试：日语条目优先、英语补齐日语缺失的光盘、设备密钥不重复。

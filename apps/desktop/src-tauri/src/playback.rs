@@ -65,7 +65,12 @@ pub async fn playback_start(
         {
             return Err(AppError::new("player", "请先停止当前播放。"));
         }
-        let settings = crate::playback_settings::read(directory)?;
+        let mut settings = crate::playback_settings::read(directory)?;
+        if settings.vlc_library.trim().is_empty() {
+            if let Some(path) = crate::bundled_runtime::vlc_library(window.app_handle()) {
+                settings.vlc_library = path.to_string_lossy().into_owned();
+            }
+        }
         #[cfg(feature = "performance-harness")]
         let fixture = crate::playback_fixture::resolve(directory, &mount_point, &token, &playlist)?;
         #[cfg(feature = "performance-harness")]
@@ -90,6 +95,7 @@ pub async fn playback_start(
                 .save_playback(&record)
         });
         let vlc = source.playlist == discatelier_player_vlc::DVD_MENU
+            || source.playlist == discatelier_player_vlc::BD_MENU
             || discatelier_player_vlc::cd_track(&source.playlist).is_some();
         let vlc_path = if vlc {
             Some(discatelier_player_vlc::configured(&settings)?)

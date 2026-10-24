@@ -15,6 +15,7 @@ impl Player {
         location: &str,
         window: usize,
         track: Option<u8>,
+        bluray_menu: bool,
     ) -> Result<Self, AppError> {
         let api = Api::load(path)?;
         let location = CString::new(location).map_err(|_| ffi::error("光盘路径无效。"))?;
@@ -38,6 +39,10 @@ impl Player {
             }
             if let Some(number) = track {
                 let option = CString::new(format!("cdda-track={number}")).unwrap();
+                (api.libvlc_media_add_option)(media, option.as_ptr());
+            }
+            if bluray_menu {
+                let option = CString::new(":bluray-menu=1").unwrap();
                 (api.libvlc_media_add_option)(media, option.as_ptr());
             }
             let handle = (api.libvlc_media_player_new_from_media)(media);
@@ -158,8 +163,11 @@ impl Player {
                     }
                 }
                 PlaybackControl::Menu { direction } => {
-                    if snapshot.source.playlist != crate::DVD_MENU {
-                        return Err(ffi::error("音频 CD 没有 DVD 菜单。"));
+                    if !matches!(
+                        snapshot.source.playlist.as_str(),
+                        crate::DVD_MENU | crate::BD_MENU
+                    ) {
+                        return Err(ffi::error("当前光盘没有可导航菜单。"));
                     }
                     if matches!(direction, MenuDirection::Root) {
                         // DVDnav marks its root-menu title with libvlc_title_menu.

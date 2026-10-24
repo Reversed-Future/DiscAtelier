@@ -219,14 +219,16 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
             <div><dt>区域</dt><dd>未确认（不修改光驱区域）</dd></div>
             <div><dt>AACS</dt><dd>{medium.aacsDirectory ? '检测到' : '未检测到'}</dd></div>
             <div><dt>BD+</dt><dd>{medium.bdplusDirectory ? '检测到' : '未检测到'}</dd></div>
-            <div><dt>BD-J</dt><dd>{medium.javaDirectory ? '检测到，未提供菜单导航' : '未检测到'}</dd></div>
+            <div><dt>BD-J</dt><dd>{medium.javaDirectory ? '检测到，菜单播放需系统 Java' : '未检测到'}</dd></div>
           </dl>
           <div className="optical-actions">
+            <button className="solid-button" disabled={busy || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, 'bd-menu')}>菜单播放</button>
             <Select label="播放列表" value={playlist} options={medium.playlists.map(name => ({ id: name, label: name }))} disabled={busy || player.active || player.busy}
               onChange={value => { setSelected(current => ({ ...current, [selectionKey]: value })); setDetails(false); }}/>
-            <button className="solid-button" disabled={busy || !playlist || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, playlist)}>播放</button>
+            <button className="text-button" disabled={busy || !playlist || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, playlist)}>直接播放</button>
             <button className="text-button" disabled={busy || !playlist || player.active || player.busy} onClick={() => void probe(drive, playlist)}>检查播放</button>
           </div>
+          <p className="setting-hint">菜单播放使用 VLC；BD-J 菜单需要可用的 Java 运行时。</p>
         </>}
         {drive.error && <p className="form-error" role="alert">{drive.error}</p>}
         {diagnostic && <div className="optical-diagnostic">

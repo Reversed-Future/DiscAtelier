@@ -78,6 +78,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
   }, [s?.sessionId, s?.source.playlist, s?.source.mountPoint, s?.source.mediaToken, s?.dvdTitle, s?.dvdMenu]);
   useEffect(() => { setDraft(null); latest.current = null; setVolume(null); setRate(null); latestVolume.current = null; setHoveredChapter(-1); seekStart.current = null; seekMoved.current = false; }, [s?.sessionId, s?.dvdTitle, s?.dvdMenu]);
   if (!s) return null;
+  const menu = s.source.playlist === 'dvd-menu' || s.source.playlist === 'bd-menu';
   const duration = s.durationSeconds || 0;
   const position = draft ?? smoothPosition;
   function chapterAt(seconds: number) {
@@ -106,7 +107,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
     if (!await player.control({ action: 'rate', rate: value })) setRate(null);
   }
   return <section className="playback-controls" aria-label="播放控制">
-    {showTitle && <div className="playback-title"><strong>{title || s.title}</strong><span>{s.source.playlist === 'dvd-menu' ? s.dvdMenu ? 'DVD' : `DVD · ${s.dvdTitle}` : s.source.playlist.startsWith('cd-track:') ? 'CD' : s.source.playlist.startsWith('netease-song:') ? '网易云' : s.source.playlist}</span></div>}
+    {showTitle && <div className="playback-title"><strong>{title || s.title}</strong><span>{s.source.playlist === 'bd-menu' ? s.dvdMenu ? 'BD 菜单' : 'BD' : s.source.playlist === 'dvd-menu' ? s.dvdMenu ? 'DVD 菜单' : `DVD · ${s.dvdTitle}` : s.source.playlist.startsWith('cd-track:') ? 'CD' : s.source.playlist.startsWith('netease-song:') ? '网易云' : s.source.playlist}</span></div>}
     <div className="playback-seek-wrap">
       {chaptered && <div className="playback-segments" aria-hidden="true">
         {chapters.map((chapter, index) => {
@@ -163,7 +164,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
           disabled={loading || stopping || player.busy || !canNext} onClick={onNext}><Icon name="next"/></button>}
       </div>
       <div className="playback-options">
-        {s.source.playlist === 'dvd-menu' && <button type="button" className="player-icon-button" aria-label="菜单" title="菜单"
+        {menu && <button type="button" className="player-icon-button" aria-label="菜单" title="菜单"
           disabled={loading || stopping || player.busy} onClick={async () => { if (await player.control({ action: 'menu', direction: 'root' })) onMenu?.(); }}><Icon name="menu"/></button>}
         {(extended || showVolume) && <div className="playback-volume">
           <button type="button" className="player-icon-button" aria-label={`音量 ${shownVolume}%`} title={`音量 ${shownVolume}%`}>

@@ -17,16 +17,17 @@ export function PlayerView({ player }: { player: PlaybackController }) {
   const live = useRef({ player, fullscreen, closing });
   live.current = { player, fullscreen, closing };
   const chrome = usePlayerChrome(fullscreen);
-  const dvd = player.snapshot?.source.playlist === 'dvd-menu';
-  const { surface, header, footer, error: surfaceError } = useVideoSurface(player.active && !closing, fullscreen, chrome.visible, dvd);
+  const menu = player.snapshot?.source.playlist === 'dvd-menu' || player.snapshot?.source.playlist === 'bd-menu';
+  const { surface, header, footer, error: surfaceError } = useVideoSurface(player.active && !closing, fullscreen, chrome.visible, menu);
   function navigate(key: string) {
     const directions: Record<string, MenuDirection> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'activate' };
     const current = live.current.player;
-    if (current.snapshot?.source.playlist !== 'dvd-menu' || !directions[key]) return false;
+    const playlist = current.snapshot?.source.playlist;
+    if ((playlist !== 'dvd-menu' && playlist !== 'bd-menu') || !directions[key]) return false;
     void current.control({ action: 'menu', direction: directions[key] });
     return true;
   }
-  useNativeVideoKeys(dvd && player.active && !closing, key => {
+  useNativeVideoKeys(menu && player.active && !closing, key => {
     chrome.wake();
     if (key === 'Escape') {
       if (live.current.fullscreen) void toggleFullscreen(); else void close();
@@ -35,7 +36,7 @@ export function PlayerView({ player }: { player: PlaybackController }) {
     else navigate(key);
   });
   async function toggleFullscreen() {
-    try { await playback.fullscreen(!live.current.fullscreen); setFullscreen(value => !value); if (dvd) surface.current?.focus(); }
+    try { await playback.fullscreen(!live.current.fullscreen); setFullscreen(value => !value); if (menu) surface.current?.focus(); }
     catch (cause) { setError(errorMessage(cause)); }
   }
   async function close() {
@@ -56,7 +57,7 @@ export function PlayerView({ player }: { player: PlaybackController }) {
     } catch (cause) { setError(errorMessage(cause)); setClosing(false); }
   }
   useEffect(() => {
-    if (dvd) surface.current?.focus(); else back.current?.focus();
+    if (menu) surface.current?.focus(); else back.current?.focus();
     const keyboard = (event: KeyboardEvent) => {
       if (event.defaultPrevented || document.querySelector('[popover]:popover-open')) return;
       const { player: current, fullscreen: full } = live.current;
