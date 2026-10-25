@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { library } from '../library/gateway';
+import { netease } from '../integrations/gateway';
 import type { LibraryCopy } from '../library/types';
 import { chooseItem, matchTrack, parseEpisode, parseTrack, trackNumberAt, type TrackTitle } from './match';
 import { FolderPicker } from './FolderPicker';
@@ -62,8 +63,17 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
     if (!items.length) return;
     let active = true;
     Promise.all(items.filter(item => item.edition.categoryId === 'music').map(async item => {
-      const content = await library.content(item.editionId);
-      return [item.id, (content?.tracks || []).map(track => ({ title: track.title, position: track.position }))] as const;
+      const [content, albums] = await Promise.all([
+        library.content(item.editionId).catch(() => null),
+        netease.albums(item.editionId).catch(() => []),
+      ]);
+      const tracks: TrackTitle[] = content?.tracks.length
+        ? content.tracks.map(track => ({ title: track.title, position: track.position }))
+        : albums.flatMap(entry => entry.album.tracks.map((song, index) => ({
+          title: song.title,
+          position: String(index + 1),
+        })));
+      return [item.id, tracks] as const;
     })).then(entries => {
       if (active) setTrackTitles(new Map(entries));
     }).catch(() => {});

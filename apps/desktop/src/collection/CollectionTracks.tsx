@@ -4,7 +4,7 @@ import { discPages } from '../metadata/discTracks';
 import { DiscTabs, DiscTrackPanel } from '../metadata/DiscTrackView';
 import type { ReleaseTrack } from '../metadata/gateway';
 import type { LinkedMusicAlbum, DiscAlbumLink, SongLink } from '../integrations/gateway';
-import { albumMatches, albumRows, albumRowLabel, trackLeaves } from '../integrations/albumTracks';
+import { albumMatches, albumRows, albumRowLabel, collectionRows, trackLeaves } from '../integrations/albumTracks';
 import { trackKey } from '../integrations/trackMatches';
 import type { PlaybackController } from '../playback/usePlayback';
 import type { LibraryCopy } from '../library/types';
@@ -29,15 +29,17 @@ export function CollectionTracks({ rows, albums, links, bindings, item, player }
   }, [item.id]);
   const localByTrack = useMemo(() => {
     const result = new Map<string, LocalBinding>();
-    const leaves = trackLeaves(rows);
+    const physical = trackLeaves(rows).length > 0;
+    const leaves = trackLeaves(collectionRows(rows, albums));
     for (const binding of local) {
       let index = -1;
-      if (binding.track) index = leaves.findIndex((row, position) => position + 1 === binding.track || positionNumber(row.position) === binding.track);
+      if (binding.track) index = leaves.findIndex((row, position) =>
+        physical ? position + 1 === binding.track || positionNumber(row.position) === binding.track : position + 1 === binding.track);
       if (index < 0 && binding.label) index = leaves.findIndex(row => binding.label.includes(` · ${row.title}`));
       if (index >= 0) result.set(trackKey(leaves[index]), binding);
     }
     return result;
-  }, [local, rows]);
+  }, [local, rows, albums]);
   function localPlayback(track: ReleaseTrack): TrackPlayback | undefined {
     const binding = localByTrack.get(trackKey(track));
     if (!binding) return undefined;

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { library } from '../library/gateway';
+import { netease } from '../integrations/gateway';
 import type { LibraryCopy } from '../library/types';
 import { isAudio, matchTrack, parseEpisode, parseTrack, trackIndexForNumber, trackNumberAt, type TrackTitle } from './match';
 import { FolderPicker } from './FolderPicker';
@@ -77,8 +78,20 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
   useEffect(() => {
     let active = true;
     if (item.edition.categoryId !== 'music') return;
-    library.content(item.editionId).then(content => {
-      if (active) setTracks((content?.tracks || []).map(track => ({ title: track.title, position: track.position })));
+    Promise.all([
+      library.content(item.editionId).catch(() => null),
+      netease.albums(item.editionId).catch(() => []),
+    ]).then(([content, albums]) => {
+      if (!active) return;
+      if (content?.tracks.length) {
+        setTracks(content.tracks.map(track => ({ title: track.title, position: track.position })));
+      } else {
+        const fallback = albums.flatMap(entry => entry.album.tracks.map((song, index) => ({
+          title: song.title,
+          position: String(index + 1),
+        })));
+        setTracks(fallback);
+      }
     }).catch(() => {});
     return () => { active = false; };
   }, [item.editionId, item.edition.categoryId]);
