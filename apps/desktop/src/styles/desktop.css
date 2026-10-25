@@ -70,8 +70,11 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .metadata-toolbar, .metadata-pagination, .settings-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-block: 14px; font-size: 12px; }
 .metadata-toolbar-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 18px; margin-left: auto; }
 .local-files-panel { width: min(1120px, 92vw); }
-.local-files-head, .local-files-summary, .local-files-actions { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
-.local-files-head { margin-block: 8px 16px; }
+.local-files-summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.local-files-settings { margin-block: 8px 20px; }
+.local-files-settings .path-input { margin-top: 8px; }
+.local-files-settings .path-input input { background: transparent; border: 1px solid var(--line); border-radius: 2px; padding: 10px; color: var(--ink); }
+.local-files-settings .data-path { margin: 6px 0 0; min-height: 18px; color: var(--muted); }
 .local-files-path { margin: 8px 0 0; font-size: 12px; opacity: .7; overflow-wrap: anywhere; }
 .local-files-path-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
 .local-files-path-row input { width: min(620px, 64vw); min-height: 32px; }
@@ -82,8 +85,10 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .local-files-table th { position: sticky; top: 0; z-index: 1; padding: 10px 12px; text-align: left; font-weight: 400; opacity: .65; background: var(--surface, #171717); }
 .local-files-table td { padding: 8px 12px; border-top: 1px solid color-mix(in srgb, currentColor 9%, transparent); vertical-align: middle; }
 .local-files-table td:first-child { max-width: 290px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.local-files-table select { width: min(360px, 38vw); min-height: 30px; }
-.local-files-table input[type="number"] { width: 96px; min-height: 30px; }
+.local-files-table .select-control { width: min(420px, 42vw); }
+.local-files-table .select-trigger { width: 100%; padding: 7px 9px; }
+.local-files-table .select-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.local-files-table input[type="number"] { width: 96px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 2px; background: transparent; color: var(--ink); }
 .local-files-ok { color: #94c9a9; }
 .local-files-miss { opacity: .6; }
 .metadata-search { display: grid; grid-template-columns: 100px minmax(0, 1fr) auto; gap: 10px; }

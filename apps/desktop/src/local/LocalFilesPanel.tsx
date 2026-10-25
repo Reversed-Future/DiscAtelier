@@ -4,6 +4,8 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { library } from '../library/gateway';
 import type { LibraryCopy } from '../library/types';
 import { chooseItem, parseEpisode, parseTrack } from './match';
+import { FolderPicker } from './FolderPicker';
+import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
 
 interface ScannedFile {
@@ -148,20 +150,14 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
   const matchedCount = rows.filter(row => row.copyId).length;
 
   return <Modal title="本地文件" onClose={onClose} wide busy={busy} className="local-files-panel">
-    <div className="local-files-head">
-      <div>
-        <p className="setting-hint">选择收藏所在的文件夹，自动扫描子目录并匹配到音乐或影片。匹配结果会保存为这台电脑上的本地关联。</p>
-        <div className="local-files-path-row">
-          <input aria-label="文件夹路径" placeholder="也可以直接粘贴文件夹路径" value={folder} onChange={event => setFolder(event.target.value)}
-            onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void scan(folder); } }} disabled={busy}/>
-          <button type="button" className="text-button" disabled={busy || !folder.trim()} onClick={() => void scan(folder)}>扫描</button>
-        </div>
-        <p className="local-files-path">{files.length ? `${files.length} 个文件` : folder ? '尚未扫描' : '尚未选择文件夹'}</p>
-      </div>
-      <div className="local-files-actions">
-        <button type="button" className="text-button" disabled={busy} onClick={() => void chooseFolder()}>{folder ? '选择其他文件夹' : '选择文件夹'}</button>
-        {!!bindings.length && <button type="button" className="text-button" disabled={busy} onClick={forget}>清除关联</button>}
-      </div>
+    <div className="local-files-settings">
+      <p className="setting-hint">选择收藏所在的文件夹，自动扫描子目录并匹配到音乐或影片。匹配结果会保存为这台电脑上的本地关联。</p>
+      <FolderPicker value={folder} onChange={setFolder} busy={busy} count={files.length}
+        onBrowse={() => void chooseFolder()} onScan={() => void scan(folder)}/>
+      {!!bindings.length && <div className="setting-row">
+        <span>已保存 {bindings.length} 条本地关联</span>
+        <button type="button" className="text-button" disabled={busy} onClick={forget}>清除全部关联</button>
+      </div>}
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
     {!loaded && <p className="utility-copy">正在读取收藏…</p>}
@@ -179,10 +175,15 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
               const saved = bound.has(row.file.path);
               return <tr key={row.file.path}>
                 <td title={row.file.relativePath}><span>{row.file.relativePath}</span></td>
-                <td><select value={row.copyId} disabled={busy} onChange={event => updateRow(index, event.target.value)}>
-                  <option value="">未关联</option>
-                  {items.map(entry => <option key={entry.id} value={entry.id}>{entry.edition.categoryId === 'music' ? '音乐' : '影像'} · {entry.edition.title}{entry.edition.creator ? ` / ${entry.edition.creator}` : ''}</option>)}
-                </select></td>
+                <td><Select label={`${row.file.name} 的收藏条目`} value={row.copyId} disabled={busy}
+                  options={[
+                    { id: '', label: '未关联' },
+                    ...items.map(entry => ({
+                      id: entry.id,
+                      label: `${entry.edition.categoryId === 'music' ? '音乐' : '影像'} · ${entry.edition.title}${entry.edition.creator ? ` / ${entry.edition.creator}` : ''}`,
+                    })),
+                  ]}
+                  onChange={value => updateRow(index, value)}/></td>
                 <td>{row.episode ? `第 ${row.episode} 集` : row.track ? `第 ${row.track} 轨` : '—'}</td>
                 <td>{saved ? <button type="button" className="text-button" disabled={busy} onClick={() => void saveAndPlay(row)}>播放</button> : item ? <span className="local-files-ok">已识别</span> : <span className="local-files-miss">未匹配</span>}</td>
               </tr>;

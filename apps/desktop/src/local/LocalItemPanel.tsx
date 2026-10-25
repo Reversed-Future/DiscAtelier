@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import type { LibraryCopy } from '../library/types';
 import { isAudio, parseEpisode, parseTrack } from './match';
+import { FolderPicker } from './FolderPicker';
 import { Modal } from '../ui/Modal';
 
 interface ScannedFile {
@@ -107,19 +108,10 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
   }
 
   return <Modal title={`本地文件 · ${item.edition.title}`} onClose={onClose} wide busy={busy} className="local-files-panel">
-    <div className="local-files-head">
-      <div>
-        <p className="setting-hint">这个文件夹只关联到当前收藏。每个文件可以单独填写集数或轨号；保存后从这里直接播放。</p>
-        <div className="local-files-path-row">
-          <input aria-label="文件夹路径" placeholder="也可以直接粘贴文件夹路径" value={folder} onChange={event => setFolder(event.target.value)}
-            onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void scan(folder); } }} disabled={busy}/>
-          <button type="button" className="text-button" disabled={busy || !folder.trim()} onClick={() => void scan(folder)}>扫描</button>
-        </div>
-        <p className="local-files-path">{files.length ? `${files.length} 个文件` : folder ? '尚未扫描' : '尚未选择文件夹'}</p>
-      </div>
-      <div className="local-files-actions">
-        <button type="button" className="text-button" disabled={busy} onClick={() => void chooseFolder()}>{folder ? '选择其他文件夹' : '选择文件夹'}</button>
-      </div>
+    <div className="local-files-settings">
+      <p className="setting-hint">这个文件夹只关联到当前收藏。每个文件可以单独填写集数或轨号；保存后从这里直接播放。</p>
+      <FolderPicker value={folder} onChange={setFolder} busy={busy} count={files.length}
+        onBrowse={() => void chooseFolder()} onScan={() => void scan(folder)}/>
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
     {!loaded && <p className="utility-copy">正在读取关联…</p>}
