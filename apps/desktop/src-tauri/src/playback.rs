@@ -49,22 +49,6 @@ pub async fn playback_start(
         let mut current = player
             .lock()
             .map_err(|_| AppError::new("player", "播放服务不可用。"))?;
-        let same_cd = current
-            .as_ref()
-            .and_then(|s| s.snapshot().ok())
-            .is_some_and(|s| {
-                discatelier_player_vlc::cd_track(&s.source.playlist).is_some()
-                    && discatelier_player_vlc::cd_track(&playlist).is_some()
-                    && s.source.mount_point == mount_point
-                    && s.source.media_token == token
-            });
-        if !same_cd
-            && current
-                .as_ref()
-                .is_some_and(|s| s.snapshot().is_ok_and(|s| s.phase.active()))
-        {
-            return Err(AppError::new("player", "请先停止当前播放。"));
-        }
         let mut settings = crate::playback_settings::read(directory)?;
         if settings.vlc_library.trim().is_empty() {
             if let Some(path) = crate::bundled_runtime::vlc_library(window.app_handle()) {
@@ -102,10 +86,8 @@ pub async fn playback_start(
         } else {
             None
         };
-        // Verification completes before an existing CD session is stopped.
-        if same_cd {
-            drop(current.take());
-        }
+        // Verification completes before the current playback is replaced.
+        drop(current.take());
         let session = if let Some(path) = vlc_path {
             PlaybackSession::Vlc(discatelier_player_vlc::VlcSession::start(
                 path,
@@ -164,19 +146,7 @@ pub async fn playback_start_local(
     let mut current = player
         .lock()
         .map_err(|_| AppError::new("player", "播放服务不可用。"))?;
-    if let Some(session) = current.as_ref() {
-        if session
-            .snapshot()
-            .is_ok_and(|snapshot| snapshot.phase.active())
-        {
-            let local = session
-                .snapshot()
-                .is_ok_and(|snapshot| snapshot.source.playlist.starts_with("local:"));
-            if !local {
-                return Err(AppError::new("player", "请先停止当前播放。"));
-            }
-        }
-    }
+    // Switching tracks or sources replaces the current session atomically.
     drop(current.take());
     let settings = crate::playback_settings::read(&directory)?;
     let video_window = window

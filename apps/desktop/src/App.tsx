@@ -51,7 +51,6 @@ export function App() {
   const [localFilesOpen, setLocalFilesOpen] = useState(false);
   const [opticalPrompt, setOpticalPrompt] = useState<OpticalPresence | null>(null);
   const knownOptical = useRef(new Set<string>());
-  const detailBeforePlayback = useRef<LibraryCopy | null>(null);
   const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [metadataOpen, setMetadataOpen] = useState(false);
@@ -143,14 +142,6 @@ export function App() {
   const [partId,setPartId] = useState(''), [instantFlip,setInstantFlip] = useState(false);
   useEffect(() => {setPartId('');},[inspected?.id]);
   useEffect(() => {
-    if (player.open) {
-      if (inspected) detailBeforePlayback.current = inspected;
-      return;
-    }
-    if (!inspected && detailBeforePlayback.current) setInspected(detailBeforePlayback.current);
-    detailBeforePlayback.current = null;
-  }, [player.open, inspected]);
-  useEffect(() => {
     const present = new Set(opticalPresence.map(value => value.mediaToken));
     for (const value of opticalPresence) {
       if (knownOptical.current.has(value.mediaToken)) continue;
@@ -215,7 +206,7 @@ export function App() {
     {player.active && !player.snapshot?.source.playlist.startsWith('netease-song:') && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
       {player.snapshot?.paused ? '已暂停' : player.snapshot?.phase === 'loading' ? '读取中' : '播放中'} · {player.snapshot?.title}
     </button>}
-    {inspected && !player.open && <Inspection metadata={currentVideo.value} metadataError={currentVideo.error} partId={partId} onPart={(id,instant) => {setPartId(id);setInstantFlip(instant);}} onOptical={() => setOpticalOpen(true)} key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
+    {inspected && <Inspection metadata={currentVideo.value} metadataError={currentVideo.error} partId={partId} onPart={(id,instant) => {setPartId(id);setInstantFlip(instant);}} onOptical={() => setOpticalOpen(true)} hidden={player.open} key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
       onDeleted={async () => { setInspected(null); setSelectedId(''); const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已删除'); }}
       edit={() => setEditing(inspected)}/>}
     {editing && snapshot && <EditEdition item={editing} categories={snapshot.categories} carriers={snapshot.carriers}

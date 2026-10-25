@@ -30,10 +30,10 @@ import { OpticalTitleBadge } from '../optical/OpticalTitleBadge';
 import { useCoverTilt } from './useCoverTilt';
 import { LocalItemPanel } from '../local/LocalItemPanel';
 
-export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, artworkSlot, prepareClose, modelBusy, player, metadata, metadataError, partId, onPart, onOptical }: {
+export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, artworkSlot, prepareClose, modelBusy, player, metadata, metadataError, partId, onPart, onOptical, hidden = false }: {
   item: LibraryCopy; carriers: Descriptor[]; onClose(): void; onSaved(): Promise<void>; onDeleted(): Promise<void>; edit(): void;
   artworkSlot(node: HTMLDivElement | null): void; prepareClose(): Promise<void>; modelBusy: boolean;
-  player: PlaybackController; metadata:VideoMetadata|null; metadataError:string; partId:string; onPart(id:string,instant:boolean):void; onOptical(): void;
+  player: PlaybackController; metadata:VideoMetadata|null; metadataError:string; partId:string; onPart(id:string,instant:boolean):void; onOptical(): void; hidden?: boolean;
 }) {
   const [neteaseOpen, setNeteaseOpen] = useState(false);
   const [chapterBusy, setChapterBusy] = useState(false);
@@ -78,7 +78,7 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
     ['购入日期', item.copy.acquiredAt], ['购入价格', formatPrice(item.copy.amountMinor, item.copy.currency)],
     ['购入位置', item.copy.seller], ['购买链接', item.copy.purchaseUrl], ['存放位置', item.copy.storageLocation], ['备注', item.copy.notes],
   ].filter(([, value]) => value);
-  return <><Modal title="收藏详情" onClose={onClose} busy={modelBusy || chapterBusy} beforeClose={prepareClose} inspection shared>
+  return <><Modal title="收藏详情" onClose={onClose} busy={modelBusy || chapterBusy} beforeClose={prepareClose} inspection shared hidden={hidden}>
     <div className="inspection-layout">
       <div className="object-stage" ref={setTiltSurface}>
         <div className={`inspection-artwork-slot${item.modelAssetId && !part ? ' has-model' : ''}`} data-portrait={(!!part || !item.modelAssetId) && portraitCover(item.edition)}

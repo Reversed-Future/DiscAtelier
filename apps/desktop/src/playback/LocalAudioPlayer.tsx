@@ -6,7 +6,6 @@ import { library } from '../library/gateway';
 import { useStaticArtwork } from '../library/useStaticArtwork';
 import { Icon } from '../ui/Icon';
 import { PlaybackControls } from './PlaybackControls';
-import { usePlayerClose } from './usePlayerClose';
 import { usePlaybackLayer } from './usePlaybackLayer';
 import type { PlaybackController } from './usePlayback';
 
@@ -29,7 +28,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
   const [error, setError] = useState('');
   const [dockOpen, setDockOpen] = useState(false);
   const [repeat, setRepeat] = useState<'list' | 'one'>(() => localStorage.getItem('discatelier.local-repeat') === 'one' ? 'one' : 'list');
-  const { closing, close } = usePlayerClose(player);
+  const closing = false;
   const host = usePlaybackLayer();
   const advanced = useRef('');
   const source = player.snapshot?.source;
@@ -78,6 +77,10 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
     if (tracks[index]) void player.startLocal(copyId, tracks[index].path, !keepDock);
   }
 
+  function closePlayer() {
+    if (!player.busy) player.hide();
+  }
+
   if (!player.snapshot || source?.mediaToken !== 'local-audio') return null;
 
   const dock = !player.open && createPortal(<div className="music-dock local-music-dock">
@@ -110,7 +113,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
   if (!player.open) return dock;
 
   return <section className="player-view audio-player" aria-label="本地音乐播放器" aria-busy={closing} data-closing={closing} data-enter="soft">
-    <header className="player-header"><button className="text-button" onClick={() => void close()} disabled={closing || player.busy}><Icon name="back"/>返回</button><span>本地音乐</span></header>
+    <header className="player-header"><button className="text-button" onClick={closePlayer} disabled={closing || player.busy}><Icon name="back"/>返回</button><span>本地音乐</span></header>
     <div className="audio-body">
       <div className={`audio-disc${artwork.url ? ' has-artwork' : ''}`} aria-hidden="true">
         {artwork.url && <img className="audio-disc-artwork" src={artwork.url} alt="" data-loaded="true" draggable={false}/>}

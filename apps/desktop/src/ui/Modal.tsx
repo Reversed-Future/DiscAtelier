@@ -2,8 +2,8 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { enter, leave } from './motion';
 import { Icon } from './Icon';
 
-export function Modal({ title, children, onClose, busy = false, wide = false, inspection = false, className = '', beforeClose, shared = false }: {
-  title: string; children: ReactNode; onClose(): void; busy?: boolean; wide?: boolean; inspection?: boolean; className?: string; beforeClose?(): Promise<void>; shared?: boolean;
+export function Modal({ title, children, onClose, busy = false, wide = false, inspection = false, className = '', beforeClose, shared = false, hidden = false }: {
+  title: string; children: ReactNode; onClose(): void; busy?: boolean; wide?: boolean; inspection?: boolean; className?: string; beforeClose?(): Promise<void>; shared?: boolean; hidden?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const closing = useRef(false);
@@ -17,6 +17,16 @@ export function Modal({ title, children, onClose, busy = false, wide = false, in
       else document.getElementById('tools-toggle')?.focus();
     };
   }, [inspection, shared]);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (hidden) {
+      if (dialog.open) dialog.close();
+    } else if (!dialog.open) {
+      // Reopen without replaying the entry animation when returning from a player.
+      dialog.showModal();
+    }
+  }, [hidden]);
   async function close() {
     if (busy || closing.current) return;
     closing.current = true;
