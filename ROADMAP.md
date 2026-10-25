@@ -1,5 +1,7 @@
 # DiscAtelier 更新路线
 
+**2026-10-25 影片本地关联改为章节（测试版，未发行）**：影片本地关联界面不再使用“歌曲”和“集数”，总入口显示“歌曲 / 章节”“章节 / 轨”，详情页显示“关联章节”和“章节”；视频行显示“第 N 章”，关联标签写入“第 N 章”。CDP 实测《蔚蓝档案 动画版》本地文件表头为“文件 / 位置 / 章节 / 操作”。115 项 JavaScript 测试、TypeScript／Vite 和发布预检通过。测试预览 `artifacts/DiscAtelier-video-label-preview.exe`，SHA-256 `f04d1d5acea4a8d41fd9b088c93943f7c79ddf474b9199cfafb414a323e5ed8f`，74,933,760 bytes；未发布正式版。
+
 **2026-10-25 0.1.26 已发布**：修复纯网易云收藏无法建立完整本地音乐关联的问题。内容表为空时回退读取网易云补充专辑曲目，本地关联表显示歌曲标题、自动匹配轨号、支持歌曲下拉，详情曲目显示本地播放图标。115 项 JavaScript 测试、严格 Clippy、格式检查、TypeScript／Vite 和签名 NSIS 构建通过；安装到 `D:\Program Files\DiscAtelier` 后版本为 `0.1.26`，MPV／VLC 运行时和快捷方式保留。Release ID `423439284`，标签 `v0.1.26`，源码提交 `94fcd11a1de68e7a5f35c43bae24dcaed5d000ae`；安装包 166,939,525 bytes，SHA-256 `9117b6b64058f59af92e9666138f8246694ed9486a5db85296c3fbb1383a7351`。五项资产回读一致，公开 Latest 下载与更新验签通过，篡改包被拒绝。仍不定义为 1.0；详见 [0.1.26 发布校验](docs/releases/v0.1.26-verification.md)。
 
 **2026-10-25 纯网易云专辑本地关联修复（测试版，未发行）**：纯网易云收藏的曲目保存在补充资料，`library.content.tracks` 为空，导致本地关联表只显示轨号、没有歌曲标题/下拉，也匹配不到曲目；Discogs 收藏因为内容表有曲目所以正常。现在详情本地文件表和总入口在内容表为空时回退读取 `netease.albums`，按专辑顺序生成曲目标题和轨号；详情曲目的本地播放绑定也改用补充曲目行。CDP 实测纯网易云专辑“六花”已保存 17 条关联显示标题，重新扫描后前 3 行分别为 `鯨の落ちる街 / 1`、`カロン / 2`、`Happiness Umbrella / 3`。115 项 JavaScript 测试、类型检查和发布预检通过。测试预览 `artifacts/DiscAtelier-local-audio-preview.exe`，SHA-256 `fe9da7edec8b5ceb4c748358da007594c94e253e80dd77336746f503f0534704`，74,685,440 bytes；未发布正式版。

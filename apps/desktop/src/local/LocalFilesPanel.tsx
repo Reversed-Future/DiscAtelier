@@ -154,7 +154,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       return {
         copyId: row.copyId,
         path: row.file.path,
-        label: `${item?.edition.title || row.file.name}${row.episode ? ` · 第 ${row.episode} 集` : row.track ? ` · 第 ${row.track} 轨${row.trackTitle ? ` · ${row.trackTitle}` : ''}` : ''}`,
+        label: `${item?.edition.title || row.file.name}${row.episode ? ` · 第 ${row.episode} 章` : row.track ? ` · 第 ${row.track} 轨${row.trackTitle ? ` · ${row.trackTitle}` : ''}` : ''}`,
         episode: row.episode,
         track: row.track,
       };
@@ -250,7 +250,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       </div>
       <div className="local-files-table-wrap">
         <table className="local-files-table">
-          <thead><tr><th>文件</th><th>收藏条目</th><th>歌曲</th><th>集 / 轨</th><th>状态</th></tr></thead>
+          <thead><tr><th>文件</th><th>收藏条目</th><th>歌曲 / 章节</th><th>章节 / 轨</th><th>状态</th></tr></thead>
           <tbody>
             {rows.map((row, index) => {
               const item = items.find(entry => entry.id === row.copyId);
@@ -267,12 +267,12 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
                   ]}
                   onChange={value => updateRow(index, value)}/></td>
                 <td>{item?.edition.categoryId === 'music' && (trackTitles.get(row.copyId) || []).length
-                  ? <Select label={`${row.file.name} 的关联歌曲`}
+                  ? <Select label={`${row.file.name} 的关联内容`}
                     value={trackTitleValue(row)}
                     options={[{ id: '', label: '不指定' }, ...(trackTitles.get(row.copyId) || []).map((track, trackIndex) => ({ id: String(trackIndex), label: track.title }))]}
                     onChange={value => updateTrackTitle(index, value)}/>
-                  : <span className="local-track-title" title={row.trackTitle || undefined}>{row.trackTitle || '—'}</span>}</td>
-                <td>{row.episode ? `第 ${row.episode} 集` : row.track ? `第 ${row.track} 轨` : '—'}</td>
+                  : <span className="local-track-title" title={row.trackTitle || undefined}>{row.episode ? `第 ${row.episode} 章` : row.trackTitle || '—'}</span>}</td>
+                <td>{row.episode ? `第 ${row.episode} 章` : row.track ? `第 ${row.track} 轨` : '—'}</td>
                 <td>{saved ? <button type="button" className="text-button" disabled={busy} onClick={() => void saveAndPlay(row)}>播放</button> : item ? <span className="local-files-ok">已识别</span> : <span className="local-files-miss">未匹配</span>}</td>
               </tr>;
             })}
@@ -280,7 +280,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         </table>
       </div>
       <div className="settings-actions">
-        <span className="setting-hint">识别依据：文件夹名、标题、作者和文件名；S01E01、第 01 集及开头的 01/02/03 会识别为集数或轨号。</span>
+        <span className="setting-hint">识别依据：文件夹名、标题、作者和文件名；S01E01、第 01 集及开头的 01/02/03 会识别为章节或轨号。</span>
         <button type="button" className="solid-button" disabled={busy || !matchedCount} onClick={() => void save().then(() => { setError(''); onClose(); }).catch(cause => setError(cause instanceof Error ? cause.message : String(cause)))}>保存关联</button>
       </div>
     </>}

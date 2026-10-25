@@ -133,7 +133,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
       return {
         copyId: item.id,
         path: row.file.path,
-        label: `${item.edition.title}${episode ? ` · 第 ${episode} 集` : track ? ` · 第 ${track} 轨${row.title ? ` · ${row.title}` : ''}` : ''}`,
+        label: `${item.edition.title}${episode ? ` · 第 ${episode} 章` : track ? ` · 第 ${track} 轨${row.title ? ` · ${row.title}` : ''}` : ''}`,
         episode,
         track,
       };
@@ -194,7 +194,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
 
   return <Modal title={`本地文件 · ${item.edition.title}`} onClose={onClose} wide busy={busy} className="local-files-panel">
     <div className="local-files-settings">
-      <p className="setting-hint">这个文件夹只关联到当前收藏。每个文件可以单独填写集数或轨号；保存后从这里直接播放。</p>
+      <p className="setting-hint">这个文件夹只关联到当前收藏。每个文件可以单独填写章节或轨号；保存后从这里直接播放。</p>
       <FolderPicker value={folder} onChange={setFolder} busy={busy}
         onBrowse={() => void chooseFolder()} onScan={() => void scan(folder)}/>
     </div>
@@ -206,30 +206,30 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
         const next = all.filter(binding => binding.copyId !== item.id);
         void invoke('local_files_save', { bindings: next }).then(() => setAll(next)).catch(cause => setError(cause instanceof Error ? cause.message : String(cause)));
       }}>清除本收藏关联</button></div>
-      <div className={files.length ? 'local-files-table-wrap local-files-saved' : 'local-files-table-wrap'}><table className="local-files-table"><thead><tr><th>文件</th><th>位置</th><th>歌曲</th><th>操作</th></tr></thead><tbody>
+      <div className={files.length ? 'local-files-table-wrap local-files-saved' : 'local-files-table-wrap'}><table className="local-files-table"><thead><tr><th>文件</th><th>位置</th><th>{item.edition.categoryId === 'video' ? '章节' : '歌曲'}</th><th>操作</th></tr></thead><tbody>
         {own.map(binding => <tr key={binding.path}><td title={binding.path}><span>{binding.path.split(/[\\/]/).pop()}</span></td>
-          <td>{binding.episode ? `第 ${binding.episode} 集` : binding.track ? `第 ${binding.track} 轨` : '—'}</td>
-          <td><span className="local-track-title">{savedTitle(binding) || '—'}</span></td>
+          <td>{binding.episode ? `第 ${binding.episode} 章` : binding.track ? `第 ${binding.track} 轨` : '—'}</td>
+          <td><span className="local-track-title">{item.edition.categoryId === 'video' ? (binding.episode ? `第 ${binding.episode} 章` : '—') : savedTitle(binding) || '—'}</span></td>
           <td><button type="button" className="text-button" disabled={busy} onClick={() => void play(binding.path)}>播放</button></td></tr>)}
       </tbody></table></div>
     </>}
     {!!files.length && <>
       <div className="local-files-summary"><span>{rows.length} 个文件将关联到当前收藏</span></div>
-      <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>{item.edition.categoryId === 'video' ? '集数' : '轨号'}</th><th>关联歌曲</th><th>操作</th></tr></thead><tbody>
+      <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>{item.edition.categoryId === 'video' ? '章节' : '轨号'}</th><th>{item.edition.categoryId === 'video' ? '关联章节' : '关联歌曲'}</th><th>操作</th></tr></thead><tbody>
         {rows.map((row, index) => <tr key={row.file.path}>
           <td title={row.file.relativePath}><span>{row.file.relativePath}</span></td>
-          <td><input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '集数' : '轨号'}`} value={row.number}
+          <td><input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '章节' : '轨号'}`} value={row.number}
             onChange={event => updateNumber(index, event.target.value)}/></td>
           <td>{item.edition.categoryId === 'music' && tracks.length
             ? <Select label={`${row.file.name} 的关联歌曲`} value={trackValue(row)}
               options={[{ id: '', label: '不指定' }, ...tracks.map((track, trackIndex) => ({ id: String(trackIndex), label: track.title }))]}
               onChange={value => updateTitle(index, value)}/>
-            : <span className={row.number ? 'local-track-manual' : 'local-files-miss'}>{row.number ? '手动填写' : '未匹配到曲目'}</span>}</td>
+            : <span className={row.number ? 'local-track-manual' : 'local-files-miss'}>{item.edition.categoryId === 'video' ? (row.number ? `第 ${row.number} 章` : '未匹配到章节') : (row.number ? '手动填写' : '未匹配到曲目')}</span>}</td>
           <td><button type="button" className="text-button" disabled={busy} onClick={() => setRows(current => current.filter((_, position) => position !== index))}>移除</button></td>
         </tr>)}
       </tbody></table></div>
       <div className="settings-actions">
-        <span className="setting-hint">留空表示只关联文件，不指定集数或轨号。</span>
+        <span className="setting-hint">留空表示只关联文件，不指定章节或轨号。</span>
         <button type="button" className="solid-button" disabled={busy || !rows.length} onClick={() => void save()}>保存关联</button>
       </div>
     </>}
