@@ -1,6 +1,6 @@
 # DiscAtelier 更新路线
 
-**2026-10-26 搜索当前 CD 歌曲（测试版，未发行）**：顶部搜索在收藏库之外读取当前插入音频 CD 的 CD-TEXT／MusicBrainz 曲目，可按键名、歌手或专辑过滤，结果列出曲号、标题、歌手／专辑和时长，点击直接播放该 CD 曲目。只搜索当前光驱中的 CD，不持久化历史 CD 曲目。无光盘时不显示结果，不影响普通收藏搜索。115 项 JavaScript 测试、TypeScript／Vite 和发布预检通过；测试预览 `artifacts/DiscAtelier-cd-search-preview.exe`，SHA-256 `153a5935d8c7f49450229cec13a369459d1358158612f08806480e844873d72e`，75,446,272 bytes；未发布正式版。
+**2026-10-26 收藏曲目／章节与当前 CD 搜索（测试版，未发行）**：顶部搜索除收藏标题、作者和标识符外，还读取已保存的 Discogs／网易云曲目表、影片 TMDB／Bangumi 章节标题，以及当前插入音频 CD 的 CD-TEXT／MusicBrainz 曲目。搜索收藏中的歌曲或章节会直接筛出对应收藏；当前 CD 的匹配显示曲号、标题、歌手／专辑和时长，点击直接播放该 CD 曲目。CDP 实测“醜人多作怪”筛出《運氣來得若有似無》，“我不同意”筛出《蔚蓝档案 动画版》。收藏曲目／章节必须已保存资料；当前 CD 不持久化历史曲目。115 项 JavaScript 测试、TypeScript／Vite 和发布预检通过；测试预览 `artifacts/DiscAtelier-collected-search-preview.exe`，SHA-256 `5e43fa2cfdd374aa339701ccce684974b81abbb7ce9d0c775bb3707be8f384fd`，75,476,992 bytes；未发布正式版。
 
 **2026-10-25 影片本地关联改为章节（测试版，未发行）**：影片本地关联界面不再使用“歌曲”和“集数”，总入口显示“歌曲 / 章节”“章节 / 轨”，详情页显示“关联章节”和“章节”；视频行显示“第 N 章”，关联标签写入“第 N 章”。CDP 实测《蔚蓝档案 动画版》本地文件表头为“文件 / 位置 / 章节 / 操作”；扫描测试视频后“关联章节”下拉列出网易云／TMDB 章节，选择第 2 章后轨号立即变为 2、标题为“本篇 · 2 · 我不同意！”。115 项 JavaScript 测试、TypeScript／Vite 和发布预检通过。测试预览 `artifacts/DiscAtelier-video-label-preview.exe`，SHA-256 `3cca19d878188c5db68da63dac8f138bb96b700555dc1ab130e339c260bd95c3`，75,180,032 bytes；未发布正式版。
 

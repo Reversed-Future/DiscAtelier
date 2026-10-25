@@ -1,6 +1,38 @@
 use crate::db_error;
 use discatelier_contracts::{validate_supplement, AppError, LinkedMusicAlbum, MusicSupplement};
 use rusqlite::{params, Connection};
+use std::collections::HashMap;
+
+/// Supplement album tracks are searchable even when the edition has no Discogs content.
+pub(crate) fn search_titles(
+    connection: &Connection,
+) -> Result<HashMap<String, Vec<String>>, AppError> {
+    let mut statement = connection
+        .prepare("SELECT edition_id,payload FROM edition_music_albums")
+        .map_err(db_error)?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(db_error)?;
+    let mut result = HashMap::new();
+    for row in rows {
+        let (edition_id, raw) = row.map_err(db_error)?;
+        let Ok(album) = serde_json::from_str::<MusicSupplement>(&raw) else {
+            continue;
+        };
+        if validate_supplement(&album).is_err() {
+            continue;
+        }
+        let titles = album
+            .tracks
+            .iter()
+            .map(|track| track.title.clone())
+            .collect();
+        result.insert(edition_id, titles);
+    }
+    Ok(result)
+}
 
 pub fn read(connection: &Connection, edition: &str) -> Result<Vec<LinkedMusicAlbum>, AppError> {
     let mut statement = connection.prepare("SELECT album_id,legacy_positions,payload FROM edition_music_albums WHERE edition_id=?1 ORDER BY ordinal,album_id").map_err(db_error)?;

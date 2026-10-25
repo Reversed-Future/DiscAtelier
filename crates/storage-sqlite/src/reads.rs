@@ -125,6 +125,21 @@ fn read(
         let (edition_id, value) = row.map_err(db_error)?;
         values.entry(edition_id).or_default().push(value);
     }
+    // Tracklists and video chapters are searchable as part of the collected edition,
+    // even though they live in separate tables.
+    let mut searchable_titles: HashMap<String, Vec<String>> = HashMap::new();
+    for titles in [
+        crate::content::search_titles(connection)?,
+        crate::music_albums::search_titles(connection)?,
+        crate::video::search_chapter_titles(connection)?,
+    ] {
+        for (edition_id, rows) in titles {
+            searchable_titles
+                .entry(edition_id)
+                .or_default()
+                .extend(rows);
+        }
+    }
     copies.retain(|copy| {
         let mut fields = vec![
             copy.edition.title.as_str(),
@@ -145,6 +160,9 @@ fn read(
         if let Some(source) = &copy.source {
             fields.push(source.provider_id.as_str());
             fields.push(source.external_id.as_str());
+        }
+        if let Some(titles) = searchable_titles.get(&copy.edition_id) {
+            fields.extend(titles.iter().map(String::as_str));
         }
         let ids = values
             .get(&copy.edition_id)

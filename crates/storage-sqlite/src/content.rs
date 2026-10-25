@@ -1,6 +1,7 @@
 use crate::db_error;
 use discatelier_contracts::*;
 use rusqlite::{params, Connection, OptionalExtension};
+use std::collections::HashMap;
 
 pub fn read(connection: &Connection, edition_id: &str) -> Result<Option<EditionContent>, AppError> {
     let text: Option<String> = connection
@@ -13,6 +14,38 @@ pub fn read(connection: &Connection, edition_id: &str) -> Result<Option<EditionC
         .map_err(db_error)?;
     text.map(|text| decode(&text)).transpose()
 }
+fn collect_titles(rows: &[ReleaseTrack], output: &mut Vec<String>) {
+    for row in rows {
+        output.push(row.title.clone());
+        collect_titles(&row.sub_tracks, output);
+    }
+}
+
+/// Track titles are searchable for editions imported with a metadata tracklist.
+pub(crate) fn search_titles(
+    connection: &Connection,
+) -> Result<HashMap<String, Vec<String>>, AppError> {
+    let mut statement = connection
+        .prepare("SELECT edition_id,content_json FROM edition_content")
+        .map_err(db_error)?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(db_error)?;
+    let mut result = HashMap::new();
+    for row in rows {
+        let (edition_id, text) = row.map_err(db_error)?;
+        // A malformed old content row must not break every library search.
+        if let Ok(content) = decode(&text) {
+            let mut titles = Vec::new();
+            collect_titles(&content.tracks, &mut titles);
+            result.insert(edition_id, titles);
+        }
+    }
+    Ok(result)
+}
+
 fn decode(text: &str) -> Result<EditionContent, AppError> {
     let content: EditionContent =
         serde_json::from_str(text).map_err(|_| AppError::new("storage", "曲目资料无法读取。"))?;

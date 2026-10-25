@@ -4,6 +4,7 @@ use discatelier_application::video::VideoRepository;
 use discatelier_contracts::*;
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 
 impl VideoRepository for SqliteLibrary {
     fn video_metadata(&self, edition: &str) -> Result<Option<VideoMetadata>, AppError> {
@@ -54,6 +55,44 @@ impl VideoRepository for SqliteLibrary {
 fn invalid() -> AppError {
     AppError::new("storage", "影像资料无法读取或保存。")
 }
+/// Saved chapter titles make collected video chapters searchable from the top bar.
+pub(crate) fn search_chapter_titles(
+    connection: &Connection,
+) -> Result<HashMap<String, Vec<String>>, AppError> {
+    let mut statement = connection
+        .prepare(
+            "SELECT e.id,w.payload FROM editions e \
+             JOIN video_work_metadata w ON w.work_id=e.work_id",
+        )
+        .map_err(db_error)?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .map_err(db_error)?;
+    let mut result = HashMap::new();
+    for row in rows {
+        let (edition_id, payload) = row.map_err(db_error)?;
+        let Ok(metadata) = snapshots::decode(&payload) else {
+            continue;
+        };
+        let mut titles = Vec::new();
+        for work in metadata.work.into_iter().chain(metadata.additional_works) {
+            for chapter in work.chapters.unwrap_or_default() {
+                titles.extend([
+                    chapter.title,
+                    chapter.original_title,
+                    chapter.group,
+                    chapter.number,
+                ]);
+            }
+        }
+        titles.retain(|value| !value.trim().is_empty());
+        result.insert(edition_id, titles);
+    }
+    Ok(result)
+}
+
 pub fn save(connection: &Connection, edition: &str, value: &VideoMetadata) -> Result<(), AppError> {
     validate_video(value)?;
     let work_id: String = connection
