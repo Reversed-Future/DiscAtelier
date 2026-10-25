@@ -55,7 +55,7 @@ DiscAtelier 是一个面向个人实体影音收藏的 Windows 桌面应用。�
 - 本地切歌和光驱/视频切换都会自动替换当前播放，不需要先停止；
 - “更多 → 本地文件”是总入口；每个收藏详情里也有“本地文件”，只处理当前这一套，并可逐文件填写集数或轨号。
 
-> 本地文件关联、曲目播放按钮和光驱插入提示在 0.1.23 正式版中提供。
+> 本地文件关联、CD 式本地播放器、曲目/章节播放按钮和光驱插入提示在 0.1.24 正式版中提供。
 
 ![本地文件关联](docs/assets/local-files.png)
 
@@ -103,7 +103,7 @@ DiscAtelier 是一个面向个人实体影音收藏的 Windows 桌面应用。�
 
 从 [GitHub Releases](https://github.com/Reversed-Future/DiscAtelier/releases) 下载最新的 Windows x64 安装包：
 
-- 当前版本：**0.1.23**
+- 当前版本：**0.1.24**
 - 安装包已内置 VLC 和 Java 运行时，不需要另外安装播放器；
 - 按当前 Windows 用户安装；
 - 没有 WebView2 时安装器会引导下载；
@@ -151,7 +151,7 @@ $env:CARGO_TARGET_DIR = 'D:\DiscAtelierBuilds\target'
 
 ## 项目状态
 
-当前是 **0.1.23**，不是 1.0。
+当前是 **0.1.24**，不是 1.0。
 
 1.0 前仍需完成：
 
