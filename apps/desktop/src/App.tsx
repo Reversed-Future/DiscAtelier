@@ -19,6 +19,7 @@ import { Settings } from './settings/Settings';
 import { useCollectionArtwork } from './collection/useCollectionArtwork';
 import { prefetchVideoMetadata } from './video/useVideoMetadata';
 import { OpticalPanel } from './optical/OpticalPanel';
+import { CdTrackSearch } from './optical/CdTrackSearch';
 import { useOpticalPresence } from './optical/useOpticalPresence';
 import type { OpticalPresence } from './optical/gateway';
 import { LocalFilesPanel } from './local/LocalFilesPanel';
@@ -185,6 +186,7 @@ export function App() {
           <input ref={search} type="search" aria-label="搜索关键词" placeholder="搜索" value={query.query}
             onChange={event => setQuery({ ...query, query: event.target.value })}
             onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); setQuery({ ...query, query: '' }); search.current?.focus(); } }}/>
+          <CdTrackSearch query={query.query} player={player}/>
         </div>
         <button className="icon-button" aria-label="添加收藏" data-tooltip="添加" disabled={!snapshot} onClick={openAdd}><Icon name="plus"/></button>
         <button className={`icon-button${query.status || organize ? ' filtered' : ''}`} id="tools-toggle" popoverTarget="tools-popover" aria-label="更多" data-tooltip="更多"><Icon name="more"/></button>

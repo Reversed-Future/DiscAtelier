@@ -35,7 +35,19 @@ button:active { transform: scale(.98); }
 .categories button.active::after { content: ""; position: absolute; height: 1px; background: currentColor; bottom: 2px; width: 12px; left: calc(50% - 6px); }
 .top-actions { justify-self: end; display: flex; align-items: center; gap: 13px; color: #b3b3b3; }
 .icon-button { display: grid; place-items: center; width: 35px; height: 35px; }
-.search-control { display: flex; align-items: center; gap: 7px; }
+.search-control { display: flex; align-items: center; gap: 7px; position: relative; }
+.cd-track-results { position: absolute; top: 42px; right: 0; z-index: 40; width: min(390px, calc(100vw - 32px)); padding: 10px; border: 1px solid #ffffff1a; border-radius: 6px; background: #1d1d1d; box-shadow: 0 15px 55px #0007; color: var(--ink); }
+.cd-track-results-heading { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 8px; color: var(--muted); font-size: 11px; }
+.cd-track-results-list { max-height: min(340px, 50vh); overflow: auto; }
+.cd-track-result { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; padding: 9px 6px; border-radius: 3px; text-align: left; }
+.cd-track-result:hover { background: #ffffff0a; }
+.cd-track-result-number { color: var(--muted); font-size: 11px; text-align: right; }
+.cd-track-result-text { min-width: 0; display: grid; gap: 3px; }
+.cd-track-result-text strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 400; }
+.cd-track-result-text small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 10px; }
+.cd-track-result time { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.cd-track-results-empty, .cd-track-results-error { margin: 4px 4px 2px; color: var(--muted); font-size: 11px; }
+.cd-track-results-error { color: #e8b4a8; }
 .search-control input { width: 150px; color: var(--ink); border: 0; border-bottom: 1px solid var(--line); background: none; padding: 7px 0; font-size: 12px; }
 .search-control input::placeholder { color: #777; }
 #tools-toggle { position: relative; }
