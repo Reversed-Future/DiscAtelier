@@ -46,7 +46,7 @@ export function CollectionTracks({ rows, albums, links, bindings, item, player }
       playing,
       busy: player.busy,
       play: () => {
-        if (playing) void player.control({ action: 'pause', paused: !player.snapshot?.paused });
+        if (playing) player.show();
         else void player.startLocal(item.id, binding.path);
       },
     };
