@@ -73,7 +73,9 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .local-files-summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .local-files-settings { margin-block: 8px 20px; }
 .local-files-settings .path-input { margin-top: 8px; }
-.local-files-settings .path-input input { background: transparent; border: 1px solid var(--line); border-radius: 2px; padding: 10px; color: var(--ink); }
+.local-files-settings .path-input input { background: transparent; border: 1px solid var(--line); border-radius: 2px; padding: 9px 10px; color: var(--ink); font-size: 12px; line-height: 1.4; min-height: 36px; }
+.local-files-settings .path-input input::placeholder { font-size: 12px; }
+.local-files-settings .path-input .text-button { min-width: 76px; justify-content: center; }
 .local-files-settings .data-path { margin: 6px 0 0; min-height: 18px; color: var(--muted); }
 .local-files-path { margin: 8px 0 0; font-size: 12px; opacity: .7; overflow-wrap: anywhere; }
 .local-files-path-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }

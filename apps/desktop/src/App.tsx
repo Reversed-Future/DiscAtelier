@@ -51,6 +51,7 @@ export function App() {
   const [localFilesOpen, setLocalFilesOpen] = useState(false);
   const [opticalPrompt, setOpticalPrompt] = useState<OpticalPresence | null>(null);
   const knownOptical = useRef(new Set<string>());
+  const detailBeforePlayback = useRef<LibraryCopy | null>(null);
   const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [metadataOpen, setMetadataOpen] = useState(false);
@@ -141,6 +142,14 @@ export function App() {
   const currentVideo = useVideoMetadata(current?.editionId || '',current?.editionRevision || 0,current?.edition.categoryId === 'video');
   const [partId,setPartId] = useState(''), [instantFlip,setInstantFlip] = useState(false);
   useEffect(() => {setPartId('');},[inspected?.id]);
+  useEffect(() => {
+    if (player.open) {
+      if (inspected) detailBeforePlayback.current = inspected;
+      return;
+    }
+    if (!inspected && detailBeforePlayback.current) setInspected(detailBeforePlayback.current);
+    detailBeforePlayback.current = null;
+  }, [player.open, inspected]);
   useEffect(() => {
     const present = new Set(opticalPresence.map(value => value.mediaToken));
     for (const value of opticalPresence) {

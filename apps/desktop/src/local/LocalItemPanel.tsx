@@ -26,6 +26,18 @@ interface Row {
   title: string;
 }
 
+function savedTitle(binding: Binding) {
+  const parts = binding.label.split(' · ');
+  return parts.length > 2 ? parts[parts.length - 1] : '';
+}
+
+function sortRows(values: Row[]) {
+  return [...values].sort((left, right) => {
+    const number = (Number(left.number) || Number.MAX_SAFE_INTEGER) - (Number(right.number) || Number.MAX_SAFE_INTEGER);
+    return number || left.file.relativePath.localeCompare(right.file.relativePath);
+  });
+}
+
 function matchRow(item: LibraryCopy, file: ScannedFile, tracks: TrackTitle[]) {
   if (item.edition.categoryId === 'music' || isAudio(file)) {
     const matched = matchTrack(file.name, tracks);
@@ -71,13 +83,14 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
   }, [item.editionId, item.edition.categoryId]);
   useEffect(() => {
     if (!tracks.length) return;
-    setRows(current => current.map(row => {
+    setRows(current => sortRows(current.map(row => {
       const matched = matchRow(item, row.file, tracks);
       return { ...row, number: row.number || matched.number, title: row.title || matched.title };
-    }));
+    })));
   }, [tracks, item]);
 
-  const own = all.filter(binding => binding.copyId === item.id);
+  const own = all.filter(binding => binding.copyId === item.id)
+    .sort((left, right) => (left.track || Number.MAX_SAFE_INTEGER) - (right.track || Number.MAX_SAFE_INTEGER));
 
   async function scan(path: string) {
     if (!path.trim()) return;
@@ -85,7 +98,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     try {
       const scanned = await invoke<ScannedFile[]>('local_files_scan', { folder: path });
       setFiles(scanned);
-      setRows(scanned.map(file => ({ file, ...matchRow(item, file, tracks) })));
+      setRows(sortRows(scanned.map(file => ({ file, ...matchRow(item, file, tracks) }))));
       if (!scanned.length) setError('这个文件夹里没有找到支持的音视频文件。');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -140,7 +153,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
   return <Modal title={`本地文件 · ${item.edition.title}`} onClose={onClose} wide busy={busy} className="local-files-panel">
     <div className="local-files-settings">
       <p className="setting-hint">这个文件夹只关联到当前收藏。每个文件可以单独填写集数或轨号；保存后从这里直接播放。</p>
-      <FolderPicker value={folder} onChange={setFolder} busy={busy} count={files.length}
+      <FolderPicker value={folder} onChange={setFolder} busy={busy}
         onBrowse={() => void chooseFolder()} onScan={() => void scan(folder)}/>
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
@@ -151,24 +164,23 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
         const next = all.filter(binding => binding.copyId !== item.id);
         void invoke('local_files_save', { bindings: next }).then(() => setAll(next)).catch(cause => setError(cause instanceof Error ? cause.message : String(cause)));
       }}>清除本收藏关联</button></div>
-      <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>位置</th><th>操作</th></tr></thead><tbody>
+      <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>位置</th><th>歌曲</th><th>操作</th></tr></thead><tbody>
         {own.map(binding => <tr key={binding.path}><td title={binding.path}><span>{binding.path.split(/[\\/]/).pop()}</span></td>
           <td>{binding.episode ? `第 ${binding.episode} 集` : binding.track ? `第 ${binding.track} 轨` : '—'}</td>
+          <td><span className="local-track-title">{savedTitle(binding) || '—'}</span></td>
           <td><button type="button" className="text-button" disabled={busy} onClick={() => void play(binding.path)}>播放</button></td></tr>)}
       </tbody></table></div>
     </>}
     {!!files.length && <>
       <div className="local-files-summary"><span>{rows.length} 个文件将关联到当前收藏</span></div>
-      <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>{item.edition.categoryId === 'video' ? '集数' : '轨号 · 匹配曲目'}</th><th>操作</th></tr></thead><tbody>
+      <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>{item.edition.categoryId === 'video' ? '集数' : '轨号'}</th><th>关联歌曲</th><th>操作</th></tr></thead><tbody>
         {rows.map((row, index) => <tr key={row.file.path}>
           <td title={row.file.relativePath}><span>{row.file.relativePath}</span></td>
-          <td><div className="local-track-cell">
-            <input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '集数' : '轨号'}`} value={row.number}
-              onChange={event => setRows(current => current.map((value, position) => position === index ? { ...value, number: event.target.value } : value))}/>
-            {item.edition.categoryId === 'music' && (row.title
-              ? <span className="local-track-title" title={row.title}>{row.title}</span>
-              : <span className={row.number ? 'local-track-manual' : 'local-files-miss'}>{row.number ? '手动填写' : '未匹配到曲目'}</span>)}
-          </div></td>
+          <td><input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '集数' : '轨号'}`} value={row.number}
+            onChange={event => setRows(current => current.map((value, position) => position === index ? { ...value, number: event.target.value } : value))}/></td>
+          <td>{item.edition.categoryId === 'music' && row.title
+            ? <span className="local-track-title" title={row.title}>{row.title}</span>
+            : <span className={row.number ? 'local-track-manual' : 'local-files-miss'}>{row.number ? '手动填写' : '未匹配到曲目'}</span>}</td>
           <td><button type="button" className="text-button" disabled={busy} onClick={() => setRows(current => current.filter((_, position) => position !== index))}>移除</button></td>
         </tr>)}
       </tbody></table></div>

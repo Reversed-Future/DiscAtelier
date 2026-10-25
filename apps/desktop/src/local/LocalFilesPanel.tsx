@@ -76,13 +76,26 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
     return { number: parseTrack(file.name), title: '' };
   }
 
+  function sortRows(values: Row[]) {
+    return [...values].sort((left, right) => {
+      if (!left.copyId || !right.copyId) {
+        if (left.copyId) return -1;
+        if (right.copyId) return 1;
+        return left.file.relativePath.localeCompare(right.file.relativePath);
+      }
+      const album = items.findIndex(item => item.id === left.copyId) - items.findIndex(item => item.id === right.copyId);
+      const track = (left.track || left.episode || Number.MAX_SAFE_INTEGER) - (right.track || right.episode || Number.MAX_SAFE_INTEGER);
+      return album || track || left.file.relativePath.localeCompare(right.file.relativePath);
+    });
+  }
+
   function propose(scanned: ScannedFile[]) {
-    setRows(scanned.map(file => {
+    setRows(sortRows(scanned.map(file => {
       const item = chooseItem(items, file, false, trackTitles);
       const episode = item && item.edition.categoryId === 'video' ? parseEpisode(file.name) : null;
       const track = item && item.edition.categoryId === 'music' ? trackFor(item.id, file) : { number: null, title: '' };
       return { file, copyId: item?.id || '', episode, track: track.number, trackTitle: track.title, matched: !!item };
-    }));
+    })));
   }
 
   async function scan(path: string) {
@@ -111,6 +124,10 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         track: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).number : null,
         trackTitle: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).title : '',
       };
+    }).sort((left, right) => {
+      if (!left.copyId || !right.copyId) return left.copyId ? -1 : right.copyId ? 1 : 0;
+      const album = items.findIndex(item => item.id === left.copyId) - items.findIndex(item => item.id === right.copyId);
+      return album || (left.track || left.episode || Number.MAX_SAFE_INTEGER) - (right.track || right.episode || Number.MAX_SAFE_INTEGER);
     }));
   }, [trackTitles, files, items]);
 
@@ -151,7 +168,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
   }
 
   function updateRow(index: number, copyId: string) {
-    setRows(current => current.map((row, position) => {
+    setRows(current => sortRows(current.map((row, position) => {
       if (position !== index) return row;
       const category = items.find(item => item.id === copyId)?.edition.categoryId || '';
       return {
@@ -162,11 +179,11 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         track: category === 'music' ? trackFor(copyId, row.file).number : null,
         trackTitle: category === 'music' ? trackFor(copyId, row.file).title : '',
       };
-    }));
+    })));
   }
 
   function autoAssociate() {
-    setRows(current => current.map(row => {
+    setRows(current => sortRows(current.map(row => {
       if (row.copyId) return row;
       const item = chooseItem(items, row.file, true, trackTitles);
       if (!item) return row;
@@ -178,7 +195,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         track: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).number : null,
         trackTitle: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).title : '',
       };
-    }));
+    })));
   }
 
   function forget() {
@@ -192,7 +209,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
   return <Modal title="本地文件" onClose={onClose} wide busy={busy} className="local-files-panel">
     <div className="local-files-settings">
       <p className="setting-hint">选择收藏所在的文件夹，自动扫描子目录并匹配到音乐或影片。匹配结果会保存为这台电脑上的本地关联。</p>
-      <FolderPicker value={folder} onChange={setFolder} busy={busy} count={files.length}
+      <FolderPicker value={folder} onChange={setFolder} busy={busy}
         onBrowse={() => void chooseFolder()} onScan={() => void scan(folder)}/>
       {!!bindings.length && <div className="setting-row">
         <span>已保存 {bindings.length} 条本地关联</span>
@@ -208,7 +225,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       </div>
       <div className="local-files-table-wrap">
         <table className="local-files-table">
-          <thead><tr><th>文件</th><th>收藏条目</th><th>集 / 轨</th><th>状态</th></tr></thead>
+          <thead><tr><th>文件</th><th>收藏条目</th><th>歌曲</th><th>集 / 轨</th><th>状态</th></tr></thead>
           <tbody>
             {rows.map((row, index) => {
               const item = items.find(entry => entry.id === row.copyId);
@@ -224,9 +241,8 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
                     })),
                   ]}
                   onChange={value => updateRow(index, value)}/></td>
-                <td>{row.episode ? `第 ${row.episode} 集` : row.track
-                  ? <span className="local-track-cell"><span>第 {row.track} 轨</span>{row.trackTitle && <span className="local-track-title" title={row.trackTitle}>{row.trackTitle}</span>}</span>
-                  : '—'}</td>
+                <td><span className="local-track-title" title={row.trackTitle || undefined}>{row.trackTitle || '—'}</span></td>
+                <td>{row.episode ? `第 ${row.episode} 集` : row.track ? `第 ${row.track} 轨` : '—'}</td>
                 <td>{saved ? <button type="button" className="text-button" disabled={busy} onClick={() => void saveAndPlay(row)}>播放</button> : item ? <span className="local-files-ok">已识别</span> : <span className="local-files-miss">未匹配</span>}</td>
               </tr>;
             })}
