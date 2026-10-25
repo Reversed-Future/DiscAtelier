@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { library } from '../library/gateway';
 import type { LibraryCopy } from '../library/types';
-import { chooseItem, matchTrack, parseEpisode, parseTrack, type TrackTitle } from './match';
+import { chooseItem, matchTrack, parseEpisode, parseTrack, trackNumberAt, type TrackTitle } from './match';
 import { FolderPicker } from './FolderPicker';
 import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
@@ -167,6 +167,21 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
     } finally { setBusy(false); }
   }
 
+  function trackTitleValue(row: Row) {
+    const index = (trackTitles.get(row.copyId) || []).findIndex(track => track.title === row.trackTitle);
+    return index >= 0 ? String(index) : '';
+  }
+
+  function updateTrackTitle(index: number, value: string) {
+    setRows(current => sortRows(current.map((row, position) => {
+      if (position !== index || !row.copyId) return row;
+      const albumTracks = trackTitles.get(row.copyId) || [];
+      const track = Number(value);
+      if (!Number.isInteger(track) || track < 0 || !albumTracks[track]) return { ...row, trackTitle: '' };
+      return { ...row, trackTitle: albumTracks[track].title, track: trackNumberAt(albumTracks, track) };
+    })));
+  }
+
   function updateRow(index: number, copyId: string) {
     setRows(current => sortRows(current.map((row, position) => {
       if (position !== index) return row;
@@ -241,7 +256,12 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
                     })),
                   ]}
                   onChange={value => updateRow(index, value)}/></td>
-                <td><span className="local-track-title" title={row.trackTitle || undefined}>{row.trackTitle || '—'}</span></td>
+                <td>{item?.edition.categoryId === 'music' && (trackTitles.get(row.copyId) || []).length
+                  ? <Select label={`${row.file.name} 的关联歌曲`}
+                    value={trackTitleValue(row)}
+                    options={[{ id: '', label: '不指定' }, ...(trackTitles.get(row.copyId) || []).map((track, trackIndex) => ({ id: String(trackIndex), label: track.title }))]}
+                    onChange={value => updateTrackTitle(index, value)}/>
+                  : <span className="local-track-title" title={row.trackTitle || undefined}>{row.trackTitle || '—'}</span>}</td>
                 <td>{row.episode ? `第 ${row.episode} 集` : row.track ? `第 ${row.track} 轨` : '—'}</td>
                 <td>{saved ? <button type="button" className="text-button" disabled={busy} onClick={() => void saveAndPlay(row)}>播放</button> : item ? <span className="local-files-ok">已识别</span> : <span className="local-files-miss">未匹配</span>}</td>
               </tr>;

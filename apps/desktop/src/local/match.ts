@@ -74,6 +74,18 @@ export interface TrackMatch {
   title: string;
 }
 
+/** The visible track number for a tracklist row, matching matchTrack's numbering. */
+export function trackNumberAt(tracks: TrackTitle[], index: number): number | null {
+  if (index < 0 || index >= tracks.length) return null;
+  const numbers = tracks.map(track => positionNumber(track.position));
+  const uniquePositions = new Set(numbers).size === tracks.length;
+  return uniquePositions ? numbers[index] || index + 1 : index + 1;
+}
+
+export function trackIndexForNumber(tracks: TrackTitle[], number: number): number {
+  return tracks.findIndex((_, index) => trackNumberAt(tracks, index) === number);
+}
+
 /** Match a file's song name against the album tracklist, independent of track numbers. */
 export function matchTrack(name: string, tracks: TrackTitle[]): TrackMatch | null {
   if (!tracks.length) return null;
@@ -83,8 +95,6 @@ export function matchTrack(name: string, tracks: TrackTitle[]): TrackMatch | nul
   const dash = name.replace(/\.[^.]+$/, '').split(/\s+[-–—]\s+/);
   if (dash.length > 1) candidates.add(normalized(dash[dash.length - 1]));
   if (parts.length > 1) candidates.add(parts.slice(1).join(' '));
-  const numbers = tracks.map(track => positionNumber(track.position));
-  const uniquePositions = new Set(numbers).size === tracks.length;
   const titles = tracks.map(track => normalized(track.title));
   // An exact title must win before trying containment. Otherwise a short title
   // such as "夏のせい" is swallowed by "夏のせい (English ver.)".
@@ -101,8 +111,7 @@ export function matchTrack(name: string, tracks: TrackTitle[]): TrackMatch | nul
     .filter(value => value.matched)
     .sort((left, right) => right.length - left.length)[0]?.index;
   if (best === undefined) return null;
-  const number = (uniquePositions ? numbers[best] : null) || best + 1;
-  return { number, title: tracks[best].title };
+  return { number: trackNumberAt(tracks, best) || best + 1, title: tracks[best].title };
 }
 
 export function matchTrackNumber(name: string, tracks: TrackTitle[]): number | null {

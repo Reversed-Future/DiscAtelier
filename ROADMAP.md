@@ -1,5 +1,7 @@
 # DiscAtelier 更新路线
 
+**2026-10-25 关联歌曲手动下拉与轨号双向同步（测试版，未发行）**：关联表的歌曲列改为从当前专辑曲目表选择，手动改轨号会立即反查并更新歌曲标题。实测第 1 行把轨号改为 6，歌曲立即变为 `Trigger For Ambition`；从下拉框选择 `Summer Attack!`，轨号立即变为 14。新增精确匹配后共 115 项 JavaScript 测试通过。测试预览 `artifacts/DiscAtelier-local-audio-preview.exe`，SHA-256 `1bb5622fd509061b995b0a5be6128e41a4ff1d7b165a22d0848ba1915ee10978`，73,130,496 bytes；未发布正式版。
+
 **2026-10-25 歌名精确匹配修复（测试版，未发行）**：曲目匹配改为精确歌名优先，再尝试包含匹配。`夏のせい` 与 `夏のせい (English ver.)` 同时存在时，无 English 文件名匹配第 1 轨，English 文件匹配第 6 轨，不再因为更长的版本标题被优先选中。新增 1 项回归测试，共 115 项 JavaScript 测试通过。测试预览 `artifacts/DiscAtelier-local-audio-preview.exe`，SHA-256 `0643b8544f9bebbc9457c52f481d86826b7591dfae1670c98b122e84a2387338`，72,865,280 bytes；未发布正式版。
 
 **2026-10-25 0.1.24 已发布**：本地文件关联、CD 式本地播放器、右下角播放列表、无需停止的直接切换、原生顶层播放器返回详情、曲目/章节播放按钮、白色网易云 Logo、关联表歌曲标题与专辑顺序、光驱插入提示已发布并设为 Latest。114 项 JavaScript 测试、严格 Clippy、格式检查、TypeScript／Vite 和签名 NSIS 构建通过；五项资产回读一致，公开 Latest 下载与更新验签通过，篡改包被拒绝。Release ID `423147754`，标签 `v0.1.24`，源码提交 `11bf3817d2e00e3a41b0f377cbb58e657b65abd2`；安装包 131,098,885 bytes，SHA-256 `de8f32ceafb6464dec8ffd87870dc5b020d8ee290893689e83c5975243a8595b`。schema 保持 15，无迁移。真实 DVD／Blu-ray 菜单、BD-J 和菜单识别尚未实盘验收，因此仍不定义为 1.0；详见 [0.1.24 发布校验](docs/releases/v0.1.24-verification.md)。

@@ -3,8 +3,9 @@ import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { library } from '../library/gateway';
 import type { LibraryCopy } from '../library/types';
-import { isAudio, matchTrack, parseEpisode, parseTrack, type TrackTitle } from './match';
+import { isAudio, matchTrack, parseEpisode, parseTrack, trackIndexForNumber, trackNumberAt, type TrackTitle } from './match';
 import { FolderPicker } from './FolderPicker';
+import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
 
 interface ScannedFile {
@@ -143,6 +144,34 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     finally { setBusy(false); }
   }
 
+  function updateNumber(index: number, value: string) {
+    setRows(current => current.map((row, position) => {
+      if (position !== index) return row;
+      const number = Number(value);
+      const track = Number.isInteger(number) && number > 0 ? trackIndexForNumber(tracks, number) : -1;
+      return { ...row, number: value, title: track >= 0 ? tracks[track].title : '' };
+    }));
+  }
+
+  function trackValue(row: Row) {
+    const index = tracks.findIndex(track => track.title === row.title);
+    return index >= 0 ? String(index) : '';
+  }
+
+  function updateTitle(index: number, value: string) {
+    const track = Number(value);
+    if (!Number.isInteger(track) || track < 0 || !tracks[track]) {
+      setRows(current => current.map((row, position) => position === index ? { ...row, title: '' } : row));
+      return;
+    }
+    const number = trackNumberAt(tracks, track) || track + 1;
+    setRows(current => current.map((row, position) => position === index ? {
+      ...row,
+      title: tracks[track].title,
+      number: String(number),
+    } : row));
+  }
+
   async function play(path: string) {
     setBusy(true); setError('');
     try { await invoke('playback_start_local', { copyId: item.id, path }); onClose(); }
@@ -177,9 +206,11 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
         {rows.map((row, index) => <tr key={row.file.path}>
           <td title={row.file.relativePath}><span>{row.file.relativePath}</span></td>
           <td><input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '集数' : '轨号'}`} value={row.number}
-            onChange={event => setRows(current => current.map((value, position) => position === index ? { ...value, number: event.target.value } : value))}/></td>
-          <td>{item.edition.categoryId === 'music' && row.title
-            ? <span className="local-track-title" title={row.title}>{row.title}</span>
+            onChange={event => updateNumber(index, event.target.value)}/></td>
+          <td>{item.edition.categoryId === 'music' && tracks.length
+            ? <Select label={`${row.file.name} 的关联歌曲`} value={trackValue(row)}
+              options={[{ id: '', label: '不指定' }, ...tracks.map((track, trackIndex) => ({ id: String(trackIndex), label: track.title }))]}
+              onChange={value => updateTitle(index, value)}/>
             : <span className={row.number ? 'local-track-manual' : 'local-files-miss'}>{row.number ? '手动填写' : '未匹配到曲目'}</span>}</td>
           <td><button type="button" className="text-button" disabled={busy} onClick={() => setRows(current => current.filter((_, position) => position !== index))}>移除</button></td>
         </tr>)}

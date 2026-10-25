@@ -88,6 +88,8 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .local-files-table td { padding: 8px 12px; border-top: 1px solid color-mix(in srgb, currentColor 9%, transparent); vertical-align: middle; }
 .local-files-table td:first-child { max-width: 290px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .local-files-table .select-control { width: min(420px, 42vw); }
+.local-files-table td:nth-child(2) .select-control { width: min(340px, 30vw); }
+.local-files-table td:nth-child(3) .select-control { width: min(230px, 22vw); }
 .local-files-table .select-trigger { width: 100%; padding: 7px 9px; }
 .local-files-table .select-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .local-files-table input[type="number"] { width: 96px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 2px; background: transparent; color: var(--ink); }
