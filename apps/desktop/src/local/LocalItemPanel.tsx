@@ -5,6 +5,7 @@ import { library } from '../library/gateway';
 import { netease } from '../integrations/gateway';
 import type { LibraryCopy } from '../library/types';
 import { isAudio, matchTrack, parseEpisode, parseTrack, trackIndexForNumber, trackNumberAt, type TrackTitle } from './match';
+import { loadVideoChapters } from './videoChapters';
 import { FolderPicker } from './FolderPicker';
 import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
@@ -51,8 +52,9 @@ function matchRow(item: LibraryCopy, file: ScannedFile, tracks: TrackTitle[]) {
     }
     return { number: '', title: '' };
   }
-  const value = parseEpisode(file.name);
-  return { number: value ? String(value) : '', title: '' };
+  const matched = matchTrack(file.name, tracks);
+  const value = parseEpisode(file.name) || (matched ? matched.number : null);
+  return { number: value ? String(value) : '', title: matched?.title || '' };
 }
 
 export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose(): void }) {
@@ -77,6 +79,10 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
 
   useEffect(() => {
     let active = true;
+    if (item.edition.categoryId === 'video') {
+      loadVideoChapters(item.editionId).then(values => { if (active) setTracks(values); }).catch(() => {});
+      return () => { active = false; };
+    }
     if (item.edition.categoryId !== 'music') return;
     Promise.all([
       library.content(item.editionId).catch(() => null),
@@ -133,7 +139,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
       return {
         copyId: item.id,
         path: row.file.path,
-        label: `${item.edition.title}${episode ? ` · 第 ${episode} 章` : track ? ` · 第 ${track} 轨${row.title ? ` · ${row.title}` : ''}` : ''}`,
+        label: `${item.edition.title}${episode ? ` · 第 ${episode} 章${row.title ? ` · ${row.title}` : ''}` : track ? ` · 第 ${track} 轨${row.title ? ` · ${row.title}` : ''}` : ''}`,
         episode,
         track,
       };
@@ -209,7 +215,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
       <div className={files.length ? 'local-files-table-wrap local-files-saved' : 'local-files-table-wrap'}><table className="local-files-table"><thead><tr><th>文件</th><th>位置</th><th>{item.edition.categoryId === 'video' ? '章节' : '歌曲'}</th><th>操作</th></tr></thead><tbody>
         {own.map(binding => <tr key={binding.path}><td title={binding.path}><span>{binding.path.split(/[\\/]/).pop()}</span></td>
           <td>{binding.episode ? `第 ${binding.episode} 章` : binding.track ? `第 ${binding.track} 轨` : '—'}</td>
-          <td><span className="local-track-title">{item.edition.categoryId === 'video' ? (binding.episode ? `第 ${binding.episode} 章` : '—') : savedTitle(binding) || '—'}</span></td>
+          <td><span className="local-track-title">{item.edition.categoryId === 'video' ? (savedTitle(binding) || (binding.episode ? `第 ${binding.episode} 章` : '—')) : savedTitle(binding) || '—'}</span></td>
           <td><button type="button" className="text-button" disabled={busy} onClick={() => void play(binding.path)}>播放</button></td></tr>)}
       </tbody></table></div>
     </>}
@@ -220,9 +226,9 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
           <td title={row.file.relativePath}><span>{row.file.relativePath}</span></td>
           <td><input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '章节' : '轨号'}`} value={row.number}
             onChange={event => updateNumber(index, event.target.value)}/></td>
-          <td>{item.edition.categoryId === 'music' && tracks.length
-            ? <Select label={`${row.file.name} 的关联歌曲`} value={trackValue(row)}
-              options={[{ id: '', label: '不指定' }, ...tracks.map((track, trackIndex) => ({ id: String(trackIndex), label: track.title }))]}
+          <td>{tracks.length
+            ? <Select label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '关联章节' : '关联歌曲'}`} value={trackValue(row)}
+              options={[{ id: '', label: '不指定' }, ...tracks.map((track, trackIndex) => ({ id: String(trackIndex), label: track.label || track.title }))]}
               onChange={value => updateTitle(index, value)}/>
             : <span className={row.number ? 'local-track-manual' : 'local-files-miss'}>{item.edition.categoryId === 'video' ? (row.number ? `第 ${row.number} 章` : '未匹配到章节') : (row.number ? '手动填写' : '未匹配到曲目')}</span>}</td>
           <td><button type="button" className="text-button" disabled={busy} onClick={() => setRows(current => current.filter((_, position) => position !== index))}>移除</button></td>

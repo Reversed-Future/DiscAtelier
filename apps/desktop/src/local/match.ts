@@ -62,6 +62,7 @@ export function parseTrack(name: string): number | null {
 export interface TrackTitle {
   title: string;
   position: string;
+  label?: string;
 }
 
 export function positionNumber(position: string): number | null {
