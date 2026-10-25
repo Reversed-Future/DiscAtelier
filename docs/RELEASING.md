@@ -1,6 +1,10 @@
 # Windows 发布
 
-当前版本：0.1.24。仓库固定为公开的 `Reversed-Future/DiscAtelier`，以 GPL-3.0-or-later 发布。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、公开更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
+当前版本：0.1.25。仓库固定为公开的 `Reversed-Future/DiscAtelier`，以 GPL-3.0-or-later 发布。0.1.4 起使用 `scripts/release/build-signed.ps1` 构建，安装包与签名、公开更新清单一起发布。完整步骤及签名身份说明见 [应用内更新](UPDATES.md)。下方 0.1.3 记录作为首次发行历史保留。
+
+## 0.1.25 发布记录
+
+发布记录在发布校验完成后补充。
 
 ## 0.1.24 发布记录
 
