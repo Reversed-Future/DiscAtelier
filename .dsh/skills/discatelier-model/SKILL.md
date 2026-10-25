@@ -1,6 +1,6 @@
 ---
 name: discatelier-model
-description: Create or adapt a DiscAtelier-compatible .ateliermodel package. Use only when the user explicitly asks to create, adapt, rebuild, or package a DiscAtelier model. Ask the user for any needed photos, materials, dimensions, or ratios; iterate until the user is satisfied and the package imports and renders in the current DiscAtelier app.
+description: Create or adapt a DiscAtelier-compatible .ateliermodel package. Use only when the user explicitly asks to create, adapt, rebuild, or package a DiscAtelier model. Ask the user for any needed photos, materials, dimensions, or ratios; iterate until the user is satisfied and the package imports and renders in the current DiscAtelier app. V2 is the portable path; V3 is only for profiles already registered in the running DiscAtelier build.
 whenToUse: The user explicitly names DiscAtelier and asks to make, adapt, rebuild, or package a 3D/interactive model for it. Do not use for generic 3D modeling, image generation, or unrelated collections.
 ---
 
@@ -17,6 +17,37 @@ whenToUse: The user explicitly names DiscAtelier and asks to make, adapt, rebuil
 - 目标收藏／专辑／版本；
 - 用户要新建模型，还是改已有 `.ateliermodel`；
 - 交付目标是**当前安装的 DiscAtelier**，不是只做一个网页或静态渲染图。
+
+## 别人怎么使用
+
+当前技能位于项目级根目录：
+
+```text
+<DiscAtelier 仓库>/.dsh/skills/discatelier-model/SKILL.md
+```
+
+因此，仓库的使用者会直接发现它；离开这个仓库则不会自动出现。
+
+需要分享给其他人时：
+
+1. 把整个 `discatelier-model/` 目录复制给对方；
+2. 放进对方的任一 Skill 根目录：
+   - `<项目根>/.dsh/skills/`
+   - 或 `~/.dsh/skills/`
+3. 对方重新打开会话，确认 Skill 目录出现 `discatelier-model`；
+4. 对方仍需具备本机的模型打包工具链和 Chromium/Playwright，路径按实际位置调整。
+
+可移植性边界：
+
+- **V2 模型流程可移植**，前提是对方的 DiscAtelier 支持 V2；
+- **V3 不可跨构建移植**，因为 profile 和装配程序在播放器代码里，不在模型包里；
+- 不要承诺“同一个 V3 包在别人的 DiscAtelier 也能用”，除非对方的安装版本明确包含同一 profile。
+
+依赖说明：
+
+- 本 Skill 只定义流程和验收，不附带 Three.js 建模器、打包器、浏览器或素材；
+- 默认引用 AtelierPublisher 的通用工具链；对方没有该工具链时，先向用户确认其可用的导出器，不要假装已打包；
+- 对方的 DiscAtelier 版本、V2 支持和图片预算也必须按实际版本核对。
 
 ## 第一原则：缺资料就问
 
@@ -76,15 +107,27 @@ V2 包包含：
 
 V2 可以表达任意三角网格和固定拓扑形变，但不能执行脚本、GLSL、骨骼蒙皮、布料／软体物理或外部贴图。
 
-### V3：固定装配格式
+### V3：运行时私有的固定装配格式，不是通用制作格式
 
-只有目标与以下现有结构之一匹配时才考虑 V3：
+V3 的 `profile` 是 DiscAtelier 播放器内置的固定装配程序编号，不是可自由填写的模板名。**别人不能仅凭一个 profile 名字制作 V3 模型。**
 
-`research-bai`、`nafelibeta2`、`ups-and-downs-firdhaus`、`yomei10-rad`、`thunder-radio-luoyan`、`qingluo-decoy`。
+只有同时满足以下条件才可使用 V3：
 
-V3 需要播放器内置对应装配程序。**不能只靠改包里的 `profile` 字符串新增一套 V3 结构**；新结构必须先扩展 DiscAtelier 的固定 runtime，再打包。
+1. 用户本人正在维护这个 DiscAtelier 运行时，并明确要扩展或复用其中已注册的结构；
+2. 当前安装的 DiscAtelier 代码里确实存在该 profile 和对应装配程序；
+3. 实物结构与这个 profile 的契约完全匹配；
+4. 当前安装版本已经验证可以加载该 V3 包。
 
-不确定时先用 V2，并向用户说明 V3 的适用边界。
+不满足时**一律使用 V2**。
+
+特别注意：
+
+- 不要把某个旧模型、旧专辑名或个人作品名当作通用 profile；
+- 不要从旧示例复制 profile 字符串；
+- 不要因为包能生成就宣称 V3 兼容；
+- 新增 V3 结构必须先改播放器固定 runtime 并发布新版本，不能只改模型包。
+
+因此，对其他用户或另一个 DiscAtelier 构建，V3 通常应视为**不可用**；V2 才是可移植的制作格式。
 
 ## 制作流程
 
