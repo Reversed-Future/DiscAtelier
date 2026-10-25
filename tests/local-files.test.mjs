@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chooseItem, matchTrackNumber, parseEpisode, parseTrack } from '../apps/desktop/src/local/match.ts';
+import { chooseItem, matchTrack, matchTrackNumber, parseEpisode, parseTrack } from '../apps/desktop/src/local/match.ts';
 
 const item = (id, categoryId, title, creator = '') => ({ id, edition: { categoryId, title, creator } });
 
@@ -28,6 +28,15 @@ test('song titles fill the track number even without a numeric prefix', () => {
   assert.equal(matchTrackNumber('7mai - Ridiculous.flac', tracks), 1);
   assert.equal(matchTrackNumber('Aiobahn - HIGH-VELOCITY.flac', tracks), 5);
   assert.equal(matchTrackNumber('KARUT - Action 68.flac', tracks), 6);
+});
+
+test('an exact song title beats a longer version title', () => {
+  const tracks = [
+    { title: '夏のせい', position: '1' },
+    { title: '夏のせい (English ver.)', position: '6' },
+  ];
+  assert.equal(matchTrack('RADWIMPS - 夏のせい.flac', tracks)?.number, 1);
+  assert.equal(matchTrack('RADWIMPS - 夏のせい (English ver.).flac', tracks)?.number, 6);
 });
 
 test('folder and file names choose the matching music or video item', () => {

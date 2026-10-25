@@ -85,18 +85,24 @@ export function matchTrack(name: string, tracks: TrackTitle[]): TrackMatch | nul
   if (parts.length > 1) candidates.add(parts.slice(1).join(' '));
   const numbers = tracks.map(track => positionNumber(track.position));
   const uniquePositions = new Set(numbers).size === tracks.length;
-  const best = tracks
+  const titles = tracks.map(track => normalized(track.title));
+  // An exact title must win before trying containment. Otherwise a short title
+  // such as "夏のせい" is swallowed by "夏のせい (English ver.)".
+  const exact = titles
+    .map((title, index) => candidates.has(title) ? index : -1)
+    .filter(index => index >= 0);
+  const best = exact.length ? exact[0] : tracks
     .map((track, index) => {
-      const title = normalized(track.title);
+      const title = titles[index];
       const matched = [...candidates].some(candidate =>
-        candidate === title || (candidate.length >= 4 && title.length >= 4 && (candidate.includes(title) || title.includes(candidate))));
+        candidate.length >= 4 && title.length >= 4 && (candidate.includes(title) || title.includes(candidate)));
       return { index, matched, length: title.length };
     })
     .filter(value => value.matched)
-    .sort((left, right) => right.length - left.length)[0];
-  if (!best) return null;
-  const number = (uniquePositions ? numbers[best.index] : null) || best.index + 1;
-  return { number, title: tracks[best.index].title };
+    .sort((left, right) => right.length - left.length)[0]?.index;
+  if (best === undefined) return null;
+  const number = (uniquePositions ? numbers[best] : null) || best + 1;
+  return { number, title: tracks[best].title };
 }
 
 export function matchTrackNumber(name: string, tracks: TrackTitle[]): number | null {
