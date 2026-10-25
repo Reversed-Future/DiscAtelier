@@ -17,6 +17,48 @@ fn validate_url(value: &str) -> Result<(), AppError> {
     Ok(())
 }
 impl VlcSession {
+    /// Play a local audio/video file through VLC. Audio deliberately passes a
+    /// zero window so VLC never creates a native video surface over the UI.
+    pub fn start_local(
+        path: PathBuf,
+        window: usize,
+        source: PlaybackSource,
+        checkpoint: Checkpoint,
+    ) -> Result<Self, AppError> {
+        let file = source
+            .playlist
+            .strip_prefix("local:")
+            .ok_or_else(|| ffi::error("本地播放路径无效。"))?;
+        let file = PathBuf::from(file);
+        if !file.is_absolute() || !file.is_file() {
+            return Err(ffi::error("本地文件不存在。"));
+        }
+        if !matches!(source.media_token.as_str(), "local-audio" | "local-video") {
+            return Err(ffi::error("本地媒体类型无效。"));
+        }
+        if source.media_token == "local-video" && window == 0 {
+            return Err(ffi::error("内置播放区域尚未创建。"));
+        }
+        let location = url::Url::from_file_path(&file)
+            .map_err(|_| ffi::error("本地文件路径无效。"))?
+            .to_string();
+        Self::launch(
+            Start {
+                path,
+                location,
+                window,
+                seconds: 0.0,
+                title: None,
+                track: None,
+                dvd: false,
+                bluray_menu: false,
+                silent: false,
+            },
+            source,
+            checkpoint,
+        )
+    }
+
     pub fn start_stream(
         path: PathBuf,
         window: usize,

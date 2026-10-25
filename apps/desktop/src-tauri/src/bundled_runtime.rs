@@ -30,6 +30,10 @@ pub fn configure(app: &tauri::AppHandle) {
         }
         paths.push(vlc);
     }
+    let mpv = root.join("mpv").join("mpv.exe");
+    if mpv.is_file() {
+        std::env::set_var("DISCATELIER_MPV", &mpv);
+    }
     let java = root.join("jre");
     if java.join("bin").join("java.exe").is_file() {
         std::env::set_var("JAVA_HOME", &java);

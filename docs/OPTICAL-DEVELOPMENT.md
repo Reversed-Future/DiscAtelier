@@ -16,7 +16,7 @@
 
 `contracts/optical.rs` 定义内部契约；application 定义设备、诊断端口；`optical-windows` 封装 Windows 查询；`player-mpv` 封装诊断子进程。Tauri 只负责设置、任务串行化、盘片身份检查和 IPC。React 面板不直接访问设备和播放器。
 
-光驱入口位于“更多 → 光驱”；安装路径位于“设置 → 播放”。配置保存到应用本地目录 `playback-settings.json`，与收藏数据库、模型包和测试目录隔离。MPV 留空按已验证的 ProgramFiles 安装布局检测；MakeMKV 库可留空，配置后只影响本应用启动的子进程。
+光驱入口位于“更多 → 光驱”；安装路径位于“设置 → 播放”。配置保存到应用本地目录 `playback-settings.json`，与收藏数据库、模型包和测试目录隔离。MPV 留空时优先使用安装目录 `mpv/mpv.exe`，再回退到已验证的 ProgramFiles 安装布局；MakeMKV 库可留空，配置后只影响本应用启动的子进程。
 
 ## 只读边界
 

@@ -117,6 +117,7 @@ export function App() {
       if (filter.categoryId === 'video') value.copies.slice(0, 8).forEach(copy => prefetchVideoMetadata(copy.editionId, copy.editionRevision));
     }).catch(() => prefetched.current.delete(key));
   }, [snapshot?.ownedCount, query.categoryId, query.status]);
+  useEffect(() => { if (player.error) notify(player.error); }, [player.error]);
   useEffect(() => { if (player.open) setOpticalOpen(false); }, [player.open]);
   useEffect(() => { if (player.open || player.musicQueue.open) setAssistantOpen(false); }, [player.open, player.musicQueue.open]);
   useEffect(() => { enter(scene.current, 0); }, [organize]);

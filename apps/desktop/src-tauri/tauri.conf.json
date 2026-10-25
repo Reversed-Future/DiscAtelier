@@ -41,6 +41,7 @@
       "../../../artifacts/netease-runtime/": "netease-runtime/",
       "../../../LICENSE": "legal/LICENSE",
       "../../../artifacts/vlc-runtime-3.0.22/vlc-3.0.22/": "vlc/",
+      "../../../artifacts/mpv-runtime/": "mpv/",
       "../../../artifacts/java-runtime-8u504b01/jdk8u504-b01-jre/": "jre/",
       "resources/aacs/": "aacs/",
       "resources/aacs/libaacs.dll": "vlc/libaacs.dll",

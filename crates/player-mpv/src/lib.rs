@@ -34,11 +34,21 @@ impl MpvProbe {
     pub fn configured(settings: &PlaybackSettings) -> Result<Self, AppError> {
         // Installation layout verified on this host; no shell or PATH lookup.
         let executable = if settings.mpv_executable.is_empty() {
-            std::env::var_os("ProgramFiles")
+            std::env::var_os("DISCATELIER_MPV")
                 .map(PathBuf::from)
-                .map(|root| root.join("MPV Player").join("mpv.exe"))
                 .filter(|path| path.is_file())
-                .ok_or_else(|| AppError::new("player", "请在设置中配置 MPV。"))?
+                .or_else(|| {
+                    std::env::var_os("ProgramFiles")
+                        .map(PathBuf::from)
+                        .map(|root| root.join("MPV Player").join("mpv.exe"))
+                        .filter(|path| path.is_file())
+                })
+                .ok_or_else(|| {
+                    AppError::new(
+                        "player",
+                        "未检测到 MPV。请安装 MPV，或在播放设置中配置 mpv.exe；安装包应包含 mpv/mpv.exe。",
+                    )
+                })?
         } else {
             PathBuf::from(&settings.mpv_executable)
         };
@@ -46,7 +56,10 @@ impl MpvProbe {
             || !executable.is_file()
             || executable.file_name().and_then(|s| s.to_str()) != Some("mpv.exe")
         {
-            return Err(AppError::new("validation", "请选择 mpv.exe 的完整路径。"));
+            return Err(AppError::new(
+                "validation",
+                "MPV 路径无效：请选择完整、存在的 mpv.exe。",
+            ));
         }
         let make_mkv_library = if settings.make_mkv_library.is_empty() {
             None

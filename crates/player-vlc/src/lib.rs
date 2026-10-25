@@ -39,14 +39,18 @@ pub fn configured(settings: &PlaybackSettings) -> Result<PathBuf, AppError> {
         || !path.is_file()
         || path.file_name().and_then(|s| s.to_str()) != Some("libvlc.dll")
     {
-        return Err(ffi::error("请在播放设置中填写 libvlc.dll 的完整路径。"));
-    }
-    let root = path
-        .parent()
-        .ok_or_else(|| ffi::error("libVLC 目录无效。"))?;
-    if !root.join("libvlccore.dll").is_file() || !root.join("plugins").is_dir() {
         return Err(ffi::error(
-            "VLC 安装不完整，需要同目录下的 libvlccore.dll 和 plugins。",
+            "未检测到 VLC。请安装 VLC，或在播放设置中填写 vlc/libvlc.dll 的完整路径。",
+        ));
+    }
+    let root = path.parent().ok_or_else(|| ffi::error("VLC 目录无效。"))?;
+    let plugins = root.join("plugins");
+    let plugins_empty = std::fs::read_dir(&plugins)
+        .map(|mut entries| entries.next().is_none())
+        .unwrap_or(true);
+    if !root.join("libvlccore.dll").is_file() || !plugins.is_dir() || plugins_empty {
+        return Err(ffi::error(
+            "VLC 运行时不完整：需要同目录的 libvlccore.dll 和非空 plugins 插件目录。请重新安装或重新打包 VLC。",
         ));
     }
     Ok(path)

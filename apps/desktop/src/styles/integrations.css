@@ -56,8 +56,9 @@
 .track-list .release-details { margin: 0 0 10px 54px; }
 /* A credit disclosure belongs to the track; only track boundaries get rules. */
 .track-list > li:not(.track-heading) { border-bottom: 1px solid var(--line); }
-.track-row { position: relative; }
-.track-position, .track-heading-content, .track-duration { pointer-events: none; }
+.track-row { position: relative; align-items: center; }
+.track-position, .track-heading-content, .track-duration { pointer-events: none; display: flex; align-items: center; min-height: 26px; }
+.track-duration { justify-content: flex-end; }
 .track-actions { display: flex; align-items: center; justify-content: flex-end; gap: 3px; pointer-events: auto; }
 .track-action { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border-radius: 3px; color: var(--muted); }
 .track-action:hover { color: var(--ink); background: #ffffff0f; }
@@ -67,7 +68,7 @@
 .track-action .icon { width: 13px; height: 13px; }
 .track-action .netease-logo { width: 18px; height: 18px; display: block; }
 
-.track-heading-content { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.track-heading-content { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .track-name { min-width: 0; overflow-wrap: anywhere; transition: color 140ms ease, opacity 140ms ease; }
 .track-credits-toggle { position: relative; z-index: 1; pointer-events: auto; padding: 0; flex: 0 0 auto; font-size: 10px; line-height: inherit; color: var(--muted); white-space: nowrap; }
 .track-credits-toggle[aria-expanded="true"] { color: var(--ink); }

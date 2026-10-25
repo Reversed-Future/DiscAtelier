@@ -1,5 +1,7 @@
 # DiscAtelier 更新路线
 
+**2026-10-25 本地 VLC 与 MPV 打包（测试版，未发行）**：本地音乐和本地视频改走 VLC，VLC 本地音频使用零窗口纯音频模式，本地视频复用内置视频区域；MPV 仅保留蓝光直读播放列表和 MakeMKV 兼容兜底，不再参与本地播放。MPV 运行时（`mpv.exe` + `d3dcompiler_43.dll`）现已加入安装包资源和 `prepare:mpv` 构建步骤，`DISCATELIER_MPV` 指向安装目录 `mpv/mpv.exe`。CDP 实测 VLC 本地音频进入 `playing`、本地视频进入 `playing`；测试签名 NSIS 安装包装到临时目录后确认包含 `mpv/mpv.exe`、`vlc/libvlc.dll`。播放启动缺少 VLC 时底部弹出“未检测到 VLC…”提示；MPV 路径和 VLC 插件目录缺失也有明确错误。同时修正歌曲列表序号、标题、时长的垂直中线对齐，本地文件弹窗标题和表头固定、表头取消半透明、表格填满可用高度。115 项 JavaScript 测试、类型检查和发布预检通过。测试预览 `artifacts/DiscAtelier-local-audio-preview.exe`，SHA-256 `a300cd7f6cb4d980e3a99ae9e1264beb73f10bae6efeb54c853f43b447822487`，74,439,680 bytes；测试安装包 `artifacts/DiscAtelier_0.1.24_vlc_mpv_test-setup.exe`，167,442,244 bytes，未发布正式版。
+
 **2026-10-25 关联歌曲手动下拉与轨号双向同步（测试版，未发行）**：关联表的歌曲列改为从当前专辑曲目表选择，手动改轨号会立即反查并更新歌曲标题。实测第 1 行把轨号改为 6，歌曲立即变为 `Trigger For Ambition`；从下拉框选择 `Summer Attack!`，轨号立即变为 14。新增精确匹配后共 115 项 JavaScript 测试通过。测试预览 `artifacts/DiscAtelier-local-audio-preview.exe`，SHA-256 `1bb5622fd509061b995b0a5be6128e41a4ff1d7b165a22d0848ba1915ee10978`，73,130,496 bytes；未发布正式版。
 
 **2026-10-25 歌名精确匹配修复（测试版，未发行）**：曲目匹配改为精确歌名优先，再尝试包含匹配。`夏のせい` 与 `夏のせい (English ver.)` 同时存在时，无 English 文件名匹配第 1 轨，English 文件匹配第 6 轨，不再因为更长的版本标题被优先选中。新增 1 项回归测试，共 115 项 JavaScript 测试通过。测试预览 `artifacts/DiscAtelier-local-audio-preview.exe`，SHA-256 `0643b8544f9bebbc9457c52f481d86826b7591dfae1670c98b122e84a2387338`，72,865,280 bytes；未发布正式版。

@@ -20,6 +20,7 @@
     "test:rust": "cargo test --workspace",
     "check": "npm run build && cargo check --workspace",
     "prepare:netease": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-netease.ps1",
-    "prepare:vlc": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-vlc.ps1"
+    "prepare:vlc": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-vlc.ps1",
+    "prepare:mpv": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-mpv.ps1"
   }
 }

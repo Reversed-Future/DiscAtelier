@@ -193,7 +193,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
         const next = all.filter(binding => binding.copyId !== item.id);
         void invoke('local_files_save', { bindings: next }).then(() => setAll(next)).catch(cause => setError(cause instanceof Error ? cause.message : String(cause)));
       }}>清除本收藏关联</button></div>
-      <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>位置</th><th>歌曲</th><th>操作</th></tr></thead><tbody>
+      <div className={files.length ? 'local-files-table-wrap local-files-saved' : 'local-files-table-wrap'}><table className="local-files-table"><thead><tr><th>文件</th><th>位置</th><th>歌曲</th><th>操作</th></tr></thead><tbody>
         {own.map(binding => <tr key={binding.path}><td title={binding.path}><span>{binding.path.split(/[\\/]/).pop()}</span></td>
           <td>{binding.episode ? `第 ${binding.episode} 集` : binding.track ? `第 ${binding.track} 轨` : '—'}</td>
           <td><span className="local-track-title">{savedTitle(binding) || '—'}</span></td>

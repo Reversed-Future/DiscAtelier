@@ -148,17 +148,17 @@ pub async fn playback_start_local(
         .map_err(|_| AppError::new("player", "播放服务不可用。"))?;
     // Switching tracks or sources replaces the current session atomically.
     drop(current.take());
-    let settings = crate::playback_settings::read(&directory)?;
+    let mut settings = crate::playback_settings::read(&directory)?;
+    if settings.vlc_library.trim().is_empty() {
+        if let Some(value) = crate::bundled_runtime::vlc_library(window.app_handle()) {
+            settings.vlc_library = value.to_string_lossy().into_owned();
+        }
+    }
+    let vlc = discatelier_player_vlc::configured(&settings)?;
     let video_window = window
         .state::<crate::video_surface::VideoSurface>()
         .handle();
     let audio = crate::local_files::is_audio(&path);
-    let config = MpvProbe::configured(&settings)?;
-    let config = if audio {
-        config
-    } else {
-        config.embedded(video_window)?
-    };
     let source = PlaybackSource {
         mount_point: copy_id.clone(),
         media_token: if audio { "local-audio" } else { "local-video" }.into(),
@@ -175,9 +175,14 @@ pub async fn playback_start_local(
             .map_err(|error| error.clone())?
             .save_playback(&record)
     });
-    let session = MpvSession::start(config, source, 0.0, directory, checkpoint)?;
+    let session = discatelier_player_vlc::VlcSession::start_local(
+        vlc,
+        if audio { 0 } else { video_window },
+        source,
+        checkpoint,
+    )?;
     let snapshot = session.snapshot()?;
-    *current = Some(PlaybackSession::Mpv(session));
+    *current = Some(PlaybackSession::Vlc(session));
     Ok(snapshot)
 }
 #[tauri::command]

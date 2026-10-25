@@ -32,9 +32,10 @@ DiscAtelier 是一个面向个人实体影音收藏的 Windows 桌面应用。�
 - 光驱只读识别 CD、DVD、Blu-ray；
 - 光驱内容与收藏条目的关联、播放历史和光驱面板缓存；
 - 插入已关联光盘时底部提示是否跳转；确认后滑到对应收藏，标题旁的光驱图标可打开光驱界面；
-- 内置 VLC 3.0.22 和 Temurin JRE，DVD／Blu-ray 菜单不需要用户另装 VLC 或 Java；
+- 内置 VLC 3.0.22、MPV 0.41 和 Temurin JRE，本地播放、DVD／Blu-ray 菜单不需要用户另装播放器或 Java；
 - CD 播放器支持曲目、封面、音量、上一首／下一首；
-- 视频使用 MPV／VLC 后端，支持进度、音轨、倍速、全屏和字幕；
+- 本地音乐、本地视频、网易云、CD 和 DVD／BD 菜单使用 VLC；蓝光直读播放列表和 MakeMKV 兼容兜底使用 MPV；
+- 启动播放时如果 VLC／MPV 或插件缺失，底部会显示具体缺失项，而不是静默失败；
 - 播放进度平滑推进，播放器淡入淡出；
 - Blu-ray 菜单和 BD-J 的运行链路已接入，但仍需真实样盘验收。
 
@@ -136,7 +137,7 @@ $env:CARGO_TARGET_DIR = 'D:\DiscAtelierBuilds\target'
 .\scripts\release\build-signed.ps1
 ```
 
-`scripts/prepare-vlc.ps1` 下载并校验 VLC／Temurin 运行时；固定版本、许可证和源码地址见 [内置运行时说明](docs/BUNDLED-VLC.md)。
+`scripts/prepare-vlc.ps1` 下载并校验 VLC／Temurin 运行时；`scripts/prepare-mpv.ps1` 从本机 MPV 安装复制 `mpv.exe` 和 `d3dcompiler_43.dll` 到 `artifacts/mpv-runtime/`。固定版本、许可证和源码地址见 [内置运行时说明](docs/BUNDLED-VLC.md)。
 
 播放器、光驱和资料源的实现记录见 [播放开发记录](docs/PLAYBACK-DEVELOPMENT.md)、[光驱开发记录](docs/OPTICAL-DEVELOPMENT.md) 和 [集成边界](docs/INTEGRATIONS.md)。
 
@@ -168,7 +169,7 @@ $env:CARGO_TARGET_DIR = 'D:\DiscAtelierBuilds\target'
 
 本项目以 **GNU General Public License v3.0 or later**（GPL-3.0-or-later）发布，完整文本见 [LICENSE](LICENSE)。
 
-安装包包含的 VLC 3.0.22、Temurin JRE 8、libaacs、libbdplus 及其他第三方组件仍适用各自许可证；固定版本、校验值、许可证文件和源码地址见 [docs/BUNDLED-VLC.md](docs/BUNDLED-VLC.md) 与安装目录下的 `legal/`、`vlc/`、`jre/`。
+安装包包含的 VLC 3.0.22、MPV 0.41、Temurin JRE 8、libaacs、libbdplus 及其他第三方组件仍适用各自许可证；固定版本、校验值、许可证文件和源码地址见 [docs/BUNDLED-VLC.md](docs/BUNDLED-VLC.md) 与安装目录下的 `legal/`、`vlc/`、`mpv/`、`jre/`。
 
 ## 作者
 

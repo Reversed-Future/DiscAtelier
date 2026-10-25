@@ -69,7 +69,14 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .restore-preview > p:first-child { font-size: 14px; }
 .metadata-toolbar, .metadata-pagination, .settings-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-block: 14px; font-size: 12px; }
 .metadata-toolbar-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 18px; margin-left: auto; }
-.local-files-panel { width: min(1120px, 92vw); }
+.local-files-panel { width: min(1120px, 92vw); display: flex; flex-direction: column; }
+.local-files-panel > .panel-body { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.local-files-panel > .panel-body > .local-files-settings,
+.local-files-panel > .panel-body > .local-files-summary,
+.local-files-panel > .panel-body > .form-error,
+.local-files-panel > .panel-body > .settings-actions { flex: 0 0 auto; }
+.local-files-panel > .panel-body > .local-files-table-wrap { flex: 1 1 auto; min-height: 120px; max-height: none; }
+.local-files-panel > .panel-body > .local-files-saved { flex: 0 1 220px; }
 .local-files-summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .local-files-settings { margin-block: 8px 20px; }
 .local-files-settings .path-input { margin-top: 8px; }
@@ -84,7 +91,7 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .local-files-summary { align-items: center; margin-block: 8px 12px; font-size: 12px; }
 .local-files-table-wrap { max-height: min(56vh, 620px); overflow: auto; border-block: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
 .local-files-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.local-files-table th { position: sticky; top: 0; z-index: 1; padding: 10px 12px; text-align: left; font-weight: 400; opacity: .65; background: var(--surface, #171717); }
+.local-files-table th { position: sticky; top: 0; z-index: 1; padding: 10px 12px; text-align: left; font-weight: 400; color: var(--muted); background: var(--surface, #171717); }
 .local-files-table td { padding: 8px 12px; border-top: 1px solid color-mix(in srgb, currentColor 9%, transparent); vertical-align: middle; }
 .local-files-table td:first-child { max-width: 290px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .local-files-table .select-control { width: min(420px, 42vw); }
