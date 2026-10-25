@@ -83,6 +83,7 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .local-files-table td { padding: 8px 12px; border-top: 1px solid color-mix(in srgb, currentColor 9%, transparent); vertical-align: middle; }
 .local-files-table td:first-child { max-width: 290px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .local-files-table select { width: min(360px, 38vw); min-height: 30px; }
+.local-files-table input[type="number"] { width: 96px; min-height: 30px; }
 .local-files-ok { color: #94c9a9; }
 .local-files-miss { opacity: .6; }
 .metadata-search { display: grid; grid-template-columns: 100px minmax(0, 1fr) auto; gap: 10px; }

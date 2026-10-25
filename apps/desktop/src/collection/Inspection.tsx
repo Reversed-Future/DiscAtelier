@@ -28,6 +28,7 @@ import type { PlaybackController } from '../playback/usePlayback';
 import { useOpticalPresence } from '../optical/useOpticalPresence';
 import { OpticalTitleBadge } from '../optical/OpticalTitleBadge';
 import { useCoverTilt } from './useCoverTilt';
+import { LocalItemPanel } from '../local/LocalItemPanel';
 
 export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, artworkSlot, prepareClose, modelBusy, player, metadata, metadataError, partId, onPart }: {
   item: LibraryCopy; carriers: Descriptor[]; onClose(): void; onSaved(): Promise<void>; onDeleted(): Promise<void>; edit(): void;
@@ -39,6 +40,7 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
   const [tab, setTab] = useState('metadata');
   const [editingPurchase, setEditingPurchase] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false), [deleting, setDeleting] = useState(false), [deleteError, setDeleteError] = useState('');
+  const [localOpen, setLocalOpen] = useState(false);
   async function remove() {
     if (deleting) return;
     setDeleting(true); setDeleteError('');
@@ -108,7 +110,7 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
           <button type="button" className="text-button delete-collection" onClick={() => { setDeleteError(''); setConfirmDelete(true); }} disabled={modelBusy || chapterBusy || deleting}>删除收藏</button>
           <button type="button" data-hidden={tab === 'tracks'} aria-hidden={tab === 'tracks'} tabIndex={tab === 'tracks' ? -1 : undefined} onClick={tab === 'purchase' ? () => setEditingPurchase(true) : edit} disabled={modelBusy || chapterBusy || deleting}>{tab === 'purchase' ? '编辑购入' : '编辑版本'}</button>
         </div>
-        <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}<span className="detail-status">{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
+        <div className="detail-sources"><CollectionSource source={item.source}/>{item.edition.categoryId === 'music' && <button className="text-button" onClick={() => setNeteaseOpen(true)}>网易云资料</button>}<button className="text-button" onClick={() => setLocalOpen(true)}>本地文件</button><span className="detail-status">{statuses.find(status => status.id === item.copy.status)?.label}</span></div>
       </section>
     </div>
   </Modal>
@@ -125,5 +127,5 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
         <button type="button" className="solid-button" disabled={deleting} onClick={() => void remove()}>{deleting ? '删除中…' : '确认删除'}</button>
       </div>
     </Modal>}
-    {neteaseOpen && <NeteasePanel rows={editionContent.content?.tracks || []} item={item} onClose={() => setNeteaseOpen(false)} onSaved={onSaved}/>} {editingPurchase && <EditPurchase item={item} onClose={() => setEditingPurchase(false)} onSaved={onSaved}/>}</>;
+    {neteaseOpen && <NeteasePanel rows={editionContent.content?.tracks || []} item={item} onClose={() => setNeteaseOpen(false)} onSaved={onSaved}/>} {editingPurchase && <EditPurchase item={item} onClose={() => setEditingPurchase(false)} onSaved={onSaved}/>}{localOpen && <LocalItemPanel item={item} onClose={() => setLocalOpen(false)}/>}</>;
 }

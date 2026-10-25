@@ -81,7 +81,9 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
   }
 
   async function save(): Promise<Binding[]> {
-    const next = rows.filter(row => row.copyId).map(row => {
+    const scanned = new Set(rows.map(row => row.file.path));
+    const kept = bindings.filter(binding => !scanned.has(binding.path));
+    const next = [...kept, ...rows.filter(row => row.copyId).map(row => {
       const item = items.find(entry => entry.id === row.copyId);
       return {
         copyId: row.copyId,
@@ -90,7 +92,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         episode: row.episode,
         track: row.track,
       };
-    });
+    })];
     await invoke('local_files_save', { bindings: next });
     setBindings(next);
     return next;
