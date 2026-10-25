@@ -124,6 +124,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     setBusy(true); setError('');
     try {
       await persist();
+      window.dispatchEvent(new Event('local-files-changed'));
       setFiles([]); setRows([]);
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
     finally { setBusy(false); }

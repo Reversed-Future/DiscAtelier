@@ -94,6 +94,10 @@
 .video-chapter-list strong { font-weight: 500; }
 .video-chapter-list small { display: block; margin-top: 5px; font-size: 11px; line-height: 1.7; color: var(--muted); }
 .video-chapter-list li > span { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; }
+.video-chapter-play { display: grid; place-items: center; align-self: start; width: 28px; height: 28px; margin-top: -3px; padding: 0; border-radius: 3px; color: var(--muted); }
+.video-chapter-play:hover { color: var(--ink); background: #ffffff0f; }
+.video-chapter-play[aria-current="true"] { color: var(--ink); }
+.video-chapter-play .icon { width: 13px; height: 13px; }
 .video-chapters .disc-tabs { margin-bottom: 10px; }
 .video-characters li { display: flex; align-items: flex-start; gap: 16px; }
 .video-characters .video-character-portrait, .video-character-no-image { width: 88px; height: 124px; object-fit: contain; object-position: top center; flex-shrink: 0; margin: 0; }

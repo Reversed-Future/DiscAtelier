@@ -134,6 +134,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
     })];
     await invoke('local_files_save', { bindings: next });
     setBindings(next);
+    window.dispatchEvent(new Event('local-files-changed'));
     return next;
   }
 

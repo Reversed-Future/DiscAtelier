@@ -27,6 +27,7 @@ export const playback = {
   snapshot: () => invoke<Snapshot | null>('playback_snapshot'),
   start: (mountPoint: string, token: string, playlist: string, resumeSeconds = 0, resumeTitle: number | null = null) =>
     invoke<Snapshot>('playback_start', { mountPoint, token, playlist, resumeSeconds, resumeTitle }),
+  startLocal: (copyId: string, path: string) => invoke<Snapshot>('playback_start_local', { copyId, path }),
   control: (sessionId: string, control: Control) => invoke<void>('playback_control', { sessionId, control }),
   history: () => invoke<PlaybackRecord[]>('playback_history'),
 };

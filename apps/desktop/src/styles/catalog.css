@@ -60,7 +60,7 @@
 .release-tracks .track-list > li:first-child > div { padding-top: 0; }
 .release-track-scroll:focus-visible { outline: none; }
 .release-track-scroll .track-list { margin-top: 0; }
-.release-track-scroll .track-list li > .track-row { display: grid; width: 100%; text-align: left; gap: 8px; grid-template-columns: 54px minmax(0, 1fr) 40px; padding-block: 11px; }
+.release-track-scroll .track-list li > .track-row { display: grid; width: 100%; text-align: left; gap: 8px; grid-template-columns: 54px minmax(0, 1fr) 40px auto; padding-block: 11px; }
 .track-list .track-position, .track-list .track-duration { color: var(--muted); font-variant-numeric: tabular-nums; }
 .track-list .track-duration { text-align: right; }
 .track-heading h4 { color: var(--muted); font-weight: 400; font-size: 11px; margin: 16px 0 8px; }
