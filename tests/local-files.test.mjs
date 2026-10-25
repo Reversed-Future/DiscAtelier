@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chooseItem, parseEpisode, parseTrack } from '../apps/desktop/src/local/match.ts';
+import { chooseItem, matchTrackNumber, parseEpisode, parseTrack } from '../apps/desktop/src/local/match.ts';
 
 const item = (id, categoryId, title, creator = '') => ({ id, edition: { categoryId, title, creator } });
 
@@ -17,6 +17,17 @@ test('track markers map leading numbers, CD/Track labels and separated numbers',
   assert.equal(parseTrack('CD03 - tazuna.flac'), 3);
   assert.equal(parseTrack('Track 12.flac'), 12);
   assert.equal(parseTrack('Album 09 - song.flac'), 9);
+});
+
+test('song titles fill the track number even without a numeric prefix', () => {
+  const tracks = [
+    { title: 'Ridiculous', position: '1' },
+    { title: 'HIGH-VELOCITY', position: '5' },
+    { title: 'Action 68', position: '6' },
+  ];
+  assert.equal(matchTrackNumber('7mai - Ridiculous.flac', tracks), 1);
+  assert.equal(matchTrackNumber('Aiobahn - HIGH-VELOCITY.flac', tracks), 5);
+  assert.equal(matchTrackNumber('KARUT - Action 68.flac', tracks), 6);
 });
 
 test('folder and file names choose the matching music or video item', () => {

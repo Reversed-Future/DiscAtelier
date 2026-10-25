@@ -59,16 +59,54 @@ export function parseTrack(name: string): number | null {
   return separated ? Number(separated[1]) : null;
 }
 
+export interface TrackTitle {
+  title: string;
+  position: string;
+}
+
+export function positionNumber(position: string): number | null {
+  const value = position.match(/\d{1,3}/);
+  return value ? Number(value[0]) : null;
+}
+
+/** Match a file's song name against the album tracklist, independent of track numbers. */
+export function matchTrackNumber(name: string, tracks: TrackTitle[]): number | null {
+  if (!tracks.length) return null;
+  const base = normalized(name);
+  const parts = base.split(/\s+/);
+  const candidates = new Set<string>([base]);
+  const dash = name.replace(/\.[^.]+$/, '').split(/\s+[-–—]\s+/);
+  if (dash.length > 1) candidates.add(normalized(dash[dash.length - 1]));
+  if (parts.length > 1) candidates.add(parts.slice(1).join(' '));
+  const numbers = tracks.map(track => positionNumber(track.position));
+  const uniquePositions = new Set(numbers).size === tracks.length;
+  const best = tracks
+    .map((track, index) => {
+      const title = normalized(track.title);
+      const matched = [...candidates].some(candidate =>
+        candidate === title || (candidate.length >= 4 && title.length >= 4 && (candidate.includes(title) || title.includes(candidate))));
+      return { index, matched, length: title.length };
+    })
+    .filter(value => value.matched)
+    .sort((left, right) => right.length - left.length)[0];
+  if (!best) return null;
+  return (uniquePositions ? numbers[best.index] : null) || best.index + 1;
+}
+
 export function isAudio(file: ScannedLike) {
   return AUDIO_EXTENSIONS.has(extension(file.name));
 }
 
-export function chooseItem(items: LibraryCopy[], file: ScannedLike, allowFallback = false): LibraryCopy | null {
+export function chooseItem(items: LibraryCopy[], file: ScannedLike, allowFallback = false, trackTitles?: Map<string, TrackTitle[]>): LibraryCopy | null {
   const text = `${file.relativePath} ${file.name}`;
   const category = isAudio(file) ? 'music' : 'video';
   const candidates = items
     .filter(item => item.edition.categoryId === category)
-    .map(item => ({ item, value: score(item, text) }))
+    .map(item => {
+      const tracks = trackTitles?.get(item.id) || [];
+      const track = category === 'music' && tracks.length ? matchTrackNumber(file.name, tracks) : null;
+      return { item, value: score(item, text) + (track ? 20 : 0) };
+    })
     .sort((left, right) => right.value - left.value);
   if (!candidates[0] || (!allowFallback && candidates[0].value === 0)) return null;
   return candidates[0].item;

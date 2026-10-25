@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
+import { library } from '../library/gateway';
 import type { LibraryCopy } from '../library/types';
-import { isAudio, parseEpisode, parseTrack } from './match';
+import { isAudio, matchTrackNumber, parseEpisode, parseTrack, type TrackTitle } from './match';
 import { FolderPicker } from './FolderPicker';
 import { Modal } from '../ui/Modal';
 
@@ -24,13 +25,24 @@ interface Row {
   number: string;
 }
 
-function defaultNumber(item: LibraryCopy, file: ScannedFile) {
-  const value = item.edition.categoryId === 'music' || isAudio(file) ? parseTrack(file.name) : parseEpisode(file.name);
+function defaultNumber(item: LibraryCopy, file: ScannedFile, tracks: TrackTitle[]) {
+  if (item.edition.categoryId === 'music' || isAudio(file)) {
+    const matched = matchTrackNumber(file.name, tracks);
+    if (matched) return String(matched);
+    // An artist - title filename must not be mistaken for a trailing track number.
+    if (/^\s*\d{1,3}(?:\s|[-–—])/.test(file.name)) {
+      const value = parseTrack(file.name);
+      if (value) return String(value);
+    }
+    return '';
+  }
+  const value = parseEpisode(file.name);
   return value ? String(value) : '';
 }
 
 export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose(): void }) {
   const [all, setAll] = useState<Binding[]>([]);
+  const [tracks, setTracks] = useState<TrackTitle[]>([]);
   const [folder, setFolder] = useState('');
   const [files, setFiles] = useState<ScannedFile[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
@@ -48,6 +60,19 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    if (item.edition.categoryId !== 'music') return;
+    library.content(item.editionId).then(content => {
+      if (active) setTracks((content?.tracks || []).map(track => ({ title: track.title, position: track.position })));
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [item.editionId, item.edition.categoryId]);
+  useEffect(() => {
+    if (!tracks.length) return;
+    setRows(current => current.map(row => ({ ...row, number: row.number || defaultNumber(item, row.file, tracks) })));
+  }, [tracks, item]);
+
   const own = all.filter(binding => binding.copyId === item.id);
 
   async function scan(path: string) {
@@ -56,7 +81,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     try {
       const scanned = await invoke<ScannedFile[]>('local_files_scan', { folder: path });
       setFiles(scanned);
-      setRows(scanned.map(file => ({ file, number: defaultNumber(item, file) })));
+      setRows(scanned.map(file => ({ file, number: defaultNumber(item, file, tracks) })));
       if (!scanned.length) setError('这个文件夹里没有找到支持的音视频文件。');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));

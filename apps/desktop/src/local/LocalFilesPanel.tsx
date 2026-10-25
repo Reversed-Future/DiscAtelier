@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { library } from '../library/gateway';
 import type { LibraryCopy } from '../library/types';
-import { chooseItem, parseEpisode, parseTrack } from './match';
+import { chooseItem, matchTrackNumber, parseEpisode, parseTrack, type TrackTitle } from './match';
 import { FolderPicker } from './FolderPicker';
 import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
@@ -31,6 +31,7 @@ interface Row {
 
 export function LocalFilesPanel({ onClose }: { onClose(): void }) {
   const [items, setItems] = useState<LibraryCopy[]>([]);
+  const [trackTitles, setTrackTitles] = useState<Map<string, TrackTitle[]>>(new Map());
   const [bindings, setBindings] = useState<Binding[]>([]);
   const [folder, setFolder] = useState('');
   const [files, setFiles] = useState<ScannedFile[]>([]);
@@ -56,11 +57,27 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    if (!items.length) return;
+    let active = true;
+    Promise.all(items.filter(item => item.edition.categoryId === 'music').map(async item => {
+      const content = await library.content(item.editionId);
+      return [item.id, (content?.tracks || []).map(track => ({ title: track.title, position: track.position }))] as const;
+    })).then(entries => {
+      if (active) setTrackTitles(new Map(entries));
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [items]);
+
+  function trackFor(itemId: string, file: ScannedFile) {
+    return matchTrackNumber(file.name, trackTitles.get(itemId) || []) || parseTrack(file.name);
+  }
+
   function propose(scanned: ScannedFile[]) {
     setRows(scanned.map(file => {
-      const item = chooseItem(items, file);
+      const item = chooseItem(items, file, false, trackTitles);
       const episode = item && item.edition.categoryId === 'video' ? parseEpisode(file.name) : null;
-      const track = item && item.edition.categoryId === 'music' ? parseTrack(file.name) : null;
+      const track = item && item.edition.categoryId === 'music' ? trackFor(item.id, file) : null;
       return { file, copyId: item?.id || '', episode, track, matched: !!item };
     }));
   }
@@ -76,6 +93,22 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally { setBusy(false); }
   }
+
+  useEffect(() => {
+    if (!trackTitles.size || !files.length) return;
+    setRows(current => current.map(row => {
+      if (row.copyId) return row;
+      const item = chooseItem(items, row.file, false, trackTitles);
+      if (!item) return row;
+      return {
+        ...row,
+        copyId: item.id,
+        matched: true,
+        episode: item.edition.categoryId === 'video' ? parseEpisode(row.file.name) : null,
+        track: item.edition.categoryId === 'music' ? trackFor(item.id, row.file) : null,
+      };
+    }));
+  }, [trackTitles, files, items]);
 
   async function chooseFolder() {
     const selected = await open({ directory: true, multiple: false, title: '选择本地文件所在的文件夹' });
@@ -121,7 +154,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         copyId,
         matched: !!copyId,
         episode: category === 'video' ? parseEpisode(row.file.name) : null,
-        track: category === 'music' ? parseTrack(row.file.name) : null,
+        track: category === 'music' ? trackFor(copyId, row.file) : null,
       };
     }));
   }
@@ -136,7 +169,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         copyId: item.id,
         matched: true,
         episode: item.edition.categoryId === 'video' ? parseEpisode(row.file.name) : null,
-        track: item.edition.categoryId === 'music' ? parseTrack(row.file.name) : null,
+        track: item.edition.categoryId === 'music' ? trackFor(item.id, row.file) : null,
       };
     }));
   }
