@@ -30,10 +30,10 @@ import { OpticalTitleBadge } from '../optical/OpticalTitleBadge';
 import { useCoverTilt } from './useCoverTilt';
 import { LocalItemPanel } from '../local/LocalItemPanel';
 
-export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, artworkSlot, prepareClose, modelBusy, player, metadata, metadataError, partId, onPart }: {
+export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, artworkSlot, prepareClose, modelBusy, player, metadata, metadataError, partId, onPart, onOptical }: {
   item: LibraryCopy; carriers: Descriptor[]; onClose(): void; onSaved(): Promise<void>; onDeleted(): Promise<void>; edit(): void;
   artworkSlot(node: HTMLDivElement | null): void; prepareClose(): Promise<void>; modelBusy: boolean;
-  player: PlaybackController; metadata:VideoMetadata|null; metadataError:string; partId:string; onPart(id:string,instant:boolean):void;
+  player: PlaybackController; metadata:VideoMetadata|null; metadataError:string; partId:string; onPart(id:string,instant:boolean):void; onOptical(): void;
 }) {
   const [neteaseOpen, setNeteaseOpen] = useState(false);
   const [chapterBusy, setChapterBusy] = useState(false);
@@ -50,7 +50,7 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
     } catch (cause) { setDeleting(false); setDeleteError(errorMessage(cause)); }
   }
   const editionContent = useEditionContent(item);
-  const optical = useOpticalPresence().find(value => value.copyId === item.id);
+  const optical = useOpticalPresence(true, 3000).find(value => value.copyId === item.id);
   const isVideo = item.edition.categoryId === 'video';
   const parts = metadata?.parts || [], part = parts.find(p => p.id === partId) || parts[0];
   const [tiltNode, setTiltNode] = useState<HTMLDivElement | null>(null);
@@ -88,7 +88,7 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
       </div>
       <section className="object-info">
         {part && <p className="video-part-caption" role="status">{part.label} · {parts.indexOf(part) + 1} / {parts.length}</p>}
-        <div className="object-title-line"><h1 title={titles.title}>{titles.title}</h1>{optical && <OpticalTitleBadge playing={optical.playing} drive={optical.drive}/>}</div>
+        <div className="object-title-line"><h1 title={titles.title}>{titles.title}</h1>{optical && <OpticalTitleBadge playing={optical.playing} drive={optical.drive} onOpen={onOptical}/>}</div>
         <p className="object-creator">{titles.subtitle}</p>
         <nav className="detail-tabs" aria-label="详情内容">
           <button className={tab === 'metadata' ? 'active' : ''} onClick={() => setTab('metadata')}>资料</button>

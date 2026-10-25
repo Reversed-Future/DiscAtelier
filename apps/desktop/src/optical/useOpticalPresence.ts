@@ -6,7 +6,7 @@ let cachedPresence: OpticalPresence[] | null = null;
 const samePresence = (left: OpticalPresence[], right: OpticalPresence[]) => JSON.stringify(left) === JSON.stringify(right);
 
 /** Read-only drive association status. Polling stops when the caller is hidden. */
-export function useOpticalPresence(active = true) {
+export function useOpticalPresence(active = true, interval = 15000) {
   const [presence, setPresence] = useState<OpticalPresence[]>(() => cachedPresence || []);
   useEffect(() => {
     if (!active || !desktopAvailable()) return;
@@ -22,8 +22,8 @@ export function useOpticalPresence(active = true) {
       } catch { /* A missing drive or locked library is not a library error. */ }
     }
     void poll();
-    const timer = setInterval(() => void poll(), 15000);
+    const timer = setInterval(() => void poll(), interval);
     return () => { live = false; clearInterval(timer); };
-  }, [active]);
+  }, [active, interval]);
   return presence;
 }

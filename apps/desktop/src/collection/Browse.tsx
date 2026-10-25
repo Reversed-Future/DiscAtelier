@@ -9,12 +9,12 @@ import type { LibraryCopy } from '../library/types';
 import { portraitCover } from '../library/coverShape';
 import { enter } from '../ui/motion';
 
-export function Browse({ items, selectedId, select, inspect, organize, modelActive, takenId, artworkSlot, move }: {
-  move(id:string,beforeId:string|null):Promise<void>; items: LibraryCopy[]; selectedId: string; select(id: string): void; inspect(item: LibraryCopy): void; organize: boolean; modelActive: boolean; takenId?: string; artworkSlot(node: HTMLDivElement | null): void;
+export function Browse({ items, selectedId, select, inspect, organize, modelActive, takenId, artworkSlot, move, onOptical }: {
+  move(id:string,beforeId:string|null):Promise<void>; items: LibraryCopy[]; selectedId: string; select(id: string): void; inspect(item: LibraryCopy): void; organize: boolean; modelActive: boolean; takenId?: string; artworkSlot(node: HTMLDivElement | null): void; onOptical(): void;
 }) {
   const index = Math.max(0, items.findIndex(item => item.id === selectedId));
   const selected = items[index];
-  const optical = useOpticalPresence().find(value => value.copyId === selected?.id);
+  const optical = useOpticalPresence(true, 3000).find(value => value.copyId === selected?.id);
   const selectedVideo = useVideoMetadata(selected?.editionId || '', selected?.editionRevision || 0, selected?.edition.categoryId === 'video');
   const titles = selected?.edition.categoryId === 'video' ? selectedVideo.value?.parts?.length ? {title:selected.edition.title,subtitle:selected.edition.creator} : workTitles(selectedVideo.value?.work, selected.edition.title, selected.edition.creator) : { title: selected?.edition.title, subtitle: selected?.edition.creator };
   const caption = useRef<HTMLDivElement>(null);
@@ -51,6 +51,6 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
         </button>;
       })}
     </div>
-    <div className="record-caption" ref={caption}><span className="record-counter">{String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}</span><div className="record-title-line"><h1>{titles.title}</h1>{optical && <OpticalTitleBadge playing={optical.playing} drive={optical.drive}/>}</div><p>{titles.subtitle}</p></div>
+    <div className="record-caption" ref={caption}><span className="record-counter">{String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}</span><div className="record-title-line"><h1>{titles.title}</h1>{optical && <OpticalTitleBadge playing={optical.playing} drive={optical.drive} onOpen={onOptical}/>}</div><p>{titles.subtitle}</p></div>
   </div>;
 }

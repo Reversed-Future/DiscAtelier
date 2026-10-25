@@ -19,6 +19,8 @@ import { Settings } from './settings/Settings';
 import { useCollectionArtwork } from './collection/useCollectionArtwork';
 import { prefetchVideoMetadata } from './video/useVideoMetadata';
 import { OpticalPanel } from './optical/OpticalPanel';
+import { useOpticalPresence } from './optical/useOpticalPresence';
+import type { OpticalPresence } from './optical/gateway';
 import { LocalFilesPanel } from './local/LocalFilesPanel';
 import { usePlayback } from './playback/usePlayback';
 import { AssistantDock } from './assistant/AssistantDock';
@@ -28,6 +30,7 @@ import { MusicDock } from './playback/MusicDock';
 
 export function App() {
   const player = usePlayback();
+  const opticalPresence = useOpticalPresence(true, 3000);
   useZoom();
   useScrollbars();
   const snapshots = useRef(new Map<string, LibrarySnapshot>());
@@ -45,6 +48,8 @@ export function App() {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [opticalOpen, setOpticalOpen] = useState(false);
   const [localFilesOpen, setLocalFilesOpen] = useState(false);
+  const [opticalPrompt, setOpticalPrompt] = useState<OpticalPresence | null>(null);
+  const knownOptical = useRef(new Set<string>());
   const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [metadataOpen, setMetadataOpen] = useState(false);
@@ -135,6 +140,34 @@ export function App() {
   const currentVideo = useVideoMetadata(current?.editionId || '',current?.editionRevision || 0,current?.edition.categoryId === 'video');
   const [partId,setPartId] = useState(''), [instantFlip,setInstantFlip] = useState(false);
   useEffect(() => {setPartId('');},[inspected?.id]);
+  useEffect(() => {
+    const present = new Set(opticalPresence.map(value => value.mediaToken));
+    for (const value of opticalPresence) {
+      if (knownOptical.current.has(value.mediaToken)) continue;
+      knownOptical.current.add(value.mediaToken);
+      if (!opticalOpen && !player.open && inspected?.id !== value.copyId && selectedId !== value.copyId) setOpticalPrompt(value);
+    }
+    for (const token of [...knownOptical.current]) if (!present.has(token)) knownOptical.current.delete(token);
+  }, [opticalPresence, opticalOpen, player.open, inspected?.id, selectedId]);
+  async function jumpToOptical(value: OpticalPresence) {
+    let copy = items.find(item => item.id === value.copyId);
+    if (!copy) {
+      const pages = await Promise.all([
+        library.list({ categoryId: 'music', status: null, query: '' }),
+        library.list({ categoryId: 'video', status: null, query: '' }),
+      ]);
+      copy = pages.flatMap(page => page.copies).find(item => item.id === value.copyId);
+    }
+    if (!copy) { setOpticalPrompt(null); notify('没有找到这张光盘对应的收藏'); return; }
+    setOpticalPrompt(null);
+    setInspected(null);
+    setSelectedId(copy.id);
+    setOrganize(false);
+    const next = { categoryId: copy.edition.categoryId, status: null, query: '' };
+    const cached = snapshots.current.get(`${next.categoryId}||`);
+    if (cached) setSnapshot(cached);
+    setQuery(next);
+  }
   const artwork = useCollectionArtwork(current, modelActive, !!inspected, currentVideo.value, partId, instantFlip);
   return <div className="workspace" data-list={organize}>
     <WindowChrome/>
@@ -161,7 +194,7 @@ export function App() {
     <main id="scene" ref={scene} aria-label="收藏展示" aria-busy={loading} inert={player.open}>
       {error ? <div className="empty-state"><span className="disc-mark"/><p role="alert">{error}</p>{desktopAvailable() && <button onClick={() => void refresh(query)}>重试</button>}</div> :
         !snapshot ? <div className="empty-state"><span className="disc-mark"/><p>正在打开收藏库</p></div> :
-        items.length ? <Browse move={async (id,beforeId) => {await library.move(id,beforeId);await refresh(query);}} items={items} selectedId={selectedId} select={setSelectedId} inspect={setInspected} organize={organize} modelActive={modelActive} takenId={inspected?.id} artworkSlot={artwork.shelfRef}/> :
+        items.length ? <Browse move={async (id,beforeId) => {await library.move(id,beforeId);await refresh(query);}} items={items} selectedId={selectedId} select={setSelectedId} inspect={setInspected} organize={organize} modelActive={modelActive} takenId={inspected?.id} artworkSlot={artwork.shelfRef} onOptical={() => setOpticalOpen(true)}/> :
         <div className="empty-state"><span className="disc-mark"/><p>{query.query || query.status ? '没有匹配的收藏' : query.categoryId === 'music' ? '还没有音乐收藏' : '还没有影像收藏'}</p>
           <button onClick={() => query.query || query.status ? setQuery({ ...query, query: '', status: null }) : openAdd()}>{query.query || query.status ? '清除筛选' : '添加收藏'}</button></div>}
     </main>
@@ -172,7 +205,7 @@ export function App() {
     {player.active && !player.snapshot?.source.playlist.startsWith('netease-song:') && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
       {player.snapshot?.paused ? '已暂停' : player.snapshot?.phase === 'loading' ? '读取中' : '播放中'} · {player.snapshot?.title}
     </button>}
-    {inspected && <Inspection metadata={currentVideo.value} metadataError={currentVideo.error} partId={partId} onPart={(id,instant) => {setPartId(id);setInstantFlip(instant);}} key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
+    {inspected && <Inspection metadata={currentVideo.value} metadataError={currentVideo.error} partId={partId} onPart={(id,instant) => {setPartId(id);setInstantFlip(instant);}} onOptical={() => setOpticalOpen(true)} key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
       onDeleted={async () => { setInspected(null); setSelectedId(''); const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已删除'); }}
       edit={() => setEditing(inspected)}/>}
     {editing && snapshot && <EditEdition item={editing} categories={snapshot.categories} carriers={snapshot.carriers}
@@ -192,6 +225,13 @@ export function App() {
     {settingsPage && <Settings initialPage={settingsPage} libraryAvailable={!!snapshot}
       onClose={() => setSettingsPage(null)}
       onRestore={() => { setSettingsPage(null); setMetadataOpen(false); setRestoring(true); }}/>}
+    {opticalPrompt && <div className="optical-jump-prompt" role="dialog" aria-label="光驱收藏提示">
+      <div><span>光驱中检测到《{opticalPrompt.title}》</span><small>{opticalPrompt.drive} · 是否跳转到对应收藏？</small></div>
+      <div className="optical-jump-actions">
+        <button type="button" className="text-button" onClick={() => setOpticalPrompt(null)}>否</button>
+        <button type="button" className="solid-button" onClick={() => void jumpToOptical(opticalPrompt)}>是</button>
+      </div>
+    </div>}
     <div className={`toast${notice ? ' visible' : ''}`} role="status">{notice}</div>
     <MusicDock player={player}/>
     <AssistantDock open={assistantOpen} hidden={player.open} onOpen={value => { if (value) player.musicQueue.setOpen(false); setAssistantOpen(value); }} onChanged={() => void refresh(query)}/>

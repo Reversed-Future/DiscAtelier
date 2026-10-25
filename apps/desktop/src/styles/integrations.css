@@ -66,13 +66,11 @@
 .track-action.netease-action:hover { color: #fff; }
 .track-action .icon { width: 13px; height: 13px; }
 .track-action .netease-logo { width: 18px; height: 18px; display: block; }
-.track-row:hover .track-name { color: var(--muted); }
+
 .track-heading-content { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .track-name { min-width: 0; overflow-wrap: anywhere; transition: color 140ms ease, opacity 140ms ease; }
 .track-credits-toggle { position: relative; z-index: 1; pointer-events: auto; padding: 0; flex: 0 0 auto; font-size: 10px; line-height: inherit; color: var(--muted); white-space: nowrap; }
 .track-credits-toggle[aria-expanded="true"] { color: var(--ink); }
-.track-row:has(.track-play-target:hover) .track-name, .track-row:has(.track-play-target:focus-visible) .track-name { color: var(--muted); }
-.track-row:has(.track-play-target:active) .track-name { opacity: .65; }
 .track-row[data-playing="true"] .track-position { color: var(--ink); }
 .track-credits { margin-left: 54px; }
 .track-credits .credit-list { margin: 2px 0 12px; gap: 6px; font-size: 10px; line-height: 1.6; }
