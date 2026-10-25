@@ -69,8 +69,13 @@ export function positionNumber(position: string): number | null {
   return value ? Number(value[0]) : null;
 }
 
+export interface TrackMatch {
+  number: number;
+  title: string;
+}
+
 /** Match a file's song name against the album tracklist, independent of track numbers. */
-export function matchTrackNumber(name: string, tracks: TrackTitle[]): number | null {
+export function matchTrack(name: string, tracks: TrackTitle[]): TrackMatch | null {
   if (!tracks.length) return null;
   const base = normalized(name);
   const parts = base.split(/\s+/);
@@ -90,7 +95,12 @@ export function matchTrackNumber(name: string, tracks: TrackTitle[]): number | n
     .filter(value => value.matched)
     .sort((left, right) => right.length - left.length)[0];
   if (!best) return null;
-  return (uniquePositions ? numbers[best.index] : null) || best.index + 1;
+  const number = (uniquePositions ? numbers[best.index] : null) || best.index + 1;
+  return { number, title: tracks[best.index].title };
+}
+
+export function matchTrackNumber(name: string, tracks: TrackTitle[]): number | null {
+  return matchTrack(name, tracks)?.number || null;
 }
 
 export function isAudio(file: ScannedLike) {

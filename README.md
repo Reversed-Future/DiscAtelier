@@ -54,6 +54,10 @@ DiscAtelier 是一个面向个人实体影音收藏的 Windows 桌面应用。�
 
 ![本地文件关联](docs/assets/local-files.png)
 
+详情页会在轨号旁显示匹配到的曲目名，未匹配时明确标出，可手动修改：
+
+![本地文件曲目匹配](docs/assets/local-item.png)
+
 ### 手机接力
 
 - 手机与电脑同一 Wi-Fi，扫码连接；

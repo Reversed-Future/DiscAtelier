@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { library } from '../library/gateway';
 import type { LibraryCopy } from '../library/types';
-import { chooseItem, matchTrackNumber, parseEpisode, parseTrack, type TrackTitle } from './match';
+import { chooseItem, matchTrack, parseEpisode, parseTrack, type TrackTitle } from './match';
 import { FolderPicker } from './FolderPicker';
 import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
@@ -26,6 +26,7 @@ interface Row {
   copyId: string;
   episode: number | null;
   track: number | null;
+  trackTitle: string;
   matched: boolean;
 }
 
@@ -70,15 +71,17 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
   }, [items]);
 
   function trackFor(itemId: string, file: ScannedFile) {
-    return matchTrackNumber(file.name, trackTitles.get(itemId) || []) || parseTrack(file.name);
+    const matched = matchTrack(file.name, trackTitles.get(itemId) || []);
+    if (matched) return { number: matched.number, title: matched.title };
+    return { number: parseTrack(file.name), title: '' };
   }
 
   function propose(scanned: ScannedFile[]) {
     setRows(scanned.map(file => {
       const item = chooseItem(items, file, false, trackTitles);
       const episode = item && item.edition.categoryId === 'video' ? parseEpisode(file.name) : null;
-      const track = item && item.edition.categoryId === 'music' ? trackFor(item.id, file) : null;
-      return { file, copyId: item?.id || '', episode, track, matched: !!item };
+      const track = item && item.edition.categoryId === 'music' ? trackFor(item.id, file) : { number: null, title: '' };
+      return { file, copyId: item?.id || '', episode, track: track.number, trackTitle: track.title, matched: !!item };
     }));
   }
 
@@ -105,7 +108,8 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         copyId: item.id,
         matched: true,
         episode: item.edition.categoryId === 'video' ? parseEpisode(row.file.name) : null,
-        track: item.edition.categoryId === 'music' ? trackFor(item.id, row.file) : null,
+        track: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).number : null,
+        trackTitle: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).title : '',
       };
     }));
   }, [trackTitles, files, items]);
@@ -123,7 +127,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       return {
         copyId: row.copyId,
         path: row.file.path,
-        label: `${item?.edition.title || row.file.name}${row.episode ? ` · 第 ${row.episode} 集` : row.track ? ` · 第 ${row.track} 轨` : ''}`,
+        label: `${item?.edition.title || row.file.name}${row.episode ? ` · 第 ${row.episode} 集` : row.track ? ` · 第 ${row.track} 轨${row.trackTitle ? ` · ${row.trackTitle}` : ''}` : ''}`,
         episode: row.episode,
         track: row.track,
       };
@@ -154,7 +158,8 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         copyId,
         matched: !!copyId,
         episode: category === 'video' ? parseEpisode(row.file.name) : null,
-        track: category === 'music' ? trackFor(copyId, row.file) : null,
+        track: category === 'music' ? trackFor(copyId, row.file).number : null,
+        trackTitle: category === 'music' ? trackFor(copyId, row.file).title : '',
       };
     }));
   }
@@ -162,14 +167,15 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
   function autoAssociate() {
     setRows(current => current.map(row => {
       if (row.copyId) return row;
-      const item = chooseItem(items, row.file, true);
+      const item = chooseItem(items, row.file, true, trackTitles);
       if (!item) return row;
       return {
         ...row,
         copyId: item.id,
         matched: true,
         episode: item.edition.categoryId === 'video' ? parseEpisode(row.file.name) : null,
-        track: item.edition.categoryId === 'music' ? trackFor(item.id, row.file) : null,
+        track: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).number : null,
+        trackTitle: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).title : '',
       };
     }));
   }
@@ -217,7 +223,9 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
                     })),
                   ]}
                   onChange={value => updateRow(index, value)}/></td>
-                <td>{row.episode ? `第 ${row.episode} 集` : row.track ? `第 ${row.track} 轨` : '—'}</td>
+                <td>{row.episode ? `第 ${row.episode} 集` : row.track
+                  ? <span className="local-track-cell"><span>第 {row.track} 轨</span>{row.trackTitle && <span className="local-track-title" title={row.trackTitle}>{row.trackTitle}</span>}</span>
+                  : '—'}</td>
                 <td>{saved ? <button type="button" className="text-button" disabled={busy} onClick={() => void saveAndPlay(row)}>播放</button> : item ? <span className="local-files-ok">已识别</span> : <span className="local-files-miss">未匹配</span>}</td>
               </tr>;
             })}

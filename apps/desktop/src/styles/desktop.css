@@ -89,6 +89,9 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .local-files-table .select-trigger { width: 100%; padding: 7px 9px; }
 .local-files-table .select-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .local-files-table input[type="number"] { width: 96px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 2px; background: transparent; color: var(--ink); }
+.local-track-cell { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.local-track-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.local-track-manual { color: var(--muted); font-size: 11px; white-space: nowrap; }
 .local-files-ok { color: #94c9a9; }
 .local-files-miss { opacity: .6; }
 .metadata-search { display: grid; grid-template-columns: 100px minmax(0, 1fr) auto; gap: 10px; }

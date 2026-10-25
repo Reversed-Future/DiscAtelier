@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { library } from '../library/gateway';
 import type { LibraryCopy } from '../library/types';
-import { isAudio, matchTrackNumber, parseEpisode, parseTrack, type TrackTitle } from './match';
+import { isAudio, matchTrack, parseEpisode, parseTrack, type TrackTitle } from './match';
 import { FolderPicker } from './FolderPicker';
 import { Modal } from '../ui/Modal';
 
@@ -23,21 +23,22 @@ interface Binding {
 interface Row {
   file: ScannedFile;
   number: string;
+  title: string;
 }
 
-function defaultNumber(item: LibraryCopy, file: ScannedFile, tracks: TrackTitle[]) {
+function matchRow(item: LibraryCopy, file: ScannedFile, tracks: TrackTitle[]) {
   if (item.edition.categoryId === 'music' || isAudio(file)) {
-    const matched = matchTrackNumber(file.name, tracks);
-    if (matched) return String(matched);
+    const matched = matchTrack(file.name, tracks);
+    if (matched) return { number: String(matched.number), title: matched.title };
     // An artist - title filename must not be mistaken for a trailing track number.
     if (/^\s*\d{1,3}(?:\s|[-–—])/.test(file.name)) {
       const value = parseTrack(file.name);
-      if (value) return String(value);
+      if (value) return { number: String(value), title: '' };
     }
-    return '';
+    return { number: '', title: '' };
   }
   const value = parseEpisode(file.name);
-  return value ? String(value) : '';
+  return { number: value ? String(value) : '', title: '' };
 }
 
 export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose(): void }) {
@@ -70,7 +71,10 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
   }, [item.editionId, item.edition.categoryId]);
   useEffect(() => {
     if (!tracks.length) return;
-    setRows(current => current.map(row => ({ ...row, number: row.number || defaultNumber(item, row.file, tracks) })));
+    setRows(current => current.map(row => {
+      const matched = matchRow(item, row.file, tracks);
+      return { ...row, number: row.number || matched.number, title: row.title || matched.title };
+    }));
   }, [tracks, item]);
 
   const own = all.filter(binding => binding.copyId === item.id);
@@ -81,7 +85,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     try {
       const scanned = await invoke<ScannedFile[]>('local_files_scan', { folder: path });
       setFiles(scanned);
-      setRows(scanned.map(file => ({ file, number: defaultNumber(item, file, tracks) })));
+      setRows(scanned.map(file => ({ file, ...matchRow(item, file, tracks) })));
       if (!scanned.length) setError('这个文件夹里没有找到支持的音视频文件。');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -102,7 +106,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
       return {
         copyId: item.id,
         path: row.file.path,
-        label: `${item.edition.title}${episode ? ` · 第 ${episode} 集` : track ? ` · 第 ${track} 轨` : ''}`,
+        label: `${item.edition.title}${episode ? ` · 第 ${episode} 集` : track ? ` · 第 ${track} 轨${row.title ? ` · ${row.title}` : ''}` : ''}`,
         episode,
         track,
       };
@@ -154,11 +158,16 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     </>}
     {!!files.length && <>
       <div className="local-files-summary"><span>{rows.length} 个文件将关联到当前收藏</span></div>
-      <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>{item.edition.categoryId === 'video' ? '集数' : '轨号'}</th><th>操作</th></tr></thead><tbody>
+      <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>{item.edition.categoryId === 'video' ? '集数' : '轨号 · 匹配曲目'}</th><th>操作</th></tr></thead><tbody>
         {rows.map((row, index) => <tr key={row.file.path}>
           <td title={row.file.relativePath}><span>{row.file.relativePath}</span></td>
-          <td><input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '集数' : '轨号'}`} value={row.number}
-            onChange={event => setRows(current => current.map((value, position) => position === index ? { ...value, number: event.target.value } : value))}/></td>
+          <td><div className="local-track-cell">
+            <input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '集数' : '轨号'}`} value={row.number}
+              onChange={event => setRows(current => current.map((value, position) => position === index ? { ...value, number: event.target.value } : value))}/>
+            {item.edition.categoryId === 'music' && (row.title
+              ? <span className="local-track-title" title={row.title}>{row.title}</span>
+              : <span className={row.number ? 'local-track-manual' : 'local-files-miss'}>{row.number ? '手动填写' : '未匹配到曲目'}</span>)}
+          </div></td>
           <td><button type="button" className="text-button" disabled={busy} onClick={() => setRows(current => current.filter((_, position) => position !== index))}>移除</button></td>
         </tr>)}
       </tbody></table></div>
