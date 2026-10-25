@@ -65,7 +65,7 @@
 .track-action.netease-action { color: #fff; }
 .track-action.netease-action:hover { color: #fff; }
 .track-action .icon { width: 13px; height: 13px; }
-.track-action .netease-logo { width: 16px; height: 16px; display: block; }
+.track-action .netease-logo { width: 18px; height: 18px; display: block; }
 .track-row:hover .track-name { color: var(--muted); }
 .track-heading-content { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .track-name { min-width: 0; overflow-wrap: anywhere; transition: color 140ms ease, opacity 140ms ease; }
