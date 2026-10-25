@@ -19,6 +19,7 @@ import { Settings } from './settings/Settings';
 import { useCollectionArtwork } from './collection/useCollectionArtwork';
 import { prefetchVideoMetadata } from './video/useVideoMetadata';
 import { OpticalPanel } from './optical/OpticalPanel';
+import { LocalFilesPanel } from './local/LocalFilesPanel';
 import { usePlayback } from './playback/usePlayback';
 import { AssistantDock } from './assistant/AssistantDock';
 import { AudioPlayer } from './playback/AudioPlayer';
@@ -43,6 +44,7 @@ export function App() {
   const [notice, setNotice] = useState('');
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [opticalOpen, setOpticalOpen] = useState(false);
+  const [localFilesOpen, setLocalFilesOpen] = useState(false);
   const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [metadataOpen, setMetadataOpen] = useState(false);
@@ -155,7 +157,7 @@ export function App() {
     <CollectionMenu status={query.status} snapshot={snapshot} organize={organize}
       onStatus={status => setQuery({ ...query, status })}
       onOrganize={() => setOrganize(value => !value)}
-      onOptical={() => setOpticalOpen(true)} onSettings={() => setSettingsPage('home')}/>
+      onOptical={() => setOpticalOpen(true)} onLocalFiles={() => setLocalFilesOpen(true)} onSettings={() => setSettingsPage('home')}/>
     <main id="scene" ref={scene} aria-label="收藏展示" aria-busy={loading} inert={player.open}>
       {error ? <div className="empty-state"><span className="disc-mark"/><p role="alert">{error}</p>{desktopAvailable() && <button onClick={() => void refresh(query)}>重试</button>}</div> :
         !snapshot ? <div className="empty-state"><span className="disc-mark"/><p>正在打开收藏库</p></div> :
@@ -165,6 +167,7 @@ export function App() {
     </main>
     {artwork.portal}
     {opticalOpen && !player.open && <OpticalPanel player={player} onClose={() => setOpticalOpen(false)}/>}
+    {localFilesOpen && !player.open && <LocalFilesPanel onClose={() => setLocalFilesOpen(false)}/>}
     {player.open && (player.snapshot?.source.playlist.startsWith('cd-track:') ? <AudioPlayer player={player}/> : <PlayerView player={player}/>)}
     {player.active && !player.snapshot?.source.playlist.startsWith('netease-song:') && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
       {player.snapshot?.paused ? '已暂停' : player.snapshot?.phase === 'loading' ? '读取中' : '播放中'} · {player.snapshot?.title}

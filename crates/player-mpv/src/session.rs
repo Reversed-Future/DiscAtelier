@@ -3,7 +3,7 @@ use discatelier_contracts::{
     AppError, PlaybackControl, PlaybackPhase, PlaybackSnapshot, PlaybackSource,
 };
 use std::{
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, Ordering},
         mpsc, Arc, Mutex,
@@ -34,7 +34,15 @@ impl MpvSession {
         if !resume_seconds.is_finite() || !(0.0..=604800.0).contains(&resume_seconds) {
             return Err(AppError::new("validation", "播放位置无效。"));
         }
-        if source.playlist.len() != 10
+        if let Some(local) = source.playlist.strip_prefix("local:") {
+            let path = Path::new(local);
+            if !path.is_absolute() || !path.is_file() {
+                return Err(AppError::new(
+                    "validation",
+                    "本地文件不存在或不是绝对路径。",
+                ));
+            }
+        } else if source.playlist.len() != 10
             || !source.playlist.ends_with(".mpls")
             || !source.playlist.as_bytes()[..5]
                 .iter()

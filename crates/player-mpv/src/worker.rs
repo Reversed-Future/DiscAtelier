@@ -263,11 +263,14 @@ async fn play(
         .arg(format!("--input-ipc-server={pipe}"))
         .arg(format!("--log-file={}", log.display()))
         .arg("--msg-level=all=error")
-        .arg(format!(
+        .arg(format!("--start={}", state.snapshot.position_seconds));
+    if !state.snapshot.source.mount_point.is_empty() {
+        process.arg(format!(
             "--bluray-device={}",
             state.snapshot.source.mount_point
-        ))
-        .arg(format!("--start={}", state.snapshot.position_seconds))
+        ));
+    }
+    process
         .creation_flags(windows_sys::Win32::System::Threading::CREATE_NO_WINDOW)
         .stdin(Stdio::null())
         .stdout(Stdio::null())

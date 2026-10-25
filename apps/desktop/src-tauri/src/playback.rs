@@ -143,6 +143,61 @@ pub async fn playback_start(
     .await
 }
 #[tauri::command]
+pub async fn playback_start_local(
+    window: tauri::WebviewWindow,
+    copy_id: String,
+    path: String,
+) -> Result<PlaybackSnapshot, AppError> {
+    if window
+        .state::<crate::playback_exit::PlaybackExit>()
+        .is_closing()
+    {
+        return Err(AppError::new("player", "应用正在关闭。"));
+    }
+    let player = window.state::<PlaybackState>().inner().clone();
+    let library = window.state::<LibraryState>().inner().clone();
+    let directory = window
+        .state::<crate::data_location::DataLocation>()
+        .0
+        .clone();
+    let binding = crate::local_files::find(&directory, &copy_id, &path)?;
+    let mut current = player
+        .lock()
+        .map_err(|_| AppError::new("player", "播放服务不可用。"))?;
+    if current.as_ref().is_some_and(|session| {
+        session
+            .snapshot()
+            .is_ok_and(|snapshot| snapshot.phase.active())
+    }) {
+        return Err(AppError::new("player", "请先停止当前播放。"));
+    }
+    let settings = crate::playback_settings::read(&directory)?;
+    let video_window = window
+        .state::<crate::video_surface::VideoSurface>()
+        .handle();
+    let config = MpvProbe::configured(&settings)?.embedded(video_window)?;
+    let source = PlaybackSource {
+        mount_point: String::new(),
+        media_token: "local".into(),
+        playlist: format!("local:{path}"),
+        label: binding.label,
+    };
+    let checkpoint: Checkpoint = Arc::new(move |snapshot| {
+        let record = PlaybackRecord::from(snapshot);
+        let mut library = library
+            .lock()
+            .map_err(|_| AppError::new("history", "收藏库不可访问。"))?;
+        library
+            .as_mut()
+            .map_err(|error| error.clone())?
+            .save_playback(&record)
+    });
+    let session = MpvSession::start(config, source, 0.0, directory, checkpoint)?;
+    let snapshot = session.snapshot()?;
+    *current = Some(PlaybackSession::Mpv(session));
+    Ok(snapshot)
+}
+#[tauri::command]
 pub async fn playback_snapshot(
     playback: tauri::State<'_, PlaybackState>,
     optical: tauri::State<'_, OpticalState>,

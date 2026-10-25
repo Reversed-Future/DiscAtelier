@@ -8,6 +8,7 @@ const paths = {
   back: <path d="m10 5-7 7 7 7M3 12h18"/>,
   more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
   list: <path d="M8 6h12M8 12h12M8 18h12M3 6h.1M3 12h.1M3 18h.1"/>,
+  folder: <><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M3 10h18"/></>,
   rotate: <path d="M20 11a8 8 0 1 0-2 6M20 4v7h-7"/>,
   archive: <><rect x="4" y="6" width="16" height="15" rx="1"/><path d="M3 3h18v4H3zM9 11h6"/></>,
   play: <path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/>,

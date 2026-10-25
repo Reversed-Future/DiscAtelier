@@ -39,6 +39,19 @@ DiscAtelier 是一个面向个人实体影音收藏的 Windows 桌面应用。�
 
 ![光驱与蓝光](docs/assets/optical.png)
 
+### 本地文件关联
+
+- 选择收藏所在的文件夹后，递归扫描所有子目录；
+- 根据文件夹名、标题、作者和文件名自动匹配音乐专辑或影片；
+- `S01E01`、`第 01 集`、`EP01` 以及开头的 `01/02/03` 会识别为集数；
+- 音乐文件的 `01 - 曲名`、`CD03`、`Track 12` 会识别为轨号；
+- 未匹配的文件保留在关联表中，可以手动选择收藏，或使用“自动关联未匹配”；
+- 保存关联后可以从关联表直接启动本地文件播放。
+
+> 本地文件关联在 0.1.23 预览中提供，0.1.22 正式安装包不含此功能。
+
+![本地文件关联](docs/assets/local-files.png)
+
 ### 手机接力
 
 - 手机与电脑同一 Wi-Fi，扫码连接；
@@ -119,7 +132,7 @@ $env:CARGO_TARGET_DIR = 'D:\DiscAtelierBuilds\target'
 %LOCALAPPDATA%\com.reversedfuture.discatelier
 ```
 
-其中包括 `library.sqlite3`、`backups`、播放器设置和 WebView2 数据。安装目录与数据目录分离；更新不会覆盖收藏和备份。
+其中包括 `library.sqlite3`、`backups`、播放器设置和 WebView2 数据。本地文件关联保存在同目录的 `local-files.json`；它记录本机文件路径，不进入 SQLite 备份，迁移电脑后需要重新选择文件夹。安装目录与数据目录分离；更新不会覆盖收藏和备份。
 
 ## 项目状态
 

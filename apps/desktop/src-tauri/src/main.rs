@@ -11,6 +11,7 @@ mod data_location;
 mod discogs;
 mod exchange;
 mod integration_settings;
+mod local_files;
 mod menu_surface;
 mod mobile_bridge;
 mod model_picker;
@@ -110,6 +111,9 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             about::about_open_project,
+            local_files::local_files_scan,
+            local_files::local_files_get,
+            local_files::local_files_save,
             mobile_bridge::mobile_addresses,
             mobile_bridge::mobile_start,
             mobile_bridge::mobile_poll,
@@ -180,6 +184,7 @@ fn main() {
             video_surface::playback_pointer,
             video_input::playback_native_keys,
             playback::playback_start,
+            playback::playback_start_local,
             playback::playback_snapshot,
             playback::playback_control,
             playback::playback_history,

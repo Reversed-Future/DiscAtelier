@@ -144,6 +144,9 @@ impl MpvProbe {
         if let Some(path) = &self.fixture {
             return path.to_string_lossy().into_owned();
         }
+        if let Some(path) = source.playlist.strip_prefix("local:") {
+            return path.to_owned();
+        }
         format!("bd://mpls/{}", &source.playlist[..5])
     }
 }
