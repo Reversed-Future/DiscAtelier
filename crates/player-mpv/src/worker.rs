@@ -248,7 +248,6 @@ async fn play(
             "--no-config",
             "--load-scripts=no",
             "--idle=yes",
-            "--force-window=immediate",
             "--osc=no",
             "--input-default-bindings=no",
             "--input-media-keys=no",
@@ -264,6 +263,13 @@ async fn play(
         .arg(format!("--log-file={}", log.display()))
         .arg("--msg-level=all=error")
         .arg(format!("--start={}", state.snapshot.position_seconds));
+    if state.snapshot.source.media_token == "local-audio" {
+        // Audio is presented by the HTML player; never create a native surface
+        // that could sit above the webview and swallow its controls.
+        process.args(["--vo=null", "--force-window=no"]);
+    } else {
+        process.arg("--force-window=immediate");
+    }
     if !state.snapshot.source.playlist.starts_with("local:")
         && !state.snapshot.source.mount_point.is_empty()
     {

@@ -182,15 +182,16 @@ pub async fn playback_start_local(
     let video_window = window
         .state::<crate::video_surface::VideoSurface>()
         .handle();
-    let config = MpvProbe::configured(&settings)?.embedded(video_window)?;
+    let audio = crate::local_files::is_audio(&path);
+    let config = MpvProbe::configured(&settings)?;
+    let config = if audio {
+        config
+    } else {
+        config.embedded(video_window)?
+    };
     let source = PlaybackSource {
         mount_point: copy_id.clone(),
-        media_token: if crate::local_files::is_audio(&path) {
-            "local-audio"
-        } else {
-            "local-video"
-        }
-        .into(),
+        media_token: if audio { "local-audio" } else { "local-video" }.into(),
         playlist: format!("local:{path}"),
         label: binding.label,
     };
