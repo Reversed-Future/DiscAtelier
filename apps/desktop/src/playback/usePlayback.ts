@@ -73,10 +73,10 @@ export function usePlayback() {
       const value = await playback.start(mount, token, playlist, resumeSeconds, resumeTitle);
       if (alive.current) { setSnapshot(value); setOpen(true); }
     }),
-    startLocal: (copyId: string, path: string) => execute(async () => {
+    startLocal: (copyId: string, path: string, open = true) => execute(async () => {
       revision.current++;
       const value = await playback.startLocal(copyId, path);
-      if (alive.current) { setSnapshot(value); setOpen(true); }
+      if (alive.current) { setSnapshot(value); setOpen(open); }
     }),
     control,
   };

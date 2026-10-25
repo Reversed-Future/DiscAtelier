@@ -24,6 +24,8 @@ const paths = {
   audio: <><path d="M4 10v4h3l4 3V7l-4 3H4Z"/><path d="M15 9a4 4 0 0 1 0 6M18 7a7 7 0 0 1 0 10"/></>,
   speed: <><path d="M4 16a8 8 0 1 1 16 0"/><path d="m12 16 4-4"/><path d="M4 16h2M18 16h2"/></>,
   eject: <><path d="m5 13 7-9 7 9H5Z"/><path d="M5 18h14"/></>,
+  repeat: <><path d="m17 2 4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></>,
+  repeatOne: <><path d="m17 2 4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/><path d="M12 10v5"/></>,
 };
 export function Icon({ name }: { name: keyof typeof paths }) {
   return <span className="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg></span>;

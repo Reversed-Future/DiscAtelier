@@ -51,9 +51,9 @@ function useSmoothPosition(s: PlaybackController['snapshot'], active: boolean) {
   return position;
 }
 
-export function PlaybackControls({ player, onMenu, title, extended = false, showVolume = false, showTitle = true, fullscreen = false, onToggleFullscreen, onPrevious, onNext, canPrevious = true, canNext = true }: {
+export function PlaybackControls({ player, onMenu, title, extended = false, showVolume = false, showTitle = true, fullscreen = false, onToggleFullscreen, onPrevious, onNext, canPrevious = true, canNext = true, repeat, onRepeat }: {
   player: PlaybackController; onMenu?(): void; title?: string | null; extended?: boolean; showVolume?: boolean; showTitle?: boolean; fullscreen?: boolean; onToggleFullscreen?(): void;
-  onPrevious?(): void; onNext?(): void; canPrevious?: boolean; canNext?: boolean;
+  onPrevious?(): void; onNext?(): void; canPrevious?: boolean; canNext?: boolean; repeat?: 'list' | 'one'; onRepeat?(): void;
 }) {
   const s = player.snapshot;
   const smoothPosition = useSmoothPosition(s, player.active);
@@ -188,6 +188,8 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
           onChange={id => void player.control({ action: 'audio', id: Number(id) })}/>}
         {onToggleFullscreen && <button type="button" className="player-icon-button" aria-label={fullscreen ? '退出全屏' : '全屏'} title={fullscreen ? '退出全屏' : '全屏'}
           disabled={stopping} onClick={onToggleFullscreen}><Icon name={fullscreen ? 'fullscreenExit' : 'fullscreen'}/></button>}
+        {onRepeat && <button type="button" className="player-icon-button playback-repeat" aria-label={repeat === 'one' ? '单曲循环，切换为列表循环' : '列表循环，切换为单曲循环'}
+          title={repeat === 'one' ? '单曲循环' : '列表循环'} disabled={loading || stopping || player.busy} onClick={onRepeat}><Icon name={repeat === 'one' ? 'repeatOne' : 'repeat'}/></button>}
       </div>
     </div>}
     {!player.active && onToggleFullscreen && <div className="playback-actions">

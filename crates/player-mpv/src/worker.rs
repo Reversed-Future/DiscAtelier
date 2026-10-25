@@ -264,7 +264,9 @@ async fn play(
         .arg(format!("--log-file={}", log.display()))
         .arg("--msg-level=all=error")
         .arg(format!("--start={}", state.snapshot.position_seconds));
-    if !state.snapshot.source.mount_point.is_empty() {
+    if !state.snapshot.source.playlist.starts_with("local:")
+        && !state.snapshot.source.mount_point.is_empty()
+    {
         process.arg(format!(
             "--bluray-device={}",
             state.snapshot.source.mount_point

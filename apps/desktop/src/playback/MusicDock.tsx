@@ -16,6 +16,7 @@ export function MusicDock({ player }: { player: PlaybackController }) {
   const [selected, setSelected] = useState<string | null>(null);
   const album = queue.albums.find(row => row.editionId === selected) || queue.current || queue.albums[0];
   const online = !!player.snapshot?.source.playlist.startsWith('netease-song:');
+  const local = player.snapshot?.source.mediaToken === 'local-audio';
   useEffect(() => { if (queue.current) setSelected(queue.current.editionId); }, [queue.current?.editionId]);
   useEffect(() => { list.current?.scrollTo(0, 0); enter(list.current, 0); }, [album?.editionId, host]);
   useEffect(() => {
@@ -28,7 +29,7 @@ export function MusicDock({ player }: { player: PlaybackController }) {
     document.addEventListener('keydown', key, true);
     return () => { document.removeEventListener('pointerdown', pointer, true); document.removeEventListener('keydown', key, true); };
   }, [queue.open]);
-  if (player.open || (!queue.albums.length && !online && !queue.open && !queue.busy)) return null;
+  if (local || player.open || (!queue.albums.length && !online && !queue.open && !queue.busy)) return null;
   return createPortal(<div className="music-dock" ref={root}>
     <section className="music-dock-panel" id="music-queue" role="region" aria-label="播放列表" data-open={queue.open} inert={!queue.open}>
       <header className="music-dock-heading"><h3>播放列表</h3><button className="icon-button" aria-label="收起播放列表" onClick={() => { queue.setOpen(false); trigger.current?.focus(); }}><Icon name="close"/></button></header>
@@ -42,8 +43,9 @@ export function MusicDock({ player }: { player: PlaybackController }) {
         {!album && <p className="setting-hint">{queue.busy ? '读取中' : '暂无曲目'}</p>}
       </div>
       <footer className="music-dock-footer">
-        <div className="music-queue-actions"><button className="text-button" disabled={player.busy || !online || !queue.current} onClick={() => queue.step(-1)}>上一首</button><button className="text-button" disabled={player.busy || !online || !queue.current} onClick={() => queue.step(1)}>下一首</button><button className="text-button music-repeat" onClick={() => queue.setMode(queue.mode === 'list' ? 'one' : 'list')} aria-label={`${queue.mode === 'list' ? '列表循环，切换为单曲循环' : '单曲循环，切换为列表循环'}`}>{queue.mode === 'list' ? '列表循环' : '单曲循环'}</button></div>
-        {online && <PlaybackControls player={player}/>}
+        {online && <PlaybackControls player={player} onPrevious={() => queue.step(-1)} onNext={() => queue.step(1)}
+          canPrevious={!!queue.current} canNext={!!queue.current} repeat={queue.mode}
+          onRepeat={() => queue.setMode(queue.mode === 'list' ? 'one' : 'list')}/>}
         {player.error && <p className="form-error" role="alert">{player.error}</p>}
       </footer>
     </section>

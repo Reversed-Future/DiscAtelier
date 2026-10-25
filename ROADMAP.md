@@ -1,5 +1,7 @@
 # DiscAtelier 更新路线
 
+**2026-10-25 本地音乐 CD 式播放器与右下播放列表（测试版，未发行）**：本地音频播放改为 CD 式界面，按轨号顺序展示整张专辑；关闭后缩到右下角播放列表，可直接点击切歌，不需要先停止。播放器底部把停止、上一首、播放/暂停、下一首放在同一行，循环按钮位于最右侧；网易云播放列表也改为同一布局。后端本地切歌会直接替换当前 MPV 会话。CDP 实测 28 首本地曲目、全屏播放、缩到右下角、直接切歌成功，源路径从 Usagi Flap 切换到 Fall Into The Rabbit Hole。测试预览 `artifacts/DiscAtelier-local-audio-preview.exe`，SHA-256 `30eeb96b1362d95a29494a905e1ab62fbd84e64e21bee3ed5d131d2fe0994c1`，70,871,040 bytes；未发布正式版。
+
 **2026-10-25 0.1.23 已发布**：本地文件总入口与详情入口、文件夹递归扫描、歌名匹配专辑曲目、曲目/章节播放按钮、白色网易云 Logo、光驱插入提示、光驱图标入口和曲目行 hover 调整已发布并设为 Latest。228 项工作区 Rust 测试（9 项忽略）、114 项 JavaScript 测试、严格 Clippy、格式检查、TypeScript／Vite 和签名 NSIS 构建通过；五项资产回读一致，公开 Latest 下载与更新验签通过，篡改包被拒绝。Release ID `423116788`，标签 `v0.1.23`，源码提交 `9759f2ff5e06e1dfe993eaa10ae6b1e17eed268c`；安装包 131,094,709 bytes，SHA-256 `2941e160fc728cd39d3a5a1d786c4c944cff5a8829bdd422071cd71c0d31bac3`。schema 保持 15，无迁移。真实 DVD／Blu-ray 菜单、BD-J 和菜单识别尚未实盘验收，因此仍不定义为 1.0；详见 [0.1.23 发布校验](docs/releases/v0.1.23-verification.md)。
 
 **2026-10-25 光驱插入提示与详情图标（测试版，未发行）**：曲目行取消整条 hover 样式，只保留本地播放和白色网易云按钮的独立反馈。插入已关联光盘后，应用每 3 秒检测光驱状态，在底部弹出“光驱中检测到《标题》· 是否跳转”；点击“是”切到对应分区并滑动到该收藏，标题旁的光驱图标可点击进入光驱界面。测试预览 `target/release/DiscAtelier-local-files-preview.exe`，SHA-256 `491487ce45aa7dfd213561795c415b859d53ef4fe8f65cc73074db7f6db2b258`，69,947,392 bytes；未发布正式版。

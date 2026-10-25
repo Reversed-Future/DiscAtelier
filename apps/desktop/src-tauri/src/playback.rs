@@ -164,21 +164,33 @@ pub async fn playback_start_local(
     let mut current = player
         .lock()
         .map_err(|_| AppError::new("player", "播放服务不可用。"))?;
-    if current.as_ref().is_some_and(|session| {
-        session
+    if let Some(session) = current.as_ref() {
+        if session
             .snapshot()
             .is_ok_and(|snapshot| snapshot.phase.active())
-    }) {
-        return Err(AppError::new("player", "请先停止当前播放。"));
+        {
+            let local = session
+                .snapshot()
+                .is_ok_and(|snapshot| snapshot.source.playlist.starts_with("local:"));
+            if !local {
+                return Err(AppError::new("player", "请先停止当前播放。"));
+            }
+        }
     }
+    drop(current.take());
     let settings = crate::playback_settings::read(&directory)?;
     let video_window = window
         .state::<crate::video_surface::VideoSurface>()
         .handle();
     let config = MpvProbe::configured(&settings)?.embedded(video_window)?;
     let source = PlaybackSource {
-        mount_point: String::new(),
-        media_token: "local".into(),
+        mount_point: copy_id.clone(),
+        media_token: if crate::local_files::is_audio(&path) {
+            "local-audio"
+        } else {
+            "local-video"
+        }
+        .into(),
         playlist: format!("local:{path}"),
         label: binding.label,
     };

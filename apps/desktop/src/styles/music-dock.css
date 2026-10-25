@@ -8,6 +8,10 @@
 .music-dock-heading { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-bottom: 12px; }
 .music-dock-heading h3 { margin: 0; font-size: 14px; font-weight: 500; }
 .music-dock-heading .icon-button { width: 28px; height: 28px; }
+.local-dock-heading-actions { display: flex; align-items: center; gap: 4px; }
+.local-dock-album { display: grid; gap: 3px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.local-dock-album strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
+.local-dock-album span { color: var(--muted); font-size: 11px; }
 .music-album-tabs { display: flex; gap: 18px; flex-shrink: 0; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
 .music-album-tabs button { position: relative; padding: 10px 0 12px; min-width: 0; flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; transition: color 160ms; }
 .music-album-tabs button[aria-pressed="true"] { color: var(--ink); }

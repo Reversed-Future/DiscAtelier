@@ -37,6 +37,10 @@ input.playback-volume-range:focus, input.playback-volume-range:focus-visible { b
 .playback-volume-range::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 10px; height: 10px; margin-top: -4px; border: 0; border-radius: 50%; background: var(--ink); }
 .playback-volume-range:disabled { opacity: .35; cursor: default; }
 .audio-track-list button:disabled { opacity: 1; }
+.local-audio-meta { display: grid; gap: 6px; padding-bottom: 10px; }
+.local-audio-meta > span { color: var(--muted); font-size: 10px; letter-spacing: .04em; }
+.local-audio-meta h2 { margin: 0; font-size: 22px; font-weight: 400; line-height: 1.25; }
+.local-audio-meta p { margin: 0; color: var(--muted); font-size: 12px; }
 .optical-toolbar { gap: 18px; }
 .playback-history { max-height: min(58vh, 520px); overflow: auto; }
 .playback-history-row { padding: 20px 0; border-bottom: 1px solid var(--line); }

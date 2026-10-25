@@ -173,6 +173,18 @@ pub fn local_files_save(
     std::fs::write(store(&directory.0), bytes).map_err(|_| error("无法保存本地文件关联。"))
 }
 
+pub fn is_audio(path: &str) -> bool {
+    matches!(
+        Path::new(path)
+            .extension()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase()
+            .as_str(),
+        "mp3" | "flac" | "wav" | "m4a" | "aac" | "ogg" | "opus" | "ape" | "wv"
+    )
+}
+
 pub fn find(directory: &Path, copy_id: &str, path: &str) -> Result<Binding, AppError> {
     read(directory)?
         .into_iter()
