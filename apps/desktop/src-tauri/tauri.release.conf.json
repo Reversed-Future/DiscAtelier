@@ -1,7 +1,7 @@
 {
   "build": {
     "beforeBuildCommand": "npm run build:release",
-    "frontendDist": "../dist-release/0.1.26"
+    "frontendDist": "../dist-release/0.1.27"
   },
   "bundle": {
     "active": true,
@@ -10,7 +10,7 @@
     ],
     "publisher": "Reversed-Future",
     "homepage": "https://github.com/Reversed-Future/DiscAtelier",
-    "shortDescription": "涓汉瀹炰綋闊冲儚鏀惰棌",
+    "shortDescription": "个人实体音像收藏",
     "resources": {
       "../public/legal/": "legal/",
       "../../../LICENSE": "legal/LICENSE",

@@ -73,6 +73,8 @@ pub struct OpticalBinding {
     pub title: String,
     pub creator: String,
     pub label: String,
+    pub disc_key: Option<String>,
+    pub disc_label: Option<String>,
 }
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -85,6 +87,15 @@ pub struct OpticalPresence {
     pub media_token: String,
     pub label: String,
     pub playing: bool,
+    pub disc_key: Option<String>,
+    pub disc_label: Option<String>,
+}
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpticalDisc {
+    pub key: String,
+    pub label: String,
+    pub title: String,
 }
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

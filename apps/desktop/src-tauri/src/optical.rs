@@ -199,12 +199,46 @@ pub async fn optical_associate(
     media_token: String,
     copy_id: String,
     label: String,
+    disc_key: Option<String>,
 ) -> Result<OpticalBinding, AppError> {
     crate::commands::run(library.inner().clone(), move |service| {
-        service.save_optical_binding(&media_token, &copy_id, &label)?;
+        service.save_optical_disc_binding(&media_token, &copy_id, &label, disc_key.as_deref())?;
         service
             .optical_binding(&media_token)?
             .ok_or_else(|| AppError::new("storage", "光盘关联未保存。"))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn optical_discs(
+    library: tauri::State<'_, crate::commands::LibraryState>,
+    edition_id: String,
+) -> Result<Vec<discatelier_contracts::OpticalDisc>, AppError> {
+    crate::commands::run(library.inner().clone(), move |service| {
+        let content = service.edition_content(&edition_id)?.unwrap_or_default();
+        let mut title = None;
+        for category in ["music", "video"] {
+            title = service
+                .list(LibraryQuery {
+                    category_id: category.into(),
+                    status: None,
+                    query: String::new(),
+                })?
+                .copies
+                .into_iter()
+                .find(|copy| copy.edition_id == edition_id)
+                .map(|copy| copy.edition.title);
+            if title.is_some() {
+                break;
+            }
+        }
+        Ok(discatelier_application::optical_discs::groups(
+            &content.tracks,
+            title
+                .as_deref()
+                .ok_or_else(|| AppError::new("validation", "收藏条目不存在。"))?,
+        ))
     })
     .await
 }
@@ -278,6 +312,8 @@ pub async fn optical_presence(
                 media_token: medium.token.clone(),
                 label: medium.label,
                 playing: playing.as_deref() == Some(medium.token.as_str()),
+                disc_key: binding.disc_key,
+                disc_label: binding.disc_label,
             });
         }
         Ok(result)

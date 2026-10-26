@@ -8,6 +8,7 @@ pub use song_links::SongLinkRepository;
 mod disc_albums;
 mod extensions;
 mod music_albums;
+pub mod optical_discs;
 pub use extensions::ExtensionRepository;
 mod metadata;
 pub use metadata::MetadataProvider;
@@ -52,6 +53,7 @@ pub trait LibraryRepository: Send {
         media_token: &str,
         copy_id: &str,
         label: &str,
+        disc_key: Option<&str>,
     ) -> Result<(), AppError>;
     fn remove_optical_binding(&mut self, media_token: &str) -> Result<(), AppError>;
     fn backup(&self) -> Result<String, AppError>;
@@ -191,7 +193,17 @@ impl<R: LibraryRepository> LibraryService<R> {
             return Err(AppError::new("validation", "光盘关联参数无效。"));
         }
         self.repository
-            .save_optical_binding(media_token, copy_id, label)
+            .save_optical_binding(media_token, copy_id, label, None)
+    }
+    pub fn save_optical_disc_binding(
+        &mut self,
+        media_token: &str,
+        copy_id: &str,
+        label: &str,
+        disc_key: Option<&str>,
+    ) -> Result<(), AppError> {
+        self.repository
+            .save_optical_binding(media_token, copy_id, label, disc_key)
     }
     pub fn remove_optical_binding(&mut self, media_token: &str) -> Result<(), AppError> {
         if media_token.is_empty() || media_token.len() > 256 {

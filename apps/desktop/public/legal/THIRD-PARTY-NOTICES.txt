@@ -2,7 +2,7 @@ DiscAtelier third-party notices
 
 This file includes dependency licenses, including build dependencies.
 MiSans licensing is supplied separately in MiSans-LICENSE.pdf and MiSans-NOTICE.txt.
-MPV, VLC and MakeMKV are not redistributed in this installer.
+MPV, VLC, Temurin JRE and the NetEase runtime are bundled with their accompanying license files. MakeMKV is not redistributed.
 
 ========================================================================
 react 19.3.1 — MIT

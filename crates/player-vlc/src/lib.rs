@@ -103,7 +103,14 @@ pub fn capture_menu(
         return Err(ffi::error("静态菜单截图窗口尚未创建。"));
     }
     let location = disc_location(source)?;
-    let player = player::Player::open(path, &location, window, None, true, true)?;
+    let player = player::Player::open(
+        path,
+        &location,
+        window,
+        None,
+        source.playlist == BD_MENU,
+        true,
+    )?;
     std::thread::sleep(wait);
     player.snapshot(output)
 }

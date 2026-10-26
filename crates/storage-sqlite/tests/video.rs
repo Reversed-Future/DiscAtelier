@@ -150,6 +150,7 @@ fn extended_work_fields_roundtrip_restore_and_legacy_defaults() {
         ],
     }];
     work.characters = vec![VideoCharacter {
+        avatar: String::new(),
         portrait_url: "https://lain.bgm.tv/pic/crt/l/2c/78/1152_crt_Unim8.jpg".into(),
         name: "春日野穹".into(),
         role: "主角".into(),

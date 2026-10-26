@@ -411,7 +411,7 @@ fn schema_thirteen_migrates_asset_limit_and_accepts_large_covers() {
         connection
             .pragma_query_value::<i64, _>(None, "user_version", |row| row.get(0))
             .unwrap(),
-        15
+        16
     );
     assert_eq!(
         connection

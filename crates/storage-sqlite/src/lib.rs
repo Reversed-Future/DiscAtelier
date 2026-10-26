@@ -128,8 +128,9 @@ impl LibraryRepository for SqliteLibrary {
         media_token: &str,
         copy_id: &str,
         label: &str,
+        disc_key: Option<&str>,
     ) -> Result<(), AppError> {
-        optical::save(&self.connection, media_token, copy_id, label)
+        optical::save(&self.connection, media_token, copy_id, label, disc_key)
     }
     fn remove_optical_binding(&mut self, media_token: &str) -> Result<(), AppError> {
         optical::remove(&self.connection, media_token)

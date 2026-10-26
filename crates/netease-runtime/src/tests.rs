@@ -4,12 +4,12 @@ fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../artifacts")
 }
 fn fixture() -> Runtime {
-    let dir = root().join(format!("netease-test-{}", uuid::Uuid::new_v4()));
+    let dir = std::env::temp_dir().join(format!("netease-test-{}", uuid::Uuid::new_v4()));
     fixture_at(dir)
 }
 fn fixture_at(dir: PathBuf) -> Runtime {
     fs::create_dir_all(&dir).unwrap();
-    fs::hard_link(
+    fs::copy(
         root().join("netease-runtime/node.exe"),
         dir.join("node.exe"),
     )
@@ -37,8 +37,9 @@ input.on('line', line => {
 #[cfg(windows)]
 #[test]
 fn canonical_resource_path_with_unicode_and_spaces_starts_and_reuses() {
-    let mut runtime =
-        fixture_at(root().join(format!("netease-test-路径 空格-{}", uuid::Uuid::new_v4())));
+    let mut runtime = fixture_at(
+        std::env::temp_dir().join(format!("netease-test-路径 空格-{}", uuid::Uuid::new_v4())),
+    );
     // Tauri resolves the executable/resource directory with std::fs::canonicalize.
     runtime.root = fs::canonicalize(&runtime.root).unwrap();
     fs::create_dir_all(&runtime.cache).unwrap();
@@ -82,7 +83,7 @@ fn playback_errors_survive_the_pipe_without_exposing_upstream_text() {
 }
 #[test]
 fn missing_components_do_not_start_or_create_cache() {
-    let path = root().join(format!("netease-missing-{}", uuid::Uuid::new_v4()));
+    let path = std::env::temp_dir().join(format!("netease-missing-{}", uuid::Uuid::new_v4()));
     let runtime = Runtime::new(path.clone(), path.join("cache"));
     assert!(runtime.request("album", json!({"id":32311})).is_err());
     assert!(!path.exists());
@@ -188,7 +189,7 @@ fn parent_exit_cleans_up_owned_child() {
             OpenProcess, WaitForSingleObject, CREATE_NO_WINDOW, PROCESS_SYNCHRONIZE,
         },
     };
-    let report = root().join(format!("netease-exit-{}.json", uuid::Uuid::new_v4()));
+    let report = std::env::temp_dir().join(format!("netease-exit-{}.json", uuid::Uuid::new_v4()));
     let mut parent = Command::new(std::env::current_exe().unwrap())
         .args(["--exact", "tests::parent_exit_helper", "--ignored"])
         .env("DISCATELIER_NODE_EXIT_REPORT", &report)
@@ -228,7 +229,7 @@ fn parent_exit_helper() {
 #[ignore = "Explicit offline check of the Release resource directory; no UI or API requests"]
 fn packaged_runner_starts_with_canonical_release_path() {
     let resources = fs::canonicalize(root().join("../target/release/netease-runtime")).unwrap();
-    let cache = root().join(format!("netease-boot-test-{}", uuid::Uuid::new_v4()));
+    let cache = std::env::temp_dir().join(format!("netease-boot-test-{}", uuid::Uuid::new_v4()));
     fs::create_dir_all(&cache).unwrap();
     let mut process =
         process::Process::spawn(&resources, &fs::canonicalize(cache).unwrap()).unwrap();
@@ -251,7 +252,7 @@ fn packaged_runner_starts_with_canonical_release_path() {
 fn actual_packaged_api() {
     let runtime = Runtime::new(
         fs::canonicalize(root().join("netease-runtime")).unwrap(),
-        root().join(format!("netease-public-test-{}", uuid::Uuid::new_v4())),
+        std::env::temp_dir().join(format!("netease-public-test-{}", uuid::Uuid::new_v4())),
     );
     assert!(pid(&runtime).is_none());
     let start = Instant::now();

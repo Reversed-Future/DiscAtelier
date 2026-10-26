@@ -14,7 +14,7 @@ const licenseNames = new Set(['COPYING', 'COPYRIGHT', 'LICENCE', 'LICENSE', 'LIC
   'LICENSE_APACHE-2.0', 'LICENSE_MIT', 'UNLICENSE', 'license-apache-2.0', 'license-mit']);
 const sections = ['DiscAtelier third-party notices\n\nThis file includes dependency licenses, including build dependencies.\n'
   + 'MiSans licensing is supplied separately in MiSans-LICENSE.pdf and MiSans-NOTICE.txt.\n'
-  + 'MPV, VLC and MakeMKV are not redistributed in this installer.'];
+  + 'MPV, VLC, Temurin JRE and the NetEase runtime are bundled with their accompanying license files. MakeMKV is not redistributed.'];
 const missing = [];
 const supplemental = {
   'alloc-stdlib': 'alloc-stdlib.txt',

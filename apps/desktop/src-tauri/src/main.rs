@@ -29,12 +29,15 @@ mod netease_queue;
 mod optical;
 mod optical_match;
 mod optical_menu;
+mod optical_menu_match;
 mod playback;
 mod playback_backend;
 mod playback_exit;
 #[cfg(feature = "performance-harness")]
 mod playback_fixture;
 mod playback_settings;
+#[cfg(feature = "isolated-preview")]
+mod preview_config;
 mod purchase_recognition;
 mod updates;
 mod video_input;
@@ -48,6 +51,13 @@ use std::sync::{Arc, Mutex};
 use tauri::Manager;
 
 fn main() {
+    let context = tauri::generate_context!();
+    #[cfg(feature = "isolated-preview")]
+    let context = {
+        let mut context = context;
+        preview_config::isolate_webviews(context.config_mut());
+        context
+    };
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -196,6 +206,7 @@ fn main() {
             optical_menu::optical_menu_recognize,
             optical::optical_candidates,
             optical::optical_associate,
+            optical::optical_discs,
             optical::optical_unbind,
             optical::optical_dvd_chapters,
             optical::optical_presence,
@@ -231,7 +242,7 @@ fn main() {
             discogs::imports::discogs_prepare_import,
             discogs::imports::discogs_import
         ])
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("DiscAtelier 无法启动")
         .run(|app, event| playback_exit::event(app, &event));
 }

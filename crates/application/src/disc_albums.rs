@@ -9,7 +9,7 @@ fn positive(value: &str) -> bool {
         && value.bytes().all(|b| b.is_ascii_digit())
         && value.bytes().any(|b| b != b'0')
 }
-fn disc_key(position: &str) -> Option<String> {
+pub(crate) fn disc_key(position: &str) -> Option<String> {
     let (left, right) = position.split_once('-')?;
     let mut parts = right.split('.');
     if !positive(parts.next()?)
@@ -20,12 +20,13 @@ fn disc_key(position: &str) -> Option<String> {
     {
         return None;
     }
-    if left == "CD" || left == "DVD" {
-        return (!right.contains('.')).then(|| left.into());
+    if left == "CD" || left == "DVD" || left == "BD" {
+        return Some(left.into());
     }
     let number = left
         .strip_prefix("CD")
         .or_else(|| left.strip_prefix("DVD"))
+        .or_else(|| left.strip_prefix("BD"))
         .unwrap_or(left);
     (positive(number) && !number.starts_with('0')).then(|| left.into())
 }
@@ -96,6 +97,9 @@ mod tests {
             ("CD2-3", "CD2"),
             ("DVD-14", "DVD"),
             ("2-1.1", "2"),
+            ("BD1-13", "BD1"),
+            ("BD2-1", "BD2"),
+            ("BD-1.1", "BD"),
         ] {
             assert_eq!(disc_key(position).as_deref(), Some(key));
         }

@@ -57,3 +57,7 @@
 .optical-log[data-open="true"] { grid-template-rows: 1fr; opacity: 1; }
 .optical-log > div { overflow: hidden; min-height: 0; }
 .optical-diagnostic pre { font: 11px/1.7 MiSans, sans-serif; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 220px; overflow: auto; color: var(--muted); }
+
+.optical-menu-result { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.optical-menu-result strong { font-size: 12px; }
+.optical-disc-selection { display: grid; gap: 16px; }

@@ -37,6 +37,26 @@ test('carrier text removes only the repeated registered prefix and never mutates
 
 const track = (position, title = position) => ({ position, title, duration: '3:00', type_: 'track' });
 const heading = title => ({ position: '', title, duration: '', type_: 'heading' });
+
+test('Quintet CD and both Blu-ray discs are peers and preserve every source row', () => {
+  const first = 'Morfonica Zepp Tour 2021「Amabile」東京公演';
+  const second = 'Morfonica Concept Live「Resonance」';
+  const source = [heading('CD'), track('CD-1'), heading(first), track('BD1-13'), track('BD1-14'), track('BD1-15'), heading(second), track('BD2-1'), track('BD2-2'), track('BD2-3'), track('BD2-4')];
+  const before = structuredClone(source);
+  const pages = discPages(source, 'Quintet');
+  assert.deepEqual(pages.map(page => [page.key, page.name, page.numbered]), [['CD', 'CD', true], ['BD1', first, true], ['BD2', second, true]]);
+  assert.deepEqual(pages[2].tracks.map(row => row.position), ['', 'BD2-1', 'BD2-2', 'BD2-3', 'BD2-4']);
+  assert.deepEqual(pages.flatMap(page => page.tracks), source);
+  assert.deepEqual(source, before);
+});
+
+test('nested Blu-ray index headings keep BD1 and BD2 on the same level', () => {
+  const pages = discPages([track('CD-1'),
+    { ...heading('BD one'), type_: 'index', sub_tracks: [track('BD1-1'), track('BD1-2')] },
+    { ...heading('BD two'), type_: 'index', sub_tracks: [track('BD2-1')] },
+  ], 'Quintet');
+  assert.deepEqual(pages.map(page => [page.key, page.name]), [['CD', 'Quintet'], ['BD1', 'BD one'], ['BD2', 'BD two']]);
+});
 test('release 14262376 CD-/DVD- positions split by medium and keep the DVD heading', () => {
   const source = [track('CD-1'), track('CD-15'), heading('Live tour final'), track('DVD-1'), track('DVD-14')];
   const pages = discPages(source, '人間開花');
