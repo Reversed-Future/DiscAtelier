@@ -16,7 +16,7 @@ description: 下载入门包，运行教学模型，导出并验证。
 <a class="primary" href="downloads/discatelier-model-starter.zip" download>下载模型制作入门包 ↓</a>
 
 
-解压到新目录，保留完整目录结构。包中是原创形状组成的通用教学盒，不含唱片照片或用户收藏。网页实验室也可直接 [打开教学模型](playground/index.html)；通过本机 HTTP 访问手册时可用。
+解压到新目录，保留完整目录结构。包中是原创形状组成的通用教学盒，不含唱片照片或用户收藏。也可以在新窗口<a href="./playground/index.html" target="_blank" rel="noopener">打开教学模型</a>，点击“构建制作源”查看示例，再尝试旋转、开合与拆装。
 
 
 ## 2. 启动本机预览 {#start}

@@ -46,6 +46,19 @@ try {
   await page.locator('.VPLocalSearchBox .result').first().click();
   await page.locator('.VPLocalSearchBox').waitFor({state: 'hidden'});
   result.search = true;
+  await page.goto(`${base}/quickstart.html`);
+  const [playground] = await Promise.all([
+    context.waitForEvent('page'),
+    page.getByRole('link', {name: '打开教学模型', exact: true}).click()
+  ]);
+  playground.on('pageerror', error => errors.push(error.message));
+  await playground.waitForLoadState();
+  await playground.getByRole('button', {name: '构建制作源', exact: true}).click();
+  await playground.waitForFunction(() => !!window.authoringPreview?.runtime);
+  assert.equal(await playground.locator('#viewport canvas').count(), 1);
+  assert(await playground.getByRole('button', {name: '导出当前包', exact: true}).isEnabled());
+  result.playground = true;
+  await playground.close();
   await page.goto(base + '/');
   const palette = await page.evaluate(() => {
     const theme = getComputedStyle(document.documentElement);
