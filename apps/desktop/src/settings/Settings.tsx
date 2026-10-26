@@ -12,9 +12,9 @@ import { UpdateSettings } from './UpdateSettings';
 const pages = [{ id: 'data', label: '数据' }, { id: 'exchange', label: '汇率' }, { id: 'video', label: '影像资料' }, { id: 'music', label: '音乐资料' }, { id: 'assistant', label: '助手' }, { id: 'playback', label: '播放' }, { id: 'about', label: '关于' }] as const;
 type Page = typeof pages[number]['id'];
 export function Settings({ initialPage, libraryAvailable, onRestore, onClose }: {
-  initialPage: 'home' | 'discogs'; libraryAvailable: boolean; onRestore(): void; onClose(): void;
+  initialPage: 'home' | 'discogs' | 'about'; libraryAvailable: boolean; onRestore(): void; onClose(): void;
 }) {
-  const [page, setPage] = useState<Page>(initialPage === 'home' ? 'data' : 'music');
+  const [page, setPage] = useState<Page>(initialPage === 'home' ? 'data' : initialPage === 'about' ? 'about' : 'music');
   const [busy, setBusy] = useState(false);
   const content = useRef<HTMLDivElement>(null);
   useEffect(() => { enter(content.current, 3); }, [page]);

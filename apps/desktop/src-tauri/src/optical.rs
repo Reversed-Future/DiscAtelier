@@ -216,29 +216,7 @@ pub async fn optical_discs(
     edition_id: String,
 ) -> Result<Vec<discatelier_contracts::OpticalDisc>, AppError> {
     crate::commands::run(library.inner().clone(), move |service| {
-        let content = service.edition_content(&edition_id)?.unwrap_or_default();
-        let mut title = None;
-        for category in ["music", "video"] {
-            title = service
-                .list(LibraryQuery {
-                    category_id: category.into(),
-                    status: None,
-                    query: String::new(),
-                })?
-                .copies
-                .into_iter()
-                .find(|copy| copy.edition_id == edition_id)
-                .map(|copy| copy.edition.title);
-            if title.is_some() {
-                break;
-            }
-        }
-        Ok(discatelier_application::optical_discs::groups(
-            &content.tracks,
-            title
-                .as_deref()
-                .ok_or_else(|| AppError::new("validation", "收藏条目不存在。"))?,
-        ))
+        service.edition_discs(&edition_id)
     })
     .await
 }

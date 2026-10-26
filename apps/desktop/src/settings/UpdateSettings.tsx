@@ -39,6 +39,7 @@ export function UpdateSettings({ onBusy }: { onBusy(value: boolean): void }) {
         onClick={() => { setError(''); void invoke('about_open_project').catch(cause => setError(errorMessage(cause))); }}>打开项目主页</button></div>
     </div>
     <h4 className="settings-subheading">软件更新</h4>
+    <p className="setting-hint">启动时自动检查更新，可忽略指定版本；这里仍可手动更新。</p>
     <p className="setting-hint">仓库已公开，检查与下载更新不再需要 GitHub 访问令牌。</p>
     {available && <div className="update-release">
       <div className="setting-row"><span>新版本 {available.version}</span><span className="setting-hint">{available.ready ? '签名已验证' : ''}</span></div>

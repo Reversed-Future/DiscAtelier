@@ -53,12 +53,12 @@ export function CollectionTracks({ rows, albums, links, bindings, item, player }
       },
     };
   }
-  const pages = useMemo(() => trackLeaves(rows).length ? discPages(rows, item.edition.title) : albums.flatMap(entry => {
+  const pages = useMemo(() => trackLeaves(rows).length ? discPages(rows, item.edition.title, item.edition.media) : albums.flatMap(entry => {
     const discs = [...new Set(entry.album.tracks.map(t => t.disc))];
     const all = albumRows(entry);
     return discs.map(disc => ({ key: `${entry.album.albumId}:${disc}`, name: entry.album.title + (discs.length > 1 ? ` · Disc ${disc}` : ''), numbered: false, tracks: all.filter((_, i) => entry.album.tracks[i].disc === disc) }));
-  }), [rows, albums, item.edition.title]);
-  const matches = useMemo(() => albumMatches(rows, albums, links, bindings), [rows, albums, links, bindings]);
+  }), [rows, albums, item.edition.title, item.edition.media]);
+  const matches = useMemo(() => albumMatches(rows, albums, links, bindings, item.edition.media), [rows, albums, links, bindings, item.edition.media]);
   const index = Math.min(page, Math.max(0, pages.length - 1));
   function playback(track: ReleaseTrack) {
     const song = matches.get(trackKey(track));

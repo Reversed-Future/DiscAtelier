@@ -11,7 +11,7 @@ export interface SearchResult { id: number; title: string; thumb: string; cover_
 export interface MetadataResults { results: SearchResult[]; pagination: { page: number; pages: number; items: number } }
 export interface ReleaseCredit { name: string; anv: string; role: string; tracks: string }
 export interface ReleaseCompany { name: string; entity_type_name: string; catno: string }
-export interface ReleaseTrack { title: string; position: string; duration: string; type_: string; sub_tracks?: ReleaseTrack[]; extraartists?: ReleaseCredit[] }
+export interface ReleaseTrack { heading_kind?: 'disc' | 'section'; disc_number?: number | null; title: string; position: string; duration: string; type_: string; sub_tracks?: ReleaseTrack[]; extraartists?: ReleaseCredit[] }
 export interface EditionContent { genres: string[]; styles: string[]; tracks: ReleaseTrack[]; credits: ReleaseCredit[]; companies: ReleaseCompany[]; notes: string; detailsLoaded: boolean }
 export interface MetadataRelease {
   extraartists: ReleaseCredit[]; companies: ReleaseCompany[]; notes: string;

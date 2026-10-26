@@ -16,7 +16,7 @@ export const integrations = {
   settings: () => invoke<IntegrationStatus>('integration_settings_get'),
   save: (settings: IntegrationSettings, apiKey: string | null, forgetKey = false) => invoke<IntegrationStatus>('integration_settings_save', { settings, apiKey, forgetKey }),
 };
-export interface MusicQueueContext { title: string; revision: number; albums: LinkedMusicAlbum[]; links: SongLink[]; bindings: DiscAlbumLink[]; tracks: import('../metadata/gateway').ReleaseTrack[] }
+export interface MusicQueueContext { media: import('../library/types').MediumDraft[]; title: string; revision: number; albums: LinkedMusicAlbum[]; links: SongLink[]; bindings: DiscAlbumLink[]; tracks: import('../metadata/gateway').ReleaseTrack[] }
 export const netease = {
   queueContext: (editionId: string) => invoke<MusicQueueContext>('netease_queue_context', { editionId }),
   rememberQueue: (editionId: string, revision: number, ids: number[]) => invoke<void>('netease_queue_remember', { editionId, revision, ids }),

@@ -8,7 +8,7 @@ import { collectionQueue } from './collectionQueue';
 
 async function readQueue(editionId: string, songId: number) {
   const value = await netease.queueContext(editionId);
-  const queue = collectionQueue(editionId, songId, value.albums, value.links, value.tracks, value.bindings);
+  const queue = collectionQueue(editionId, songId, value.albums, value.links, value.tracks, value.bindings, value.media);
   if (queue) {
     queue.title = value.title;
     await netease.rememberQueue(editionId, value.revision, queue.tracks.map(t => t.id));

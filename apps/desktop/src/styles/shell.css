@@ -93,12 +93,16 @@ button:active { transform: scale(.98); }
 .workspace[data-list="true"] .topbar { flex-shrink: 0; }
 .workspace[data-list="true"] #scene { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .workspace[data-list="true"] .organizer { width: calc(100vw - 112px); margin-right: 0; }
-.optical-jump-prompt { position: fixed; z-index: 49; bottom: 88px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 28px; min-width: min(520px, calc(100vw - 36px)); padding: 13px 14px 13px 18px; border: 1px solid var(--line); border-radius: 6px; background: #1b1b1b; box-shadow: 0 16px 50px #0009; font-size: 12px; animation: optical-prompt-in 180ms var(--ease); }
+.optical-jump-prompt { position: fixed; z-index: 49; bottom: 56px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 28px; min-width: min(520px, calc(100vw - 36px)); padding: 13px 14px 13px 18px; border: 1px solid var(--line); border-radius: 6px; background: #1b1b1b; box-shadow: 0 16px 50px #0009; font-size: 12px; }
 .optical-jump-prompt > div:first-child { display: grid; gap: 4px; min-width: 0; }
 .optical-jump-prompt small { color: var(--muted); font-size: 11px; }
 .optical-jump-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; flex: none; }
 .optical-jump-actions .solid-button { padding: 7px 16px; }
-@keyframes optical-prompt-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.fade-notice { opacity: 0; transition: opacity 180ms var(--ease); }
+.fade-notice[data-shown="true"] { opacity: 1; }
+.fade-notice[inert] { pointer-events: none; }
+/* Keep a short opacity-only fade despite the global reduced-motion reset. */
+@media (prefers-reduced-motion: reduce) { .fade-notice { transition: opacity 125ms var(--ease) !important; } }
 .toast { position: fixed; z-index: 50; bottom: 35px; left: 50%; transform: translate(-50%, 12px); background: var(--ink); color: var(--surface); padding: 11px 20px; border-radius: 6px; opacity: 0; pointer-events: none; font-size: 12px; transition: opacity 180ms ease, transform 180ms var(--ease); }
 .toast.visible { opacity: 1; transform: translate(-50%, 0); }
 @media (hover: hover) and (pointer: fine) { #tools-popover > button:hover { background: #ffffff0a; } .top-actions button:hover { color: #fff; } }

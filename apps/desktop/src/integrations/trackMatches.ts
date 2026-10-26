@@ -1,6 +1,7 @@
 import type { ReleaseTrack } from '../metadata/gateway';
 import type { MusicSupplement, SongLink } from './gateway';
 import { comparableTitle } from './trackTitle.ts';
+import { discKey, isVideoDiscKey } from '../metadata/discTracks.ts';
 
 export const trackKey = (track: Pick<ReleaseTrack, 'position' | 'title'>) => JSON.stringify([track.position, track.title]);
 function leaves(rows: ReleaseTrack[]): ReleaseTrack[] {
@@ -26,10 +27,10 @@ function sameSlot(track: ReleaseTrack, song: Song, album: MusicSupplement) {
 }
 // Match only inside a user-selected album. Normalization applies to display
 // titles, never source IDs or stored link keys. Version words remain significant.
-export function trackMatches(rows: ReleaseTrack[], album: MusicSupplement | null, links: SongLink[] = []) {
+export function trackMatches(rows: ReleaseTrack[], album: MusicSupplement | null, links: SongLink[] = [], options: { includeVideo?: boolean } = {}) {
   const result = new Map<string, MusicSupplement['tracks'][number]>();
   const tracks = leaves(rows);
-  const audio = tracks.filter(t => !t.position.startsWith('DVD'));
+  const audio = tracks.filter(t => options.includeVideo || !isVideoDiscKey(discKey(t.position)));
   const names = new Map(audio.map(t => [t, comparableTitle(t.title)]));
   const songNames = new Map((album?.tracks || []).map(t => [t, comparableTitle(t.title)]));
   const used = new Set<number>();

@@ -26,6 +26,7 @@ mod netease_create;
 mod netease_links;
 mod netease_playback;
 mod netease_queue;
+mod netease_startup;
 mod optical;
 mod optical_match;
 mod optical_menu;
@@ -108,10 +109,12 @@ fn main() {
                 std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                     .join("../../../artifacts/netease-runtime")
             };
-            app.manage(Arc::new(discatelier_netease_runtime::Runtime::new(
+            let netease_runtime = Arc::new(discatelier_netease_runtime::Runtime::new(
                 runtime_root,
                 directory.join("netease-cache"),
-            )));
+            ));
+            app.manage(netease_runtime.clone());
+            netease_startup::schedule(netease_runtime, directory.clone());
             app.manage(Arc::new(optical::OpticalService::new(directory)));
             app.manage(Arc::new(Mutex::new(None)) as playback::PlaybackState);
             app.manage(video_input::VideoInput::default());

@@ -36,9 +36,13 @@ pub fn validate_content(content: &EditionContent) -> Result<(), AppError> {
         depth <= 16
             && *total <= 10000
             && rows.iter().all(|row| {
-                [&row.title, &row.position, &row.duration, &row.type_]
-                    .iter()
-                    .all(|text| text.len() <= 16384 && !text.contains('\0'))
+                row.disc_number.is_none_or(|disc| (1..=99).contains(&disc))
+                    && row.heading_kind.as_deref().is_none_or(|kind| {
+                        ["disc", "section"].contains(&kind) && row.type_ == "heading"
+                    })
+                    && [&row.title, &row.position, &row.duration, &row.type_]
+                        .iter()
+                        .all(|text| text.len() <= 16384 && !text.contains('\0'))
                     && tracks(&row.sub_tracks, depth + 1, total)
                     && valid_credits(&row.extraartists)
             })

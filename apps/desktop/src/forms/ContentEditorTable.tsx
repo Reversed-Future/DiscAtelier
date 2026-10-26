@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 // Declared once so empty rows and populated rows share exactly the same columns.
 const layouts = {
-  tracks: ['72px', '110px', undefined, '90px', '106px'],
+  tracks: ['150px', '95px', '100px', undefined, '80px', '80px'],
   credits: ['20%', '20%', '20%', undefined, '106px'],
   companies: [undefined, undefined, undefined, '106px'],
   facts: ['24%', undefined, '106px'],

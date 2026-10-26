@@ -1,0 +1,376 @@
+[
+  {
+    "name": "unknown positions with two peer headings and two physical discs",
+    "discCount": 2,
+    "keys": [
+      "section:1",
+      "section:2"
+    ],
+    "tracks": [
+      {
+        "title": "Album",
+        "type_": "heading"
+      },
+      {
+        "title": "Song",
+        "position": "source-alpha"
+      },
+      {
+        "title": "Live",
+        "type_": "heading"
+      },
+      {
+        "title": "Opening",
+        "position": "source-beta"
+      }
+    ]
+  },
+  {
+    "name": "implicit first section plus live heading",
+    "discCount": 2,
+    "keys": [
+      "section:1",
+      "section:2"
+    ],
+    "tracks": [
+      {
+        "title": "Song",
+        "position": "opaque-one"
+      },
+      {
+        "title": "Live",
+        "type_": "heading"
+      },
+      {
+        "title": "Opening",
+        "position": "opaque-two"
+      }
+    ]
+  },
+  {
+    "name": "two top level source containers",
+    "discCount": 2,
+    "keys": [
+      "section:1",
+      "section:2"
+    ],
+    "tracks": [
+      {
+        "title": "Main",
+        "type_": "index",
+        "sub_tracks": [
+          {
+            "title": "A",
+            "position": "alpha"
+          }
+        ]
+      },
+      {
+        "title": "Live",
+        "type_": "index",
+        "sub_tracks": [
+          {
+            "title": "B",
+            "position": "beta"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "physical count alone does not split a flat tracklist",
+    "discCount": 2,
+    "keys": [
+      "unassigned"
+    ],
+    "tracks": [
+      {
+        "title": "A",
+        "position": "1"
+      },
+      {
+        "title": "B",
+        "position": "2"
+      }
+    ]
+  },
+  {
+    "name": "extra bonus section prevents structural split",
+    "discCount": 2,
+    "keys": [
+      "unassigned"
+    ],
+    "tracks": [
+      {
+        "title": "Main",
+        "type_": "heading"
+      },
+      {
+        "title": "A"
+      },
+      {
+        "title": "Bonus",
+        "type_": "heading"
+      },
+      {
+        "title": "B"
+      },
+      {
+        "title": "Live",
+        "type_": "heading"
+      },
+      {
+        "title": "C"
+      }
+    ]
+  },
+  {
+    "name": "bonus heading within the same numbered disc stays together",
+    "discCount": 2,
+    "keys": [
+      "CD"
+    ],
+    "tracks": [
+      {
+        "title": "Main",
+        "type_": "heading"
+      },
+      {
+        "title": "A",
+        "position": "CD-1"
+      },
+      {
+        "title": "Bonus",
+        "type_": "heading"
+      },
+      {
+        "title": "B",
+        "position": "CD-2"
+      }
+    ]
+  },
+  {
+    "name": "single disc sections are not promoted",
+    "discCount": 1,
+    "keys": [
+      "unassigned"
+    ],
+    "tracks": [
+      {
+        "title": "Main",
+        "type_": "heading"
+      },
+      {
+        "title": "A"
+      },
+      {
+        "title": "Bonus",
+        "type_": "heading"
+      },
+      {
+        "title": "B"
+      }
+    ]
+  },
+  {
+    "name": "manual assignment overrides numbering and source containers",
+    "discCount": 2,
+    "keys": [
+      "manual:1",
+      "manual:2"
+    ],
+    "tracks": [
+      {
+        "title": "A",
+        "position": "CD12",
+        "disc_number": 1
+      },
+      {
+        "title": "B",
+        "position": "BR1",
+        "disc_number": 1
+      },
+      {
+        "title": "Live",
+        "type_": "index",
+        "disc_number": 2,
+        "sub_tracks": [
+          {
+            "title": "C",
+            "position": "1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "conflicting source container does not override explicit numbering",
+    "discCount": 2,
+    "keys": [
+      "1",
+      "2"
+    ],
+    "tracks": [
+      {
+        "title": "First part",
+        "type_": "heading"
+      },
+      {
+        "title": "A",
+        "position": "1-1"
+      },
+      {
+        "title": "B",
+        "position": "2-1"
+      },
+      {
+        "title": "Second part",
+        "type_": "heading"
+      },
+      {
+        "title": "C",
+        "position": "2-2"
+      }
+    ]
+  },
+  {
+    "name": "BD2 is the third physical medium even when CD track data is missing",
+    "discCount": 3,
+    "media": [
+      {
+        "carrierId": "cd",
+        "label": "CD"
+      },
+      {
+        "carrierId": "bd",
+        "label": "BD1"
+      },
+      {
+        "carrierId": "bd",
+        "label": "BD2"
+      }
+    ],
+    "keys": [
+      "BD2"
+    ],
+    "numbers": [
+      3
+    ],
+    "tracks": [
+      {
+        "title": "Live",
+        "type_": "heading"
+      },
+      {
+        "title": "Opening",
+        "position": "BD2-1"
+      }
+    ]
+  },
+  {
+    "name": "manual and automatic rows for the same physical CD share one disc",
+    "discCount": 3,
+    "media": [
+      {
+        "carrierId": "cd",
+        "label": "CD"
+      },
+      {
+        "carrierId": "bd",
+        "label": "BD1"
+      },
+      {
+        "carrierId": "bd",
+        "label": "BD2"
+      }
+    ],
+    "keys": [
+      "CD",
+      "manual:2"
+    ],
+    "numbers": [
+      1,
+      2
+    ],
+    "tracks": [
+      {
+        "title": "A",
+        "position": "CD1",
+        "disc_number": 1
+      },
+      {
+        "title": "B",
+        "position": "CD2"
+      },
+      {
+        "title": "C",
+        "position": "opaque",
+        "disc_number": 2
+      }
+    ]
+  },
+  {
+    "name": "explicit small heading stays inside its disc section",
+    "discCount": 2,
+    "keys": [
+      "section:1",
+      "section:2"
+    ],
+    "tracks": [
+      {
+        "title": "Main",
+        "type_": "heading"
+      },
+      {
+        "title": "A"
+      },
+      {
+        "title": "Bonus",
+        "type_": "heading",
+        "heading_kind": "section"
+      },
+      {
+        "title": "B"
+      },
+      {
+        "title": "Live",
+        "type_": "heading"
+      },
+      {
+        "title": "C"
+      }
+    ]
+  },
+  {
+    "name": "manual small heading belongs to its own physical disc without a following song",
+    "discCount": 3,
+    "media": [
+      {
+        "carrierId": "cd",
+        "label": "CD"
+      },
+      {
+        "carrierId": "bd",
+        "label": "BD1"
+      },
+      {
+        "carrierId": "bd",
+        "label": "BD2"
+      }
+    ],
+    "keys": [
+      "manual:2"
+    ],
+    "numbers": [
+      2
+    ],
+    "tracks": [
+      {
+        "title": "Bonus",
+        "type_": "heading",
+        "heading_kind": "section",
+        "disc_number": 2
+      }
+    ]
+  }
+]

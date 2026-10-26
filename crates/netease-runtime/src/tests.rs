@@ -127,6 +127,43 @@ fn lazy_reuse_restart_and_shutdown() {
     assert!(pid(&runtime).is_none());
     assert!(runtime.request("album", json!({"id":32311})).is_err());
 }
+
+#[test]
+fn warmup_reuses_the_request_process_and_cannot_restart_after_exit() {
+    let runtime = fixture();
+    assert!(pid(&runtime).is_none());
+    runtime.warmup().unwrap();
+    let first = pid(&runtime).unwrap();
+    runtime.warmup().unwrap();
+    assert_eq!(pid(&runtime), Some(first));
+    assert_eq!(
+        runtime
+            .request("search", json!({"query":"after warmup"}))
+            .unwrap()["pid"],
+        first
+    );
+    runtime.shutdown();
+    assert!(runtime.warmup().is_err());
+    assert!(pid(&runtime).is_none());
+}
+
+#[test]
+fn concurrent_warmup_and_queries_share_a_child() {
+    let runtime = Arc::new(fixture());
+    let tasks: Vec<_> = (0..4)
+        .map(|_| {
+            let runtime = runtime.clone();
+            thread::spawn(move || {
+                runtime.warmup().unwrap();
+                runtime
+                    .request("search", json!({"query":"concurrent"}))
+                    .unwrap()
+            })
+        })
+        .collect();
+    let replies: Vec<_> = tasks.into_iter().map(|task| task.join().unwrap()).collect();
+    assert!(replies.iter().all(|reply| reply == &replies[0]));
+}
 #[test]
 fn timeout_and_oversized_response_release_the_process() {
     let mut runtime = fixture();

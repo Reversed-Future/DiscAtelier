@@ -5,6 +5,8 @@ import type { LibraryCopy, LibraryQuery, LibrarySnapshot } from './library/types
 import { library, desktopAvailable, errorMessage } from './library/gateway';
 import { Icon } from './ui/Icon';
 import { WindowChrome } from './ui/WindowChrome';
+import { StartupUpdateNotice } from './settings/StartupUpdateNotice';
+import { OpticalJumpPrompt } from './optical/OpticalJumpPrompt';
 import { CollectionMenu } from './ui/CollectionMenu';
 import { enter } from './ui/motion';
 import { Browse } from './collection/Browse';
@@ -53,7 +55,7 @@ export function App() {
   const [localFilesOpen, setLocalFilesOpen] = useState(false);
   const [opticalPrompt, setOpticalPrompt] = useState<OpticalPresence | null>(null);
   const knownOptical = useRef(new Set<string>());
-  const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | null>(null);
+  const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | 'about' | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [videoDiscogs, setVideoDiscogs] = useState(false);
@@ -175,6 +177,7 @@ export function App() {
   const artwork = useCollectionArtwork(current, modelActive, !!inspected, currentVideo.value, partId, instantFlip);
   return <div className="workspace" data-list={organize}>
     <WindowChrome/>
+    <StartupUpdateNotice hidden={player.open || !!settingsPage} onReview={() => setSettingsPage('about')}/>
     <header className="topbar" inert={player.open} data-window-drag="true">
       <div className="wordmark"><span className="disc-mark"/>DiscAtelier<span className="wordmark-dot">.</span></div>
       <nav className="categories" aria-label="收藏分区">{snapshot?.categories.map(category =>
@@ -233,13 +236,7 @@ export function App() {
     {settingsPage && <Settings initialPage={settingsPage} libraryAvailable={!!snapshot}
       onClose={() => setSettingsPage(null)}
       onRestore={() => { setSettingsPage(null); setMetadataOpen(false); setRestoring(true); }}/>}
-    {opticalPrompt && <div className="optical-jump-prompt" role="dialog" aria-label="光驱收藏提示">
-      <div><span>光驱中检测到《{opticalPrompt.title}》</span><small>{opticalPrompt.drive} · 是否跳转到对应收藏？</small></div>
-      <div className="optical-jump-actions">
-        <button type="button" className="text-button" onClick={() => setOpticalPrompt(null)}>否</button>
-        <button type="button" className="solid-button" onClick={() => void jumpToOptical(opticalPrompt)}>是</button>
-      </div>
-    </div>}
+    <OpticalJumpPrompt value={opticalPrompt} onDismiss={() => setOpticalPrompt(null)} onConfirm={value => void jumpToOptical(value)}/>
     <div className={`toast${notice ? ' visible' : ''}`} role="status">{notice}</div>
     <MusicDock player={player}/>
     <AssistantDock open={assistantOpen} hidden={player.open} onOpen={value => { if (value) player.musicQueue.setOpen(false); setAssistantOpen(value); }} onChanged={() => void refresh(query)}/>

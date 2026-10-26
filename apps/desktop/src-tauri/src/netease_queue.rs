@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QueueContext {
+    media: Vec<discatelier_domain::MediumDraft>,
     title: String,
     revision: i64,
     albums: Vec<LinkedMusicAlbum>,
@@ -39,6 +40,7 @@ fn context(
         .find(|c| c.edition_id == edition)
         .ok_or_else(|| AppError::new("netease", "收藏已改变，请重新打开详情。"))?;
     Ok(QueueContext {
+        media: item.edition.media.clone(),
         title: item.edition.title,
         revision: item.edition_revision,
         albums: service.music_albums(edition)?,

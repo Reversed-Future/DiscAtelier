@@ -96,20 +96,24 @@ fn match_copy(
     tracks: &[discatelier_contracts::ReleaseTrack],
     evidence: &str,
 ) -> Vec<DiscMatch> {
-    discatelier_application::optical_discs::groups(tracks, &copy.edition.title)
-        .into_iter()
-        .filter_map(|disc| {
-            let (score, reason) = score(evidence, &disc.title, &copy.edition.creator);
-            (score > 0).then(|| DiscMatch {
-                copy_id: copy.id.clone(),
-                title: copy.edition.title.clone(),
-                disc_key: disc.key,
-                disc_label: disc.label,
-                score,
-                reason: reason.into(),
-            })
+    discatelier_application::optical_discs::for_media(
+        tracks,
+        &copy.edition.title,
+        &copy.edition.media,
+    )
+    .into_iter()
+    .filter_map(|disc| {
+        let (score, reason) = score(evidence, &disc.title, &copy.edition.creator);
+        (score > 0).then(|| DiscMatch {
+            copy_id: copy.id.clone(),
+            title: copy.edition.title.clone(),
+            disc_key: disc.key,
+            disc_label: disc.label,
+            score,
+            reason: reason.into(),
         })
-        .collect()
+    })
+    .collect()
 }
 
 pub fn automatic(rows: &[DiscMatch], confidence: u8) -> Option<&DiscMatch> {

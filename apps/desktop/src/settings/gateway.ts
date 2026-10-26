@@ -1,4 +1,5 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
+import { shareUpdateCheck } from './startupUpdates';
 
 export interface UpdateStatus {
   currentVersion: string;
@@ -15,7 +16,7 @@ export const updates = {
   status: () => invoke<UpdateStatus>('update_status'),
   saveToken: (token: string) => invoke('update_save_token', { token }),
   forgetToken: () => invoke('update_forget_token'),
-  check: () => invoke<UpdateStatus>('update_check'),
+  check: shareUpdateCheck(() => invoke<UpdateStatus>('update_check')),
   download: (progress: (value: DownloadProgress) => void) => {
     const onProgress = new Channel<DownloadProgress>();
     onProgress.onmessage = progress;

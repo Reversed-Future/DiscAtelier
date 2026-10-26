@@ -1,4 +1,4 @@
-//! Lazy, private-pipe Node runtime. Creating this manager never starts a process.
+//! Private-pipe Node runtime with optional preloading. Construction is lazy.
 mod failure;
 #[cfg(windows)]
 mod job;
@@ -53,7 +53,7 @@ impl Runtime {
             return Err(error("网易云搜索页码无效。"));
         }
         match operation {
-            "authStart" | "authStatus" | "authLogout" => {}
+            "warmup" | "authStart" | "authStatus" | "authLogout" => {}
             "authCheck"
                 if arguments
                     .get("key")
@@ -90,6 +90,11 @@ impl Runtime {
             process.take();
         }
         result
+    }
+    /// Load local API modules without account lookup or a provider request.
+    /// Uses the same lock/process as real requests, including exit cancellation.
+    pub fn warmup(&self) -> Result<(), AppError> {
+        self.request("warmup", json!({})).map(|_| ())
     }
     pub fn shutdown(&self) {
         self.closing.store(true, Ordering::Release);

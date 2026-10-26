@@ -16,8 +16,8 @@ export function TrackLinkManager({ item, rows, albums, links, bindings, onClose,
   const [busy, setBusy] = useState(false);
   const [page, setPage] = useState(0);
   const [track, setTrack] = useState<ReleaseTrack | null>(null);
-  const pages = useMemo(() => trackLeaves(rows).length ? discPages(rows, item.edition.title) : albums.map(a => ({ key: String(a.album.albumId), name: a.album.title, numbered: false, tracks: albumRows(a) })), [rows, albums, item.edition.title]);
-  const matches = useMemo(() => albumMatches(rows, albums, links, bindings), [rows, albums, links, bindings]);
+  const pages = useMemo(() => trackLeaves(rows).length ? discPages(rows, item.edition.title, item.edition.media) : albums.map(a => ({ key: String(a.album.albumId), name: a.album.title, numbered: false, tracks: albumRows(a) })), [rows, albums, item.edition.title, item.edition.media]);
+  const matches = useMemo(() => albumMatches(rows, albums, links, bindings, item.edition.media), [rows, albums, links, bindings, item.edition.media]);
   const index = Math.min(page, Math.max(0, pages.length - 1));
   return <><Modal title="关联曲目" onClose={onClose} busy={busy} className="track-link-manager">
     <div className="collection-tracks"><DiscTabs pages={pages} page={index} onChange={next => { if (!busy) setPage(next); }}/>

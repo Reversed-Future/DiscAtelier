@@ -7,7 +7,7 @@ import { video, emptyVideo, type VideoCharacter, type VideoChapter, type VideoFa
 import { videoWorks } from '../video/sources';
 import { TrackMultiSelect } from './TrackMultiSelect';
 import { ContentEditorTable } from './ContentEditorTable';
-import { removeTrackRows } from './contentTracks';
+import { MusicTrackEditor } from './MusicTrackEditor';
 
 function splitTags(value: string) {
   return value.split(',').map(part => part.trim()).filter(Boolean);
@@ -29,22 +29,6 @@ function flattenTrackRows(rows: ReleaseTrack[], prefix: number[] = [], depth = 0
   });
 }
 
-function updateTrackRows(rows: ReleaseTrack[], path: number[], patch: Partial<ReleaseTrack>): ReleaseTrack[] {
-  const [index, ...rest] = path;
-  return rows.map((row, at) => at !== index ? row
-    : rest.length ? { ...row, sub_tracks: updateTrackRows(row.sub_tracks || [], rest, patch) }
-    : { ...row, ...patch });
-}
-
-function trackDisc(position: string) {
-  return Number(position.match(/^(?:CD|DVD)?(\d+)-/i)?.[1] || 1);
-}
-
-function withDisc(position: string, disc: number, fallback: number) {
-  const suffix = position.match(/-(\d+(?:\.\d+)?)$/)?.[1] || String(fallback);
-  return `${disc}-${suffix}`;
-}
-
 function MusicEditor({ item, onSaved, onBusy }: { item: LibraryCopy; onSaved(): void; onBusy(value: boolean): void }) {
   const [content, setContent] = useState<EditionContent | null>(null);
   const [busy, setBusy] = useState(true);
@@ -61,32 +45,16 @@ function MusicEditor({ item, onSaved, onBusy }: { item: LibraryCopy; onSaved(): 
   const change = (value: Partial<EditionContent>) => setContent(current => current ? { ...current, ...value } : current);
   const flatTracks = flattenTrackRows(content.tracks);
   const leaves = flatTracks.filter(entry => entry.track.type_ !== 'heading');
-  const updateTrack = (path: number[], value: Partial<ReleaseTrack>) => change({ tracks: updateTrackRows(content.tracks, path, value) });
-  const removeTrack = (path: number[]) => change({ tracks: removeTrackRows(content.tracks, path) });
   const credit = (index: number, value: Partial<ReleaseCredit>) => change({ credits: content.credits.map((row, i) => i === index ? { ...row, ...value } : row) });
   const company = (index: number, value: Partial<ReleaseCompany>) => change({ companies: content.companies.map((row, i) => i === index ? { ...row, ...value } : row) });
   const trackLabel = (path: number[], position: string, title: string) => `${path.join('.')} · ${position || '—'} · ${title || '未命名'}`;
   return <section className="content-editor">
-    <p className="setting-hint">这里编辑的是已保存的曲目、 Credits 和专辑资料。保存后会同时用于本地关联、搜索和详情显示。</p>
+    <p className="setting-hint">这里编辑的是已保存的曲目、Credits 和专辑资料。按实体载体分盘，可调整条目的所属 Disc；分盘标题与盘内小标题分开显示，不改动原曲号。保存后生效。</p>
     <div className="content-editor-scroll">
       <label>流派<input value={content.genres.join(', ')} onChange={e => change({ genres: splitTags(e.target.value) })}/></label>
       <label>风格<input value={content.styles.join(', ')} onChange={e => change({ styles: splitTags(e.target.value) })}/></label>
       <label>简介<textarea rows={4} value={content.notes} onChange={e => change({ notes: e.target.value })}/></label>
-      <div className="content-editor-heading"><h3>曲目</h3><button type="button" className="text-button" onClick={() => change({ tracks: [...content.tracks, { position: '1-1', title: '', duration: '', type_: 'track', sub_tracks: [], extraartists: [] }] })}>添加曲目</button></div>
-      <ContentEditorTable kind="tracks"><thead><tr><th>Disc</th><th>位置</th><th>标题</th><th>时长</th><th/></tr></thead><tbody>
-        {flatTracks.map(({ track: row, path, depth }) => <tr key={path.join('.')}>
-          <td><input type="number" min="1" max="99" aria-label={`曲目 ${path.join('.')} Disc`} value={trackDisc(row.position)} onChange={e => updateTrack(path, { position: withDisc(row.position, Number(e.target.value) || 1, path.at(-1)! + 1) })}/></td>
-          <td><input value={row.position} aria-label={`曲目 ${path.join('.')} 位置`} onChange={e => updateTrack(path, { position: e.target.value })}/></td>
-          <td><input style={{ paddingLeft: 10 + depth * 16 }} value={row.title} aria-label={`曲目 ${path.join('.')} 标题`} onChange={e => updateTrack(path, { title: e.target.value })}/></td>
-          <td><input value={row.duration} aria-label={`曲目 ${path.join('.')} 时长`} onChange={e => updateTrack(path, { duration: e.target.value })}/></td>
-          <td><button type="button" className="text-button" onClick={() => removeTrack(path)}>移除</button></td>
-        </tr>)}
-        {!flatTracks.length && <tr className="content-editor-ghost">
-          <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
-          <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
-          <td><button type="button" className="content-editor-ghost-add" onClick={() => change({ tracks: [{ position: '1-1', title: '', duration: '', type_: 'track', sub_tracks: [], extraartists: [] }] })}>添加曲目</button></td>
-        </tr>}
-      </tbody></ContentEditorTable>
+      <MusicTrackEditor tracks={content.tracks} title={item.edition.title} media={item.edition.media} onChange={tracks => change({ tracks })}/>
       <div className="content-editor-heading"><h3>Credits</h3><button type="button" className="text-button" onClick={() => change({ credits: [...content.credits, { name: '', anv: '', role: '', tracks: '' }] })}>添加</button></div>
       <ContentEditorTable kind="credits"><thead><tr><th>姓名</th><th>别名（ANV）</th><th>角色</th><th>曲目</th><th/></tr></thead><tbody>
         {content.credits.map((row, i) => <tr key={i}><td><input value={row.name} onChange={e => credit(i, { name: e.target.value })}/></td><td><input value={row.anv} placeholder="没有别名就留空" onChange={e => credit(i, { anv: e.target.value })}/></td><td><input value={row.role} onChange={e => credit(i, { role: e.target.value })}/></td><td><TrackMultiSelect value={row.tracks} options={leaves.map(entry => ({ id: entry.track.position, label: trackLabel(entry.path, entry.track.position, entry.track.title) }))} onChange={value => credit(i, { tracks: value })}/></td><td><button type="button" className="text-button" onClick={() => change({ credits: content.credits.filter((_, at) => at !== i) })}>移除</button></td></tr>)}

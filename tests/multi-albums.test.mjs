@@ -34,6 +34,19 @@ test('each physical disc can explicitly choose a different album with identicall
   assert.equal(matches.get(trackKey(tracks[1])).id,41);
   assert.deepEqual(collectionQueue('physical',31,[first,second],[],tracks,bindings).tracks.map(s=>s.id),[31,41]);
 });
+
+test('source-section grouping and manual discs scope songs without changing playback order or manual song links', () => {
+  const albums = [linked(1, 'Main', [song(31, 'Opening')]), linked(2, 'Live', [song(41, 'Opening')])];
+  const tracks = [{ ...row('', 'Main'), type_: 'heading' }, row('opaque-first', 'Opening'),
+    { ...row('', 'Live'), type_: 'heading' }, row('opaque-second', 'Opening')];
+  const bindings = [{ discKey: 'section:1', albumId: 1 }, { discKey: 'section:2', albumId: 2 }];
+  assert.deepEqual(collectionQueue('physical', 31, albums, [], tracks, bindings, 2).tracks.map(song => song.id), [31, 41]);
+  const manual = tracks.map(track => track.type_ === 'heading' ? track : { ...track, disc_number: track.position === 'opaque-first' ? 1 : 2 });
+  const links = [{ position: 'opaque-first', title: 'Opening', song: song(99, 'Manual song') }];
+  const manualBindings = [{ discKey: 'manual:1', albumId: 1 }, { discKey: 'manual:2', albumId: 2 }];
+  assert.deepEqual(collectionQueue('physical', 99, albums, links, manual, manualBindings, 2).tracks.map(song => song.id), [99, 41]);
+  assert.deepEqual(manual.map(track => track.position), tracks.map(track => track.position));
+});
 test('manual song links override disc scope; unavailable or mismatched scoped albums never fall back silently', () => {
   const bindings=[{discKey:'1',albumId:200},{discKey:'2',albumId:200}];
   assert.equal(albumMatches(rows,[pm,am],[],bindings).has(trackKey(rows[0])),false);

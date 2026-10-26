@@ -26,11 +26,12 @@ input.on('line', async line => {
       if (!args || !Number.isSafeInteger(args.id) || args.id <= 0) throw new Error('arguments');
     } else if (request.operation === 'authCheck') {
       if (typeof args?.key !== 'string' || !args.key || args.key.length > 1024 || /[\s\x00-\x1f]/.test(args.key)) throw new Error('key');
-    } else if (!['authStart', 'authStatus', 'authLogout'].includes(request.operation)) throw new Error('operation');
+    } else if (!['warmup', 'authStart', 'authStatus', 'authLogout'].includes(request.operation)) throw new Error('operation');
     active = true;
     try { api ||= require('@neteasecloudmusicapienhanced/api'); }
     catch { throw Object.assign(new Error('Component load failed'), { code: 'NETEASE_COMPONENT_LOAD' }); }
-    const response = request.operation === 'authStart' ? { body: await require('./auth.cjs').start(api) }
+    const response = request.operation === 'warmup' ? { body: { ready: true } }
+      : request.operation === 'authStart' ? { body: await require('./auth.cjs').start(api) }
       : request.operation === 'authCheck' ? { body: await require('./auth.cjs').check(api, args.key) }
       : request.operation === 'authStatus' ? { body: await require('./auth.cjs').status(api, args?.cookie, true) }
       : request.operation === 'authLogout' ? { body: await require('./auth.cjs').logout(api, args?.cookie) }

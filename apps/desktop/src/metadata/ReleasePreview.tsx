@@ -3,12 +3,13 @@ import { useState } from 'react';
 import { DiscTabs, DiscTrackPanel } from './DiscTrackView';
 import { SearchCover } from './SearchCover';
 import { discPages } from './discTracks';
+import { releaseMedia } from './discStructure';
 import { ReleaseDetails } from './ReleaseDetails';
 
 export function ReleasePreview({ release }: { release: MetadataRelease }) {
   const [identifiersOpen, setIdentifiersOpen] = useState(false);
   const [page, setPage] = useState(0);
-  const pages = discPages(release.tracklist, release.title);
+  const pages = discPages(release.tracklist, release.title, releaseMedia(release.formats));
   const artwork = release.images.find(image => image.type === 'primary') || release.images[0];
   return <section className="release-preview">
     <DiscTabs pages={pages} page={page} onChange={setPage}/>

@@ -3,6 +3,43 @@ import assert from 'node:assert/strict';
 import { dateValue, readDate, monthDays, moveMonth, localDate } from '../apps/desktop/src/ui/calendar.ts';
 import { mediumLabel } from '../apps/desktop/src/library/mediumLabel.ts';
 import { discPages } from '../apps/desktop/src/metadata/discTracks.ts';
+import { physicalDiscCount, releaseDiscCount } from '../apps/desktop/src/metadata/discStructure.ts';
+import { readFileSync } from 'node:fs';
+import { assignTrackDisc } from '../apps/desktop/src/forms/contentTracks.ts';
+
+test('manual assignment preserves original order within a physical disc', () => {
+  const rows = [{ title: 'first', position: 'CD-1' }, { title: 'second', position: 'CD-2', disc_number: 1 }, { title: 'third', position: 'CD-3' }];
+  const pages = discPages(rows, 'Album', [{ carrierId: 'cd', label: 'CD' }]);
+  assert.equal(pages.length, 1);
+  assert.deepEqual(pages[0].tracks.map(row => row.title), ['first', 'second', 'third']);
+  assert.deepEqual(pages[0].entries.map(row => row.path), [[0], [1], [2]]);
+});
+
+test('moving a section changes ownership without rewriting positions or following sections', () => {
+  const rows = [{ title: 'Bonus', type_: 'heading', heading_kind: 'section', position: '' }, { title: 'Song', position: 'original-42' }, { title: 'Next', type_: 'heading', position: '' }];
+  const moved = assignTrackDisc(rows, [0], 2);
+  assert.deepEqual(moved.map(row => row.disc_number), [2, 2, undefined]);
+  assert.deepEqual(moved.map(row => row.position), rows.map(row => row.position));
+  assert.equal(rows[1].disc_number, undefined);
+});
+
+for (const fixture of JSON.parse(readFileSync(new URL('./fixtures/disc-structure.json', import.meta.url), 'utf8'))) {
+  test(`disc source structure: ${fixture.name}`, () => {
+    const before = JSON.stringify(fixture.tracks);
+    const pages = discPages(fixture.tracks, 'Fixture', fixture.media ?? fixture.discCount);
+    assert.deepEqual(pages.map(page => page.key), fixture.keys);
+    if (fixture.numbers) assert.deepEqual(pages.map(page => page.number), fixture.numbers);
+    const leaves = rows => rows.flatMap(row => row.sub_tracks?.length ? leaves(row.sub_tracks) : row.type_ === 'heading' ? [] : [row]);
+    assert.deepEqual(pages.flatMap(page => leaves(page.tracks)), leaves(fixture.tracks));
+    assert.equal(JSON.stringify(fixture.tracks), before);
+  });
+}
+test('physical media counts exclude vinyl sides and preserve Discogs quantities', () => {
+  assert.equal(physicalDiscCount([{ carrierId: 'cd' }, { carrierId: 'bd' }, { carrierId: 'bd' }]), 3);
+  assert.equal(physicalDiscCount([{ carrierId: 'vinyl' }, { carrierId: 'vinyl' }]), 0);
+  assert.equal(releaseDiscCount([{ name: 'CD', qty: '1' }, { name: 'Blu-ray', qty: '2' }, { name: 'Box Set', qty: '1' }]), 3);
+  assert.equal(releaseDiscCount([{ name: 'Unknown source format', qty: '2' }]), 0);
+});
 
 test('calendar validates real dates and retains local calendar values', () => {
   for (const value of ['2024-02-29', '2000-02-29', '2026-12-31', '0099-01-02']) {
@@ -37,6 +74,27 @@ test('carrier text removes only the repeated registered prefix and never mutates
 
 const track = (position, title = position) => ({ position, title, duration: '3:00', type_: 'track' });
 const heading = title => ({ position: '', title, duration: '', type_: 'heading' });
+
+test('saved Pop Virus CD12 / BR1 rows split on read without rewriting source or track identities', () => {
+  const live = '星野源　Live At Onkio Haus Studio';
+  const source = [track('CD12', 'Family Song'), track('CD13', 'Nothing'), track('CD14', 'Hello Song'),
+    heading(live), track('BR1', 'Night Troop'), track('BR2', '肌'), track('BR3', '桜の森'), track('BR4', 'Snow Men')];
+  const saved = JSON.stringify(source);
+  const restored = JSON.parse(saved);
+  const pages = discPages(restored, 'Pop Virus');
+  assert.deepEqual(pages.map(page => [page.key, page.name, page.numbered]), [['CD', 'Pop Virus', true], ['BR', live, true]]);
+  assert.deepEqual(pages[0].tracks.map(row => row.position), ['CD12', 'CD13', 'CD14']);
+  assert.deepEqual(pages[1].tracks.map(row => row.position), ['', 'BR1', 'BR2', 'BR3', 'BR4']);
+  assert.deepEqual(pages.flatMap(page => page.tracks), source);
+  assert.equal(JSON.stringify(restored), saved);
+});
+
+test('compact carrier grouping keeps nested tracks and does not interpret unrelated labels', () => {
+  const pages = discPages([{ ...track('CD01'), type_: 'index', sub_tracks: [track('1.1'), track('1.2')] }, track('BR01'),
+    ...['A1', 'B1', 'CD0', 'BR0', 'CD', 'BR', 'cd12', 'br1', 'BR1extra'].map(value => track(value))], 'Saved');
+  assert.deepEqual(pages.map(page => page.key), ['CD', 'BR', 'unassigned']);
+  assert.deepEqual(pages[0].tracks.map(row => row.position), ['CD01', '1.1', '1.2']);
+});
 
 test('Quintet CD and both Blu-ray discs are peers and preserve every source row', () => {
   const first = 'Morfonica Zepp Tour 2021「Amabile」東京公演';

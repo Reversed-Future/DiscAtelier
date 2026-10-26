@@ -59,6 +59,26 @@ pub fn replace(
     content: &EditionContent,
 ) -> Result<(), AppError> {
     validate_content(content)?;
+    let count: u32 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM media WHERE edition_id=?1",
+            [edition_id],
+            |row| row.get(0),
+        )
+        .map_err(db_error)?;
+    fn within_media(rows: &[ReleaseTrack], count: u32) -> bool {
+        rows.iter().all(|row| {
+            row.disc_number
+                .is_none_or(|number| u32::from(number) <= count)
+                && within_media(&row.sub_tracks, count)
+        })
+    }
+    if !within_media(&content.tracks, count) {
+        return Err(AppError::new(
+            "validation",
+            "所属 Disc 超出本版本的实体载体数量，请先核对版本载体。",
+        ));
+    }
     let text = serde_json::to_string(content)
         .map_err(|_| AppError::new("storage", "曲目资料无法保存。"))?;
     connection

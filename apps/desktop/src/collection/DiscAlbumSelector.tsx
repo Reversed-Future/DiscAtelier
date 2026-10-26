@@ -3,11 +3,16 @@ import { Select } from '../ui/Select';
 import { netease, type LinkedMusicAlbum, type DiscAlbumLink } from '../integrations/gateway';
 import type { LibraryCopy } from '../library/types';
 import { errorMessage } from '../library/gateway';
+import { physicalDiscNumber } from '../metadata/physicalDiscs';
+import { isVideoDiscKey } from '../metadata/discTracks';
 
 export function DiscAlbumSelector({ item, discKey, title, albums, bindings, onSaved, onBusy }: {
   item: LibraryCopy; discKey: string; title: string; albums: LinkedMusicAlbum[]; bindings: DiscAlbumLink[];
   onSaved(): Promise<void>; onBusy(busy: boolean): void;
 }) {
+  const number = physicalDiscNumber(discKey, item.edition.media);
+  const carrier = number === null ? undefined : item.edition.media[number - 1]?.carrierId;
+  const video = carrier === undefined ? isVideoDiscKey(discKey) : carrier === 'bd' || carrier === 'dvd';
   const saved = bindings.find(b => b.discKey === discKey)?.albumId;
   const [value, setValue] = useState(saved ? String(saved) : '');
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
@@ -20,9 +25,9 @@ export function DiscAlbumSelector({ item, discKey, title, albums, bindings, onSa
   }
   return <section className="disc-album-selector">
     <label>{title} · 音源专辑<Select label={`${title} 的音源专辑`} value={value} disabled={busy}
-      options={[{ id: '', label: '从全部关联专辑匹配' }, ...albums.map(a => ({ id: String(a.album.albumId), label: a.album.title }))]} onChange={setValue}/></label>
+      options={[{ id: '', label: video ? '请选择音源专辑' : '从全部关联专辑匹配' }, ...albums.map(a => ({ id: String(a.album.albumId), label: a.album.title }))]} onChange={setValue}/></label>
     <button className="text-button" disabled={busy || value === (saved ? String(saved) : '')} onClick={() => void save()}>{busy ? '保存中' : '保存分盘关联'}</button>
-    <p className="setting-hint">此分盘仅从所选专辑匹配，手动指定的单曲保持优先。</p>
+    <p className="setting-hint">{video && !saved ? 'DVD／BD 选择音源专辑后再自动匹配，手动指定的单曲保持优先。' : '此分盘仅从所选专辑匹配，手动指定的单曲保持优先。'}</p>
     {error && <p className="form-error" role="alert">{error}</p>}
   </section>;
 }

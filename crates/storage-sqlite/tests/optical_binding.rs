@@ -71,7 +71,22 @@ fn disc_binding_validates_key_supports_correction_and_survives_reopen() {
     use discatelier_contracts::{EditionContent, LibraryQuery};
     let dir = tempfile::tempdir().unwrap();
     let mut service = LibraryService::new(SqliteLibrary::open(dir.path()).unwrap());
-    let copy_id = service.create(draft()).unwrap();
+    let mut request = draft();
+    request.edition.as_mut().unwrap().media = vec![
+        MediumDraft {
+            carrier_id: "cd".into(),
+            label: "CD".into(),
+        },
+        MediumDraft {
+            carrier_id: "bd".into(),
+            label: "BD1".into(),
+        },
+        MediumDraft {
+            carrier_id: "bd".into(),
+            label: "BD2".into(),
+        },
+    ];
+    let copy_id = service.create(request).unwrap();
     let item = service
         .list(LibraryQuery {
             category_id: "video".into(),

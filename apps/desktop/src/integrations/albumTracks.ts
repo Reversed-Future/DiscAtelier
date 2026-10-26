@@ -1,6 +1,7 @@
+import type { MediumDraft } from '../library/types';
 import type { LinkedMusicAlbum, NeteaseSong, SongLink, DiscAlbumLink } from './gateway';
 import type { ReleaseTrack } from '../metadata/gateway';
-import { discPages } from '../metadata/discTracks.ts';
+import { discPages, isVideoDiscKey } from '../metadata/discTracks.ts';
 import { trackKey, trackMatches } from './trackMatches.ts';
 
 export const trackLeaves = (rows: ReleaseTrack[]): ReleaseTrack[] => rows.flatMap(t => t.sub_tracks?.length ? trackLeaves(t.sub_tracks) : t.type_ === 'heading' ? [] : [t]);
@@ -24,7 +25,7 @@ export function albumRowLabel(row: ReleaseTrack, albums: LinkedMusicAlbum[]) {
 
 // Exact manual identities always win. An automatic match must agree across all
 // linked albums; duplicate titles in different releases are not silently picked.
-export function albumMatches(rows: ReleaseTrack[], albums: LinkedMusicAlbum[], links: SongLink[], bindings: DiscAlbumLink[] = []) {
+export function albumMatches(rows: ReleaseTrack[], albums: LinkedMusicAlbum[], links: SongLink[], bindings: DiscAlbumLink[] = [], discCount: number | readonly MediumDraft[] = 0) {
   const physical = trackLeaves(rows).length > 0;
   const source = collectionRows(rows, albums);
   const leaves = trackLeaves(source);
@@ -38,14 +39,20 @@ export function albumMatches(rows: ReleaseTrack[], albums: LinkedMusicAlbum[], l
     }
     return result;
   }
-  const automatic = albums.map(a => trackMatches(source, a.album, links));
+  const automatic: Map<string, NeteaseSong>[] = [];
   const scoped = new Map<string, NeteaseSong>();
   const constrained = new Set<string>();
-  for (const page of discPages(rows, '')) {
+  for (const page of discPages(rows, '', discCount)) {
     const binding = bindings.find(b => b.discKey === page.key);
-    if (!binding) continue;
+    if (!binding) {
+      const carrier = typeof discCount !== 'number' && page.number !== undefined
+        ? discCount[page.number - 1]?.carrierId : undefined;
+      const video = carrier !== undefined ? carrier === 'bd' || carrier === 'dvd' : isVideoDiscKey(page.key);
+      if (!video) automatic.push(...albums.map(entry => trackMatches(page.tracks, entry.album, links, { includeVideo: true })));
+      continue;
+    }
     const album = albums.find(a => a.album.albumId === binding.albumId)?.album ?? null;
-    const matches = trackMatches(page.tracks, album, links);
+    const matches = trackMatches(page.tracks, album, links, { includeVideo: true });
     for (const row of trackLeaves(page.tracks)) {
       const key = trackKey(row);
       constrained.add(key);

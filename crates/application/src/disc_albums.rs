@@ -1,5 +1,5 @@
 use crate::{ExtensionRepository, LibraryRepository, LibraryService};
-use discatelier_contracts::{AppError, DiscAlbumLink, ReleaseTrack};
+use discatelier_contracts::{AppError, DiscAlbumLink, LibraryCopy, LibraryQuery, OpticalDisc};
 use std::collections::BTreeSet;
 
 // Same documented Discogs position forms as metadata/discTracks.ts. No title
@@ -10,6 +10,12 @@ fn positive(value: &str) -> bool {
         && value.bytes().any(|b| b != b'0')
 }
 pub(crate) fn disc_key(position: &str) -> Option<String> {
+    // Pop Virus prints CD12 / BR1: these are track numbers within each medium.
+    for prefix in ["CD", "BR"] {
+        if position.strip_prefix(prefix).is_some_and(positive) {
+            return Some(prefix.into());
+        }
+    }
     let (left, right) = position.split_once('-')?;
     let mut parts = right.split('.');
     if !positive(parts.next()?)
@@ -30,31 +36,48 @@ pub(crate) fn disc_key(position: &str) -> Option<String> {
         .unwrap_or(left);
     (positive(number) && !number.starts_with('0')).then(|| left.into())
 }
-fn collect_keys(rows: &[ReleaseTrack], parent: Option<&str>, keys: &mut BTreeSet<String>) {
-    for track in rows {
-        let key = disc_key(&track.position).or_else(|| parent.map(str::to_owned));
-        if track.sub_tracks.is_empty() {
-            if track.type_ != "heading" {
-                keys.insert(key.unwrap_or_else(|| "unassigned".into()));
-            }
-        } else {
-            collect_keys(&track.sub_tracks, key.as_deref(), keys);
-        }
-    }
-}
 impl<R: LibraryRepository + ExtensionRepository> LibraryService<R> {
+    fn disc_edition(&self, edition: &str) -> Result<LibraryCopy, AppError> {
+        crate::request_id(edition)?;
+        for category in ["music", "video"] {
+            if let Some(copy) = self
+                .repository
+                .list(&LibraryQuery {
+                    category_id: category.into(),
+                    ..Default::default()
+                })?
+                .into_iter()
+                .find(|copy| copy.edition_id == edition)
+            {
+                return Ok(copy);
+            }
+        }
+        Err(AppError::new("validation", "收藏条目不存在。"))
+    }
+    pub fn edition_discs(&self, edition: &str) -> Result<Vec<OpticalDisc>, AppError> {
+        let copy = self.disc_edition(edition)?;
+        let content = self
+            .repository
+            .edition_content(edition)?
+            .unwrap_or_default();
+        Ok(crate::optical_discs::for_media(
+            &content.tracks,
+            &copy.edition.title,
+            &copy.edition.media,
+        ))
+    }
     pub fn disc_albums(&self, edition: &str) -> Result<Vec<DiscAlbumLink>, AppError> {
         crate::request_id(edition)?;
-        let mut keys = BTreeSet::new();
-        if let Some(content) = self.repository.edition_content(edition)? {
-            collect_keys(&content.tracks, None, &mut keys);
-        }
-        Ok(self
-            .repository
-            .disc_albums(edition)?
+        let keys: BTreeSet<_> = self
+            .edition_discs(edition)?
             .into_iter()
-            .filter(|l| keys.contains(&l.disc_key))
-            .collect())
+            .map(|disc| disc.key)
+            .collect();
+        Ok(crate::disc_links::resolve(
+            &keys.into_iter().collect::<Vec<_>>(),
+            &self.repository.disc_albums(edition)?,
+            &self.disc_edition(edition)?.edition.media,
+        ))
     }
     pub fn save_disc_album(
         &mut self,
@@ -64,10 +87,11 @@ impl<R: LibraryRepository + ExtensionRepository> LibraryService<R> {
         album: Option<u64>,
     ) -> Result<(), AppError> {
         crate::request_id(edition)?;
-        let mut keys = BTreeSet::new();
-        if let Some(content) = self.repository.edition_content(edition)? {
-            collect_keys(&content.tracks, None, &mut keys);
-        }
+        let keys: BTreeSet<_> = self
+            .edition_discs(edition)?
+            .into_iter()
+            .map(|disc| disc.key)
+            .collect();
         if revision < 1
             || !keys.contains(key)
             || album.is_some_and(|id| {
@@ -100,11 +124,16 @@ mod tests {
             ("BD1-13", "BD1"),
             ("BD2-1", "BD2"),
             ("BD-1.1", "BD"),
+            ("CD12", "CD"),
+            ("CD14", "CD"),
+            ("BR1", "BR"),
+            ("BR04", "BR"),
         ] {
             assert_eq!(disc_key(position).as_deref(), Some(key));
         }
         for position in [
-            "A1", "B1", "3.1", "01-2", "PM-1", "AM-1", "2-1-2", "2-1.1.1",
+            "A1", "B1", "3.1", "01-2", "PM-1", "AM-1", "2-1-2", "2-1.1.1", "CD0", "BR0", "CD",
+            "BR", "cd12", "br1", "BR1extra",
         ] {
             assert_eq!(disc_key(position), None);
         }

@@ -80,9 +80,8 @@
 .inspection-tab-content[data-tab="tracks"] { overflow: hidden; }
 .inspection-tracks-page { height: 100%; min-height: 0; }
 .edition-contents[data-section="tracks"] { height: 100%; min-height: 0; display: flex; flex-direction: column; }
-.object-info .object-actions { margin-top: 22px; padding-top: 18px; min-height: 36px; }
 /* Preserve the same footer height and divider position across every detail tab. */
-.object-info .object-actions > button[data-hidden="true"] { visibility: hidden; pointer-events: none; }
+.object-info .object-actions { margin-top: 22px; padding-top: 18px; min-height: 36px; }
 .object-info > .collection-source { margin: 18px 0 0; }
 
 .release-preview { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(210px, .85fr) minmax(0, 1.65fr); column-gap: 30px; row-gap: 16px; grid-template-rows: 46px minmax(0, 1fr); }
@@ -188,3 +187,13 @@
 .audio-track-list button { display: flex; align-items: center; width: 100%; gap: 24px; padding: 15px 12px; border-bottom: 1px solid var(--line); color: var(--muted); transition: color 160ms, background 160ms; }
 .audio-track-list button[aria-current] { color: var(--ink); background: #ffffff07; }
 .audio-track-list time { margin-left: auto; }
+
+.content-editor-disc + .content-editor-disc { margin-top: 24px; }
+.track-heading-kind { margin-right: 10px; font-size: 10px; color: var(--muted); }
+.content-editor-disc-actions { display: flex; gap: 16px; }
+.content-editor .content-editor-disc-title { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: center; gap: 12px; margin: 8px 0 12px; font-size: 11px; color: var(--muted); }
+.content-editor > .setting-hint { font-size: 11px; line-height: 1.8; font-weight: 400; color: var(--muted); margin: 0; }
+.content-editor-disc-title input { font-size: 11px; padding: 5px 6px; }
+.content-editor-table-tracks { min-width: 820px; }
+.content-editor-table-tracks select { width: 100%; min-width: 0; padding: 5px 6px; font-size: 11px; }
+.content-editor-table-tracks tr[data-entry-type="heading"] input { color: var(--muted); }

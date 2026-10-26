@@ -70,6 +70,12 @@ pub struct ReleaseIdentifier {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ReleaseTrack {
     pub title: String,
+    /// User-confirmed physical disc, independent of the original position text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disc_number: Option<u16>,
+    /// Explicit editor distinction; absent on legacy provider headings.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub heading_kind: Option<String>,
     #[serde(default)]
     pub position: String,
     #[serde(default)]

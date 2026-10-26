@@ -36,6 +36,12 @@ test('bundled search forwards the requested page and preserves total count', asy
   assert.equal(response.body.result.albumCount, 513);
   assert.equal(response.id, 'page-check');
 });
+
+test('startup warmup loads the API without requesting remote data or credentials', async () => {
+  const { response, calls } = await exchange({}, 'warmup');
+  assert.equal(response.body.ready, true);
+  assert.deepEqual(calls, []);
+});
 test('song URL requests use the registered API with unblocking disabled and validate the ID', async () => {
   const { response, calls } = await exchange({id:42}, 'songUrl');
   assert.deepEqual(calls,[{id:42,level:'standard',unblock:'false'}]);

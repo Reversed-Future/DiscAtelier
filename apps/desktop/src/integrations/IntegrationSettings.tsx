@@ -55,7 +55,7 @@ export function IntegrationSettings({ kind, onBusy }: { kind: 'netease' | 'assis
       <div className="netease-service-detail" key={status?.settings.neteaseMode}>
         {status?.settings.neteaseMode === 'custom'
           ? <label>服务地址<input value={status.settings.neteaseBaseUrl} disabled={busy} spellCheck={false} placeholder="http://127.0.0.1:3000" onChange={e => change('neteaseBaseUrl', e.target.value)}/></label>
-          : <p className="setting-hint">使用时自动启动，退出时关闭。</p>}
+          : <p className="setting-hint">随应用静默启动，退出时关闭。</p>}
       </div>
     </> : <>
       <label>Base URL<input value={status?.settings.aiBaseUrl || ''} disabled={!status || busy} spellCheck={false} placeholder="https://服务地址/v1" onChange={e => change('aiBaseUrl', e.target.value)}/></label>

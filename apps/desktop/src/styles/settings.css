@@ -98,3 +98,9 @@
 @media (hover: hover) and (pointer: fine) { .settings-nav button:not(:disabled):hover, .menu-filter button:hover { color: var(--ink); background: #ffffff09; } }
 @media (max-width: 650px) { .settings-layout { grid-template-columns: 114px minmax(0, 1fr); } .settings-nav { padding: 18px 8px; } .settings-content { padding: 24px 20px; } .settings-nav button { padding-inline: 12px; } }
 @media (prefers-reduced-motion: reduce) { .settings-disclosure, .update-progress span, .settings-nav button, .menu-filter button { transition: none; } .settings-feedback > * { animation: none; } }
+.startup-update-notice { position: fixed; top: 104px; right: 28px; z-index: 125; width: min(360px, calc(100vw - 40px)); padding: 18px 20px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); box-shadow: 0 8px 32px #0004; font-size: 12px; }
+.startup-update-notice p { margin: 0 0 14px; font-size: 12px; line-height: 1.7; }
+.startup-update-actions { display: flex; gap: 16px; align-items: center; justify-content: flex-end; }
+.startup-update-actions button { font-size: 11px; }
+.startup-update-actions .solid-button { padding: 9px 13px; }
+.startup-update-notice .form-error { margin: 12px 0 0; font-size: 11px; }

@@ -62,8 +62,11 @@ pub(crate) fn save(
             [copy_id], |row| Ok((row.get(0)?, row.get(1)?)),
         ).map_err(db_error)?;
         let content = crate::content::read(connection, &edition)?.unwrap_or_default();
+        let media = crate::reads::edition(connection, &edition)?
+            .map(|copy| copy.edition.media)
+            .unwrap_or_default();
         Some(
-            discatelier_application::optical_discs::groups(&content.tracks, &title)
+            discatelier_application::optical_discs::for_media(&content.tracks, &title, &media)
                 .into_iter()
                 .find(|disc| disc.key == key)
                 .ok_or_else(|| AppError::new("validation", "该 Disc 已不存在，请重新选择。"))?
