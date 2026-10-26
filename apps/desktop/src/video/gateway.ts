@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type { CreateCopy, UpdateEdition } from '../library/types';
 export type VideoSource = 'tmdbMovie' | 'tmdbTv' | 'bangumi';
 export interface VideoFact { label: string; values: { text: string; url: string }[] }
-export interface VideoCharacter { name: string; role: string; actors: string[]; portraitUrl?: string; facts?: VideoFact[]; actorPortraits?: { name: string; portraitUrl: string }[] }
+export interface VideoCharacter { name: string; role: string; actors: string[]; portraitUrl?: string; avatar?: string; facts?: VideoFact[]; actorPortraits?: { name: string; portraitUrl: string }[] }
 export interface VideoImage { kind: 'poster' | 'backdrop'; url: string; previewUrl: string; width: number; height: number; language: string }
 export interface VideoChapter { id: number; group: string; number: string; title: string; originalTitle: string; airDate: string; duration: string; summary?: string; imageUrl?: string; episodeKind?: number; seasonNumber?: number }
 export interface VideoWork { source: VideoSource; externalId: number; title: string; originalTitle: string; summary: string; premiereDate: string; posterUrl: string; episodeCount: number | null; genres: string[]; people: { name: string; role: string }[]; facts?: VideoFact[]; characters?: VideoCharacter[]; chapters?: VideoChapter[] | null; images?: VideoImage[] | null }

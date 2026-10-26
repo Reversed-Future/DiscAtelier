@@ -215,6 +215,7 @@ fn main() {
             commands::library_delete,
             commands::library_backup,
             commands::library_update_edition,
+            commands::library_content_save,
             commands::library_cover,
             commands::library_model,
             commands::library_backups,

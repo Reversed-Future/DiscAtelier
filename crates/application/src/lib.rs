@@ -24,6 +24,11 @@ pub trait LibraryRepository: Send {
         source: &EditionSource,
         value: &EditionContent,
     ) -> Result<(), AppError>;
+    fn save_edited_content(
+        &mut self,
+        edition_id: &str,
+        value: &EditionContent,
+    ) -> Result<(), AppError>;
 
     fn stage_model(&mut self, model: PreparedModel) -> Result<ModelPreparation, AppError>;
     fn prepared_model_data(&self, token: &str) -> Result<std::sync::Arc<str>, AppError>;
@@ -72,6 +77,15 @@ impl<R: LibraryRepository> LibraryService<R> {
         validate_source(source, &[])?;
         validate_content(value)?;
         self.repository.complete_content(edition_id, source, value)
+    }
+    pub fn save_edited_content(
+        &mut self,
+        edition_id: &str,
+        value: &EditionContent,
+    ) -> Result<(), AppError> {
+        request_id(edition_id)?;
+        validate_content(value)?;
+        self.repository.save_edited_content(edition_id, value)
     }
 
     pub fn stage_model(&mut self, model: PreparedModel) -> Result<ModelPreparation, AppError> {

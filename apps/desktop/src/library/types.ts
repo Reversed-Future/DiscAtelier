@@ -33,6 +33,7 @@ export interface DeleteCopy { requestId: string; id: string; expectedRevision: n
 export interface LibraryGateway {
   move(copyId: string, beforeId: string | null): Promise<void>;
   content(editionId: string): Promise<import('../metadata/gateway').EditionContent | null>;
+  saveContent(editionId: string, content: import('../metadata/gateway').EditionContent): Promise<void>;
   backups(): Promise<BackupEntry[]>;
   prepareRestore(path: string): Promise<RestorePreview>;
   restore(token: string): Promise<string>;

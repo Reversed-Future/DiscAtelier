@@ -41,6 +41,7 @@ fn normalize(row: &Character, detail: Detail) -> Result<VideoCharacter, AppError
             .or(row.images.as_ref())
             .map(|i| i.large.clone())
             .unwrap_or_default(),
+        avatar: String::new(),
         actors: row.actors.iter().map(|a| a.name.clone()).collect(),
         actor_portraits: row
             .actors

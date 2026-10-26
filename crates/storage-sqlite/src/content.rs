@@ -52,6 +52,25 @@ fn decode(text: &str) -> Result<EditionContent, AppError> {
     validate_content(&content)?;
     Ok(content)
 }
+/// Replace a tracklist after the user has manually edited fetched metadata.
+pub fn replace(
+    connection: &Connection,
+    edition_id: &str,
+    content: &EditionContent,
+) -> Result<(), AppError> {
+    validate_content(content)?;
+    let text = serde_json::to_string(content)
+        .map_err(|_| AppError::new("storage", "曲目资料无法保存。"))?;
+    connection
+        .execute(
+            "INSERT INTO edition_content (edition_id,content_json) VALUES (?1,?2) \
+             ON CONFLICT(edition_id) DO UPDATE SET content_json=excluded.content_json",
+            params![edition_id, text],
+        )
+        .map_err(db_error)?;
+    Ok(())
+}
+
 pub fn insert(
     connection: &Connection,
     edition_id: &str,

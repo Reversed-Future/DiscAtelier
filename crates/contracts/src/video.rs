@@ -43,6 +43,9 @@ pub struct VideoCharacter {
     pub actors: Vec<String>,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub portrait_url: String,
+    /// Locally supplied avatar as a data URL; kept separate from source portraits.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub avatar: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub facts: Vec<VideoFact>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -171,6 +174,8 @@ pub fn validate_video(value: &VideoMetadata) -> Result<(), AppError> {
                 && w.characters.iter().all(|c| {
                     bounded(&c.name, 2000)
                         && bounded(&c.portrait_url, 2000)
+                        && (c.avatar.is_empty()
+                            || (c.avatar.len() <= 700_000 && c.avatar.starts_with("data:image/")))
                         && bounded(&c.role, 2000)
                         && c.actors.len() <= 100
                         && c.actors.iter().all(|a| bounded(a, 2000))

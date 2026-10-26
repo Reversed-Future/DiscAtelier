@@ -1,5 +1,7 @@
 # DiscAtelier 更新路线
 
+**2026-10-26 编辑版本自定义资料页（测试版，未发行）**：编辑版本增加“版本 / 资料”两页。音乐资料页可改流派、风格、简介、曲目、Credits 和公司；影像资料页可改作品标题、原名、简介、日期、集数、海报、类型、资料条目、图片、人物、角色和章节。角色支持网络头像地址或本地 PNG／JPEG／WebP 头像（内嵌 data URL，约 700,000 字符上限）。音乐内容保存通过新增 `library_content_save` 写入 `edition_content`；影像继续复用 `video.update` 的资料保存和 revision 校验。CDP 验证《Lemon》资料页 41 条曲目保存后关闭，以及《蔚蓝档案 动画版》资料页 21 个角色、12 个章节。115 项 JavaScript 测试、TypeScript／Vite 和发布预检通过；测试预览 `artifacts/DiscAtelier-content-editor-preview.exe`，SHA-256 `0fb34b831b094f4cd50a254816b95ba8d485925bff8059b8a574866aeb1c1f1b`，76,897,792 bytes；未发布正式版。
+
 **2026-10-26 收藏曲目／章节与当前 CD 搜索（测试版，未发行）**：顶部搜索除收藏标题、作者和标识符外，还读取已保存的 Discogs／网易云曲目表、影片 TMDB／Bangumi 章节标题，以及当前插入音频 CD 的 CD-TEXT／MusicBrainz 曲目。搜索收藏中的歌曲或章节会直接筛出对应收藏；当前 CD 的匹配显示曲号、标题、歌手／专辑和时长，点击直接播放该 CD 曲目。CDP 实测“醜人多作怪”筛出《運氣來得若有似無》，“我不同意”筛出《蔚蓝档案 动画版》。收藏曲目／章节必须已保存资料；当前 CD 不持久化历史曲目。115 项 JavaScript 测试、TypeScript／Vite 和发布预检通过；测试预览 `artifacts/DiscAtelier-collected-search-preview.exe`，SHA-256 `5e43fa2cfdd374aa339701ccce684974b81abbb7ce9d0c775bb3707be8f384fd`，75,476,992 bytes；未发布正式版。
 
 **2026-10-25 影片本地关联改为章节（测试版，未发行）**：影片本地关联界面不再使用“歌曲”和“集数”，总入口显示“歌曲 / 章节”“章节 / 轨”，详情页显示“关联章节”和“章节”；视频行显示“第 N 章”，关联标签写入“第 N 章”。CDP 实测《蔚蓝档案 动画版》本地文件表头为“文件 / 位置 / 章节 / 操作”；扫描测试视频后“关联章节”下拉列出网易云／TMDB 章节，选择第 2 章后轨号立即变为 2、标题为“本篇 · 2 · 我不同意！”。115 项 JavaScript 测试、TypeScript／Vite 和发布预检通过。测试预览 `artifacts/DiscAtelier-video-label-preview.exe`，SHA-256 `3cca19d878188c5db68da63dac8f138bb96b700555dc1ab130e339c260bd95c3`，75,180,032 bytes；未发布正式版。

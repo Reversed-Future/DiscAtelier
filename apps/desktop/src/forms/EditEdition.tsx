@@ -12,12 +12,14 @@ import { useModelDraft } from '../models/useModelDraft';
 import { ModelField } from '../models/ModelField';
 import { modelChangeRequest } from '../models/assets';
 import { EditionFields } from './EditionFields';
+import { ContentEditor } from './ContentEditor';
 import { Select } from '../ui/Select';
 import { netease, type LinkedMusicAlbum } from '../integrations/gateway';
 
 export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   item: LibraryCopy; categories: Descriptor[]; carriers: Descriptor[]; onClose(): void; onSaved(categoryId: string): void;
 }) {
+  const [page, setPage] = useState<'edition' | 'content'>('edition');
   const [videoDraft, setVideoDraft] = useState(emptyVideo);
   const [videoLoaded, setVideoLoaded] = useState(item.edition.categoryId !== 'video');
   useEffect(() => {
@@ -38,8 +40,13 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   const [model, setModel] = useModelDraft();
   const [error, setError] = useState('');
   const attempt = useRef({ payload: '', requestId: crypto.randomUUID() });
-  return <Modal title="编辑版本" onClose={onClose} busy={busy || reading} wide>
-    <form className="editor-form" noValidate onSubmit={async event => {
+  return <Modal title="编辑版本" onClose={onClose} busy={busy || reading} wide className="editor-panel">
+    <nav className="detail-tabs editor-page-tabs" aria-label="编辑内容">
+      <button type="button" className={page === 'edition' ? 'active' : ''} disabled={busy} onClick={() => setPage('edition')}>版本</button>
+      <button type="button" className={page === 'content' ? 'active' : ''} disabled={busy} onClick={() => setPage('content')}>资料</button>
+    </nav>
+    {page === 'content' ? <ContentEditor item={item} onBusy={setReading}
+      onSaved={() => { onSaved(item.edition.categoryId); onClose(); }}/> : <form className="editor-form" noValidate onSubmit={async event => {
       const dialog = event.currentTarget.closest('dialog');
       event.preventDefault(); if (busy || reading || !videoLoaded) return;
       if (edition.categoryId === 'video' && partsError(videoDraft)) {setError(partsError(videoDraft));return;}
@@ -68,6 +75,6 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
       </fieldset>
       <p className="form-error" role="alert">{error}</p>
       <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading || !videoLoaded}>{busy ? '保存中' : '保存版本'}</button></footer>
-    </form>
+    </form>}
   </Modal>;
 }

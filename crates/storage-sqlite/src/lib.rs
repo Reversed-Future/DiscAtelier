@@ -71,6 +71,13 @@ impl LibraryRepository for SqliteLibrary {
     ) -> Result<(), AppError> {
         content::complete(&self.connection, edition_id, source, value)
     }
+    fn save_edited_content(
+        &mut self,
+        edition_id: &str,
+        value: &EditionContent,
+    ) -> Result<(), AppError> {
+        content::replace(&self.connection, edition_id, value)
+    }
 
     fn stage_model(&mut self, model: PreparedModel) -> Result<ModelPreparation, AppError> {
         Ok(self.prepared_models.insert(model))

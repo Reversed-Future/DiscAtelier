@@ -5,6 +5,7 @@ import type { LibraryGateway } from './types';
 export const library: LibraryGateway = {
   move: (copyId,beforeId) => invoke('library_move', {copyId,beforeId}),
   content: editionId => invoke('library_content', { editionId }),
+  saveContent: (editionId, content) => invoke('library_content_save', { editionId, content }),
   backups: () => invoke('library_backups'),
   prepareRestore: path => invoke('library_prepare_restore', { path }),
   restore: token => invoke('library_restore', { token }),

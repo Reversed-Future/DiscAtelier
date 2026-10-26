@@ -30,6 +30,18 @@ pub(crate) async fn run<T: Send + 'static>(
     .map_err(|_| AppError::new("internal", "收藏操作未完成，请重新打开应用检查。"))?
 }
 #[tauri::command]
+pub async fn library_content_save(
+    state: tauri::State<'_, LibraryState>,
+    edition_id: String,
+    content: EditionContent,
+) -> Result<(), AppError> {
+    run(state.inner().clone(), move |service| {
+        service.save_edited_content(&edition_id, &content)
+    })
+    .await
+}
+
+#[tauri::command]
 pub async fn library_move(
     state: tauri::State<'_, LibraryState>,
     copy_id: String,
