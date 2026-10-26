@@ -29,6 +29,10 @@
 .content-editor-table td { padding: 4px 6px; border-top: 1px solid #ffffff12; vertical-align: middle; }
 .content-editor-table input, .content-editor-table textarea { min-width: 64px; padding: 5px 6px; font-size: 11px; }
 .content-editor-table .text-button { white-space: nowrap; }
+.content-editor-table .content-editor-multi { min-width: 190px; height: 76px; padding: 5px; }
+.content-editor-ghost td { padding: 5px 6px !important; }
+.content-editor-ghost-add { width: 100%; min-height: 36px; padding: 8px 10px; border: 1px dashed #ffffff38; border-radius: 2px; color: var(--muted); font-size: 11px; text-align: left; }
+.content-editor-ghost-add:hover { color: var(--ink); border-color: #ffffff66; }
 .content-editor-table textarea { min-width: 180px; min-height: 44px; resize: vertical; }
 .content-editor-table td:nth-child(2) input, .content-editor-table td:nth-child(3) input, .content-editor-table td:nth-child(4) input { min-width: 150px; }
 .content-editor-character-fields textarea { min-height: 54px; }
