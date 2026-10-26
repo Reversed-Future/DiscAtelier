@@ -1,6 +1,6 @@
 {
   "name": "discatelier",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -9,7 +9,6 @@
   ],
   "scripts": {
     "dev": "npm run tauri:dev -w @discatelier/desktop",
-    "prototype": "node scripts/serve.mjs",
     "web": "npm run dev -w @discatelier/desktop",
     "build": "npm run build -w @discatelier/desktop",
     "desktop:build": "npm run tauri:build -w @discatelier/desktop",

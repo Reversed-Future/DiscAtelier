@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DiscAtelier 模型制作与包预览</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eeeee9;color:#222;font:14px system-ui}header{padding:14px 20px;background:#fff;border-bottom:1px solid #ccc;display:flex;gap:12px;align-items:center;flex-wrap:wrap}button,label{font:inherit}button{padding:7px 12px;cursor:pointer}#viewport{width:100%;height:calc(100vh - 185px);min-height:350px;position:relative}#status,#controls{padding:8px 20px}#controls{display:flex;gap:8px;flex-wrap:wrap}p{margin:8px 20px}#status{white-space:pre-wrap}canvas{display:block}
+</style>
+<header><strong>DiscAtelier 模型制作</strong><button id="build">构建制作源</button><label>载入模型包 <input id="file" type="file" accept=".ateliermodel"></label><button id="export" disabled>导出当前包</button></header>
+<p>初始制作源是教学样例，不是实物成品。拖动旋转、滚轮缩放、点击部件操作。最终仍须在目标 DiscAtelier 中导入验收。</p>
+<div id="status" role="status">选择制作源或最终模型包。</div><div id="viewport"></div><div id="controls"></div>
+<script type="module" src="./preview.mjs"></script>
+</html>

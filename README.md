@@ -8,6 +8,8 @@ DiscAtelier 是一个面向个人实体影音收藏的 Windows 桌面应用。�
 
 ## 功能
 
+制作可导入的实体模型：阅读 [模型开发手册](https://docs.reversed-future.com/disc-atelier/models/)，包含 VitePress 中文文档站、可下载 AI Skill 与提示词、可运行入门包、V2/V3 格式参考和导入验收流程。
+
 ### 实体收藏，而不是一张在线歌单
 
 - 音乐与影像分区；
@@ -26,7 +28,7 @@ DiscAtelier 是一个面向个人实体影音收藏的 Windows 桌面应用。�
 - **MusicBrainz**：通过 CD 的 Disc ID 识别音频 CD，匹配收藏库；
 - **网易云**：搜索专辑、读取分享链接、补充曲目和封面，也可以直接从网易云开始添加；
 - **AI 资料识别**：识别实体包装、购物截图，以及实验性的光盘菜单截图；
-- 识别结果始终作为候选，保存前需要人工确认。
+- 识别资料会先展示，确认后再保存收藏。
 
 ### 光盘与播放
 
@@ -57,8 +59,6 @@ DiscAtelier 是一个面向个人实体影音收藏的 Windows 桌面应用。�
 - 本地音乐播放会直接叠层打开 CD 式播放界面，详情窗口保持打开；关闭播放器立即回到原详情，不经过首页；正在播放的曲目再次点击播放会直接打开播放器；
 - 本地切歌和光驱/视频切换都会自动替换当前播放，不需要先停止；
 - “更多 → 本地文件”是总入口；每个收藏详情里也有“本地文件”，只处理当前这一套，并可逐文件填写章节或轨号；影片可以从已保存的 TMDB／Bangumi 章节下拉手动匹配。
-
-> 本地文件关联、CD 式本地播放器、VLC 本地播放、MPV 内置运行时和纯网易云专辑本地关联在 0.1.26 正式版中提供。
 
 ![本地文件关联](docs/assets/local-files.png)
 
@@ -106,7 +106,7 @@ DiscAtelier 是一个面向个人实体影音收藏的 Windows 桌面应用。�
 
 从 [GitHub Releases](https://github.com/Reversed-Future/DiscAtelier/releases) 下载最新的 Windows x64 安装包：
 
-- 当前版本：**0.1.26**
+- 当前版本：**0.2.1**
 - 安装包已内置 VLC 和 Java 运行时，不需要另外安装播放器；
 - 按当前 Windows 用户安装；
 - 没有 WebView2 时安装器会引导下载；
@@ -128,19 +128,16 @@ npm run dev
 
 ```powershell
 npm run build
-npm run tauri:build
+npm run desktop:build
 ```
 
 构建签名 NSIS 安装包需要现有的 Tauri 更新签名身份：
 
 ```powershell
-$env:CARGO_TARGET_DIR = 'D:\DiscAtelierBuilds\target'
 .\scripts\release\build-signed.ps1
 ```
 
 `scripts/prepare-vlc.ps1` 下载并校验 VLC／Temurin 运行时；`scripts/prepare-mpv.ps1` 从本机 MPV 安装复制 `mpv.exe` 和 `d3dcompiler_43.dll` 到 `artifacts/mpv-runtime/`。固定版本、许可证和源码地址见 [内置运行时说明](docs/BUNDLED-VLC.md)。
-
-播放器、光驱和资料源的实现记录见 [播放开发记录](docs/PLAYBACK-DEVELOPMENT.md)、[光驱开发记录](docs/OPTICAL-DEVELOPMENT.md) 和 [集成边界](docs/INTEGRATIONS.md)。
 
 ## 数据位置
 
@@ -151,20 +148,6 @@ $env:CARGO_TARGET_DIR = 'D:\DiscAtelierBuilds\target'
 ```
 
 其中包括 `library.sqlite3`、`backups`、播放器设置和 WebView2 数据。本地文件关联保存在同目录的 `local-files.json`；它记录本机文件路径，不进入 SQLite 备份，迁移电脑后需要重新选择文件夹。安装目录与数据目录分离；更新不会覆盖收藏和备份。
-
-## 项目状态
-
-当前是 **0.1.26**，不是 1.0。
-
-1.0 前仍需完成：
-
-- 真实 DVD 和 Blu-ray 样盘的菜单验收；
-- BD-J／Java 环境在不同光盘上的兼容性验收；
-- 光盘菜单 AI 识别的真实样盘端到端验收；
-- 安装、覆盖升级、应用内更新和下一版本更新的完整人工验收；
-- 公开仓库后的许可证与第三方源码合规复核。
-
-在这些项目完成前，不把菜单或 BD-J 标为“已支持”，也不宣称全区播放完成。
 
 ## 许可证
 

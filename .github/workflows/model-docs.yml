@@ -1,0 +1,55 @@
+name: Model documentation
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/model-dev/**'
+      - 'scripts/model-docs/**'
+      - 'packages/atelier-model-runtime/**'
+      - 'package.json'
+      - 'LICENSE'
+      - '.github/workflows/model-docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: model-docs-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: docs/model-dev/package-lock.json
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: '3.12'
+      - uses: actions/configure-pages@v6.0.0
+      - run: npm ci --prefix docs/model-dev --ignore-scripts
+      - run: npm run build --prefix docs/model-dev
+        env:
+          MODEL_DOCS_BASE: /disc-atelier/models/
+      - run: python scripts/model-docs/verify-skill.py
+      - run: python scripts/model-docs/stage-pages.py
+      - uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: artifacts/model-docs-pages
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v5.0.1
+        id: deployment

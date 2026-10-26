@@ -1,0 +1,14 @@
+[
+  {"id":"index","group":"开始","title":"模型开发指南","summary":"从实物、几何与贴图，到可以取出、翻页与收起的模型。"},
+  {"id":"quickstart","group":"开始","title":"制作第一个模型","summary":"下载入门包，运行教学模型，导出并验证。"},
+  {"id":"ai-authoring","group":"开始","title":"让 AI 帮你制作","summary":"完整 Skill 下载、调用方式与可复制的任务提示词。"},
+  {"id":"physical","group":"制作","title":"测量与素材准备","summary":"确定包装结构、比例、贴图和部件关系。"},
+  {"id":"scene","group":"制作","title":"场景与几何","summary":"坐标系、层级、铰链和可点击部件。"},
+  {"id":"materials","group":"制作","title":"材质与贴图","summary":"纸张、透明盒、光碟与内置图片。"},
+  {"id":"interaction","group":"制作","title":"动作与状态","summary":"点击取放、单件返回、整体收起和翻页取景。"},
+  {"id":"format","group":"参考","title":"V2 格式参考","summary":"包头、场景、状态、轨道与导出接口。"},
+  {"id":"v3","group":"参考","title":"V3 固定装配","summary":"已注册结构的边界与精确资源清单。"},
+  {"id":"limits","group":"参考","title":"限额与兼容性","summary":"图片、几何、状态图和动画预算。"},
+  {"id":"validation","group":"交付","title":"验证与导入","summary":"区分结构预检、真实渲染、原生导入和实物验收。"},
+  {"id":"troubleshooting","group":"交付","title":"排错与交付清单","summary":"从错误信息定位制作源，留下可复现的交付记录。"}
+]

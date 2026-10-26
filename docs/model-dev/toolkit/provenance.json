@@ -1,0 +1,51 @@
+{
+  "snapshot": "2026-10-25",
+  "note": "Authoring helpers only. Runtime is supplied from the current repository during the manual build. Local adaptations are documented in README.md.",
+  "origin": "discatelier-model-creator",
+  "files": [
+    {
+      "sha256": "060a8fe584a861dfd392f71086b9ce41714172a7c441b5650723437962559821",
+      "source": "assets/workspace/author.mjs"
+    },
+    {
+      "sha256": "dbe7a8e3906cc67d49369245a16f349d316bf10c3e00be1ea4f9c76eb75e0bfa",
+      "source": "assets/workspace/index.html"
+    },
+    {
+      "sha256": "c9ca0462c2754ab12fe6062934dc32e52134a2108e71b34585e8fb86ace455a8",
+      "source": "assets/workspace/preview.mjs"
+    },
+    {
+      "sha256": "9c64412496d8870fe2f4c2a160a51b1c8f95ce0b2269f89018f00f64d81c286b",
+      "source": "assets/workspace/serve.py"
+    },
+    {
+      "sha256": "b65b92ddf8f01b6bfd7632c24da20dfc2002cfe3c3c0cf57d0987650b69add9d",
+      "source": "assets/workspace/package.json"
+    },
+    {
+      "sha256": "7bcbd1960bc76a871966cb74e331ce2a36db920db6301a1f7e2a6312bd0177a9",
+      "source": "assets/workspace/打开预览.cmd"
+    },
+    {
+      "sha256": "d9d7969d8a0b36472c117653bd40cb5f58b3583c25fd2b242af5ec3c600f2b74",
+      "source": "assets/workspace/runtime/model-authoring/export-package.js"
+    },
+    {
+      "sha256": "103c8c74bbb44602391a5dc4e67a11f1d6cbec3f0c83e57f0db59bce18d54931",
+      "source": "assets/workspace/runtime/model-authoring/examples.js"
+    },
+    {
+      "sha256": "885959eb5bf70194333f4af643256c30ca0fc3c2706a798e6e189eb745254351",
+      "source": "assets/workspace/runtime/model-authoring/part-interaction.js"
+    },
+    {
+      "sha256": "c6cf9255f19fb5146cddbb336268900c68ae2c4218dbed3e7a86a4c296731212",
+      "source": "assets/workspace/runtime/model-authoring/record-scene.js"
+    },
+    {
+      "sha256": "109d82b8cc93486de90ccb8097bc181e72ddfb30e04045db1ea1aedd51b00127",
+      "source": "scripts/validate-images.py"
+    }
+  ]
+}

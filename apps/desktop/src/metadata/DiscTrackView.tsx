@@ -30,7 +30,7 @@ export function DiscTrackPanel({ disc, index, playback, localPlayback, positionL
       const action = track.type_ === 'heading' ? undefined : playback?.(track);
       const local = track.type_ === 'heading' ? undefined : localPlayback?.(track);
       return <li key={index} className={track.type_ === 'heading' ? 'track-heading' : undefined}>
-      {track.type_ === 'heading' ? <><h4>{track !== disc?.titleEntry?.source && <span className="track-heading-kind">小标题</span>}{track.title}</h4>{!!track.extraartists?.length && <ReleaseDetails credits={track.extraartists}/>}</> : <TrackRow track={track} playback={action} localPlayback={local} positionLabel={positionLabel?.(track)}/>}
+      {track.type_ === 'heading' ? <><h4>{track.title}</h4>{!!track.extraartists?.length && <ReleaseDetails credits={track.extraartists}/>}</> : <TrackRow track={track} playback={action} localPlayback={local} positionLabel={positionLabel?.(track)}/>}
     </li>; })}</ol> : <p className="utility-copy">暂无曲目</p>}
   </div>;
 }

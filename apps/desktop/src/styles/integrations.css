@@ -70,14 +70,16 @@
 
 .track-heading-content { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .track-name { min-width: 0; overflow-wrap: anywhere; transition: color 140ms ease, opacity 140ms ease; }
-.track-credits-toggle { position: relative; z-index: 1; pointer-events: auto; padding: 0; flex: 0 0 auto; font-size: 10px; line-height: inherit; color: var(--muted); white-space: nowrap; }
+.track-credits-toggle { position: relative; z-index: 1; pointer-events: auto; margin-left: auto; padding: 4px 0 4px 8px; flex: 0 0 auto; font-size: 10px; font-weight: 400; line-height: 1.4; color: var(--muted); white-space: nowrap; }
 .track-credits-toggle[aria-expanded="true"] { color: var(--ink); }
 .track-row[data-playing="true"] .track-position { color: var(--ink); }
-.track-credits { margin-left: 54px; }
+.track-credits { margin-left: 53px; }
+.release-track-scroll .track-credits { margin-left: 62px; }
 .track-credits .credit-list { margin: 2px 0 12px; gap: 6px; font-size: 10px; line-height: 1.6; }
+.track-credits .credit-list > div { grid-template-columns: minmax(0, 96px) minmax(0, 1fr); gap: 12px; }
 .detail-status { margin-left: auto; flex-shrink: 0; color: var(--muted); font-size: 10px; }
 .detail-sources { min-height: 24px; flex-wrap: nowrap; }
-@media (max-width: 620px) { .track-credits { margin-left: 28px; } }
+@media (max-width: 620px) { .release-track-scroll .track-credits { margin-left: 36px; } }
 .track-link-manager { width: 780px; }
 .track-link-manager .panel-body { display: flex; flex-direction: column; overflow: hidden; }
 .track-link-manager .track-link-list strong { font-weight: 400; }

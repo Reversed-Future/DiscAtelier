@@ -2,8 +2,9 @@
 .video-browser-panel > .panel-body { display: flex; overflow: hidden; }
 .video-browser, .video-packaging { display: flex; flex-direction: column; gap: 16px; width: 100%; min-height: 0; }
 .video-browser > :not(.video-results), .video-packaging > :not(.video-results) { flex-shrink: 0; }
-.video-search { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 12px; }
+.video-search { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
 .video-search input { width: 100%; padding: 12px; color: var(--ink); background: transparent; border: 1px solid var(--line); }
+.video-search .select-trigger, .video-search > input, .video-search > .solid-button { height: 42px; min-height: 42px; box-sizing: border-box; margin-block: 0; padding-block: 0; line-height: 1.4; }
 .video-results { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 .video-result { display: flex; gap: 20px; width: 100%; padding: 18px 0; text-align: left; border-bottom: 1px solid var(--line); transition: opacity 160ms ease, transform 160ms ease; }
 .video-result:hover { opacity: .8; }

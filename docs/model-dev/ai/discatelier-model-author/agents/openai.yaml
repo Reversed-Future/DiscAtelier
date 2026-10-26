@@ -1,0 +1,4 @@
+interface:
+  display_name: "DiscAtelier 模型制作"
+  short_description: "从实体包装照片制作可导入模型，包含拆装交互、导出预检和分层验收"
+  default_prompt: "使用 $discatelier-model-author，根据我的包装素材制作并验证可导入 DiscAtelier 的模型。"
