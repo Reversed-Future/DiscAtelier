@@ -29,6 +29,7 @@ import { usePlayback } from './playback/usePlayback';
 import { AssistantDock } from './assistant/AssistantDock';
 import { AudioPlayer } from './playback/AudioPlayer';
 import { LocalAudioPlayer } from './playback/LocalAudioPlayer';
+import { NeteaseAudioPlayer } from './playback/NeteaseAudioPlayer';
 import { PlayerLayer } from './playback/PlayerLayer';
 import { PlayerView } from './playback/PlayerView';
 import { MusicDock } from './playback/MusicDock';
@@ -210,9 +211,10 @@ export function App() {
     {opticalOpen && !player.open && <OpticalPanel player={player} onClose={() => setOpticalOpen(false)}/>}
     {localFilesOpen && !player.open && <LocalFilesPanel onClose={() => setLocalFilesOpen(false)}/>}
     {player.open && <PlayerLayer>
-      {player.snapshot?.source.mediaToken === 'local-audio' ? <LocalAudioPlayer player={player}/> : player.snapshot?.source.playlist.startsWith('cd-track:') ? <AudioPlayer player={player}/> : <PlayerView player={player}/>}
+      {player.snapshot?.source.playlist.startsWith('netease-song:') ? <NeteaseAudioPlayer player={player}/> : player.snapshot?.source.mediaToken === 'local-audio' ? <LocalAudioPlayer player={player}/> : player.snapshot?.source.playlist.startsWith('cd-track:') ? <AudioPlayer player={player}/> : <PlayerView player={player}/>}
     </PlayerLayer>}
     {!player.open && player.snapshot?.source.mediaToken === 'local-audio' && <LocalAudioPlayer player={player}/>}
+    {!player.open && player.snapshot?.source.playlist.startsWith('cd-track:') && <AudioPlayer player={player}/>}
     {player.active && !player.snapshot?.source.playlist.startsWith('netease-song:') && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
       {player.snapshot?.paused ? '已暂停' : player.snapshot?.phase === 'loading' ? '读取中' : '播放中'} · {player.snapshot?.title}
     </button>}

@@ -4,6 +4,7 @@ use discatelier_integration_http::{error, request};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 mod artwork;
+pub mod lyrics;
 mod song;
 mod stream;
 pub use artwork::{album_cover, download_album_cover};

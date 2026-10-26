@@ -22,7 +22,7 @@ input.on('line', async line => {
     if (request.operation === 'search') {
       if (!args || typeof args.query !== 'string' || !args.query.trim() || Buffer.byteLength(args.query) > 500) throw new Error('arguments');
       if (args.offset !== undefined && (!Number.isInteger(args.offset) || args.offset < 0 || args.offset > 4294967295)) throw new Error('offset');
-    } else if (request.operation === 'album' || request.operation === 'songUrl' || request.operation === 'songDetail') {
+    } else if (request.operation === 'album' || request.operation === 'songUrl' || request.operation === 'songDetail' || request.operation === 'lyrics') {
       if (!args || !Number.isSafeInteger(args.id) || args.id <= 0) throw new Error('arguments');
     } else if (request.operation === 'authCheck') {
       if (typeof args?.key !== 'string' || !args.key || args.key.length > 1024 || /[\s\x00-\x1f]/.test(args.key)) throw new Error('key');
@@ -39,6 +39,7 @@ input.on('line', async line => {
       ? await api.search({ keywords: args.query, type: 10, limit: 20, offset: args.offset ?? 0 })
       : request.operation === 'album' ? await api.album({ id: args.id })
       : request.operation === 'songDetail' ? await api.song_detail({ ids: String(args.id) })
+      : request.operation === 'lyrics' ? await api.lyric({ id: args.id })
       : await require('./playback.cjs')(api, args.id, args.cookie);
     // Never forward upstream cookies, headers or errors containing request config.
     const reply = JSON.stringify({ id, body: response.body });

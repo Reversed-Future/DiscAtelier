@@ -284,6 +284,8 @@ mod tests {
                     Err(cause) => panic!("local test connection failed: {cause}"),
                 }
             };
+            // Windows can inherit the listener's nonblocking mode on accept.
+            socket.set_nonblocking(false).unwrap();
             socket
                 .set_read_timeout(Some(Duration::from_secs(5)))
                 .unwrap();

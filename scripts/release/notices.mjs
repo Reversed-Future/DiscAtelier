@@ -32,7 +32,7 @@ function append(name, directory, licenseFile, extraFile) {
   if (!files.size) missing.push(name);
   sections.push(`\n${'='.repeat(72)}\n${name}\n${[...files].map(file => readFileSync(file, 'utf8')).join('\n\n')}`);
 }
-const frontendPackages = ['react', 'react-dom', 'scheduler', '@tauri-apps/api', 'opencc-js', '@zxing/browser', '@zxing/library', '@zxing/text-encoding', 'ts-custom-error'];
+const frontendPackages = ['react', 'react-dom', 'scheduler', '@tauri-apps/api', 'opencc-js', '@zxing/browser', '@zxing/library', '@zxing/text-encoding', 'ts-custom-error', 'motion', 'framer-motion', 'motion-dom', 'motion-utils', 'tslib'];
 for (const name of frontendPackages) {
   const directory = join(root, ...(['@zxing/browser', '@zxing/library'].includes(name) ? ['apps', 'desktop', 'node_modules'] : ['node_modules']), name);
   const pkg = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'));

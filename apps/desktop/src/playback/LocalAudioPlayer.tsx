@@ -8,6 +8,9 @@ import { Icon } from '../ui/Icon';
 import { PlaybackControls } from './PlaybackControls';
 import { usePlaybackLayer } from './usePlaybackLayer';
 import type { PlaybackController } from './usePlayback';
+import { AudioContentTabs } from './AudioContentTabs';
+import { useLinkedLyricSong } from './useLinkedLyricSong';
+import { useSystemMediaSource } from './useSystemMediaSource';
 
 interface LocalBinding {
   copyId: string;
@@ -64,6 +67,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
   }), [bindings]);
   const current = tracks.findIndex(binding => `local:${binding.path}` === source?.playlist);
   const currentTitle = current >= 0 ? trackTitle(tracks[current]) : undefined;
+  const lyric = useLinkedLyricSong(copy?.editionId, tracks[current]?.track);
 
   useEffect(() => {
     const snapshot = player.snapshot;
@@ -80,6 +84,8 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
   function closePlayer() {
     if (!player.busy) player.hide();
   }
+
+  useSystemMediaSource(player, { title: currentTitle || player.snapshot?.title || '', artist: copy?.edition.creator || '', album: copy?.edition.title || '', previous: current > 0 ? () => play(current - 1, !player.open) : undefined, next: current >= 0 && current < tracks.length - 1 ? () => play(current + 1, !player.open) : undefined });
 
   if (!player.snapshot || source?.mediaToken !== 'local-audio') return null;
 
@@ -113,7 +119,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
   if (!player.open) return dock;
 
   return <section className="player-view audio-player" aria-label="本地音乐播放器" aria-busy={closing} data-closing={closing} data-enter="soft">
-    <header className="player-header"><button className="text-button" onClick={closePlayer} disabled={closing || player.busy}><Icon name="back"/>返回</button><span>本地音乐</span></header>
+    <header className="player-header"><button className="text-button" onClick={closePlayer} disabled={closing || player.busy}><Icon name="back"/>返回</button></header>
     <div className="audio-body">
       <div className={`audio-disc${artwork.url ? ' has-artwork' : ''}`} aria-hidden="true">
         {artwork.url && <img className="audio-disc-artwork" src={artwork.url} alt="" data-loaded="true" draggable={false}/>}
@@ -121,16 +127,15 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
       </div>
       <div className="audio-cd-content">
         <div className="local-audio-meta">
-          <span>本地文件 · 按专辑轨号排序</span>
           <h2>{copy?.edition.title || '本地音乐'}</h2>
           <p>{copy?.edition.creator}</p>
         </div>
-        <div className="audio-track-list" aria-label="本地曲目">{tracks.map((binding, index) =>
+        <AudioContentTabs player={player} {...lyric}><div className="audio-track-list" aria-label="本地曲目">{tracks.map((binding, index) =>
           <button key={binding.path} aria-current={index === current ? 'true' : undefined} disabled={player.busy} onClick={() => play(index)}>
             <span>{String(binding.track || index + 1).padStart(2, '0')}</span><strong>{trackTitle(binding)}</strong>
           </button>)}
         </div>
-        <div className="cd-metadata-status">{tracks.length ? `${tracks.length} 首` : '这个收藏还没有本地曲目'}</div>
+        <div className="cd-metadata-status">{tracks.length ? `${tracks.length} 首` : '这个收藏还没有本地曲目'}</div></AudioContentTabs>
       </div>
     </div>
     <footer className="player-footer">

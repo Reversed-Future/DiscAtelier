@@ -44,3 +44,32 @@ pub fn save(directory: &Path, settings: &PlaybackSettings) -> Result<(), AppErro
     std::fs::rename(temporary, directory.join(FILE))
         .map_err(|_| AppError::new("settings", "无法替换播放设置。"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn smtc_is_opt_in_and_round_trips_without_replacing_other_preferences() {
+        let directory = std::env::temp_dir().join(format!(
+            "discatelier-smtc-settings-{}",
+            uuid::Uuid::new_v4()
+        ));
+        assert!(!read(&directory).unwrap().smtc_enabled);
+        std::fs::create_dir_all(&directory).unwrap();
+        let mut old = serde_json::to_value(PlaybackSettings::default()).unwrap();
+        old.as_object_mut().unwrap().remove("smtcEnabled");
+        std::fs::write(directory.join(FILE), serde_json::to_vec(&old).unwrap()).unwrap();
+        let mut settings = read(&directory).unwrap();
+        assert!(!settings.smtc_enabled);
+        settings.smtc_enabled = true;
+        save(&directory, &settings).unwrap();
+        let stored = read(&directory).unwrap();
+        assert!(stored.smtc_enabled);
+        let mut unchanged = serde_json::to_value(stored).unwrap();
+        unchanged.as_object_mut().unwrap().remove("smtcEnabled");
+        assert_eq!(unchanged, old);
+        settings.smtc_enabled = false;
+        save(&directory, &settings).unwrap();
+        assert!(!read(&directory).unwrap().smtc_enabled);
+    }
+}

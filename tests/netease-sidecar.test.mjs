@@ -23,6 +23,7 @@ async function exchange(argumentsValue, operation = 'search', failure) {
         search: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code: 200, result: { albumCount: 513, albums: [] } } }; },
         song_url_v1: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code: 200, data: [{ id: args.id, url: null, freeTrialInfo: null }] } }; },
         song_detail: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code:200, songs:[{id:Number(args.ids),al:{id:42}}] } }; },
+        lyric: async args => { calls.push(JSON.parse(JSON.stringify(args))); return { body: { code: 200, lrc: { lyric: '[00:01.00]fixture' }, tlyric: { lyric: '[00:01.00]测试' } } }; },
       };
       throw new Error(`Unexpected dependency: ${name}`);
     },
@@ -35,6 +36,15 @@ test('bundled search forwards the requested page and preserves total count', asy
   assert.deepEqual(calls, [{ keywords: 'Lemon', type: 10, limit: 20, offset: 20 }]);
   assert.equal(response.body.result.albumCount, 513);
   assert.equal(response.id, 'page-check');
+});
+test('lyrics dispatch uses the verified lyric endpoint and rejects invalid IDs', async () => {
+  const { response, calls } = await exchange({ id: 42 }, 'lyrics');
+  assert.deepEqual(calls, [{ id: 42 }]);
+  assert.equal(response.body.lrc.lyric, '[00:01.00]fixture');
+  assert.equal(response.body.tlyric.lyric, '[00:01.00]测试');
+  for (const id of [0, -1, 1.5, '42', null, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.equal((await exchange({ id }, 'lyrics')).calls.length, 0);
+  }
 });
 
 test('startup warmup loads the API without requesting remote data or credentials', async () => {

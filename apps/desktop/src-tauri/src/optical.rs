@@ -157,12 +157,23 @@ pub async fn playback_settings_get(
 #[tauri::command]
 pub async fn playback_settings_save(
     state: tauri::State<'_, OpticalState>,
+    window: tauri::WebviewWindow,
     settings: PlaybackSettings,
 ) -> Result<(), AppError> {
-    run(state.inner().clone(), move |directory| {
+    let previous = crate::playback_settings::read(&state.directory)?.smtc_enabled;
+    let enabled = settings.smtc_enabled;
+    crate::system_media::configure(window.clone(), enabled).await?;
+    let result = run(state.inner().clone(), move |directory| {
         crate::playback_settings::save(directory, &settings)
     })
-    .await
+    .await;
+    if result.is_err() {
+        let _ = crate::system_media::configure(window.clone(), previous).await;
+    } else {
+        use tauri::Emitter;
+        let _ = window.emit("playback-settings-changed", enabled);
+    }
+    result
 }
 
 #[tauri::command]

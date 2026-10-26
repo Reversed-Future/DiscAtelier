@@ -3,6 +3,7 @@ import { optical } from '../optical/gateway';
 import { desktopAvailable, errorMessage } from '../library/gateway';
 import { isActive, playback, type Control, type Snapshot } from './gateway';
 import { useMusicQueue } from './useMusicQueue';
+import { useSystemMedia } from './useSystemMedia';
 
 export function usePlayback() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -60,18 +61,19 @@ export function usePlayback() {
     start: (editionId: string, songId: number) => execute(async () => {
       revision.current++;
       const value = await playback.netease(editionId, songId);
-      if (alive.current) { setSnapshot(value); setOpen(false); }
+      if (alive.current) { setSnapshot(value); }
     }),
   });
+  const systemMedia = useSystemMedia(snapshot, busy || musicQueue.busy, control, musicQueue);
   return {
-    snapshot, busy: busy || musicQueue.busy, error: musicQueue.error || error, open,
-    show: () => snapshot?.source.playlist.startsWith('netease-song:') ? musicQueue.setOpen(true) : setOpen(true),
+    snapshot, busy: busy || musicQueue.busy, error: musicQueue.error || error || systemMedia.error, open, systemMedia,
+    show: () => { musicQueue.setOpen(false); setOpen(true); },
     hide: () => setOpen(false), active: isActive(snapshot?.phase), musicQueue,
     startNetease: musicQueue.start,
-    start: (mount: string, token: string, playlist: string, resumeSeconds = 0, resumeTitle: number | null = null) => execute(async () => {
+    start: (mount: string, token: string, playlist: string, resumeSeconds = 0, resumeTitle: number | null = null, open = true) => execute(async () => {
       revision.current++;
       const value = await playback.start(mount, token, playlist, resumeSeconds, resumeTitle);
-      if (alive.current) { setSnapshot(value); setOpen(true); }
+      if (alive.current) { setSnapshot(value); setOpen(open); }
     }),
     startLocal: (copyId: string, path: string, open = true) => execute(async () => {
       revision.current++;

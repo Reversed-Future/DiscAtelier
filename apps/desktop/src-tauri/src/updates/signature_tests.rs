@@ -107,9 +107,11 @@ fn verify_published_release() {
 #[ignore = "Explicit local release verification: reads installer bytes, never executes them"]
 fn verify_local_release_package() {
     let path = std::env::var("DISCATELIER_VERIFY_PACKAGE").expect("Set the exact installer path");
+    let version = std::env::var("DISCATELIER_VERIFY_VERSION")
+        .unwrap_or_else(|_| env!("CARGO_PKG_VERSION").to_owned());
     let bytes = std::fs::read(&path).unwrap();
     let mut update = updater()
-        .restore_update(manifest(env!("CARGO_PKG_VERSION")))
+        .restore_update(manifest(&version))
         .unwrap()
         .unwrap();
     update.signature = std::fs::read_to_string(format!("{path}.sig"))

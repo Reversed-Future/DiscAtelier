@@ -32,7 +32,7 @@ export function MusicDock({ player }: { player: PlaybackController }) {
   if (local || player.open || (!queue.albums.length && !online && !queue.open && !queue.busy)) return null;
   return createPortal(<div className="music-dock" ref={root}>
     <section className="music-dock-panel" id="music-queue" role="region" aria-label="播放列表" data-open={queue.open} inert={!queue.open}>
-      <header className="music-dock-heading"><h3>播放列表</h3><button className="icon-button" aria-label="收起播放列表" onClick={() => { queue.setOpen(false); trigger.current?.focus(); }}><Icon name="close"/></button></header>
+      <header className="music-dock-heading"><h3>播放列表</h3><div className="local-dock-heading-actions">{online && <button className="icon-button" aria-label="打开播放界面" title="打开播放界面" onClick={player.show}><Icon name="disc"/></button>}<button className="icon-button" aria-label="收起播放列表" onClick={() => { queue.setOpen(false); trigger.current?.focus(); }}><Icon name="close"/></button></div></header>
       <nav className="music-album-tabs" aria-label="最近播放的专辑">{queue.albums.map(row => <button key={row.editionId} title={row.title} aria-pressed={row.editionId === album?.editionId} onClick={() => setSelected(row.editionId)}>{row.title}</button>)}</nav>
       <div ref={list} className="music-queue-scroll" aria-busy={queue.busy}>
         {album?.tracks.map((track, index) => <button key={track.id} className="music-queue-track" disabled={player.busy}
@@ -43,7 +43,7 @@ export function MusicDock({ player }: { player: PlaybackController }) {
         {!album && <p className="setting-hint">{queue.busy ? '读取中' : '暂无曲目'}</p>}
       </div>
       <footer className="music-dock-footer">
-        {online && <PlaybackControls player={player} onPrevious={() => queue.step(-1)} onNext={() => queue.step(1)}
+        {online && <PlaybackControls player={player} showVolume onPrevious={() => queue.step(-1)} onNext={() => queue.step(1)}
           canPrevious={!!queue.current} canNext={!!queue.current} repeat={queue.mode}
           onRepeat={() => queue.setMode(queue.mode === 'list' ? 'one' : 'list')}/>}
         {player.error && <p className="form-error" role="alert">{player.error}</p>}

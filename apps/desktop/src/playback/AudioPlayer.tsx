@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { optical, type CdTrack } from '../optical/gateway';
 import { library, errorMessage } from '../library/gateway';
 import { PlaybackControls } from './PlaybackControls';
@@ -6,11 +6,13 @@ import { time } from './gateway';
 import type { PlaybackController } from './usePlayback';
 import { Icon } from '../ui/Icon';
 import { useCdMetadata } from '../optical/useCdMetadata';
-import { CdMetadataFacts } from '../optical/CdMetadataFacts';
 import { useOpticalPresence } from '../optical/useOpticalPresence';
 import { useStaticArtwork } from '../library/useStaticArtwork';
 import { usePlayerClose } from './usePlayerClose';
 import type { LibraryCopy } from '../library/types';
+import { AudioContentTabs } from './AudioContentTabs';
+import { useLinkedLyricSong } from './useLinkedLyricSong';
+import { useSystemMediaSource } from './useSystemMediaSource';
 
 export function AudioPlayer({ player }: { player: PlaybackController }) {
   const [tracks, setTracks] = useState<CdTrack[]>([]);
@@ -49,32 +51,6 @@ export function AudioPlayer({ player }: { player: PlaybackController }) {
     const timer = setTimeout(() => setArtworkLoaded(artwork.url), remaining);
     return () => clearTimeout(timer);
   }, [artwork.url, imageReady]);
-  const trackList = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const list = trackList.current;
-    if (!list) return;
-    let frame = 0;
-    const fit = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const row = list.querySelector('button')?.getBoundingClientRect().height || 0;
-        const footer = document.querySelector('.audio-player .player-footer')?.getBoundingClientRect();
-        if (!row || !footer) return;
-        const available = Math.max(row * 3, footer.top - list.getBoundingClientRect().top - 28);
-        const height = `${Math.round(Math.floor(available / row) * row * 10) / 10}px`;
-        if (list.style.maxHeight !== height) list.style.maxHeight = height;
-      });
-    };
-    fit();
-    const observer = new ResizeObserver(fit);
-    observer.observe(list);
-    window.addEventListener('resize', fit);
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      window.removeEventListener('resize', fit);
-    };
-  }, [tracks.length, metadata.tracks.length]);
   useEffect(() => {
     let active = true;
     setTracks([]); setError('');
@@ -85,11 +61,14 @@ export function AudioPlayer({ player }: { player: PlaybackController }) {
   }, [source?.mountPoint, source?.mediaToken]);
   const current = tracks.findIndex(t => `cd-track:${t.number}` === source?.playlist);
   const currentMetadata = metadata.tracks.find(track => track.number === tracks[current]?.number);
+  const lyric = useLinkedLyricSong(linkedCopy?.editionId, tracks[current]?.number, presence?.discKey ?? null);
   function play(index: number) {
-    if (source && tracks[index]) void player.start(source.mountPoint, source.mediaToken, `cd-track:${tracks[index].number}`);
+    if (source && tracks[index]) void player.start(source.mountPoint, source.mediaToken, `cd-track:${tracks[index].number}`, 0, null, player.open);
   }
+  useSystemMediaSource(player, { title: currentMetadata?.title || player.snapshot?.title || '', artist: currentMetadata?.artist || '', album: currentMetadata?.album || '', previous: current > 0 ? () => play(current - 1) : undefined, next: current >= 0 && current < tracks.length - 1 ? () => play(current + 1) : undefined });
+  if (!player.open) return null;
   return <section className="player-view audio-player" aria-label="CD 播放器" aria-busy={closing} data-closing={closing} data-enter="soft">
-    <header className="player-header"><button className="text-button" onClick={() => void close()} disabled={closing || player.busy}><Icon name="back"/>返回</button><span>CD</span></header>
+    <header className="player-header"><button className="text-button" onClick={() => void close()} disabled={closing || player.busy}><Icon name="back"/>返回</button></header>
     <div className="audio-body">
       <div className={`audio-disc${artwork.url ? ' has-artwork' : ''}${coverLoading ? ' is-loading' : ''}`} aria-hidden="true">
         {artwork.url && <img ref={artworkImage} className="audio-disc-artwork" src={artwork.url} alt="" draggable={false}
@@ -97,13 +76,17 @@ export function AudioPlayer({ player }: { player: PlaybackController }) {
         <span/>
       </div>
       <div className="audio-cd-content">
-      <CdMetadataFacts track={currentMetadata} number={tracks[current]?.number} total={tracks.length}/>
-      <div className="audio-track-list" ref={trackList} aria-label="光盘曲目">{tracks.map((track, index) =>
+      <div className="local-audio-meta">
+        <h2>{currentMetadata?.album || linkedCopy?.edition.title || '未知专辑'}</h2>
+        <p>{currentMetadata?.artist || linkedCopy?.edition.creator}</p>
+        {(currentMetadata?.date || currentMetadata?.genre) && <p>{[currentMetadata?.date, currentMetadata?.genre].filter(Boolean).join(' · ')}</p>}
+      </div>
+      <AudioContentTabs player={player} {...lyric}><div className="audio-track-list" aria-label="光盘曲目">{tracks.map((track, index) =>
         <button key={track.number} aria-current={index === current ? 'true' : undefined} disabled={player.busy}
           onClick={() => play(index)}><span>{String(track.number).padStart(2, '0')}</span><strong>{metadata.tracks.find(item => item.number === track.number)?.title || `曲目 ${track.number}`}</strong><time>{time(track.durationSeconds)}</time></button>)}
       </div>
-      <div className="cd-metadata-status">{metadata.loading ? <span role="status">正在识别曲目资料…</span> : <button className="text-button" onClick={metadata.refresh}>重新识别</button>}
-        {metadata.error && <span role="status">{metadata.error} 仍可按曲号播放。</span>}</div>
+      <div className="cd-metadata-status"><span>{tracks[current]?.number || 0} / {currentMetadata?.trackTotal || tracks.length} 首</span>{metadata.loading ? <span role="status">正在识别曲目资料…</span> : <button className="text-button" onClick={metadata.refresh}>重新识别</button>}
+        {metadata.error && <span role="status">{metadata.error} 仍可按曲号播放。</span>}</div></AudioContentTabs>
       </div>
     </div>
     <footer className="player-footer">

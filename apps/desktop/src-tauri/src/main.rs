@@ -24,6 +24,7 @@ mod netease_artwork;
 mod netease_auth;
 mod netease_create;
 mod netease_links;
+mod netease_lyrics;
 mod netease_playback;
 mod netease_queue;
 mod netease_startup;
@@ -40,6 +41,7 @@ mod playback_settings;
 #[cfg(feature = "isolated-preview")]
 mod preview_config;
 mod purchase_recognition;
+mod system_media;
 mod updates;
 mod video_input;
 mod video_metadata;
@@ -120,9 +122,13 @@ fn main() {
             app.manage(video_input::VideoInput::default());
             app.manage(menu_surface::MenuSurface::create().map_err(|error| error.message)?);
             app.manage(playback_exit::PlaybackExit::default());
+            app.manage(system_media::State::default());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            netease_lyrics::netease_lyrics,
+            system_media::system_media_sync,
+            system_media::system_media_refresh,
             about::about_open_project,
             local_files::local_files_scan,
             local_files::local_files_get,

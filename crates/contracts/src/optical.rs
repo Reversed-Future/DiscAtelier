@@ -113,6 +113,8 @@ pub struct OpticalCandidate {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PlaybackSettings {
+    #[serde(default)]
+    pub smtc_enabled: bool,
     pub mpv_executable: String,
     pub make_mkv_library: String,
     #[serde(default)]
@@ -126,6 +128,7 @@ fn default_make_mkv_fallback() -> bool {
 impl Default for PlaybackSettings {
     fn default() -> Self {
         Self {
+            smtc_enabled: false,
             mpv_executable: String::new(),
             make_mkv_library: String::new(),
             vlc_library: String::new(),
@@ -144,5 +147,6 @@ mod tests {
             serde_json::from_str(r#"{"mpvExecutable":"","makeMkvLibrary":"","vlcLibrary":""}"#)
                 .unwrap();
         assert!(value.make_mkv_fallback);
+        assert!(!value.smtc_enabled);
     }
 }

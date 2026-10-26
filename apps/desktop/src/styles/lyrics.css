@@ -1,0 +1,22 @@
+.audio-content-tabs { flex-shrink: 0; margin: 0 0 12px; }
+.audio-content-tabs button { font-size: 12px; }
+.lyrics-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.lyrics-scroll { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; padding: 24px 0; }
+.lyric-line { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 14px 0; text-align: left; font-size: 17px; line-height: 1.6; font-weight: 400; color: var(--muted); background: transparent; border: 0; white-space: pre-wrap; overflow-wrap: anywhere; transition: color 180ms var(--ease); }
+.lyric-line[aria-current="true"] { color: var(--ink); }
+.lyric-line:disabled { opacity: 1; cursor: default; }
+.lyric-line small { font-size: 12px; color: var(--muted); }
+.lyrics-caption { min-height: 26px; display: flex; justify-content: space-between; gap: 12px; align-items: center; font-size: 10px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .lyric-line { transition: none; } }
+.audio-player { --audio-body-width: min(940px, 84vw); --audio-controls-width: min(1100px, calc(100vw - 64px)); }
+.audio-player .player-footer { width: var(--audio-controls-width); }
+.audio-player .audio-body { width: var(--audio-body-width); height: 100%; max-height: 680px; padding: 24px 0; box-sizing: border-box; transform: none; grid-template-rows: auto auto minmax(0, 1fr); column-gap: 56px; row-gap: 0; align-items: start; }
+/* Previous starts after the 30px stop button and the 6px transport gap. */
+.audio-player .audio-disc { grid-column: 1; grid-row: 3; width: auto; height: 100%; max-height: min(42vh, 400px); max-width: 100%; justify-self: start; margin: 0; transform: translateX(calc((var(--audio-body-width) - var(--audio-controls-width)) / 2 + 36px)); }
+.audio-player .audio-cd-content { display: contents; }
+.audio-cd-content > .local-audio-meta { grid-column: 2; grid-row: 1; min-width: 0; max-height: 160px; overflow: auto; padding: 0; margin-bottom: 24px; }
+.audio-cd-content > .audio-content-tabs { grid-column: 2; grid-row: 2; margin: 0 0 24px; }
+.audio-cd-content > .audio-content-pane { grid-column: 2; grid-row: 3; height: 100%; min-width: 0; }
+.audio-content-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.audio-content-pane .audio-track-list { min-height: 0; max-height: none; flex: 1; margin-top: 0; }
+.audio-content-pane .cd-metadata-status { flex-shrink: 0; }

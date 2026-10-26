@@ -68,7 +68,7 @@ impl Runtime {
                     .get("query")
                     .and_then(Value::as_str)
                     .is_some_and(|q| !q.trim().is_empty() && q.len() <= 500) => {}
-            "album" | "songUrl" | "songDetail"
+            "album" | "songUrl" | "songDetail" | "lyrics"
                 if arguments
                     .get("id")
                     .and_then(Value::as_u64)

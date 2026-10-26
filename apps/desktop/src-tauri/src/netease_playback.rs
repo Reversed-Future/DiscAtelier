@@ -10,6 +10,12 @@ use discatelier_provider_netease as provider;
 use std::sync::Arc;
 use tauri::Manager;
 
+fn requires_stop(phase: &discatelier_contracts::PlaybackPhase, source: &PlaybackSource) -> bool {
+    phase.active()
+        && !source.playlist.starts_with("netease-song:")
+        && source.media_token != "local-audio"
+}
+
 #[tauri::command]
 pub async fn netease_play(
     window: tauri::WebviewWindow,
@@ -75,7 +81,7 @@ pub async fn netease_play(
             .map_err(|_| AppError::new("player", "播放服务不可用。"))?;
         if current.as_ref().is_some_and(|s| {
             s.snapshot()
-                .is_ok_and(|s| s.phase.active() && !s.source.playlist.starts_with("netease-song:"))
+                .is_ok_and(|s| requires_stop(&s.phase, &s.source))
         }) {
             return Err(AppError::new("player", "请先停止当前光盘播放。"));
         }
@@ -112,4 +118,34 @@ pub async fn netease_play(
     })
     .await
     .map_err(|_| AppError::new("player", "网易云播放未完成。"))?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use discatelier_contracts::PlaybackPhase;
+    #[test]
+    fn netease_can_replace_local_music_but_preserves_the_disc_stop_gate() {
+        for phase in [
+            PlaybackPhase::Playing,
+            PlaybackPhase::Paused,
+            PlaybackPhase::Loading,
+        ] {
+            for (token, playlist, blocked) in [
+                ("local-audio", "local:test.flac", false),
+                ("album", "netease-song:42", false),
+                ("disc", "cd-track:1", true),
+                ("disc", "dvd", true),
+            ] {
+                let source = PlaybackSource {
+                    mount_point: String::new(),
+                    media_token: token.into(),
+                    playlist: playlist.into(),
+                    label: String::new(),
+                };
+                assert_eq!(requires_stop(&phase, &source), blocked);
+                assert!(!requires_stop(&PlaybackPhase::Stopped, &source));
+            }
+        }
+    }
 }

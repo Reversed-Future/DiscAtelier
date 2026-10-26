@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { errorMessage } from '../library/gateway';
 import { optical, type KeydbProgress, type KeydbStatus, type PlaybackSettings as Settings } from './gateway';
+import SquishSwitch from '../ui/SquishSwitch';
 
 const initial: Settings = {
+  smtcEnabled: false,
   mpvExecutable: '',
   makeMkvLibrary: '',
   vlcLibrary: '',
@@ -14,6 +16,7 @@ let cachedSettings: Settings | null = null;
 let cachedKeydb: KeydbStatus | null = null;
 function sameSettings(left: Settings, right: Settings) {
   return left.mpvExecutable === right.mpvExecutable
+    && left.smtcEnabled === right.smtcEnabled
     && left.makeMkvLibrary === right.makeMkvLibrary
     && left.vlcLibrary === right.vlcLibrary
     && left.makeMkvFallback === right.makeMkvFallback;
@@ -118,6 +121,8 @@ export function PlaybackSettings({ onBusy }: { onBusy(value: boolean): void }) {
     catch (cause) { setError(errorMessage(cause)); }
     finally { setBusy(false); onBusy(false); }
   }}>
+    <div className="setting-row"><span>Windows 媒体控制 · SMTC</span><SquishSwitch checked={value.smtcEnabled} disabled={busy} onChange={next => change('smtcEnabled', next)} ariaLabel="Windows 媒体控制 · SMTC" width={36} height={20} radius={0} trackColor="#27272a" trackOnColor="#f5f5f5" colorDuration={220}/></div>
+    <p className="setting-hint">在系统媒体面板显示当前播放，并支持媒体键控制。保存后生效。</p>
     <div className="setting-row bluray-key-row">
       <span>蓝光密钥文件</span>
       <span className="bluray-key-actions">

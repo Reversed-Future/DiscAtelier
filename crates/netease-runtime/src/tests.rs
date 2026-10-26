@@ -61,6 +61,26 @@ fn pid(runtime: &Runtime) -> Option<u32> {
         .map(process::Process::pid)
 }
 #[test]
+fn lyrics_use_the_shared_process_and_validate_song_identity() {
+    let runtime = fixture();
+    for id in [
+        json!(0),
+        json!(-1),
+        json!(1.5),
+        json!("42"),
+        json!(9_007_199_254_740_992_u64),
+    ] {
+        assert!(runtime.request("lyrics", json!({"id": id})).is_err());
+        assert!(pid(&runtime).is_none());
+    }
+    let first = runtime.request("lyrics", json!({"id":42})).unwrap();
+    assert_eq!(
+        first,
+        runtime.request("songDetail", json!({"id":42})).unwrap()
+    );
+    runtime.shutdown();
+}
+#[test]
 fn playback_errors_survive_the_pipe_without_exposing_upstream_text() {
     let runtime = fixture();
     for (query, message) in [

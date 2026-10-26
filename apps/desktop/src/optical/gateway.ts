@@ -36,7 +36,7 @@ export interface OpticalCandidate {
   copyId: string; editionId: string; title: string; creator: string;
   editionLabel: string; categoryId: string; score: number; matchKind: 'title' | 'edition' | 'catalog' | 'barcode' | 'creator' | 'none';
 }
-export interface PlaybackSettings { mpvExecutable: string; makeMkvLibrary: string; vlcLibrary: string; makeMkvFallback: boolean }
+export interface PlaybackSettings { mpvExecutable: string; makeMkvLibrary: string; vlcLibrary: string; makeMkvFallback: boolean; smtcEnabled: boolean }
 export const optical = {
   list: () => invoke<OpticalDrive[]>('optical_list'),
   eject: (mountPoint: string) => invoke<void>('optical_eject', { mountPoint }),
