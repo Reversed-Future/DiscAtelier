@@ -196,3 +196,7 @@
 .content-editor-table-tracks { min-width: 820px; }
 .content-editor-table-tracks select { width: 100%; min-width: 0; padding: 5px 6px; font-size: 11px; }
 .content-editor-table-tracks tr[data-entry-type="heading"] input { color: var(--muted); }
+
+.content-editor-table .select-trigger { min-height: 36px; padding: 9px 10px; line-height: 1.5; gap: 8px; }
+.content-editor-table .select-trigger > span { min-width: 0; overflow-wrap: anywhere; }
+.content-editor-table .select-trigger::after { flex-shrink: 0; }

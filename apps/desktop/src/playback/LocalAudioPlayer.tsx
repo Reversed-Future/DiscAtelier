@@ -11,6 +11,7 @@ import type { PlaybackController } from './usePlayback';
 import { AudioContentTabs } from './AudioContentTabs';
 import { useLinkedLyricSong } from './useLinkedLyricSong';
 import { useSystemMediaSource } from './useSystemMediaSource';
+import { usePlayerClose } from './usePlayerClose';
 
 interface LocalBinding {
   copyId: string;
@@ -31,7 +32,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
   const [error, setError] = useState('');
   const [dockOpen, setDockOpen] = useState(false);
   const [repeat, setRepeat] = useState<'list' | 'one'>(() => localStorage.getItem('discatelier.local-repeat') === 'one' ? 'one' : 'list');
-  const closing = false;
+  const { closing, close: closePlayer } = usePlayerClose(player);
   const host = usePlaybackLayer();
   const advanced = useRef('');
   const source = player.snapshot?.source;
@@ -79,10 +80,6 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
 
   function play(index: number, keepDock = false) {
     if (tracks[index]) void player.startLocal(copyId, tracks[index].path, !keepDock);
-  }
-
-  function closePlayer() {
-    if (!player.busy) player.hide();
   }
 
   useSystemMediaSource(player, { title: currentTitle || player.snapshot?.title || '', artist: copy?.edition.creator || '', album: copy?.edition.title || '', previous: current > 0 ? () => play(current - 1, !player.open) : undefined, next: current >= 0 && current < tracks.length - 1 ? () => play(current + 1, !player.open) : undefined });

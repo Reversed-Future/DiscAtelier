@@ -25,8 +25,9 @@ export interface MetadataRelease {
   images: { type: string; uri: string; uri150: string }[];
 }
 export const discogs = {
+  updateEdition: (request: import('../library/types').UpdateEdition, token: string, content: EditionContent, metadata: import('../video/gateway').VideoMetadata | null) => invoke<string>('discogs_update_edition', { request, token, content, metadata }),
   completeContent: (editionId: string, id: number) => invoke<EditionContent>('discogs_complete_content', { editionId, id }),
-  prepareImport: (id: number, categoryId: string) => invoke<ImportPreview>('discogs_prepare_import', { id, categoryId }),
+  prepareImport: (id: number, categoryId: string, refreshCover = false) => invoke<ImportPreview>('discogs_prepare_import', { id, categoryId, refreshCover }),
   importCopy: (request: ImportCopyRequest) => invoke<string>('discogs_import', { request }),
   openRelease: (id: number) => invoke<void>('discogs_open_release', { id }),
   openTokenPage: () => invoke<void>('discogs_open_token_page'),

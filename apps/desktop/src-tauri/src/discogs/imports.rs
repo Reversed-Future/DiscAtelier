@@ -43,6 +43,7 @@ pub async fn discogs_prepare_import(
     library: tauri::State<'_, LibraryState>,
     id: u64,
     category_id: String,
+    refresh_cover: Option<bool>,
 ) -> Result<ImportPreview, AppError> {
     let (token, edition, source, images) = run(state.inner().clone(), move |service| {
         let snapshot = service
@@ -89,7 +90,7 @@ pub async fn discogs_prepare_import(
         service.source_copy(&lookup.provider_id, &lookup.external_id)
     })
     .await?;
-    let cover = if existing.is_none() {
+    let cover = if existing.is_none() || refresh_cover.unwrap_or(false) {
         run(state.inner().clone(), move |service| {
             service.provider.cover(&images)
         })
@@ -135,6 +136,36 @@ pub async fn discogs_import(
     // No network lock is held while the personal collection transaction commits.
     commands::run(library.inner().clone(), move |service| {
         service.import_copy(value)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn discogs_update_edition(
+    state: tauri::State<'_, DiscogsState>,
+    library: tauri::State<'_, LibraryState>,
+    request: UpdateEdition,
+    token: String,
+    content: EditionContent,
+    metadata: Option<VideoMetadata>,
+) -> Result<String, AppError> {
+    let value = run(state.inner().clone(), move |service| {
+        let prepared = service
+            .imports
+            .get(&token)
+            .filter(|value| value.created.elapsed() < MAX_AGE)
+            .ok_or_else(|| AppError::new("expired", "资料已过期，请重新选择 Discogs 发行。"))?;
+        Ok(ReplaceEditionSource {
+            request,
+            content,
+            video: metadata,
+            source: prepared.source.clone(),
+            identifiers: prepared.identifiers.clone(),
+        })
+    })
+    .await?;
+    commands::run(library.inner().clone(), move |service| {
+        service.replace_edition_source(value)
     })
     .await
 }

@@ -97,9 +97,10 @@ pub async fn library_backup(state: tauri::State<'_, LibraryState>) -> Result<Str
 pub async fn library_update_edition(
     state: tauri::State<'_, LibraryState>,
     request: UpdateEdition,
+    content: Option<EditionContent>,
 ) -> Result<String, AppError> {
     run(state.inner().clone(), move |service| {
-        service.update_edition(request)
+        service.update_edition_with_content(request, content)
     })
     .await
 }

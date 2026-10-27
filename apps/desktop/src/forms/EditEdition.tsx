@@ -13,6 +13,9 @@ import { ModelField } from '../models/ModelField';
 import { modelChangeRequest } from '../models/assets';
 import { EditionFields } from './EditionFields';
 import { ContentEditor } from './ContentEditor';
+import { DiscogsReplacement } from './DiscogsReplacement';
+import { discogs, type ImportPreview } from '../metadata/gateway';
+import { useContentDraft } from './useContentDraft';
 import { Select } from '../ui/Select';
 import { netease, type LinkedMusicAlbum } from '../integrations/gateway';
 
@@ -20,6 +23,8 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   item: LibraryCopy; categories: Descriptor[]; carriers: Descriptor[]; onClose(): void; onSaved(categoryId: string): void;
 }) {
   const [page, setPage] = useState<'edition' | 'content'>('edition');
+  const [sourceOpen, setSourceOpen] = useState(false);
+  const [sourceDraft, setSourceDraft] = useState<ImportPreview | null>(null);
   const [videoDraft, setVideoDraft] = useState(emptyVideo);
   const [videoLoaded, setVideoLoaded] = useState(item.edition.categoryId !== 'video');
   useEffect(() => {
@@ -34,6 +39,7 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
     return () => { live = false; };
   }, [item.editionId]);
   const [edition, setEdition] = useState(item.edition);
+  const content = useContentDraft(item.editionId, sourceOpen || (page === 'content' && edition.categoryId !== 'video'));
   const [cover, setCover] = useState<CoverChange>({ action: 'keep' });
   const [busy, setBusy] = useState(false);
   const [reading, setReading] = useState(false);
@@ -42,24 +48,27 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   const attempt = useRef({ payload: '', requestId: crypto.randomUUID() });
   return <Modal title="编辑版本" onClose={onClose} busy={busy || reading} wide className="editor-panel">
     <nav className="detail-tabs editor-page-tabs" aria-label="编辑内容">
-      <button type="button" className={page === 'edition' ? 'active' : ''} disabled={busy} onClick={() => setPage('edition')}>版本</button>
-      <button type="button" className={page === 'content' ? 'active' : ''} disabled={busy} onClick={() => setPage('content')}>资料</button>
+      <button type="button" className={page === 'edition' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('edition')}>版本</button>
+      <button type="button" className={page === 'content' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('content')}>资料</button>
     </nav>
-    {page === 'content' ? <ContentEditor item={item} onBusy={setReading}
-      onSaved={() => { onSaved(item.edition.categoryId); onClose(); }}/> : <form className="editor-form" noValidate onSubmit={async event => {
+    <form className="editor-form" noValidate onSubmit={async event => {
       const dialog = event.currentTarget.closest('dialog');
-      event.preventDefault(); if (busy || reading || !videoLoaded) return;
+      event.preventDefault(); if (busy || reading || !videoLoaded || content.pending) return;
       if (edition.categoryId === 'video' && partsError(videoDraft)) {setError(partsError(videoDraft));return;}
-      const payload = measureSync('draft_encode', () => JSON.stringify({ edition, cover, model, videoDraft }));
+      const payload = measureSync('draft_encode', () => JSON.stringify({ edition, cover, model, videoDraft, content: content.changed, sourceToken: sourceDraft?.token }));
       if (payload !== attempt.current.payload) attempt.current = { payload, requestId: crypto.randomUUID() };
       setBusy(true); setError('');
       try {
         const request = { requestId: attempt.current.requestId, editionId: item.editionId, expectedRevision: item.editionRevision, edition, cover, model: modelChangeRequest(model) };
-        await measureAsync('save_ipc', () => edition.categoryId === 'video' ? video.update(request, videoDraft) : library.updateEdition(request));
+        await measureAsync('save_ipc', () => sourceDraft && content.value ? discogs.updateEdition(request, sourceDraft.token, content.value, edition.categoryId === 'video' ? videoDraft : null) : edition.categoryId === 'video' ? video.update(request, videoDraft) : library.updateEdition(request, content.changed));
         onSaved(edition.categoryId);
         dialog?.setAttribute('data-closing', 'true'); await leave(dialog); onClose();
       } catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
     }}>
+      {page === 'edition' ? <>
+      <div className="metadata-toolbar"><button type="button" className="text-button" disabled={busy || reading} onClick={() => setSourceOpen(true)}>更换 Discogs 资料</button>
+        {sourceDraft && <span className="form-note">已选择 Discogs #{sourceDraft.source.externalId} · 保存后生效</span>}
+      </div>
       {item.editionCopyCount > 1 && <p className="form-note">本版本共 {item.editionCopyCount} 套，资料、封面与模型会同步更新。</p>}
       <fieldset disabled={busy || reading || !videoLoaded}>
         {edition.categoryId === 'video' && videoLoaded && <VideoFields value={videoDraft} onChange={setVideoDraft} edition={edition} onEdition={setEdition} onCover={setCover} cover={cover} assetId={item.coverAssetId} onBusy={setReading}/>}
@@ -73,8 +82,18 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
         <ModelField value={model} title={item.modelTitle} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
         <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
       </fieldset>
-      <p className="form-error" role="alert">{error}</p>
-      <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading || !videoLoaded}>{busy ? '保存中' : '保存版本'}</button></footer>
-    </form>}
+      </> : <fieldset disabled={busy || reading || !videoLoaded}>
+        <ContentEditor edition={edition} content={content.value} onContent={content.change}
+          metadata={videoDraft} onMetadata={setVideoDraft} onBusy={setReading}/>
+      </fieldset>}
+      <p className="form-error" role="alert">{error || content.error}</p>
+      <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading || !videoLoaded || content.pending}>{busy ? '保存中' : page === 'content' ? '保存资料' : '保存版本'}</button></footer>
+    </form>
+    {sourceOpen && <DiscogsReplacement editionId={item.editionId} edition={edition} categories={categories} carriers={carriers}
+      onClose={() => setSourceOpen(false)} onApply={value => {
+        setEdition(value.preview.edition); content.change(value.content); setSourceDraft(value.preview);
+        if (value.preview.cover) setCover({ action: 'replace', dataUrl: value.preview.cover });
+        setSourceOpen(false);
+      }}/>}
   </Modal>;
 }

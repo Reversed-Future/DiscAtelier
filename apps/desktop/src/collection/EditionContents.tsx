@@ -1,5 +1,7 @@
 import type { useEditionContent } from './useEditionContent';
 import { ReleaseDetails } from '../metadata/ReleaseDetails';
+import { useMemo } from 'react';
+import { tracksWithCredits } from '../metadata/creditTracks';
 import { MusicAlbumInfo } from './MusicAlbumInfo';
 import { CollectionTracks } from './CollectionTracks';
 import type { LinkedMusicAlbum, DiscAlbumLink, SongLink } from '../integrations/gateway';
@@ -11,6 +13,7 @@ export function EditionContents({ section, state, albums, links, bindings, item,
   item: LibraryCopy; player: PlaybackController;
 }) {
   const { content, busy, error, complete, canComplete } = state;
+  const tracks = useMemo(() => content ? tracksWithCredits(content, item.edition.title, item.edition.media) : [], [content, item.edition.title, item.edition.media]);
   return <section className="edition-contents" data-section={section} aria-busy={busy}>
     {section === 'metadata' && <>
       {!!content?.genres.length && <dl className="metadata"><div><dt>流派</dt><dd>{content.genres.join(' / ')}</dd></div></dl>}
@@ -18,7 +21,7 @@ export function EditionContents({ section, state, albums, links, bindings, item,
       <MusicAlbumInfo albums={albums} title={item.edition.title}/>
       <ReleaseDetails credits={content?.credits} companies={content?.companies} notes={content?.notes}/>
     </>}
-    {section === 'tracks' && <CollectionTracks rows={content?.tracks || []} albums={albums} links={links} bindings={bindings} item={item} player={player}/>}
+    {section === 'tracks' && <CollectionTracks rows={tracks} albums={albums} links={links} bindings={bindings} item={item} player={player}/>}
     {canComplete && <button className="text-button complete-content" disabled={busy} onClick={() => void complete()}>{busy ? '读取中' : '补全资料'}</button>}
     {error && <p className="form-error" role="alert">{error}</p>}
   </section>;

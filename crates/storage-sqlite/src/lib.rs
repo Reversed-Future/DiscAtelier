@@ -59,7 +59,11 @@ impl SqliteLibrary {
         })
     }
 }
+mod source_replacement;
 impl LibraryRepository for SqliteLibrary {
+    fn replace_edition_source(&mut self, value: &ReplaceEditionSource) -> Result<String, AppError> {
+        editions::replace_source(&mut self.connection, value, &self.prepared_models)
+    }
     fn edition_content(&self, edition_id: &str) -> Result<Option<EditionContent>, AppError> {
         content::read(&self.connection, edition_id)
     }
@@ -113,6 +117,18 @@ impl LibraryRepository for SqliteLibrary {
     }
     fn update_edition(&mut self, request: &UpdateEdition) -> Result<String, AppError> {
         editions::update(&mut self.connection, request, &self.prepared_models)
+    }
+    fn update_edition_content(
+        &mut self,
+        request: &UpdateEdition,
+        content: &EditionContent,
+    ) -> Result<String, AppError> {
+        editions::update_with_content(
+            &mut self.connection,
+            request,
+            &self.prepared_models,
+            content,
+        )
     }
     fn model(&self, asset_id: &str, preview: bool) -> Result<String, AppError> {
         models::read(&self.connection, asset_id, preview)

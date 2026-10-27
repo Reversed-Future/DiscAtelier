@@ -1,63 +1,34 @@
-import { useEffect, useRef, useState } from 'react';
-import type { EditionContent, ReleaseCompany, ReleaseCredit, ReleaseTrack } from '../metadata/gateway';
-import { library, errorMessage } from '../library/gateway';
-import type { LibraryCopy } from '../library/types';
+import { useRef, useState } from 'react';
+import type { EditionContent, ReleaseCompany, ReleaseCredit } from '../metadata/gateway';
+import { errorMessage } from '../library/gateway';
+import type { EditionDraft } from '../library/types';
 import { readCover } from '../library/artwork';
-import { video, emptyVideo, type VideoCharacter, type VideoChapter, type VideoFact, type VideoMetadata, type VideoWork } from '../video/gateway';
+import { type VideoCharacter, type VideoChapter, type VideoFact, type VideoMetadata, type VideoWork } from '../video/gateway';
 import { videoWorks } from '../video/sources';
 import { TrackMultiSelect } from './TrackMultiSelect';
 import { ContentEditorTable } from './ContentEditorTable';
 import { MusicTrackEditor } from './MusicTrackEditor';
+import { changeContentTracks, creditSelection, creditTrackOptions } from '../metadata/creditTracks';
 
 function splitTags(value: string) {
   return value.split(',').map(part => part.trim()).filter(Boolean);
 }
 
-interface FlatTrack {
-  track: ReleaseTrack;
-  path: number[];
-  depth: number;
-}
-
-function flattenTrackRows(rows: ReleaseTrack[], prefix: number[] = [], depth = 0): FlatTrack[] {
-  return rows.flatMap((track, index) => {
-    const path = [...prefix, index];
-    return [
-      { track, path, depth },
-      ...flattenTrackRows(track.sub_tracks || [], path, depth + 1),
-    ];
-  });
-}
-
-function MusicEditor({ item, onSaved, onBusy }: { item: LibraryCopy; onSaved(): void; onBusy(value: boolean): void }) {
-  const [content, setContent] = useState<EditionContent | null>(null);
-  const [busy, setBusy] = useState(true);
-  const [error, setError] = useState('');
-  useEffect(() => {
-    let live = true;
-    library.content(item.editionId).then(value => {
-      if (!live) return;
-      setContent(value || { genres: [], styles: [], tracks: [], credits: [], companies: [], notes: '', detailsLoaded: false });
-    }).catch(cause => { if (live) setError(errorMessage(cause)); }).finally(() => { if (live) setBusy(false); });
-    return () => { live = false; };
-  }, [item.editionId]);
-  if (busy || !content) return <p className="utility-copy">{error || '正在读取资料…'}</p>;
-  const change = (value: Partial<EditionContent>) => setContent(current => current ? { ...current, ...value } : current);
-  const flatTracks = flattenTrackRows(content.tracks);
-  const leaves = flatTracks.filter(entry => entry.track.type_ !== 'heading');
+function MusicEditor({ edition, content, onChange }: { edition: EditionDraft; content: EditionContent; onChange(value: EditionContent): void }) {
+  const change = (value: Partial<EditionContent>) => onChange({ ...content, ...value });
+  const trackOptions = creditTrackOptions(content.tracks, edition.title, edition.media);
   const credit = (index: number, value: Partial<ReleaseCredit>) => change({ credits: content.credits.map((row, i) => i === index ? { ...row, ...value } : row) });
   const company = (index: number, value: Partial<ReleaseCompany>) => change({ companies: content.companies.map((row, i) => i === index ? { ...row, ...value } : row) });
-  const trackLabel = (path: number[], position: string, title: string) => `${path.join('.')} · ${position || '—'} · ${title || '未命名'}`;
   return <section className="content-editor">
     <p className="setting-hint">这里编辑的是已保存的曲目、Credits 和专辑资料。按实体载体分盘，可调整条目的所属 Disc；分盘标题与盘内小标题分开显示，不改动原曲号。保存后生效。</p>
     <div className="content-editor-scroll">
       <label>流派<input value={content.genres.join(', ')} onChange={e => change({ genres: splitTags(e.target.value) })}/></label>
       <label>风格<input value={content.styles.join(', ')} onChange={e => change({ styles: splitTags(e.target.value) })}/></label>
       <label>简介<textarea rows={4} value={content.notes} onChange={e => change({ notes: e.target.value })}/></label>
-      <MusicTrackEditor tracks={content.tracks} title={item.edition.title} media={item.edition.media} onChange={tracks => change({ tracks })}/>
+      <MusicTrackEditor tracks={content.tracks} title={edition.title} media={edition.media} onChange={(tracks, sameRows) => onChange(changeContentTracks(content, tracks, edition.title, edition.media, sameRows))}/>
       <div className="content-editor-heading"><h3>Credits</h3><button type="button" className="text-button" onClick={() => change({ credits: [...content.credits, { name: '', anv: '', role: '', tracks: '' }] })}>添加</button></div>
       <ContentEditorTable kind="credits"><thead><tr><th>姓名</th><th>别名（ANV）</th><th>角色</th><th>曲目</th><th/></tr></thead><tbody>
-        {content.credits.map((row, i) => <tr key={i}><td><input value={row.name} onChange={e => credit(i, { name: e.target.value })}/></td><td><input value={row.anv} placeholder="没有别名就留空" onChange={e => credit(i, { anv: e.target.value })}/></td><td><input value={row.role} onChange={e => credit(i, { role: e.target.value })}/></td><td><TrackMultiSelect value={row.tracks} options={leaves.map(entry => ({ id: entry.track.position, label: trackLabel(entry.path, entry.track.position, entry.track.title) }))} onChange={value => credit(i, { tracks: value })}/></td><td><button type="button" className="text-button" onClick={() => change({ credits: content.credits.filter((_, at) => at !== i) })}>移除</button></td></tr>)}
+        {content.credits.map((row, i) => <tr key={i}><td><input value={row.name} onChange={e => credit(i, { name: e.target.value })}/></td><td><input value={row.anv} placeholder="没有别名就留空" onChange={e => credit(i, { anv: e.target.value })}/></td><td><input value={row.role} onChange={e => credit(i, { role: e.target.value })}/></td><td><TrackMultiSelect {...creditSelection(row.tracks, trackOptions)} onChange={value => credit(i, { tracks: value })}/></td><td><button type="button" className="text-button" onClick={() => change({ credits: content.credits.filter((_, at) => at !== i) })}>移除</button></td></tr>)}
         {!content.credits.length && <tr className="content-editor-ghost">
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
@@ -74,31 +45,14 @@ function MusicEditor({ item, onSaved, onBusy }: { item: LibraryCopy; onSaved(): 
         </tr>}
       </tbody></ContentEditorTable>
     </div>
-    {error && <p className="form-error" role="alert">{error}</p>}
-    <footer className="settings-actions"><button type="button" className="solid-button" disabled={busy} onClick={async () => {
-      setBusy(true); onBusy(true); setError('');
-      try { await library.saveContent(item.editionId, content); onSaved(); }
-      catch (cause) { setError(errorMessage(cause)); }
-      finally { setBusy(false); onBusy(false); }
-    }}>保存资料</button></footer>
   </section>;
 }
 
-function VideoEditor({ item, onSaved, onBusy }: { item: LibraryCopy; onSaved(): void; onBusy(value: boolean): void }) {
-  const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
+function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadata; setMetadata(value: VideoMetadata): void; onBusy(value: boolean): void }) {
   const [selected, setSelected] = useState(0);
-  const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
   const avatarInput = useRef<HTMLInputElement>(null);
   const [avatarRow, setAvatarRow] = useState(-1);
-  useEffect(() => {
-    let live = true;
-    video.metadata(item.editionId).then(value => { if (live) setMetadata(value || emptyVideo()); })
-      .catch(cause => { if (live) setError(errorMessage(cause)); })
-      .finally(() => { if (live) setBusy(false); });
-    return () => { live = false; };
-  }, [item.editionId]);
-  if (busy || !metadata) return <p className="utility-copy">{error || '正在读取资料…'}</p>;
   const works = videoWorks(metadata);
   const work = works[selected] || works[0];
   if (!work) return <p className="utility-copy">这份收藏还没有作品资料。</p>;
@@ -180,12 +134,13 @@ function VideoEditor({ item, onSaved, onBusy }: { item: LibraryCopy; onSaved(): 
       <input ref={avatarInput} type="file" accept="image/png,image/jpeg,image/webp" hidden aria-label="角色头像文件" onChange={async event => {
         const file = event.target.files?.[0]; event.target.value = '';
         if (!file || avatarRow < 0) return;
+        onBusy(true);
         try {
           const url = await readCover(file);
           if (url.length > 700_000) throw Error('头像图片过大，请使用较小的 PNG／JPEG／WebP。');
           character(avatarRow, { avatar: url });
           setError('');
-        } catch (cause) { setError(errorMessage(cause)); }
+        } catch (cause) { setError(errorMessage(cause)); } finally { onBusy(false); }
       }}/>
 
       <div className="content-editor-heading"><h3>章节</h3><button type="button" className="text-button" onClick={() => updateWork({ chapters: [...chapters, { id: Date.now(), group: '', number: String(chapters.length + 1), title: '', originalTitle: '', airDate: '', duration: '', summary: '', imageUrl: '' }] })}>添加章节</button></div>
@@ -201,19 +156,13 @@ function VideoEditor({ item, onSaved, onBusy }: { item: LibraryCopy; onSaved(): 
       </tbody></ContentEditorTable>
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
-    <footer className="settings-actions"><button type="button" className="solid-button" disabled={busy} onClick={async () => {
-      setBusy(true); onBusy(true); setError('');
-      try {
-        await video.update({ requestId: crypto.randomUUID(), editionId: item.editionId, expectedRevision: item.editionRevision, edition: item.edition, cover: { action: 'keep' }, model: { action: 'keep' } }, metadata);
-        onSaved();
-      } catch (cause) { setError(errorMessage(cause)); }
-      finally { setBusy(false); onBusy(false); }
-    }}>保存资料</button></footer>
   </section>;
 }
 
-export function ContentEditor({ item, onSaved, onBusy }: { item: LibraryCopy; onSaved(): void; onBusy(value: boolean): void }) {
-  return item.edition.categoryId === 'video'
-    ? <VideoEditor item={item} onSaved={onSaved} onBusy={onBusy}/>
-    : <MusicEditor item={item} onSaved={onSaved} onBusy={onBusy}/>;
+export function ContentEditor({ edition, content, onContent, metadata, onMetadata, onBusy }: {
+  edition: EditionDraft; content: EditionContent | null; onContent(value: EditionContent): void;
+  metadata: VideoMetadata; onMetadata(value: VideoMetadata): void; onBusy(value: boolean): void;
+}) {
+  if (edition.categoryId === 'video') return <VideoEditor metadata={metadata} setMetadata={onMetadata} onBusy={onBusy}/>;
+  return content ? <MusicEditor edition={edition} content={content} onChange={onContent}/> : <p className="utility-copy">正在读取资料…</p>;
 }

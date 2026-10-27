@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
 export function TrackMultiSelect({ value, options, onChange }: {
-  value: string; options: { id: string; label: string }[]; onChange(value: string): void;
+  value: string; options: { id: string; key?: string; label: string }[]; onChange(value: string): void;
 }) {
   const id = useId();
   const wrapper = useRef<HTMLDivElement>(null);
@@ -57,7 +57,7 @@ export function TrackMultiSelect({ value, options, onChange }: {
     if (key === 'All') { onChange(selected.includes('All') ? '' : 'All'); return; }
     onChange((selected.includes(key) ? selected.filter(item => item !== key) : [...selected.filter(item => item !== 'All'), key]).join(', '));
   }
-  const rows = [{ id: 'All', label: '全部曲目' }, ...options];
+  const rows = [{ id: 'All', key: 'all-tracks', label: '全部曲目' }, ...options];
   return <div className="content-editor-multi-select" ref={wrapper}>
     <button type="button" ref={trigger} className="content-editor-multi-trigger" role="combobox" aria-label="Credits 曲目"
       aria-controls={id} aria-haspopup="listbox" aria-expanded={open} title={label}
@@ -72,7 +72,7 @@ export function TrackMultiSelect({ value, options, onChange }: {
         if (next !== null) { event.preventDefault(); buttons[next]?.focus(); }
         if (event.key === 'Tab') close(true);
       }}>
-      {rows.map(option => <button type="button" key={option.id} className="content-editor-multi-option" role="option" tabIndex={-1}
+      {rows.map(option => <button type="button" key={option.key || option.id} className="content-editor-multi-option" role="option" tabIndex={-1}
         aria-selected={selected.includes(option.id)} onClick={() => toggle(option.id)}>
         <span className="content-editor-multi-check" aria-hidden="true">{selected.includes(option.id) ? '✓' : ''}</span><span>{option.label}</span>
       </button>)}

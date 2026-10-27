@@ -51,9 +51,9 @@ input.playback-volume-range:focus, input.playback-volume-range:focus-visible { b
 .playback-controls, .playback-history, .playback-return { opacity: 1; transition: opacity 180ms cubic-bezier(.23,1,.32,1); @starting-style { opacity: 0; } }
 .playback-return:active { transform: translateX(-50%) scale(.98); }
 .optical-drive:has(+ .playback-controls) { border-bottom: 0; padding-bottom: 0; }
-.player-layer { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: #090909; color: var(--ink); overflow: hidden; }
-.player-layer::backdrop { background: #090909; }
-.player-view { position: fixed; inset: 0; z-index: 100; background: #090909; display: grid; grid-template-rows: 54px minmax(0, 1fr) 170px; padding: 0 32px; opacity: 1; transition: opacity 220ms cubic-bezier(.42,0,.58,1); @starting-style { opacity: 0; } }
+.player-layer { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: var(--ink); overflow: hidden; }
+.player-layer::backdrop { background: transparent; }
+.player-view { position: fixed; inset: 0; z-index: 100; background: #090909; display: grid; grid-template-rows: 54px minmax(0, 1fr) 170px; padding: 0 32px; opacity: 1; transition: opacity 220ms var(--ease); @starting-style { opacity: 0; } }
 .player-view[data-closing="true"] { opacity: 0; pointer-events: none; }
 .player-view[data-enter="soft"] { animation: none; }
 @starting-style { .player-view[data-enter="soft"] { opacity: 1; } }
@@ -87,5 +87,7 @@ input.playback-volume-range:focus, input.playback-volume-range:focus-visible { b
 .player-view[data-fullscreen="true"][data-controls="false"] .player-footer { transform: translateY(100%); opacity: 0; pointer-events: none; }
 .player-view[data-fullscreen="true"][data-controls="false"] { cursor: none; }
 @media (prefers-reduced-motion: reduce) {
-  .player-view, .player-view .player-header, .player-view .player-footer { transition: none; }
+  /* Preserve a short opacity fade against the global reduced-motion reset. */
+  .player-view { transition: opacity 125ms var(--ease) !important; }
+  .player-view .player-header, .player-view .player-footer { transition: none; }
 }

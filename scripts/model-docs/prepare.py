@@ -34,7 +34,7 @@ def zip_directory(source, target, prefix=''):
 
 def prepare():
     version = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))['version']
-    if version not in ('0.2.0', '0.2.1'):
+    if version not in ('0.2.0', '0.2.1', '0.2.2'):
         raise ValueError('Review the manual and Skill compatibility baseline before updating the application version.')
     playground = PUBLIC / 'playground'
     copy_tree(ROOT / 'packages/atelier-model-runtime', playground / 'runtime')

@@ -1,16 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { PlaybackController } from './usePlayback';
+
+export const playerExitDuration = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 125 : 220;
 
 /** Let the webview player fade before the native surface/view is removed. */
 export function usePlayerClose(player: PlaybackController) {
   const [closing, setClosing] = useState(false);
-  useEffect(() => { if (!player.open) setClosing(false); }, [player.open]);
-  async function close() {
-    if (closing || player.busy) return;
+  const pending = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => {
+    pending.current = false; setClosing(false);
+    return () => { clearTimeout(timer.current); };
+  }, [player.open]);
+  function close() {
+    if (pending.current || player.busy || !player.open) return;
+    pending.current = true;
     setClosing(true);
-    const delay = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220;
-    if (delay) await new Promise(resolve => setTimeout(resolve, delay));
-    player.hide();
+    timer.current = setTimeout(() => player.hide(), playerExitDuration());
   }
   return { closing, close };
 }

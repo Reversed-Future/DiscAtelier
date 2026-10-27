@@ -20,13 +20,49 @@ pub fn update_with_video(
     prepared: &crate::models::prepared::PreparedModels,
     video: Option<&discatelier_contracts::VideoMetadata>,
 ) -> Result<String, AppError> {
+    update_draft(connection, request, prepared, video, None, None)
+}
+pub fn update_with_content(
+    connection: &mut Connection,
+    request: &UpdateEdition,
+    prepared: &crate::models::prepared::PreparedModels,
+    content: &discatelier_contracts::EditionContent,
+) -> Result<String, AppError> {
+    update_draft(connection, request, prepared, None, Some(content), None)
+}
+pub fn replace_source(
+    connection: &mut Connection,
+    value: &discatelier_contracts::ReplaceEditionSource,
+    prepared: &crate::models::prepared::PreparedModels,
+) -> Result<String, AppError> {
+    update_draft(
+        connection,
+        &value.request,
+        prepared,
+        value.video.as_ref(),
+        Some(&value.content),
+        Some(value),
+    )
+}
+fn update_draft(
+    connection: &mut Connection,
+    request: &UpdateEdition,
+    prepared: &crate::models::prepared::PreparedModels,
+    video: Option<&discatelier_contracts::VideoMetadata>,
+    content: Option<&discatelier_contracts::EditionContent>,
+    source: Option<&discatelier_contracts::ReplaceEditionSource>,
+) -> Result<String, AppError> {
     let _total = crate::profiling::Span::new("edition.total");
     let payload =
         crate::profiling::measure("edition.request_hash", || -> Result<String, AppError> {
             Ok(format!(
                 "edition:{:x}",
                 Sha256::digest(
-                    if video.is_some() {
+                    if let Some(source) = source {
+                        serde_json::to_vec(&("replace_source", source))
+                    } else if content.is_some() {
+                        serde_json::to_vec(&(request, "content", content))
+                    } else if video.is_some() {
                         serde_json::to_vec(&(request, video))
                     } else {
                         serde_json::to_vec(request)
@@ -113,8 +149,14 @@ pub fn update_with_video(
             params![request.edition_id, edition.media.len() as i64],
         )
         .map_err(db_error)?;
+    if let Some(value) = content {
+        crate::content::replace(&transaction, &request.edition_id, value)?;
+    }
     if let Some(value) = video {
         crate::video::save(&transaction, &request.edition_id, value)?;
+    }
+    if let Some(value) = source {
+        crate::source_replacement::save(&transaction, value)?;
     }
     save_receipt(
         &transaction,

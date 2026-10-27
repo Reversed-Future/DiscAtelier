@@ -1,5 +1,8 @@
 /* Window controls share the navigation's surface, without a second wordmark. */
 .window-chrome { position: fixed; inset: 0 0 auto; z-index: 200; height: 30px; display: flex; color: var(--muted); background: var(--surface); user-select: none; pointer-events: auto; }
+/* Native resize notifications can precede the fullscreen state update. The
+   player's confirmed state must also hide controls, including dialog portals. */
+body:has(.player-view[data-fullscreen="true"]) .window-chrome { display: none; }
 .window-drag-region { flex: 1; min-width: 0; }
 .window-chrome button { flex: 0 0 44px; display: grid; place-items: center; padding: 0; border-radius: 0; cursor: default; transition: color 120ms ease, background-color 120ms ease; }
 .window-chrome button svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1; pointer-events: none; }

@@ -60,6 +60,16 @@ pub struct ImportCopy {
     pub identifiers: Vec<ImportedIdentifier>,
 }
 
+/// Provider provenance is resolved from a prepared token, never trusted from raw IPC.
+#[derive(Debug, Clone, Serialize)]
+pub struct ReplaceEditionSource {
+    pub request: crate::UpdateEdition,
+    pub content: crate::EditionContent,
+    pub source: EditionSource,
+    pub identifiers: Vec<ImportedIdentifier>,
+    pub video: Option<crate::VideoMetadata>,
+}
+
 pub fn validate_source(
     source: &EditionSource,
     identifiers: &[ImportedIdentifier],

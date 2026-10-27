@@ -22,11 +22,12 @@ function detectMode(value: string): SearchMode {
   return 'keyword';
 }
 
-export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onClose, onSettings }: {
+export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onClose, onSettings, onSelect, initialQuery = '' }: {
   categoryId: string; categories: Descriptor[]; carriers: Descriptor[];
   onSaved(id: string, categoryId: string): Promise<void>; onClose(): void; onSettings(): void;
+  onSelect?(preview: ImportPreview, release: MetadataRelease): void; initialQuery?: string;
 }) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [mode, setMode] = useState<'auto' | SearchMode>('auto');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [neteaseOpen, setNeteaseOpen] = useState(false);
@@ -79,7 +80,7 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
     <div className="metadata-toolbar">
       {release ? <button type="button" className="text-button" disabled={busy} onClick={() => setRelease(null)}>返回搜索</button> :
         <button type="button" className="text-button" disabled={busy} onClick={onSettings}>设置</button>}
-      {!release && <div className="metadata-toolbar-actions">
+      {!release && !onSelect && <div className="metadata-toolbar-actions">
         <button type="button" className="text-button" disabled={busy} onClick={() => setManualOpen(true)}>手动录入</button>
         {categoryId === 'music' && <button type="button" className="text-button" disabled={busy} onClick={() => setNeteaseOpen(true)}>从网易云添加</button>}
         <button type="button" className="text-button" disabled={busy} onClick={() => setMobileOpen(true)}>手机扫条码</button>
@@ -102,9 +103,10 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
       </form>}
       {(!release || error) && <p className="form-error" role="alert">{error}</p>}
       <div ref={content} className="metadata-search-body">{release ? <><ReleasePreview key={release.id} release={release}/>
-        <footer className="form-footer release-footer"><SourceLink id={release.id} button/><button type="button" className="solid-button" disabled={busy} onClick={async () => {
+        <footer className="form-footer release-footer"><SourceLink id={release.id} button/>
+          <button type="button" className="solid-button" disabled={busy} onClick={async () => {
           setBusy(true); setError('');
-          try { setImported(await discogs.prepareImport(release.id, categoryId)); }
+          try { const preview = await discogs.prepareImport(release.id, categoryId, !!onSelect); if (onSelect) onSelect(preview, release); else setImported(preview); }
           catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
         }}>{busy ? '读取中' : '选择此版本'}</button></footer>
       </> : results && <>

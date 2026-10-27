@@ -10,10 +10,11 @@ export function useEditionContent(item: LibraryCopy) {
   const [error, setError] = useState('');
   useEffect(() => {
     let mounted = true;
+    setBusy(true); setError('');
     void library.content(item.editionId).then(value => { if (mounted) setContent(value); })
       .catch(cause => { if (mounted) setError(errorMessage(cause)); }).finally(() => { if (mounted) setBusy(false); });
     return () => { mounted = false; };
-  }, [item.editionId]);
+  }, [item.editionId, item.editionRevision]);
   async function complete() {
     if (busy || item.source?.providerId !== 'discogs') return;
     const id = Number(item.source.externalId);

@@ -14,6 +14,7 @@ pub mod optical_discs;
 mod physical_discs;
 pub use extensions::ExtensionRepository;
 mod metadata;
+mod source_replacement;
 pub use metadata::MetadataProvider;
 mod optical;
 pub use optical::{OpticalDeviceProvider, OpticalPlaybackProbe};
@@ -47,7 +48,13 @@ pub trait LibraryRepository: Send {
     fn create(&mut self, request: &CreateCopy) -> Result<String, AppError>;
     fn update(&mut self, request: &UpdateCopy) -> Result<String, AppError>;
     fn delete(&mut self, request: &DeleteCopy) -> Result<String, AppError>;
+    fn replace_edition_source(&mut self, value: &ReplaceEditionSource) -> Result<String, AppError>;
     fn update_edition(&mut self, request: &UpdateEdition) -> Result<String, AppError>;
+    fn update_edition_content(
+        &mut self,
+        request: &UpdateEdition,
+        content: &EditionContent,
+    ) -> Result<String, AppError>;
     fn model(&self, asset_id: &str, preview: bool) -> Result<String, AppError>;
     fn cover(&self, asset_id: &str) -> Result<String, AppError>;
     fn optical_binding(&self, media_token: &str) -> Result<Option<OpticalBinding>, AppError>;
@@ -252,13 +259,25 @@ impl<R: LibraryRepository> LibraryService<R> {
         self.repository.restore(&token)
     }
     pub fn update_edition(&mut self, request: UpdateEdition) -> Result<String, AppError> {
+        self.update_edition_with_content(request, None)
+    }
+    pub fn update_edition_with_content(
+        &mut self,
+        request: UpdateEdition,
+        content: Option<EditionContent>,
+    ) -> Result<String, AppError> {
         request_id(&request.request_id)?;
         request_id(&request.edition_id)?;
         if request.expected_revision < 1 {
             return Err(validation("版本记录无效".into()));
         }
         validate_edition(&request.edition).map_err(validation)?;
-        self.repository.update_edition(&request)
+        if let Some(content) = content {
+            validate_content(&content)?;
+            self.repository.update_edition_content(&request, &content)
+        } else {
+            self.repository.update_edition(&request)
+        }
     }
     pub fn model(&self, asset_id: String, preview: bool) -> Result<String, AppError> {
         if asset_id.len() != 64 || !asset_id.bytes().all(|value| value.is_ascii_hexdigit()) {

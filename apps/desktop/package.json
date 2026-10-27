@@ -1,6 +1,6 @@
 {
   "name": "@discatelier/desktop",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -8,7 +8,7 @@
     "dev": "npm run build:mobile && vite --host 127.0.0.1 --port 1420 --strictPort",
     "build:mobile": "vite build --config vite.mobile.config.ts",
     "build": "tsc --noEmit && npm run build:mobile && vite build",
-    "build:release": "tsc --noEmit && npm run build:mobile && vite build --outDir dist-release/0.2.1",
+    "build:release": "tsc --noEmit && npm run build:mobile && vite build --outDir dist-release/0.2.2",
     "tauri:dev": "npm run prepare:netease --prefix ../.. && npm run prepare:vlc --prefix ../.. && npm run prepare:mpv --prefix ../.. && tauri dev",
     "tauri:build": "npm run prepare:netease --prefix ../.. && npm run prepare:vlc --prefix ../.. && npm run prepare:mpv --prefix ../.. && tauri build --no-bundle",
     "tauri:release": "npm run prepare:netease --prefix ../.. && npm run prepare:vlc --prefix ../.. && npm run prepare:mpv --prefix ../.. && tauri build --config src-tauri/tauri.release.conf.json --bundles nsis --ci -- --locked"

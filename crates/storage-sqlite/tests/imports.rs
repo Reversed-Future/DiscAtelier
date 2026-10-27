@@ -494,3 +494,126 @@ fn enrich_old_details_preserves_track_order_and_survives_restore() {
         item.edition.title
     );
 }
+
+#[test]
+fn replacing_discogs_source_is_atomic_and_preserves_collection_and_supplements() {
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let original = import_with_music();
+    service.import_copy(original.clone()).unwrap();
+    let first = service.list(query("")).unwrap().copies.remove(0);
+    let duplicate = CreateCopy {
+        request_id: Uuid::new_v4().to_string(),
+        existing_edition_id: Some(first.edition_id.clone()),
+        edition: None,
+        copy: first.copy.clone(),
+        cover: None,
+        model: None,
+        model_token: None,
+    };
+    service.create(duplicate).unwrap();
+    let mut edition = first.edition.clone();
+    edition.title = "Replacement release".into();
+    let mut value = ReplaceEditionSource {
+        request: UpdateEdition {
+            request_id: Uuid::new_v4().to_string(),
+            edition_id: first.edition_id.clone(),
+            expected_revision: first.edition_revision,
+            edition,
+            cover: CoverChange::Keep,
+            model: ModelChange::Keep,
+        },
+        content: contents(),
+        source: EditionSource {
+            external_id: "249505".into(),
+            ..original.source.clone()
+        },
+        identifiers: vec![ImportedIdentifier {
+            namespace: "catalog".into(),
+            kind: "New label".into(),
+            value: "NEW-1".into(),
+            description: "".into(),
+        }],
+        video: None,
+    };
+    let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
+    let supplement: String = connection
+        .query_row(
+            "SELECT payload FROM edition_supplements WHERE edition_id=?1",
+            [&first.edition_id],
+            |row| row.get(0),
+        )
+        .unwrap();
+    connection.execute_batch("CREATE TRIGGER fail_replacement BEFORE INSERT ON imported_identifiers BEGIN SELECT RAISE(ABORT, 'test failure'); END;").unwrap();
+    assert!(service.replace_edition_source(value.clone()).is_err());
+    let unchanged = service.source_copy("discogs", "249504").unwrap().unwrap();
+    assert_eq!(unchanged.edition.title, first.edition.title);
+    assert_eq!(unchanged.edition_revision, first.edition_revision);
+    assert!(service.source_copy("discogs", "249505").unwrap().is_none());
+    connection
+        .execute_batch("DROP TRIGGER fail_replacement")
+        .unwrap();
+    service.replace_edition_source(value.clone()).unwrap();
+    service.replace_edition_source(value.clone()).unwrap();
+    assert!(service.source_copy("discogs", "249504").unwrap().is_none());
+    let copies = service.list(query("")).unwrap().copies;
+    assert_eq!(copies.len(), 2);
+    for copy in &copies {
+        assert_eq!(copy.edition_id, first.edition_id);
+        assert_eq!(copy.edition.title, "Replacement release");
+        assert_eq!(copy.copy.seller, first.copy.seller);
+        assert_eq!(copy.copy.amount_minor, first.copy.amount_minor);
+        assert_eq!(copy.edition_revision, first.edition_revision + 1);
+        assert_eq!(copy.source.as_ref().unwrap().external_id, "249505");
+    }
+    assert_eq!(
+        connection
+            .query_row::<String, _, _>(
+                "SELECT payload FROM edition_supplements WHERE edition_id=?1",
+                [&first.edition_id],
+                |row| row.get(0)
+            )
+            .unwrap(),
+        supplement
+    );
+    assert_eq!(
+        service
+            .edition_content(&first.edition_id)
+            .unwrap()
+            .unwrap()
+            .tracks
+            .len(),
+        value.content.tracks.len()
+    );
+    assert_eq!(
+        connection
+            .query_row::<i64, _, _>(
+                "SELECT COUNT(*) FROM imported_identifiers WHERE edition_id=?1",
+                [&first.edition_id],
+                |row| row.get(0)
+            )
+            .unwrap(),
+        1
+    );
+    // A different edition's source cannot be stolen; changes roll back together.
+    let mut other = request();
+    other.source.external_id = "249506".into();
+    service.import_copy(other).unwrap();
+    value.request.request_id = Uuid::new_v4().to_string();
+    value.request.expected_revision += 1;
+    value.request.edition.title = "Must roll back".into();
+    value.source.external_id = "249506".into();
+    assert_eq!(
+        service.replace_edition_source(value).unwrap_err().code,
+        "conflict"
+    );
+    assert_eq!(
+        service
+            .source_copy("discogs", "249505")
+            .unwrap()
+            .unwrap()
+            .edition
+            .title,
+        "Replacement release"
+    );
+}

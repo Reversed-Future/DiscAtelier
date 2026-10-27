@@ -41,7 +41,7 @@ export interface LibraryGateway {
   create(request: CreateCopy): Promise<string>;
   update(request: UpdateCopy): Promise<string>;
   delete(request: DeleteCopy): Promise<string>;
-  updateEdition(request: UpdateEdition): Promise<string>;
+  updateEdition(request: UpdateEdition, content?: import('../metadata/gateway').EditionContent | null): Promise<string>;
   model(assetId: string, preview: boolean): Promise<string>;
   cover(assetId: string): Promise<string>;
   backup(): Promise<string>;

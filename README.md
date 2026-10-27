@@ -106,7 +106,7 @@ DiscAtelier 是一个面向个人实体影音收藏的 Windows 桌面应用。�
 
 从 [GitHub Releases](https://github.com/Reversed-Future/DiscAtelier/releases) 下载最新的 Windows x64 安装包：
 
-- 当前版本：**0.2.1**
+- 当前版本：**0.2.2**
 - 安装包已内置 VLC 和 Java 运行时，不需要另外安装播放器；
 - 按当前 Windows 用户安装；
 - 没有 WebView2 时安装器会引导下载；

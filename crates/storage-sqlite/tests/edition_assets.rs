@@ -439,3 +439,109 @@ fn restore_uses_validated_snapshot_even_if_source_file_changes() {
         "原名称"
     );
 }
+
+#[test]
+fn editor_saves_both_tabs_atomically_and_retries_without_duplicate_revision() {
+    use discatelier_contracts::{EditionContent, ReleaseTrack};
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    service.create(draft()).unwrap();
+    let first = service.list(query()).unwrap().copies.remove(0);
+    let mut edition = first.edition.clone();
+    edition.title = "两个标签一起保存".into();
+    edition.media.push(MediumDraft {
+        carrier_id: "bd".into(),
+        label: "Disc 2".into(),
+    });
+    let request = UpdateEdition {
+        request_id: Uuid::new_v4().to_string(),
+        edition_id: first.edition_id.clone(),
+        expected_revision: first.edition_revision,
+        edition,
+        cover: CoverChange::Remove,
+        model: Default::default(),
+    };
+    let content = EditionContent {
+        notes: "资料页的修改".into(),
+        tracks: vec![ReleaseTrack {
+            title: "第二张的曲目".into(),
+            position: "BD1".into(),
+            duration: "3:00".into(),
+            type_: "track".into(),
+            disc_number: Some(2),
+            heading_kind: None,
+            sub_tracks: vec![],
+            extraartists: vec![],
+        }],
+        ..Default::default()
+    };
+    let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
+    connection.execute_batch("CREATE TRIGGER fail_editor_content BEFORE INSERT ON edition_content BEGIN SELECT RAISE(ABORT, 'test failure'); END;").unwrap();
+    assert!(service
+        .update_edition_with_content(request.clone(), Some(content.clone()))
+        .is_err());
+    let unchanged = service.list(query()).unwrap().copies.remove(0);
+    assert_eq!(unchanged.edition.title, first.edition.title);
+    assert_eq!(unchanged.edition_revision, first.edition_revision);
+    assert_eq!(unchanged.cover_asset_id, first.cover_asset_id);
+    assert_eq!(unchanged.edition.media.len(), 1);
+    assert!(service
+        .edition_content(&first.edition_id)
+        .unwrap()
+        .is_none());
+    connection
+        .execute_batch("DROP TRIGGER fail_editor_content")
+        .unwrap();
+    service
+        .update_edition_with_content(request.clone(), Some(content.clone()))
+        .unwrap();
+    service
+        .update_edition_with_content(request.clone(), Some(content.clone()))
+        .unwrap();
+    let saved = service.list(query()).unwrap().copies.remove(0);
+    assert_eq!(saved.edition.title, request.edition.title);
+    assert_eq!(saved.edition_revision, first.edition_revision + 1);
+    assert_eq!(saved.edition.media.len(), 2);
+    assert!(saved.cover_asset_id.is_none());
+    assert_eq!(
+        service
+            .edition_content(&first.edition_id)
+            .unwrap()
+            .unwrap()
+            .notes,
+        content.notes
+    );
+    let mut changed_content = content.clone();
+    changed_content.notes = "不同的重试内容".into();
+    assert!(service
+        .update_edition_with_content(request.clone(), Some(changed_content))
+        .is_err());
+    assert!(service
+        .update_edition_with_content(
+            UpdateEdition {
+                request_id: Uuid::new_v4().to_string(),
+                ..request
+            },
+            Some(content.clone())
+        )
+        .is_err());
+    // Saving only the edition must preserve the previously saved content.
+    service
+        .update_edition(UpdateEdition {
+            request_id: Uuid::new_v4().to_string(),
+            edition_id: saved.edition_id.clone(),
+            expected_revision: saved.edition_revision,
+            edition: saved.edition,
+            cover: CoverChange::Keep,
+            model: Default::default(),
+        })
+        .unwrap();
+    assert_eq!(
+        service
+            .edition_content(&first.edition_id)
+            .unwrap()
+            .unwrap()
+            .notes,
+        content.notes
+    );
+}

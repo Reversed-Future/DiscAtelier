@@ -24,7 +24,6 @@ import { OpticalPanel } from './optical/OpticalPanel';
 import { CdTrackSearch } from './optical/CdTrackSearch';
 import { useOpticalPresence } from './optical/useOpticalPresence';
 import type { OpticalPresence } from './optical/gateway';
-import { LocalFilesPanel } from './local/LocalFilesPanel';
 import { usePlayback } from './playback/usePlayback';
 import { AssistantDock } from './assistant/AssistantDock';
 import { AudioPlayer } from './playback/AudioPlayer';
@@ -53,7 +52,6 @@ export function App() {
   const [notice, setNotice] = useState('');
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [opticalOpen, setOpticalOpen] = useState(false);
-  const [localFilesOpen, setLocalFilesOpen] = useState(false);
   const [opticalPrompt, setOpticalPrompt] = useState<OpticalPresence | null>(null);
   const knownOptical = useRef(new Set<string>());
   const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | 'about' | null>(null);
@@ -199,7 +197,7 @@ export function App() {
     <CollectionMenu status={query.status} snapshot={snapshot} organize={organize}
       onStatus={status => setQuery({ ...query, status })}
       onOrganize={() => setOrganize(value => !value)}
-      onOptical={() => setOpticalOpen(true)} onLocalFiles={() => setLocalFilesOpen(true)} onSettings={() => setSettingsPage('home')}/>
+      onOptical={() => setOpticalOpen(true)} onSettings={() => setSettingsPage('home')}/>
     <main id="scene" ref={scene} aria-label="收藏展示" aria-busy={loading} inert={player.open}>
       {error ? <div className="empty-state"><span className="disc-mark"/><p role="alert">{error}</p>{desktopAvailable() && <button onClick={() => void refresh(query)}>重试</button>}</div> :
         !snapshot ? <div className="empty-state"><span className="disc-mark"/><p>正在打开收藏库</p></div> :
@@ -209,7 +207,6 @@ export function App() {
     </main>
     {artwork.portal}
     {opticalOpen && !player.open && <OpticalPanel player={player} onClose={() => setOpticalOpen(false)}/>}
-    {localFilesOpen && !player.open && <LocalFilesPanel onClose={() => setLocalFilesOpen(false)}/>}
     {player.open && <PlayerLayer>
       {player.snapshot?.source.playlist.startsWith('netease-song:') ? <NeteaseAudioPlayer player={player}/> : player.snapshot?.source.mediaToken === 'local-audio' ? <LocalAudioPlayer player={player}/> : player.snapshot?.source.playlist.startsWith('cd-track:') ? <AudioPlayer player={player}/> : <PlayerView player={player}/>}
     </PlayerLayer>}

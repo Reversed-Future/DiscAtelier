@@ -6,8 +6,10 @@ import { AudioContentTabs } from './AudioContentTabs';
 import { PlaybackControls } from './PlaybackControls';
 import type { PlaybackController } from './usePlayback';
 import { time } from './gateway';
+import { usePlayerClose } from './usePlayerClose';
 
 export function NeteaseAudioPlayer({ player }: { player: PlaybackController }) {
+  const { closing, close } = usePlayerClose(player);
   const queue = player.musicQueue, album = queue.current;
   const [cover, setCover] = useState<{ editionId: string; id: string | null } | null>(null);
   useEffect(() => {
@@ -19,8 +21,8 @@ export function NeteaseAudioPlayer({ player }: { player: PlaybackController }) {
     return () => { live = false; };
   }, [album?.editionId]);
   const artwork = useStaticArtwork('cover', cover?.editionId === album?.editionId ? cover?.id || null : null);
-  return <section className="player-view audio-player" aria-label="网易云音乐播放器" data-enter="soft">
-    <header className="player-header"><button className="text-button" onClick={player.hide}><Icon name="back"/>返回</button></header>
+  return <section className="player-view audio-player" aria-label="网易云音乐播放器" data-enter="soft" data-closing={closing} aria-busy={closing}>
+    <header className="player-header"><button className="text-button" onClick={close} disabled={closing || player.busy}><Icon name="back"/>返回</button></header>
     <div className="audio-body">
       <div className={`audio-disc${artwork.url ? ' has-artwork' : ''}`} aria-hidden="true">{artwork.url && <img className="audio-disc-artwork" src={artwork.url} alt="" data-loaded="true" draggable={false}/>}<span/></div>
       <div className="audio-cd-content">

@@ -8,6 +8,7 @@ import { useNativeVideoKeys } from './useNativeVideoKeys';
 import type { MenuDirection } from './gateway';
 import { errorMessage } from '../library/gateway';
 import { Icon } from '../ui/Icon';
+import { playerExitDuration } from './usePlayerClose';
 
 export function PlayerView({ player }: { player: PlaybackController }) {
   const [fullscreen, setFullscreen] = useState(false);
@@ -49,8 +50,7 @@ export function PlayerView({ player }: { player: PlaybackController }) {
       if (!await current.player.control({ action: 'stop' })) { setClosing(false); return; }
     }
     try {
-      const delay = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220;
-      if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise(resolve => setTimeout(resolve, playerExitDuration()));
       await playback.viewport({ x: 0, y: 0, width: 0, height: 0, visible: false });
       if (current.fullscreen) await playback.fullscreen(false);
       current.player.hide();
