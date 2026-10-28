@@ -81,9 +81,15 @@ export function validateV2(value){
    if(node.weights&&(!vector(node.weights,g.morphAttributes?.position?.length??0)))fail('形变权重无效');
   }
  }
+ validateStateGraph(value,nodes,geometries);
+ return {format:value.format,version:2,id:value.id,title:value.title,creator:value.creator,cover:value.cover,scene,states:value.states,actions:value.actions,initialState:value.initialState,...(value.navigation?{navigation:value.navigation}:{})};
+}
+
+// Shared bounded graph validation for the assembly and independently operated parts.
+export function validateStateGraph(value,nodes,geometries,limits={states:768,actions:4000}){
  // Independent booklet, tray, discs, inlay and removable obi use 576 states.
  // Geometry, sample-count and file-size limits still bound the package cost.
- const states=table(value.states,'状态',768),actions=table(value.actions,'动作',4000);
+ const states=table(value.states,'状态',limits.states),actions=table(value.actions,'动作',limits.actions);
  if(value.navigation!==undefined){if(!value.navigation||typeof value.navigation!=='object'||Object.keys(value.navigation).some(k=>!['preserveOverview','stateReset','followActions'].includes(k))||Object.values(value.navigation).some(v=>typeof v!=='boolean'))fail('浏览策略无效');}
  if(!states.has(value.initialState))fail('初始状态不存在');
  for(const state of states.values()){
@@ -129,5 +135,5 @@ export function validateV2(value){
  }}
  if(reachable.size!==states.size)fail('存在无法通过点击到达的状态');
  if(value.navigation?.stateReset)for(const state of states.values()){const seen=new Set();let s=state;while(s.id!==value.initialState){if(seen.has(s.id)||!s.reset)fail('收起流程无法返回初始状态');seen.add(s.id);const a=actions.get(s.reset.action);s=states.get(s.reset.reverse?a.from:a.to);}}
- return {format:value.format,version:2,id:value.id,title:value.title,creator:value.creator,cover:value.cover,scene,states:value.states,actions:value.actions,initialState:value.initialState,...(value.navigation?{navigation:value.navigation}:{})};
+ return {states,actions};
 }

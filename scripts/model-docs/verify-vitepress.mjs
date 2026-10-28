@@ -36,9 +36,15 @@ try {
   }
   await page.goto(`${base}/ai-authoring.html`);
   await page.screenshot({path: resolve(output, 'ai-authoring-desktop.png'), fullPage: true});
+  // Capture the real copy button payload without touching the user's OS clipboard.
+  await page.evaluate(() => {
+    window.modelDocsCopiedText = '';
+    Object.defineProperty(navigator.clipboard, 'writeText', {configurable: true,
+      value: async text => { window.modelDocsCopiedText = text; }});
+  });
   const copy = page.locator('.vp-doc div[class*="language-"] button.copy').first();
   await copy.click();
-  assert((await page.evaluate(() => navigator.clipboard.readText())).includes('$discatelier-model-author'));
+  await page.waitForFunction(() => window.modelDocsCopiedText.includes('$discatelier-model-author'));
   result.promptCopy = true;
   await page.getByRole('button', {name: '搜索文档', exact: true}).click();
   await page.locator('#localsearch-input').fill('stateReset');

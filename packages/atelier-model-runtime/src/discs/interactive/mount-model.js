@@ -16,8 +16,8 @@ export async function mountModel(host,model,{signal,onChange,onError,interactive
   if(model.version===3){
    const {createAssemblyRuntime}=await import('./assembly/runtime.js');signal?.throwIfAborted();
    loaded=await createAssemblyRuntime({viewer,model,signal,onChange,onError});
-  }else if(model.version===2)loaded=await createGenericAsset(viewer.renderer,model.scene,{signal});
-  else throw Error('只支持 AtelierPublisher v2 或 v3 模型。');
+  }else if(model.version===2||model.version===4)loaded=await createGenericAsset(viewer.renderer,model.scene,{signal});
+  else throw Error('只支持 AtelierPublisher v2、v3 或 v4 模型。');
   if(disposed||signal?.aborted){loaded.dispose();signal?.throwIfAborted();throw Error('Model disposed');}
   asset=loaded;
   if(model.version===3)session=asset;

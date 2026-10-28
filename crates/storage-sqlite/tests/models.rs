@@ -262,3 +262,44 @@ fn v3_prepared_import_survives_backup_and_restore() {
     let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
     assert_eq!(service.model(id, false).unwrap(), text);
 }
+
+#[test]
+fn v4_controller_is_preserved_through_prepared_import_backup_and_reopen() {
+    let dir = directory();
+    let mut value: serde_json::Value = serde_json::from_str(&model()).unwrap();
+    value["version"] = json!(4);
+    value["states"] = json!([
+        {"id":"closed","focus":[],"clicks":[{"target":"root","action":"take"}]},
+        {"id":"out","focus":[],"clicks":[],"reset":{"action":"take","reverse":true}}
+    ]);
+    value["actions"] = json!([
+        {"id":"take","from":"closed","to":"out","part":"root","duration":500}
+    ]);
+    value["controllers"] = json!([{
+        "id":"reading","part":"root","enabledIn":["out"],
+        "initialState":"first","navigation":{"stateReset":true},
+        "states":[
+            {"id":"first","focus":[],"clicks":[{"target":"root","action":"next"}]},
+            {"id":"second","focus":[],"clicks":[],"reset":{"action":"next","reverse":true}}
+        ],
+        "actions":[{"id":"next","from":"first","to":"second","part":"root","duration":500,"keepFocus":true}]
+    }]);
+    let text = value.to_string();
+    let path = dir.join("split-book.ateliermodel");
+    std::fs::write(&path, &text).unwrap();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let asset = discatelier_storage::prepare_model_file(&path).unwrap();
+    let id = asset.id.clone();
+    let prepared = service.stage_model(asset).unwrap();
+    let mut request = request();
+    request.model = None;
+    request.model_token = Some(prepared.token);
+    service.create(request).unwrap();
+    let backup = service.backup().unwrap();
+    let preview = service.prepare_restore(backup).unwrap();
+    assert_eq!((preview.copies, preview.models), (1, 1));
+    service.restore(preview.token).unwrap();
+    drop(service);
+    let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    assert_eq!(service.model(id, false).unwrap(), text);
+}

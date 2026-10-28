@@ -1,4 +1,4 @@
-"""Decode embedded images and check the documented DiscAtelier 0.2.0 budgets."""
+"""Decode embedded images and check the documented DiscAtelier 0.2.3 budgets."""
 import argparse
 import base64
 import hashlib
@@ -20,10 +20,10 @@ def main():
         raise ValueError('Package exceeds 50 MiB')
     raw = args.package.read_bytes()
     model = json.loads(raw.decode('utf-8'))
-    if model['format'] != 'atelier-interactive-model' or model['version'] not in (2, 3):
-        raise ValueError('Only DiscAtelier V2/V3 data packages are supported')
+    if model['format'] != 'atelier-interactive-model' or model['version'] not in (2, 3, 4):
+        raise ValueError('Only DiscAtelier V2/V3/V4 data packages are supported')
     rows = [('cover', model['cover'])]
-    table = model['scene']['textures'] if model['version'] == 2 else model['images']
+    table = model['scene']['textures'] if model['version'] in (2, 4) else model['images']
     rows.extend((row['id'], row['image']) for row in table)
     total = 0
     results = []

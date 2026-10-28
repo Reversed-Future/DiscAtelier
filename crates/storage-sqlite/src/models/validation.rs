@@ -2,6 +2,8 @@
 //! Full upstream validation additionally runs in a worker before rendering.
 #[path = "validation_v3.rs"]
 mod v3;
+#[path = "validation_v4.rs"]
+mod v4;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use discatelier_contracts::AppError;
 use serde_json::Value;
@@ -96,10 +98,10 @@ pub fn validate(text: &str) -> Result<Metadata, AppError> {
     let value: Value = crate::profiling::measure("model.parse_json", || serde_json::from_str(text))
         .map_err(|_| invalid("模型文件不是有效的 JSON。"))?;
     if value["format"] != "atelier-interactive-model"
-        || !matches!(value["version"].as_u64(), Some(2 | 3))
+        || !matches!(value["version"].as_u64(), Some(2..=4))
     {
         return Err(invalid(
-            "请使用 AtelierPublisher 导出的 v2 或 v3 .ateliermodel 文件。",
+            "请使用 AtelierPublisher 导出的 v2、v3 或 v4 .ateliermodel 文件。",
         ));
     }
     label(&value["id"], 100)?;
@@ -162,14 +164,30 @@ pub fn validate(text: &str) -> Result<Metadata, AppError> {
             references(&node["mesh"]["materials"], &materials)?;
         }
     }
-    let states = table(&value["states"], 768)?;
-    let actions = table(&value["actions"], 4000)?;
+    validate_graph(&value, &nodes, 768, 4000)?;
+    if value["version"] == 4 {
+        v4::validate(&value, &nodes)?;
+    }
+    Ok(Metadata {
+        title,
+        preview: value["cover"].as_str().unwrap().to_owned(),
+    })
+}
+
+fn validate_graph(
+    value: &Value,
+    nodes: &HashMap<&str, &Value>,
+    max_states: usize,
+    max_actions: usize,
+) -> Result<(), AppError> {
+    let states = table(&value["states"], max_states)?;
+    let actions = table(&value["actions"], max_actions)?;
     if !states.contains_key(label(&value["initialState"], 160)?) {
         return Err(invalid("模型初始状态不存在。"));
     }
     for state in states.values() {
         for field in ["focus", "inspect", "view"] {
-            references(&state[field], &nodes)?;
+            references(&state[field], nodes)?;
         }
         let clicks = state["clicks"]
             .as_array()
@@ -194,13 +212,10 @@ pub fn validate(text: &str) -> Result<Metadata, AppError> {
         {
             return Err(invalid("模型动画时长无效。"));
         }
-        references(&action["focus"], &nodes)?;
-        references(&action["view"], &nodes)?;
+        references(&action["focus"], nodes)?;
+        references(&action["view"], nodes)?;
     }
-    Ok(Metadata {
-        title,
-        preview: value["cover"].as_str().unwrap().to_owned(),
-    })
+    Ok(())
 }
 
 #[cfg(test)]

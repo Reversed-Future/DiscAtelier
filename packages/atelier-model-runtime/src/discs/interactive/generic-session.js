@@ -1,3 +1,4 @@
+import {createIndependentControls} from './model/independent-controls.js';
 import * as THREE from './vendor/three.module.js';
 import {decodeNumbers,resolveActionTracks} from '../../../shared/model-v2.js';
 import {createPartControls} from './part-controls.js';
@@ -19,12 +20,14 @@ export function createGenericSession({viewer,asset,model,onChange=()=>{},onError
  const states=new Map(model.states.map(state=>[state.id,state]));
  const sources=new Map(model.actions.map(action=>[action.id,action]));
  const actions=new Map(model.actions.map(action=>[action.id,{...action,tracks:resolveActionTracks(action,sources).map(track=>({...track,values:decodeNumbers(track.values)}))}]));
- const readingFrame=createReadingFrames(asset.nodes,actions,applyTrack);
+ const independent=createIndependentControls(model);
+ const readingActions=new Map([...actions,...independent.actions.map((a,i)=>[`independent-${i}`,a])]);
+ const readingFrame=createReadingFrames(asset.nodes,readingActions,applyTrack);
  const initial=new Map([...asset.nodes].map(([id,node])=>[id,{position:node.position.clone(),quaternion:node.quaternion.clone(),scale:node.scale.clone(),weights:node.morphTargetInfluences?.slice(),visible:node.visible}]));
  let stateId=model.initialState,busy=false,disposed=false,held=null,history=[],cancelFrame,inspectionView=null,homeView;
  let partControls;
  function belongsTo(id,parent){for(let n=asset.nodes.get(id);n;n=n.parent)if(n===asset.nodes.get(parent))return true;return false;}
- const state=()=>({step:history.length,stateId,busy,held,accessible:[...asset.nodes.keys()],returns:(states.get(stateId).returns??[]).filter(r=>!held||belongsTo(r.target,held)||belongsTo(held,r.target))});
+ const state=()=>({step:history.length,stateId,busy,held,controllers:independent.snapshot(),accessible:[...asset.nodes.keys()],returns:(states.get(stateId).returns??[]).filter(r=>!held||belongsTo(r.target,held)||belongsTo(held,r.target))});
  const emit=()=>{if(!disposed){const s=state();partControls?.update(s);onChange(s);}};
  function animate(duration,apply){
   if(disposed)return Promise.reject(Error('Session disposed'));
@@ -64,8 +67,15 @@ export function createGenericSession({viewer,asset,model,onChange=()=>{},onError
   });viewer.controls.update();
  }
  async function pick(id){return locked(async()=>{
+  const localAction=await independent.pick(id,stateId,async action=>{
+   if(!action.keepFocus)await exitInspection();
+   await play(action);
+   if(!action.keepFocus)await frame(action.view);
+  });
+  if(localAction)return;
   const current=states.get(stateId),click=current.clicks.find(click=>click.target===id);
   if(click){const action=actions.get(click.action);
+   await independent.beforeTransition(stateId,action.to,async(a,reverse)=>{await exitInspection();await play(a,reverse);});
    if(action.keepFocus){if(action.focus?.length&&held!==action.focus[0]){if(!held)inspectionView=viewer.snapshot();held=action.focus[0];await focus(action.focus);}await play(action);stateId=action.to;if(action.refitFocus)await focus(action.focus);return;}
    await exitInspection();if(action.focus)await focus(action.focus);await play(action);history.push(action.id);stateId=action.to;
    const next=states.get(stateId);if(model.navigation?.followActions){visibleFor(next.focus);await frame(action.view);}else if(model.navigation?.preserveOverview&&!current.focus.length&&!next.focus.length){visibleFor([]);}else await focus(next.focus);
@@ -79,7 +89,8 @@ export function createGenericSession({viewer,asset,model,onChange=()=>{},onError
  async function putBack(target){return locked(async()=>{
   const option=states.get(stateId).returns?.find(r=>r.target===target);if(!option)return;
   await exitInspection();visibleFor([]);
-  for(const step of option.steps){const action=actions.get(step.action);await frame(action.view??[target]);await play(action,!!step.reverse);stateId=step.reverse?action.from:action.to;}
+  await independent.returnPart(target,play);
+  for(const step of option.steps){const action=actions.get(step.action);await frame(action.view??[target]);await independent.beforeTransition(stateId,step.reverse?action.from:action.to,play);await play(action,!!step.reverse);stateId=step.reverse?action.from:action.to;}
   // The return is a state transition, not a rewind of unrelated user actions.
   history=[];await frame(actions.get(option.steps.at(-1).action).view??[target]);
  });}
@@ -87,6 +98,7 @@ export function createGenericSession({viewer,asset,model,onChange=()=>{},onError
   const view=viewer.snapshot(),atHome=view.position.distanceToSquared(homeView.position)<1e-8&&view.target.distanceToSquared(homeView.target)<1e-8&&view.up.distanceToSquared(homeView.up)<1e-8;
   if(stateId===model.initialState&&!held&&!history.length&&atHome)return;
   await exitInspection();inspectionView=null;
+  await independent.reset(play);
   if(model.navigation?.stateReset){
    let assemblyView=false;
    while(stateId!==model.initialState){const spec=states.get(stateId).reset,action=actions.get(spec.action);if(model.navigation.followActions){visibleFor([]);await frame(action.view);}else if(!spec.reverse)await focus(states.get(stateId).focus.length?states.get(stateId).focus:action.focus??states.get(action.to).focus);else {visibleFor([]);if(!assemblyView){viewer.restore(homeView);assemblyView=true;}}await play(action,!!spec.reverse);stateId=spec.reverse?action.from:action.to;}

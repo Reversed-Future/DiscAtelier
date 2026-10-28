@@ -31,7 +31,7 @@ description: 从实物、几何与贴图，到可以取出、翻页与收起的�
 ## 适用版本 {#baseline}
 
 
-本指南适用于 **DiscAtelier 0.2.0**。入门包包含模型制作工具、运行库、教学样例和校验脚本，可从零开始制作自己的实体模型。
+本指南适用于 **DiscAtelier 0.2.3**。入门包包含模型制作工具、运行库、教学样例和校验脚本，可从零开始制作自己的实体模型。
 
 
 首次制作可从[入门教程](quickstart.html)开始，也可以使用 [AI 制作 Skill 与提示词](ai-authoring.html)。已有制作经验时，可直接查阅[格式参考](format.html)和[导入检查](validation.html)。

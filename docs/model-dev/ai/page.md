@@ -14,7 +14,7 @@ description: 完整 Skill、制作工具与可直接复制的任务提示词。
 - <a href="downloads/AI-PROMPTS.md" download>下载通用提示词</a>：适合粘贴给不支持 Skill 的 AI。
 - [单独下载制作入门包](downloads/discatelier-model-starter.zip)：手动制作或给已有工具的 AI 使用。
 
-Skill 名称为 **`discatelier-model-author`**，适用于 DiscAtelier 0.2.0 的模型制作、修正和检查。
+Skill 名称为 **`discatelier-model-author`**，适用于 DiscAtelier 0.2.3 的模型制作、修正和检查。
 
 ## 在支持 Skill 的客户端使用 {#use-skill}
 
@@ -40,3 +40,5 @@ Skill 名称为 **`discatelier-model-author`**，适用于 DiscAtelier 0.2.0 的
 应拿到实际 `.ateliermodel`、制作源、可运行预览、最终哈希和检查记录。报告要分清文件校验、真实渲染、桌面上传保存重开与实物认可。只给效果截图、说“JSON 没问题”、或把版本号改为 V3，都不足以证明可导入。
 
 收到模型后，按[验证与导入](validation.html)检查导出文件与实际操作。有问题时将具体步骤、截图或报错交给 AI，使用上面的“修正已有模型”提示词继续调整。
+
+本次 Skill 已包含完整曲边校正、白边保留、分切页、真实表面点击、最终包哈希与交付副本核验。V4 使用独立控制器，旧版不会自动获得支持；请同时阅读 [V4 独立控制器](v4.html)。

@@ -11,7 +11,7 @@ description: 图片、几何、状态图和动画预算。
 
 <table><thead><tr><th>项目</th><th>当前边界</th></tr></thead><tbody><tr><td>完整 UTF-8 JSON</td><td>≤ 50 × 1024² 字节（50 MiB）</td></tr><tr><td>每个图片 data URI</td><td>≤ 16 × 1024² 字符，包含前缀和 Base64</td></tr><tr><td>实际图片宽／高</td><td>各 ≤ 8192</td></tr><tr><td>原生单次图片解码分配</td><td>128 MiB 预算</td></tr><tr><td>封面与图片合计</td><td>≤ 192 × 1024² 像素</td></tr><tr><td>格式</td><td>内置 PNG／WebP，真实解码必须通过</td></tr></tbody></table>
 
-V2 按 cover 加 scene.textures 每项计数；V3 按 cover 加 images 计数，贴图别名不重复计数。入门包的 Pillow 预检还按 RGBA 做保守估算；它不是原生分配器的逐字节模拟。
+V2/V4 按 cover 加 scene.textures 每项计数；V3 按 cover 加 images 计数，贴图别名不重复计数。入门包的 Pillow 预检还按 RGBA 做保守估算；它不是原生分配器的逐字节模拟。
 
 
 ## V2 场景与动画 {#v2}
@@ -25,4 +25,8 @@ V2 按 cover 加 scene.textures 每项计数；V3 按 cover 加 images 计数，
 ## 兼容边界 {#compatibility}
 
 
-DiscAtelier 支持 V2 和已注册结构的 V3，不支持 V1。OBJ／GLB／FBX 需要先转换为符合要求的 .ateliermodel。模型包只包含数据与内置资源；导入前请确认所用软件版本支持对应的格式和结构。
+DiscAtelier 0.2.3 支持 V2、已注册结构的 V3 和独立控制器 V4，不支持 V1。OBJ／GLB／FBX 需要先转换为符合要求的 .ateliermodel。模型包只包含数据与内置资源；导入前请确认所用软件版本支持对应的格式和结构。
+
+## V4 状态预算
+
+控制器最多 8 个，每个最多 2048 状态、10000 动作；与整套装配合计最多 8192 状态、24000 动作。场景及整套装配沿用 V2 限额。详情见 [V4 独立控制器](v4.md)，运行实际校验器核对引用、归属和收回路径。

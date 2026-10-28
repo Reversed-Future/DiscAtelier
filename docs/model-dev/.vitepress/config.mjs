@@ -17,7 +17,7 @@ export default defineConfig({
   themeConfig: {
     siteTitle: 'DiscAtelier 模型开发', sidebar,
     nav: [{text: '开发指南', link: '/'}, {text: 'AI 制作', link: '/ai-authoring'},
-      {text: '0.2.1', link: '/limits'}],
+      {text: '0.2.3', link: '/limits'}],
     outline: {level: [2, 3], label: '本页内容'},
     docFooter: {prev: '上一页', next: '下一页'},
     sidebarMenuLabel: '目录', returnToTopLabel: '返回顶部', darkModeSwitchLabel: '主题',
@@ -26,6 +26,6 @@ export default defineConfig({
       modal: {displayDetails: '显示详情', resetButtonTitle: '清空搜索', backButtonTitle: '关闭搜索',
         noResultsText: '没有相关结果', footer: {selectText: '选择', navigateText: '切换', closeText: '关闭'}}
     }}}}},
-    footer: {message: '模型制作工具遵循随包许可证', copyright: '适用于 DiscAtelier 0.2.0–0.2.1'}
+    footer: {message: '模型制作工具遵循随包许可证', copyright: '适用于 DiscAtelier 0.2.3'}
   }
 });

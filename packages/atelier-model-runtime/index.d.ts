@@ -1,4 +1,5 @@
 export interface ModelState {
+  controllers?: Record<string,string>;
   step: number; stateId: string; busy: boolean; held: string | null;
   returns: {target: string; label: string}[];
   assembly?: {
@@ -8,7 +9,7 @@ export interface ModelState {
   };
 }
 export interface ModelPackage {
-  version: 2 | 3; id: string; title: string; creator: string; cover: string;
+  version: 2 | 3 | 4; id: string; title: string; creator: string; cover: string;
   initialState?: string;
 }
 export interface ModelHandle {
