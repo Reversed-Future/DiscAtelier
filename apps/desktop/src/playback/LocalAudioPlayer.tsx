@@ -82,7 +82,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
     if (tracks[index]) void player.startLocal(copyId, tracks[index].path, !keepDock);
   }
 
-  useSystemMediaSource(player, { title: currentTitle || player.snapshot?.title || '', artist: copy?.edition.creator || '', album: copy?.edition.title || '', previous: current > 0 ? () => play(current - 1, !player.open) : undefined, next: current >= 0 && current < tracks.length - 1 ? () => play(current + 1, !player.open) : undefined });
+  useSystemMediaSource(player, { repeat, setRepeat, title: currentTitle || player.snapshot?.title || '', artist: copy?.edition.creator || '', album: copy?.edition.title || '', previous: current > 0 ? () => play(current - 1, !player.open) : undefined, next: current >= 0 && current < tracks.length - 1 ? () => play(current + 1, !player.open) : undefined });
 
   if (!player.snapshot || source?.mediaToken !== 'local-audio') return null;
 

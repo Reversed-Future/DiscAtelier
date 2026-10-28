@@ -17,6 +17,7 @@ impl Player {
         track: Option<u8>,
         bluray_menu: bool,
         silent: bool,
+        fade_in: bool,
     ) -> Result<Self, AppError> {
         let api = Api::load(path)?;
         let location = CString::new(location).map_err(|_| ffi::error("光盘路径无效。"))?;
@@ -64,6 +65,9 @@ impl Player {
             (player.api.libvlc_video_set_mouse_input)(handle, 1);
             (player.api.libvlc_video_set_key_input)(handle, 0);
             (player.api.libvlc_media_player_set_video_title_display)(handle, -1, 0);
+            if fade_in && (player.api.libvlc_audio_set_volume)(handle, 0) != 0 {
+                return Err(ffi::error("无法初始化音乐音量。"));
+            }
             if (player.api.libvlc_media_player_play)(handle) != 0 {
                 return Err(ffi::error("无法开始光盘播放。"));
             }

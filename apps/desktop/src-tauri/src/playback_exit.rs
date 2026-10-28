@@ -27,7 +27,13 @@ pub fn event(app: &tauri::AppHandle, event: &tauri::RunEvent) {
             label,
             event: tauri::WindowEvent::CloseRequested { api, .. },
             ..
-        } if label == "main" => api.prevent_close(),
+        } if label == "main" => {
+            api.prevent_close();
+            if !state.is_closing() {
+                crate::desktop_shell::request_close(app);
+            }
+            return;
+        }
         tauri::RunEvent::ExitRequested { api, .. } => api.prevent_exit(),
         _ => return,
     }

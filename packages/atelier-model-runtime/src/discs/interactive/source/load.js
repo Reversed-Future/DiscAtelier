@@ -23,9 +23,10 @@ export async function loadSource(model,{signal}={}) {
   signal?.throwIfAborted();const resources=sourceResources(model,signal);let root,animations=[],disposed=false;
   const dispose=()=>{if(disposed)return;disposed=true;disposeObject(root);resources.dispose();};
   try {
-    if(model.sourceFormat==='glb') {
+    await resources.prepare();
+    if(model.sourceFormat==='glb'||model.sourceFormat==='skp') {
       const {GLTFLoader}=await import('../vendor/source/loaders/GLTFLoader.js');signal?.throwIfAborted();
-      const data=resources.bytes(model.main);checkGLB(data);
+      const data=resources.bytes(model.sourceFormat==='skp'?'__discatelier/sketchup.glb':model.main);checkGLB(data);
       const gltf=await new GLTFLoader(resources.manager).parseAsync(data.buffer,'');root=gltf.scene;animations=gltf.animations;
 
     } else if(model.sourceFormat==='obj') {

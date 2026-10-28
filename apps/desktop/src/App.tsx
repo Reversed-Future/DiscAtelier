@@ -1,3 +1,6 @@
+import { ContextMenu, type ContextAction } from './ui/ContextMenu';
+import { DeleteCollection } from './collection/DeleteCollection';
+import { DesktopShell } from './shell/DesktopShell';
 import { useVideoMetadata } from './video/useVideoMetadata';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
@@ -48,6 +51,7 @@ export function App() {
   const [selectedId, setSelectedId] = useState('');
   const [inspected, setInspected] = useState<LibraryCopy | null>(null);
   const [add, setAdd] = useState<{ existing?: LibraryCopy } | null>(null);
+  const [deletingCopy, setDeletingCopy] = useState<LibraryCopy | null>(null);
   const [editing, setEditing] = useState<LibraryCopy | null>(null);
   const [notice, setNotice] = useState('');
   const [assistantOpen, setAssistantOpen] = useState(false);
@@ -176,6 +180,26 @@ export function App() {
   const artwork = useCollectionArtwork(current, modelActive, !!inspected, currentVideo.value, partId, instantFlip);
   return <div className="workspace" data-list={organize}>
     <WindowChrome/>
+    <DesktopShell player={player} onSettings={() => setSettingsPage('home')}/>
+    <ContextMenu onError={notify} actions={target => {
+      const id = target.closest<HTMLElement>('[data-collection-id]')?.dataset.collectionId;
+      const item = id ? items.find(value => value.id === id) : null;
+      if (item) return [
+        { label: '查看收藏', run: () => setInspected(item) },
+        { label: '编辑版本', run: () => setEditing(item) },
+        { label: '复制名称', run: () => navigator.clipboard.writeText(`${item.edition.title} ${item.edition.creator}`.trim()) },
+        { label: '删除收藏', separator: true, run: () => setDeletingCopy(item) },
+      ];
+      const actions: ContextAction[] = [];
+      if (!target.closest('dialog, input, textarea, [contenteditable="true"]')) {
+        if (player.active) actions.push({ label: '打开播放界面', run: player.show });
+        actions.push({ label: '设置', run: () => setSettingsPage('home') });
+      }
+      return actions;
+    }}/>
+    {deletingCopy && <DeleteCollection item={deletingCopy} onClose={() => setDeletingCopy(null)} onDeleted={async () => {
+      snapshots.current.clear(); setInspected(null); setSelectedId(''); await refresh(query); notify('已删除');
+    }}/>}
     <StartupUpdateNotice hidden={player.open || !!settingsPage} onReview={() => setSettingsPage('about')}/>
     <header className="topbar" inert={player.open} data-window-drag="true">
       <div className="wordmark"><span className="disc-mark"/>DiscAtelier<span className="wordmark-dot">.</span></div>

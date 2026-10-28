@@ -3,9 +3,12 @@ import {createViewer} from './model/viewer.js';
 import {createGenericAsset} from './generic-asset.js';
 import {createGenericSession} from './generic-session.js';
 import {prepareRenderer} from './prepare-renderer.js';
+import {createLoadBudget} from './load-work.js';
 
 export async function mountModel(host,model,{signal,onChange,onError,interactive=true}={}){
  signal?.throwIfAborted();
+ const checkpoint=createLoadBudget(signal);
+ await checkpoint(true);
  let session,asset;
  const viewer=createViewer(host,(id,book)=>session?.pick(id,book).catch(()=>{}),{interactive});
  let disposed=false;
@@ -29,6 +32,7 @@ export async function mountModel(host,model,{signal,onChange,onError,interactive
   // Submit shader compilation together before the first draw; avoid serial
   // compile-status waits in render. No quality or material variants are changed.
   const compileStart=performance.now();
+  await checkpoint(true);
   await prepareRenderer(viewer.renderer,viewer.scene,viewer.camera,{signal});
   performance.measure('model.display_compile',{start:compileStart,end:performance.now()});
   signal?.throwIfAborted();

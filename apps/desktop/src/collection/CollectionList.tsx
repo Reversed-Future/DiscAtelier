@@ -31,7 +31,7 @@ export function CollectionList({items,inspect,move}: {items:LibraryCopy[];inspec
   return <div className="organizer" aria-busy={busy}>
     {error && <p className="form-error" role="alert">{error}</p>}
     <table><thead><tr><th>收藏</th><th>载体</th><th>状态</th><th>价格</th></tr></thead><tbody>
-      {items.map((item,index) => <tr key={item.id} data-drop={over?.id === item.id ? over.after ? 'after' : 'before' : undefined}
+      {items.map((item,index) => <tr key={item.id} data-collection-id={item.id} data-drop={over?.id === item.id ? over.after ? 'after' : 'before' : undefined}
         onDragOver={event => {if (!dragging.current || pending.current) return;event.preventDefault();event.dataTransfer.dropEffect='move';const rect=event.currentTarget.getBoundingClientRect();setOver({id:item.id,after:event.clientY > rect.top+rect.height/2});}}
         onDrop={event => {event.preventDefault();const id=dragging.current;if (!id) return;const rect=event.currentTarget.getBoundingClientRect();const after=event.clientY > rect.top+rect.height/2;void save(id,after ? items[index+1]?.id || null : item.id);}}>
         <td><div className="organizer-title-cell">

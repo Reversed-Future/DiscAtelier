@@ -6,6 +6,7 @@ import { readCover } from '../library/artwork';
 import { type VideoCharacter, type VideoChapter, type VideoFact, type VideoMetadata, type VideoWork } from '../video/gateway';
 import { videoWorks } from '../video/sources';
 import { TrackMultiSelect } from './TrackMultiSelect';
+import { Select } from '../ui/Select';
 import { ContentEditorTable } from './ContentEditorTable';
 import { MusicTrackEditor } from './MusicTrackEditor';
 import { changeContentTracks, creditSelection, creditTrackOptions } from '../metadata/creditTracks';
@@ -83,7 +84,7 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
   return <section className="content-editor">
     <p className="setting-hint">编辑已保存的作品、人物、角色和章节。角色头像可以填网络地址，也可以从本地选择图片；本地头像只保存在这份收藏资料里。</p>
     <div className="content-editor-scroll">
-      {works.length > 1 && <label>编辑作品<select value={selected} onChange={e => setSelected(Number(e.target.value))}>{works.map((row, i) => <option key={`${row.source}:${row.externalId}`} value={i}>{row.title}</option>)}</select></label>}
+      {works.length > 1 && <label>编辑作品<Select label="编辑作品" value={String(selected)} onChange={value => setSelected(Number(value))} options={works.map((row, i) => ({id:String(i),label:row.title}))}/></label>}
       <label>标题<input value={work.title} onChange={e => updateWork({ title: e.target.value })}/></label>
       <label>原名<input value={work.originalTitle} onChange={e => updateWork({ originalTitle: e.target.value })}/></label>
       <label>简介<textarea rows={4} value={work.summary} onChange={e => updateWork({ summary: e.target.value })}/></label>
@@ -99,7 +100,7 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
 
       <div className="content-editor-heading"><h3>图片</h3><button type="button" className="text-button" onClick={() => updateWork({ images: [...images, { kind: 'backdrop', url: '', previewUrl: '', width: 1, height: 1, language: '' }] })}>添加</button></div>
       <ContentEditorTable kind="images"><thead><tr><th>类型</th><th>地址</th><th>预览地址</th><th>语言</th><th>宽</th><th>高</th><th/></tr></thead><tbody>
-        {images.map((row, i) => <tr key={i}><td><select value={row.kind} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, kind: e.target.value as 'poster' | 'backdrop' } : image) })}><option value="poster">poster</option><option value="backdrop">backdrop</option></select></td><td><input value={row.url} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, url: e.target.value } : image) })}/></td><td><input value={row.previewUrl} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, previewUrl: e.target.value } : image) })}/></td><td><input value={row.language} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, language: e.target.value } : image) })}/></td><td><input type="number" min="1" value={row.width} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, width: Number(e.target.value) } : image) })}/></td><td><input type="number" min="1" value={row.height} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, height: Number(e.target.value) } : image) })}/></td><td><button type="button" className="text-button" onClick={() => updateWork({ images: images.filter((_, at) => at !== i) })}>移除</button></td></tr>)}
+        {images.map((row, i) => <tr key={i}><td><Select label={`第 ${i + 1} 张图片类型`} value={row.kind} options={[{id:'poster',label:'海报'},{id:'backdrop',label:'剧照'}]} onChange={value => { if (value === 'poster' || value === 'backdrop') updateWork({ images: images.map((image, at) => at === i ? { ...image, kind: value } : image) }); }}/></td><td><input value={row.url} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, url: e.target.value } : image) })}/></td><td><input value={row.previewUrl} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, previewUrl: e.target.value } : image) })}/></td><td><input value={row.language} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, language: e.target.value } : image) })}/></td><td><input type="number" min="1" value={row.width} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, width: Number(e.target.value) } : image) })}/></td><td><input type="number" min="1" value={row.height} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, height: Number(e.target.value) } : image) })}/></td><td><button type="button" className="text-button" onClick={() => updateWork({ images: images.filter((_, at) => at !== i) })}>移除</button></td></tr>)}
         {!images.length && <tr className="content-editor-ghost">
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>

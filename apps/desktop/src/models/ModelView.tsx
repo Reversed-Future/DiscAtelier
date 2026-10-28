@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { mountModel, type ModelHandle, type ModelState } from '../../../../packages/atelier-model-runtime';
-import { loadModel } from './assets';
+import { type ModelHandle, type ModelState } from '../../../../packages/atelier-model-runtime';
+import { mountCollectionModel } from './render-client';
 import { measureAsync } from './timing';
 import { errorMessage } from '../library/gateway';
+import { Select } from '../ui/Select';
 
 interface ModelViewProps {
   assetId: string; fallback: ReactNode; interactive?: boolean; enabled?: boolean; visible?: boolean;
@@ -27,12 +28,15 @@ function ModelSession({ assetId, fallback, interactive = false, enabled = true, 
     setLoaded(false); setError(''); setState(null);
     async function start() {
       try {
-        const model = await measureAsync('display_load', () => loadModel(assetId, controller.signal));
-        controller.signal.throwIfAborted();
-        const mounted = await measureAsync('display_mount', () => mountModel(host.current!, model, {
+        const mounted = await measureAsync('display_worker', () => mountCollectionModel(host.current!, assetId, {
           interactive: interaction.current, signal: controller.signal,
           onChange: next => { if (!controller.signal.aborted) { setState(next); callbacks.current.onBusy?.(next.busy); } },
           onError: cause => { if (!controller.signal.aborted) setError(errorMessage(cause)); },
+          onFailure: cause => {
+            if (controller.signal.aborted) return;
+            handle.current = null; setLoaded(false); setState(null); setError(errorMessage(cause));
+            callbacks.current.onReady?.(null); callbacks.current.onBusy?.(false);
+          },
         }));
         if (controller.signal.aborted) { mounted.dispose(); return; }
         handle.current = mounted; mounted.setInteractive(interaction.current); callbacks.current.onReady?.(mounted); setLoaded(true);
@@ -64,10 +68,7 @@ function ModelSession({ assetId, fallback, interactive = false, enabled = true, 
       {state?.source && <>
         <button type="button" className="text-button" onClick={() => void handle.current?.reset()}>重置视角</button>
         {state.source.clips.length > 0 && <>
-          <select aria-label="模型动画" value={state.source.selected} onChange={event => void handle.current?.act(event.target.value)}>
-            <option value="" disabled>选择动画</option>
-            {state.source.clips.map(clip => <option key={clip.id} value={clip.id}>{clip.label}</option>)}
-          </select>
+          <Select label="模型动画" value={state.source.selected} options={[{id:'',label:'选择动画'}, ...state.source.clips]} onChange={value => { if (value) void handle.current?.act(value); }}/>
           {state.source.selected && <>
             <button type="button" className="text-button" onClick={() => void handle.current?.act('pause')}>{state.source.playing ? '暂停' : '播放'}</button>
             <button type="button" className="text-button" onClick={() => void handle.current?.act('stop')}>停止动画</button>

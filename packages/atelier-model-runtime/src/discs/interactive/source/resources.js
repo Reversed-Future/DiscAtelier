@@ -1,8 +1,20 @@
 import {LoadingManager} from '../vendor/three.module.js';
 import {resourcePath} from '../../../../shared/source-model.js';
+import {createLoadBudget,decodeBase64InSlices} from '../load-work.js';
 
 export function sourceResources(model, signal) {
   const files = new Map(model.files.map(file => [file.path, file.content]));
+  const decoded = new Map();
+  async function prepare() {
+    const checkpoint = createLoadBudget(signal);
+    await checkpoint(true);
+    for (const [path, content] of files) {
+      // The original SKP is retained for export; only its converted GLB is rendered.
+      if (model.sourceFormat === 'skp' && path === model.main) continue;
+      const data = await decodeBase64InSlices(content, checkpoint);
+      signal?.throwIfAborted(); decoded.set(path, data);
+    }
+  }
   const urls = new Map(), owned = new Set(); let resolve, reject, disposed = false;
   const complete = new Promise((yes,no) => {resolve=yes;reject=no;});
   // A loader can fail synchronously before its image requests finish.
@@ -12,6 +24,7 @@ export function sourceResources(model, signal) {
   const abort = () => reject(signal.reason);
   signal?.addEventListener('abort', abort, {once:true});
   function bytes(path) {
+    if (decoded.has(resourcePath(path))) return decoded.get(resourcePath(path));
     const value = files.get(resourcePath(path));
     if (value === undefined) throw Error(`缺少关联资源：${path}`);
     return Uint8Array.from(atob(value), ch => ch.charCodeAt(0));
@@ -29,6 +42,6 @@ export function sourceResources(model, signal) {
   });
   // FBX embedded images also register URLs that are not necessarily referenced by a mesh.
   manager.sourceObjectURL = blob => {const url=URL.createObjectURL(blob);owned.add(url);return url;};
-  function dispose() {disposed=true;signal?.removeEventListener('abort',abort);for(const url of owned)URL.revokeObjectURL(url);owned.clear();}
-  return {manager,bytes,text,async finish(){manager.itemEnd('source-parse');await complete;signal?.throwIfAborted();},dispose};
+  function dispose() {disposed=true;signal?.removeEventListener('abort',abort);for(const url of owned)URL.revokeObjectURL(url);owned.clear();decoded.clear();}
+  return {manager,bytes,text,prepare,async finish(){manager.itemEnd('source-parse');await complete;signal?.throwIfAborted();decoded.clear();},dispose};
 }

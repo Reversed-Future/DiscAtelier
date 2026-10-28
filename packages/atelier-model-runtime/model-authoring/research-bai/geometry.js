@@ -21,7 +21,7 @@ export function sheet(p,parent,id,shape,front,back=front,thickness=paperThicknes
  }
 }
 export function materials(){
- const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const c=canvas.getContext('2d'),im=c.createImageData(128,128);let seed=2314;
+ const canvas=(typeof document==='undefined'?new OffscreenCanvas(1,1):document.createElement('canvas'));canvas.width=canvas.height=128;const c=canvas.getContext('2d'),im=c.createImageData(128,128);let seed=2314;
  for(let i=0;i<im.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;const v=115+(seed%25);im.data.set([v,v,v,255],i);}c.putImageData(im,0,0);
  const grain=new THREE.CanvasTexture(canvas);grain.wrapS=grain.wrapT=THREE.RepeatWrapping;grain.repeat.set(6,6);
  return {caseBlack:new THREE.MeshStandardMaterial({color:'#080808',roughness:.83,bumpMap:grain,bumpScale:.008}),navy:new THREE.MeshStandardMaterial({color:'#151b31',roughness:.83,bumpMap:grain,bumpScale:.008}),orange:new THREE.MeshStandardMaterial({color:'#c4340d',roughness:.85}),white:new THREE.MeshStandardMaterial({color:'#eeeee4',roughness:.9}),rubber:new THREE.MeshStandardMaterial({color:'#080808',roughness:.95}),metal:new THREE.MeshPhysicalMaterial({color:'#ced2d2',metalness:1,roughness:.19,envMapIntensity:2})};

@@ -1,3 +1,4 @@
+import { TrayPanel } from './shell/TrayPanel';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { ExchangeProvider } from './exchange/ExchangeContext';
@@ -20,4 +21,4 @@ import './styles/integrations.css';
 import './styles/music-dock.css';
 import './styles/window-chrome.css';
 
-createRoot(document.getElementById('root')!).render(<ExchangeProvider><App/></ExchangeProvider>);
+createRoot(document.getElementById('root')!).render(location.hash === '#tray' ? <TrayPanel/> : <ExchangeProvider><App/></ExchangeProvider>);

@@ -2,6 +2,7 @@
 mod fbx;
 mod references;
 mod resources;
+mod skp;
 #[cfg(test)]
 mod tests;
 use super::validation::{self, Metadata};
@@ -59,6 +60,16 @@ pub fn prepare(path: &Path, source_format: &str) -> Result<PreparedModel, AppErr
         path: main.clone(),
         content: STANDARD.encode(&bytes),
     }];
+    if source_format == "skp" {
+        let render = skp::convert(&bytes)?;
+        if total + render.len() > RAW_LIMIT {
+            return Err(invalid("SKP 原文件与转换资源合计不能超过 50 MiB。"));
+        }
+        files.push(Resource {
+            path: skp::RENDER.into(),
+            content: STANDARD.encode(render),
+        });
+    }
     let mut seen = HashSet::from([main.clone()]);
     let mut pending: Vec<_> = references::collect(source_format, &bytes)?
         .into_iter()
@@ -113,7 +124,7 @@ pub fn validate(value: &serde_json::Value) -> Result<Metadata, AppError> {
         serde_json::from_value(value.clone()).map_err(|_| invalid("原格式模型记录无效。"))?;
     if source.format != "discatelier-source-model"
         || source.version != 1
-        || !matches!(source.source_format.as_str(), "glb" | "obj" | "fbx")
+        || !matches!(source.source_format.as_str(), "glb" | "obj" | "fbx" | "skp")
         || source.files.is_empty()
         || source.files.len() > 256
     {
@@ -140,6 +151,15 @@ pub fn validate(value: &serde_json::Value) -> Result<Metadata, AppError> {
     let main = decoded
         .get(&source.main)
         .ok_or_else(|| invalid("原格式模型缺少主文件。"))?;
+    if source.source_format == "skp" {
+        skp::header(main)?;
+        let render = decoded
+            .get(skp::RENDER)
+            .ok_or_else(|| invalid("SKP 缺少转换后的显示资源，请重新导入原文件。"))?;
+        if !references::collect("glb", render)?.is_empty() {
+            return Err(invalid("SKP 显示资源必须内嵌贴图。"));
+        }
+    }
     for name in references::collect(&source.source_format, main)? {
         let name = resources::relative(&name)?;
         let bytes = decoded

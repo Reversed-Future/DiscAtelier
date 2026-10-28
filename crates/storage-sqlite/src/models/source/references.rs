@@ -4,6 +4,10 @@ use serde_json::Value;
 
 pub(super) fn collect(format: &str, data: &[u8]) -> Result<Vec<String>, AppError> {
     match format {
+        "skp" => {
+            super::skp::header(data)?;
+            Ok(Vec::new())
+        }
         "glb" => glb(data),
         "fbx" => fbx::references(data),
         "obj" => Ok(text(data)?

@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {writeFile} from 'node:fs/promises';
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE);
+const browser=await chromium.launch({headless:true,channel:'msedge'});
+try{
+ const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
+ const failures=[];
+ page.on('pageerror',error=>failures.push(error.message));
+ await page.goto('http://127.0.0.1:7645/',{waitUntil:'networkidle'});
+ const video=page.locator('#intro-video');
+ await video.evaluate(v=>{v.muted=true;v.load();});
+ await page.waitForFunction(()=>document.querySelector('#intro-video').readyState>=2);
+ assert.equal(await video.evaluate(v=>v.duration),180);
+ await page.getByRole('button',{name:'音乐',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('#intro-video').currentTime>67);
+ assert.ok(await video.evaluate(v=>!v.paused));
+ await video.evaluate(v=>v.pause());
+ const captions=await video.evaluate(v=>v.textTracks.length);
+ assert.equal(captions,0);
+ assert.equal(await page.locator('video track').count(),0);
+ const manuscript=await page.getByRole('link',{name:'下载介绍稿 ↓'}).getAttribute('href');
+ const response=await page.request.get(new URL(manuscript,page.url()).href);
+ assert.ok(response.ok());
+ assert.match(await response.text(),/^# DiscAtelier 功能介绍稿/);
+ await page.getByRole('button',{name:'数据',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('#intro-video').currentTime>=158.98);
+ await video.evaluate(v=>v.pause());
+ assert.equal(failures.length,0);
+ const result={duration:180,browserPlayback:true,chapterSeek:true,captions,manuscriptDownload:true,errors:failures};
+ await writeFile('artifacts/product-launch/browser-video-verification.json',JSON.stringify(result,null,2));
+ console.log(JSON.stringify(result));
+}finally{await browser.close();}

@@ -3,9 +3,9 @@ import {THREE} from './surfaces.js';
 // Only microscopic fiber relief is textured. Cloth color carries no photographed
 // illumination: every broad highlight comes from geometry and scene lighting.
 export function silkMaterial(){
- const size=256,canvas=document.createElement('canvas');canvas.width=canvas.height=size;
+ const size=256,canvas=(typeof document==='undefined'?new OffscreenCanvas(1,1):document.createElement('canvas'));canvas.width=canvas.height=size;
  const context=canvas.getContext('2d'),pixels=context.createImageData(size,size);
- const roughCanvas=document.createElement('canvas');roughCanvas.width=roughCanvas.height=size;
+ const roughCanvas=(typeof document==='undefined'?new OffscreenCanvas(1,1):document.createElement('canvas'));roughCanvas.width=roughCanvas.height=size;
  const roughContext=roughCanvas.getContext('2d'),roughPixels=roughContext.createImageData(size,size);
  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
   const satin=(Math.floor(x/2)+2*Math.floor(y/2))%5;

@@ -1,0 +1,6 @@
+.app-context-menu { position: fixed; inset: auto; margin: 0; padding: 6px; min-width: 190px; max-width: calc(100vw - 16px); border: 1px solid var(--line); border-radius: 5px; background: #1b1b1b; color: var(--ink); box-shadow: 0 12px 40px #0006; opacity: 0; transform: translateY(3px); transition: opacity 130ms var(--ease), transform 130ms var(--ease), display 130ms allow-discrete, overlay 130ms allow-discrete; }
+.app-context-menu:popover-open { opacity: 1; transform: none; @starting-style { opacity: 0; transform: translateY(3px); } }
+.app-context-menu button { display: block; width: 100%; padding: 10px 14px; text-align: left; font-size: 12px; border-radius: 3px; }
+.app-context-menu button:hover, .app-context-menu button:focus-visible { background: #ffffff0c; outline: none; }
+.app-context-menu button[data-separator="true"] { margin-top: 5px; border-top: 1px solid var(--line); border-radius: 0; padding-top: 13px; }
+@media (prefers-reduced-motion: reduce) { .app-context-menu { transition: none; transform: none; } }

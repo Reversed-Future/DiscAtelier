@@ -14,7 +14,7 @@ pub fn choose(owner: usize) -> Result<Option<PathBuf>, AppError> {
         OFN_FILEMUSTEXIST, OFN_NOCHANGEDIR, OFN_PATHMUSTEXIST, OPENFILENAMEW,
     };
     let mut path = vec![0_u16; 32768];
-    let filter: Vec<u16> = "支持的三维模型\0*.ateliermodel;*.glb;*.obj;*.fbx\0DiscAtelier 拆装模型\0*.ateliermodel\0GLB 模型\0*.glb\0OBJ 模型\0*.obj\0FBX 模型\0*.fbx\0\0"
+    let filter: Vec<u16> = "支持的三维模型\0*.ateliermodel;*.glb;*.obj;*.fbx;*.skp\0DiscAtelier 拆装模型\0*.ateliermodel\0GLB 模型\0*.glb\0OBJ 模型\0*.obj\0FBX 模型\0*.fbx\0SketchUp 模型\0*.skp\0\0"
         .encode_utf16()
         .collect();
     let title: Vec<u16> = "选择模型\0".encode_utf16().collect();

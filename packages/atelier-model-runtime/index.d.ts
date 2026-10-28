@@ -14,7 +14,7 @@ export interface InteractiveModelPackage {
   initialState?: string;
 }
 export interface SourceModelPackage {
-  format: 'discatelier-source-model'; version: 1; sourceFormat: 'glb' | 'obj' | 'fbx';
+  format: 'discatelier-source-model'; version: 1; sourceFormat: 'glb' | 'obj' | 'fbx' | 'skp';
   title: string; main: string; cover: string; files: {path: string; content: string}[];
 }
 export type ModelPackage = InteractiveModelPackage | SourceModelPackage;

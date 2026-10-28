@@ -1,9 +1,10 @@
-name: Model documentation
+name: Product website and model documentation
 on:
   push:
     branches: [main]
     paths:
       - 'docs/model-dev/**'
+      - 'docs/site/**'
       - 'scripts/model-docs/**'
       - 'packages/atelier-model-runtime/**'
       - 'package.json'

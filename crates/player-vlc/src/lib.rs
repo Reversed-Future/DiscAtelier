@@ -1,4 +1,5 @@
 mod audio_cd;
+mod audio_fade;
 mod cd_metadata;
 pub use audio_cd::cd_track;
 pub use cd_metadata::read_cd_metadata;
@@ -110,6 +111,7 @@ pub fn capture_menu(
         None,
         source.playlist == BD_MENU,
         true,
+        false,
     )?;
     std::thread::sleep(wait);
     player.snapshot(output)

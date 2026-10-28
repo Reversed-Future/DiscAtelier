@@ -75,6 +75,7 @@ pub fn run(
         start.track,
         start.bluray_menu,
         start.silent,
+        crate::audio_fade::music(&snapshot.source) && !start.silent,
     )
     .and_then(|player| {
         let result = playing(
@@ -93,7 +94,9 @@ pub fn run(
         snapshot.phase = phase;
         result
     });
-    if let Err(error) = result {
+    if cancelled.load(Ordering::Acquire) {
+        snapshot.phase = PlaybackPhase::Stopped;
+    } else if let Err(error) = result {
         snapshot.phase = PlaybackPhase::Failed;
         snapshot.error = Some(error.message);
     } else if snapshot.phase.active() {
@@ -120,6 +123,8 @@ fn playing(
     let mut resume = start.title.map(|title| (title, false, Instant::now()));
     let mut loaded = false;
     let mut cd_resume = !start.dvd && start.seconds > 0.0;
+    let music = crate::audio_fade::music(&snapshot.source) && !start.silent;
+    let mut fade_in = music;
     loop {
         if cancelled.load(Ordering::Acquire) {
             return Ok(());
@@ -139,6 +144,15 @@ fn playing(
             return Ok(());
         }
         loaded |= state == 3 || state == 4;
+        if fade_in && state == 3 {
+            crate::audio_fade::ramp(
+                0,
+                snapshot.volume,
+                &mut |control| player.control(control, snapshot),
+                &mut || fade_wait(cancelled),
+            )?;
+            fade_in = false;
+        }
         if !loaded && started.elapsed() > Duration::from_secs(60) {
             return Err(ffi::error("媒体读取超时。"));
         }
@@ -249,6 +263,11 @@ fn playing(
                 } else {
                     None
                 };
+                let paused = if let PlaybackControl::Pause { paused } = &request.control {
+                    Some(*paused)
+                } else {
+                    None
+                };
                 let resets = matches!(
                     request.control,
                     PlaybackControl::Seek { .. }
@@ -260,7 +279,19 @@ fn playing(
                 let result = if resume.is_some() {
                     Err(ffi::error("正在恢复 DVD 标题。"))
                 } else {
-                    player.control(request.control, snapshot)
+                    match request.control {
+                        PlaybackControl::Volume { .. } if fade_in => Ok(()),
+                        PlaybackControl::Pause { paused } if music && loaded => {
+                            crate::audio_fade::pause(
+                                paused,
+                                snapshot.paused,
+                                snapshot.volume,
+                                |control| player.control(control, snapshot),
+                                || fade_wait(cancelled),
+                            )
+                        }
+                        control => player.control(control, snapshot),
+                    }
                 };
                 if result.is_ok() {
                     if let Some(volume) = volume {
@@ -272,6 +303,17 @@ fn playing(
                     if resets {
                         progress.reset_sample();
                     }
+                    if let Some(paused) = paused {
+                        snapshot.paused = paused;
+                        if loaded {
+                            snapshot.phase = if paused {
+                                PlaybackPhase::Paused
+                            } else {
+                                PlaybackPhase::Playing
+                            };
+                        }
+                    }
+                    publication.publish(snapshot, false);
                 }
                 let _ = request.reply.send(result);
             }
@@ -279,6 +321,14 @@ fn playing(
             Err(mpsc::RecvTimeoutError::Disconnected) => return Ok(()),
         }
     }
+}
+
+fn fade_wait(cancelled: &AtomicBool) -> Result<(), AppError> {
+    if cancelled.load(Ordering::Acquire) {
+        return Err(ffi::error("播放已停止。"));
+    }
+    std::thread::sleep(Duration::from_millis(crate::audio_fade::STEP_MS));
+    Ok(())
 }
 
 #[cfg(test)]

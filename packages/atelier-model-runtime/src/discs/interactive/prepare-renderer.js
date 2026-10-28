@@ -1,7 +1,10 @@
 import * as THREE from './vendor/three.module.js';
+import {createLoadBudget} from './load-work.js';
+import {prepareTextures} from './prepare-textures.js';
 
 export async function prepareRenderer(renderer, scene, camera, {signal} = {}) {
  signal?.throwIfAborted();
+ await prepareTextures(renderer,scene,{signal});
  await renderer.compileAsync(scene, camera);
  signal?.throwIfAborted();
  let transmission = false;
@@ -28,6 +31,7 @@ export async function prepareRenderer(renderer, scene, camera, {signal} = {}) {
 }
 
 async function prepareBindings(renderer, signal) {
+ const checkpoint=createLoadBudget(signal);
  // compileAsync waits for each material's last variant. Warm every submitted
  // program and its reflection data before draw calls start filling the GPU queue.
  const programs = [...renderer.info.programs];
@@ -37,6 +41,7 @@ async function prepareBindings(renderer, signal) {
  }
  signal?.throwIfAborted();
  for (const program of programs) {
+  await checkpoint();
   program.getUniforms(); program.getAttributes();
  }
 }

@@ -40,7 +40,7 @@ export function Browse({ items, selectedId, select, inspect, organize, modelActi
       {items.map((item, itemIndex) => {
         const distance = itemIndex - index;
         if (Math.abs(distance) > 3) return null;
-        return <button key={item.id} className={`record-sleeve${item.modelAssetId ? ' has-model' : ''}`} data-portrait={!item.modelAssetId && portraitCover(item.edition)} data-category={item.edition.categoryId} data-current={distance === 0} data-offstage={Math.abs(distance) > 2} inert={Math.abs(distance) > 2}
+        return <button key={item.id} data-collection-id={item.id} className={`record-sleeve${item.modelAssetId ? ' has-model' : ''}`} data-portrait={!item.modelAssetId && portraitCover(item.edition)} data-category={item.edition.categoryId} data-current={distance === 0} data-offstage={Math.abs(distance) > 2} inert={Math.abs(distance) > 2}
           aria-label={`${distance === 0 ? '取出' : '选择'} ${item.edition.title}`} tabIndex={distance === 0 ? 0 : -1}
           style={{ '--distance': distance, '--abs-distance': Math.abs(distance), '--direction': Math.sign(distance) } as CSSProperties}
           onClick={() => { if (dragged.current) { dragged.current = false; return; } setKeyNavigation(false); distance === 0 ? inspect(item) : select(item.id); }}>

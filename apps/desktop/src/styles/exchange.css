@@ -4,6 +4,18 @@
 .exchange-rate-row strong { font-weight: 400; }
 .exchange-rate-row small { color: var(--muted); font-size: 10px; }
 .exchange-rates { animation: settings-feedback-in 160ms var(--ease); }
+.exchange-dashboard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+.exchange-dashboard .exchange-rate-row { grid-template-columns: 65px minmax(0, 1fr); gap: 6px 10px; }
+.exchange-dashboard .exchange-rate-row small { grid-column: 2; }
+.exchange-calculator { border-left: 1px solid var(--line); padding-left: 28px; min-width: 0; }
+.exchange-calculator h4 { font-size: 12px; font-weight: 400; margin: 14px 0 20px; }
+.exchange-calculator input, .exchange-calculator .select-trigger { height: 40px; }
+.exchange-currencies { display: grid; grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr); align-items: end; gap: 8px; margin: 14px 0; }
+.exchange-calculator .exchange-currencies label { margin: 0; }
+.exchange-currencies > button { display: grid; place-items: center; height: 40px; padding: 0; margin: 0; }
+.exchange-currencies > button .icon { width: 16px; height: 16px; }
+.exchange-result { display: block; font-size: 24px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; margin-top: 20px; }
+@media (max-width: 700px) { .exchange-dashboard { grid-template-columns: 1fr; } .exchange-calculator { border-left: 0; border-top: 1px solid var(--line); padding: 12px 0 0; } }
 .exchange-source, .exchange-source:visited { color: var(--muted); text-decoration: none; transition: color 140ms ease; }
 .exchange-source:hover, .exchange-source:focus-visible { color: var(--ink); }
 @media (max-width: 650px) { .exchange-rate-row { grid-template-columns: 70px minmax(0, 1fr); gap: 8px; } .exchange-rate-row small { grid-column: 2; } }

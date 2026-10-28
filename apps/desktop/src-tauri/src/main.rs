@@ -8,6 +8,7 @@ mod cd_metadata;
 mod commands;
 mod credentials;
 mod data_location;
+mod desktop_shell;
 mod discogs;
 mod exchange;
 mod integration_settings;
@@ -123,9 +124,16 @@ fn main() {
             app.manage(menu_surface::MenuSurface::create().map_err(|error| error.message)?);
             app.manage(playback_exit::PlaybackExit::default());
             app.manage(system_media::State::default());
+            desktop_shell::setup(app.handle())?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            desktop_shell::window_close_preference,
+            desktop_shell::window_save_close_preference,
+            desktop_shell::window_finish_close,
+            desktop_shell::tray_sync,
+            desktop_shell::tray_snapshot,
+            desktop_shell::tray_action,
             netease_lyrics::netease_lyrics,
             system_media::system_media_sync,
             system_media::system_media_refresh,

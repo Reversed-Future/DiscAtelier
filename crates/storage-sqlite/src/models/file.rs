@@ -7,14 +7,14 @@ use std::{ffi::OsStr, fs::File, io::Read, path::Path};
 pub fn prepare(path: &Path) -> Result<PreparedModel, AppError> {
     let _total = profiling::Span::new("model.prepare_total");
     if path.is_absolute() {
-        if let Some(format @ ("glb" | "obj" | "fbx")) = path.extension().and_then(|s| s.to_str()) {
+        if let Some(format @ ("glb" | "obj" | "fbx" | "skp")) = path.extension().and_then(|s| s.to_str()) {
             return super::source::prepare(path, format);
         }
     }
     if !path.is_absolute() || path.extension() != Some(OsStr::new("ateliermodel")) {
         return Err(AppError::new(
             "model",
-            "请选择 .ateliermodel、.glb、.obj 或 .fbx 文件。",
+            "请选择 .ateliermodel、.glb、.obj、.fbx 或 .skp 文件。",
         ));
     }
     let text = profiling::measure("model.file_read", || -> Result<String, AppError> {

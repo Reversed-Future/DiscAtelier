@@ -5,7 +5,7 @@ import { desktopAvailable, errorMessage } from '../library/gateway';
 import type { Control, Snapshot } from './gateway';
 import type { MusicQueueController } from './useMusicQueue';
 
-export interface SystemMediaSource { sessionId: string; title: string; artist: string; album: string; previous?: () => void; next?: () => void }
+export interface SystemMediaSource { sessionId: string; title: string; artist: string; album: string; previous?: () => void; next?: () => void; repeat?: 'list' | 'one'; setRepeat?: (mode: 'list' | 'one') => void }
 interface MediaCommand { sessionId: string; action: 'play' | 'pause' | 'stop' | 'previous' | 'next' | 'seek'; seconds: number | null }
 export function useSystemMedia(snapshot: Snapshot | null, busy: boolean, control: (value: Control) => Promise<boolean>, queue: MusicQueueController) {
   const source = useRef<SystemMediaSource | null>(null), pending = useRef(false), mounted = useRef(true);

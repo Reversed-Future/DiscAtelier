@@ -6,12 +6,12 @@ import {fitParts} from './framing.js';
 
 export function createViewer(host,onPick,{interactive=true}={}){
   let dirty=true,started=false,enabled=interactive;
-  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+  const renderer=new THREE.WebGLRenderer({...(host.renderCanvas?{canvas:host.renderCanvas}:{}),antialias:true,alpha:true,powerPreference:'high-performance'});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;
   // This pinned Three version replaces PCFSoftShadowMap with PCFShadowMap on
   // first render. Use that same effective filter before compiling shaders.
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
-  const canvas=renderer.domElement;canvas.className='atelier-canvas';canvas.tabIndex=interactive?0:-1;canvas.setAttribute('aria-label','三维收藏：拖动旋转，滚轮缩放，方向键旋转，加减键缩放');host.prepend(canvas);
+  const canvas=host.inputElement??renderer.domElement;canvas.className='atelier-canvas';canvas.tabIndex=interactive?0:-1;canvas.setAttribute('aria-label','三维收藏：拖动旋转，滚轮缩放，方向键旋转，加减键缩放');host.prepend(canvas);
   const scene=new THREE.Scene(),root=new THREE.Group();root.rotation.x=-Math.PI/2;scene.add(root);
   const studio=new RoomEnvironment(),pmrem=new THREE.PMREMGenerator(renderer);
   const environment=pmrem.fromScene(studio,.04);scene.environment=environment.texture;scene.environmentIntensity=.45;studio.dispose();pmrem.dispose();
@@ -25,7 +25,8 @@ export function createViewer(host,onPick,{interactive=true}={}){
   controls.enabled=interactive;
   // Shared-object travel uses CSS transforms. Size the drawing buffer from the
   // layout box so an intermediate transform cannot lower inspection resolution.
-  const resize=()=>{dirty=true;const width=host.clientWidth,height=host.clientHeight;if(!width||!height)return;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();controls.handleResize();};const observer=new ResizeObserver(resize);observer.observe(host);resize();
+  const resize=()=>{dirty=true;const width=host.clientWidth,height=host.clientHeight;if(!width||!height)return;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();controls.handleResize();};
+  const observer=host.observeSize?{disconnect:host.observeSize(resize)}:new ResizeObserver(resize);if(!host.observeSize)observer.observe(host);resize();
   const updateClipping=createModelClipping(root,camera);
   function render(){controls.update();updateClipping();renderer.render(scene,camera);dirty=false;}
   const frameListeners=new Set();
@@ -33,6 +34,7 @@ export function createViewer(host,onPick,{interactive=true}={}){
   let raf=0;function draw(){if(started&&(enabled||dirty)){for(const fn of frameListeners)fn(performance.now());render();}raf=requestAnimationFrame(draw);}draw();
   function start(){render();started=true;}
   async function capturePreview(){
+    if(host.renderCanvas){render();const surface=host.renderCanvas;return {blob:await surface.convertToBlob({type:'image/png'}),width:surface.width,height:surface.height};}
     const copy=document.createElement('canvas');
     copy.width=canvas.width;copy.height=canvas.height;
     const context=copy.getContext('2d');
