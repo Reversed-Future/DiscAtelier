@@ -1,6 +1,6 @@
 ---
 title: GLB、OBJ、FBX 直接导入
-description: DiscAtelier 0.2.4 的原格式模型读取、资源路径和动画范围。
+description: DiscAtelier 0.3.0 的原格式模型读取、资源路径和动画范围。
 ---
 
 # GLB、OBJ、FBX 直接导入

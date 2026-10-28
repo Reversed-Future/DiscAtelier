@@ -56,6 +56,6 @@ makeModelPackage({
 
 ## 权威源码 {#source}
 
-<ul><li><a href="https://github.com/Reversed-Future/DiscAtelier/blob/v0.2.4/packages/atelier-model-runtime/index.js">公开适配入口：parseModel、mountModel</a></li><li><a href="https://github.com/Reversed-Future/DiscAtelier/blob/v0.2.4/packages/atelier-model-runtime/shared/model-v2.js">V2 精确校验规则</a></li><li><a href="https://github.com/Reversed-Future/DiscAtelier/blob/v0.2.4/crates/storage-sqlite/src/models/validation.rs">原生存储与图片校验</a></li></ul>
+<ul><li><a href="https://github.com/Reversed-Future/DiscAtelier/blob/v0.3.0/packages/atelier-model-runtime/index.js">公开适配入口：parseModel、mountModel</a></li><li><a href="https://github.com/Reversed-Future/DiscAtelier/blob/v0.3.0/packages/atelier-model-runtime/shared/model-v2.js">V2 精确校验规则</a></li><li><a href="https://github.com/Reversed-Future/DiscAtelier/blob/v0.3.0/crates/storage-sqlite/src/models/validation.rs">原生存储与图片校验</a></li></ul>
 
 入门包同时含本地源码。摘要无法代替完整校验；尤其 JS 长度按 UTF-16 计数，Rust 文本检查另有字符与空字符约束，应同时通过两层检查。

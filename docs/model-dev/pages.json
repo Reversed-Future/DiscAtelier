@@ -21,7 +21,7 @@
     "id": "source-models",
     "group": "开始",
     "title": "直接导入三维文件",
-    "summary": "0.2.4：GLB、OBJ、FBX 资源和动画。"
+    "summary": "0.3.0：GLB、OBJ、FBX 资源和动画。"
   },
   {
     "id": "physical",
