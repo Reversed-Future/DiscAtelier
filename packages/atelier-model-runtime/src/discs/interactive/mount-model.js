@@ -13,14 +13,17 @@ export async function mountModel(host,model,{signal,onChange,onError,interactive
  signal?.addEventListener('abort',dispose,{once:true});
  try{
   let loaded;
-  if(model.version===3){
+  if(model.format==='discatelier-source-model'){
+   const {createSourceSession}=await import('./source/session.js');
+   loaded=await createSourceSession({viewer,model,signal,onChange});
+  }else if(model.version===3){
    const {createAssemblyRuntime}=await import('./assembly/runtime.js');signal?.throwIfAborted();
    loaded=await createAssemblyRuntime({viewer,model,signal,onChange,onError});
   }else if(model.version===2||model.version===4)loaded=await createGenericAsset(viewer.renderer,model.scene,{signal});
   else throw Error('只支持 AtelierPublisher v2、v3 或 v4 模型。');
   if(disposed||signal?.aborted){loaded.dispose();signal?.throwIfAborted();throw Error('Model disposed');}
   asset=loaded;
-  if(model.version===3)session=asset;
+  if(model.version===3||model.format==='discatelier-source-model')session=asset;
   else{viewer.root.add(asset.root);session=createGenericSession({viewer,asset,model,onChange,onError});}
   viewer.setInteractive(interactive);
   // Submit shader compilation together before the first draw; avoid serial

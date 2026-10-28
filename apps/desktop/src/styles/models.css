@@ -19,3 +19,6 @@
 .model-controls button { font: inherit; font-size: 12px; background: var(--surface); color: var(--ink); padding: 8px 12px; border-radius: 6px; }
 .model-error { position: absolute; bottom: 8px; left: 16px; right: 16px; text-align: center; font-size: 12px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .model-host, .model-fallback { transition: none; } }
+
+.model-format-help { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 8px 0 0; }
+.model-controls select { max-width: 230px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); padding: 6px 10px; font: inherit; font-size: 12px; }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { validatePreparedModel, type ModelChange, type ModelPreparation } from './assets';
+import { prepareModelPreview } from './prepare-preview';
+import { type ModelChange, type ModelPreparation } from './assets';
 import { measureAsync } from './timing';
 import { errorMessage } from '../library/gateway';
 
@@ -18,7 +19,7 @@ export function ModelField({ value, title, onChange, onBusy, disabled }: {
     try {
       prepared = await measureAsync('native_prepare', () => invoke<ModelPreparation | null>('model_choose'));
       if (!prepared) return;
-      await measureAsync('worker_validate', () => validatePreparedModel(prepared!.token));
+      prepared = await measureAsync('worker_validate', () => prepareModelPreview(prepared!));
       onChange({ action: 'prepared', token: prepared.token, title: prepared.title });
       prepared = null; // The parent form now owns this preparation.
     } catch (cause) { setError(errorMessage(cause)); }
@@ -35,6 +36,7 @@ export function ModelField({ value, title, onChange, onBusy, disabled }: {
       {shownTitle && <><span className="model-file-title" title={shownTitle}>{shownTitle}</span>
         <button type="button" className="text-button" disabled={disabled || reading} onClick={() => { onChange({ action: 'remove' }); setError(''); }}>移除模型</button></>}
     </div>
+    <p className="model-format-help">支持 .ateliermodel、GLB、OBJ、FBX；模型与关联资源合计最多 50 MiB。OBJ/FBX 贴图需保持原相对路径。</p>
     {error && <p className="form-error" role="alert">{error}</p>}
   </div>;
 }

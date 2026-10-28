@@ -1,4 +1,4 @@
-"""Decode embedded images and check the documented DiscAtelier 0.2.3 budgets."""
+"""Decode embedded images and check the documented DiscAtelier 0.2.4 budgets."""
 import argparse
 import base64
 import hashlib

@@ -1,4 +1,5 @@
 export interface ModelState {
+  source?: { clips: {id: string; label: string}[]; selected: string; playing: boolean };
   controllers?: Record<string,string>;
   step: number; stateId: string; busy: boolean; held: string | null;
   returns: {target: string; label: string}[];
@@ -8,10 +9,15 @@ export interface ModelState {
     parts: {id: string; label: string}[];
   };
 }
-export interface ModelPackage {
+export interface InteractiveModelPackage {
   version: 2 | 3 | 4; id: string; title: string; creator: string; cover: string;
   initialState?: string;
 }
+export interface SourceModelPackage {
+  format: 'discatelier-source-model'; version: 1; sourceFormat: 'glb' | 'obj' | 'fbx';
+  title: string; main: string; cover: string; files: {path: string; content: string}[];
+}
+export type ModelPackage = InteractiveModelPackage | SourceModelPackage;
 export interface ModelHandle {
   reset(): Promise<void>;
   activate(target: string | null): Promise<void>;

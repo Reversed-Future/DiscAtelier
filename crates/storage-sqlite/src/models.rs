@@ -1,6 +1,7 @@
 //! Atomic model storage. Models and covers are independent version assets.
 pub mod file;
 pub mod prepared;
+pub mod source;
 mod validation;
 use crate::db_error;
 use discatelier_contracts::AppError;

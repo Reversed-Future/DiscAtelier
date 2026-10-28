@@ -61,6 +61,19 @@ function ModelSession({ assetId, fallback, interactive = false, enabled = true, 
     <div className="model-fallback" aria-hidden={displayed}>{fallback}</div>
     <div className="model-host" ref={host} aria-hidden={!interactive || !displayed} inert={!interactive || !displayed}/>
     {interactive && displayed && <div className="model-controls">
+      {state?.source && <>
+        <button type="button" className="text-button" onClick={() => void handle.current?.reset()}>重置视角</button>
+        {state.source.clips.length > 0 && <>
+          <select aria-label="模型动画" value={state.source.selected} onChange={event => void handle.current?.act(event.target.value)}>
+            <option value="" disabled>选择动画</option>
+            {state.source.clips.map(clip => <option key={clip.id} value={clip.id}>{clip.label}</option>)}
+          </select>
+          {state.source.selected && <>
+            <button type="button" className="text-button" onClick={() => void handle.current?.act('pause')}>{state.source.playing ? '暂停' : '播放'}</button>
+            <button type="button" className="text-button" onClick={() => void handle.current?.act('stop')}>停止动画</button>
+          </>}
+        </>}
+      </>}
       {state?.assembly?.actions.filter(action => ['decode', 'uncover'].includes(action.id) && !action.disabled).map(action => <button type="button" className="text-button" key={action.id} disabled={state.busy} onClick={() => void handle.current?.act(action.id).catch(() => {})}>{action.label}</button>)}
       {state?.returns.map(option => <button type="button" className="text-button" key={option.target} disabled={state.busy} onClick={() => void handle.current?.putBack(option.target).catch(() => {})}>{option.label}</button>)}
       {state?.held && <button type="button" className="text-button" disabled={state.busy} onClick={() => void handle.current?.exitInspection().catch(() => {})}>返回</button>}

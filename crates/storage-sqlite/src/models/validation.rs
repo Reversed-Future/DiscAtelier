@@ -30,7 +30,7 @@ fn add_pixels(pixels: &mut u64, width: u32, height: u32) -> Result<(), AppError>
     }
     Ok(())
 }
-fn label(value: &Value, max: usize) -> Result<&str, AppError> {
+pub(super) fn label(value: &Value, max: usize) -> Result<&str, AppError> {
     value
         .as_str()
         .filter(|s| !s.trim().is_empty() && s.chars().count() <= max && !s.contains('\0'))
@@ -49,7 +49,7 @@ fn table(value: &Value, max: usize) -> Result<HashMap<&str, &Value>, AppError> {
     }
     Ok(map)
 }
-fn image(value: &Value, pixels: &mut u64) -> Result<(), AppError> {
+pub(super) fn image(value: &Value, pixels: &mut u64) -> Result<(), AppError> {
     let _image = crate::profiling::Span::new("model.image_decode");
     let text = value
         .as_str()
@@ -92,11 +92,17 @@ fn references(value: &Value, nodes: &HashMap<&str, &Value>) -> Result<(), AppErr
     Ok(())
 }
 pub fn validate(text: &str) -> Result<Metadata, AppError> {
-    if text.len() > 50 * 1024 * 1024 {
+    if text.len() > super::source::TEXT_LIMIT {
         return Err(invalid("模型文件不能超过 50 MiB。"));
     }
     let value: Value = crate::profiling::measure("model.parse_json", || serde_json::from_str(text))
         .map_err(|_| invalid("模型文件不是有效的 JSON。"))?;
+    if value["format"] == "discatelier-source-model" {
+        return super::source::validate(&value);
+    }
+    if text.len() > 50 * 1024 * 1024 {
+        return Err(invalid("模型文件不能超过 50 MiB。"));
+    }
     if value["format"] != "atelier-interactive-model"
         || !matches!(value["version"].as_u64(), Some(2..=4))
     {

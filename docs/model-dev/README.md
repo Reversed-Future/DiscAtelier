@@ -2,7 +2,7 @@
 
 在线阅读：https://docs.reversed-future.com/disc-atelier/models/
 
-手册使用 VitePress，包含模型格式参考、制作流程、AI Skill 和入门包。模型契约适用于 DiscAtelier 0.2.3（V2/V3/V4；V4 自 0.2.3 起）。
+手册使用 VitePress，包含模型格式参考、制作流程、AI Skill 和入门包。模型契约适用于 DiscAtelier 0.2.4（V2/V3/V4；V4 自 0.2.3 起）。
 
 ## 本地预览
 

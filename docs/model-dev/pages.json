@@ -18,6 +18,12 @@
     "summary": "完整 Skill 下载、调用方式与可复制的任务提示词。"
   },
   {
+    "id": "source-models",
+    "group": "开始",
+    "title": "直接导入三维文件",
+    "summary": "0.2.4：GLB、OBJ、FBX 资源和动画。"
+  },
+  {
     "id": "physical",
     "group": "制作",
     "title": "测量与素材准备",

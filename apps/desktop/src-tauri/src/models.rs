@@ -47,6 +47,29 @@ pub async fn model_release(
     .await
 }
 
+#[tauri::command]
+pub async fn model_source_preview(
+    state: tauri::State<'_, LibraryState>,
+    token: String,
+    cover: String,
+) -> Result<ModelPreparation, AppError> {
+    let read_token = token.clone();
+    let text = commands::run(state.inner().clone(), move |service| {
+        service.prepared_model_data(&read_token)
+    })
+    .await?;
+    let model = tauri::async_runtime::spawn_blocking(move || {
+        discatelier_storage::prepare_source_model_preview(&text, &cover)
+    })
+    .await
+    .map_err(|_| AppError::new("model", "模型预览未完成。"))??;
+    commands::run(state.inner().clone(), move |service| {
+        service.release_model(&token)?;
+        service.stage_model(model)
+    })
+    .await
+}
+
 /// One-way raw transfer to the validation worker. Tokens resolve in-memory
 /// snapshots only, never filesystem paths; no cache survives the webview session.
 pub fn protocol(

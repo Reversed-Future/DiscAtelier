@@ -25,7 +25,7 @@ V2/V4 按 cover 加 scene.textures 每项计数；V3 按 cover 加 images 计数
 ## 兼容边界 {#compatibility}
 
 
-DiscAtelier 0.2.3 支持 V2、已注册结构的 V3 和独立控制器 V4，不支持 V1。OBJ／GLB／FBX 需要先转换为符合要求的 .ateliermodel。模型包只包含数据与内置资源；导入前请确认所用软件版本支持对应的格式和结构。
+DiscAtelier 0.2.4 支持 V2、已注册结构的 V3 和独立控制器 V4，不支持 V1。GLB／OBJ／FBX 可[直接导入](source-models.md)，资源和渲染限制见该页；不会自动生成拆装交互。模型包只包含数据与内置资源；导入前请确认所用软件版本支持对应的格式和结构。
 
 ## V4 状态预算
 

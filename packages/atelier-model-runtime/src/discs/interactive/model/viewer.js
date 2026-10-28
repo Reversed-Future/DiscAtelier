@@ -28,7 +28,9 @@ export function createViewer(host,onPick,{interactive=true}={}){
   const resize=()=>{dirty=true;const width=host.clientWidth,height=host.clientHeight;if(!width||!height)return;renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();controls.handleResize();};const observer=new ResizeObserver(resize);observer.observe(host);resize();
   const updateClipping=createModelClipping(root,camera);
   function render(){controls.update();updateClipping();renderer.render(scene,camera);dirty=false;}
-  let raf=0;function draw(){if(started&&(enabled||dirty))render();raf=requestAnimationFrame(draw);}draw();
+  const frameListeners=new Set();
+  function addFrameListener(fn){frameListeners.add(fn);return ()=>frameListeners.delete(fn);}
+  let raf=0;function draw(){if(started&&(enabled||dirty)){for(const fn of frameListeners)fn(performance.now());render();}raf=requestAnimationFrame(draw);}draw();
   function start(){render();started=true;}
   async function capturePreview(){
     const copy=document.createElement('canvas');
@@ -76,5 +78,5 @@ export function createViewer(host,onPick,{interactive=true}={}){
   function fit(objects,options){dirty=true;fitParts({scene,camera,controls,updateClipping},objects,options);}
   function zoom(factor){camera.position.sub(controls.target).multiplyScalar(factor).add(controls.target);controls.update();}
   function dispose(){cancelAnimationFrame(raf);observer.disconnect();controls.dispose();key.shadow.map?.dispose();environment.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove();}
-  return {renderer,root,scene,camera,controls,fit,zoom,snapshot,restore,updateClipping,start,setInteractive,capturePreview,dispose};
+  return {addFrameListener,renderer,root,scene,camera,controls,fit,zoom,snapshot,restore,updateClipping,start,setInteractive,capturePreview,dispose};
 }

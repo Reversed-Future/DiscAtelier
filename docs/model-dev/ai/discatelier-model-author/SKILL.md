@@ -5,7 +5,7 @@ description: 仅当用户明确要求创建适配 DiscAtelier 的可导入模型
 
 # DiscAtelier 模型制作
 
-交付可重现制作、可以真实拆装的 `.ateliermodel` 及制作源。参考基线为 DiscAtelier 0.2.3；随附运行库来自该版本，不能把网页预览等同于原生导入成功。
+交付可重现制作、可以真实拆装的 `.ateliermodel` 及制作源。参考基线为 DiscAtelier 0.2.4；随附运行库来自该版本，不能把网页预览等同于原生导入成功。
 
 ## 先确认任务与实物
 

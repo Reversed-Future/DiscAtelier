@@ -1,6 +1,6 @@
 import type { ModelPackage } from '../../../../packages/atelier-model-runtime';
 
-export function readModelWorker(input: string | { url: string; mode: 'load' | 'validate' }, signal?: AbortSignal): Promise<ModelPackage | undefined> {
+export function readModelWorker(input: string | { url: string; mode: 'load' | 'validate' | 'prepare' }, signal?: AbortSignal): Promise<ModelPackage | undefined> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) { reject(signal.reason); return; }
     const worker = new Worker(new URL('./validation.worker.ts', import.meta.url), { type: 'module' });

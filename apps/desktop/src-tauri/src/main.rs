@@ -226,6 +226,7 @@ fn main() {
             bluray::bluray_key_download,
             models::model_choose,
             models::model_release,
+            models::model_source_preview,
             commands::library_list,
             commands::library_move,
             commands::library_content,

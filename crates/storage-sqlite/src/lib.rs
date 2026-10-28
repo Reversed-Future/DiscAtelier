@@ -15,6 +15,7 @@ mod ordering;
 mod song_links;
 mod video;
 pub use models::file::prepare as prepare_model_file;
+pub use models::source::with_preview as prepare_source_model_preview;
 mod playback;
 pub mod profiling;
 mod reads;

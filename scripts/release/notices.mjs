@@ -40,6 +40,7 @@ for (const name of frontendPackages) {
 }
 sections.push('\nOpenCC dictionary notices\n' + readFileSync(join(root, 'node_modules/opencc-js/THIRD_PARTY_LICENSES.md'), 'utf8'));
 sections.push('\nThree.js\n' + readFileSync(join(root, 'packages/atelier-model-runtime/src/discs/interactive/vendor/THREE-LICENSE.txt'), 'utf8'));
+sections.push('\nfflate 0.8.2\n' + readFileSync(join(root, 'packages/atelier-model-runtime/src/discs/interactive/vendor/source/FFLATE-LICENSE.txt'), 'utf8'));
 for (const pkg of metadata.packages.filter(pkg => pkg.source).sort((a, b) => a.name.localeCompare(b.name))) {
   const directory = dirname(pkg.manifest_path);
   let source = pkg.repository || '';

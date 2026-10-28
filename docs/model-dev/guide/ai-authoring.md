@@ -14,7 +14,7 @@ description: 完整 Skill、制作工具与可直接复制的任务提示词。
 - <a href="downloads/AI-PROMPTS.md" download>下载通用提示词</a>：适合粘贴给不支持 Skill 的 AI。
 - [单独下载制作入门包](downloads/discatelier-model-starter.zip)：手动制作或给已有工具的 AI 使用。
 
-Skill 名称为 **`discatelier-model-author`**，适用于 DiscAtelier 0.2.3 的模型制作、修正和检查。
+Skill 名称为 **`discatelier-model-author`**，适用于 DiscAtelier 0.2.4 的模型制作、修正和检查。
 
 ## 在支持 Skill 的客户端使用 {#use-skill}
 

@@ -26,12 +26,14 @@ description: 从实物、几何与贴图，到可以取出、翻页与收起的�
 
 ## 选择制作路线 {#choose}
 
-<table><thead><tr><th>需求</th><th>路线</th></tr></thead><tbody><tr><td>新的单碟盒、多碟盒、纸套、书式包装</td><td><strong>优先 V2</strong>：通用几何、材质和数据轨道。</td></tr><tr><td>已有专用装配结构，资源槽与实物完全吻合</td><td><a href="v3.html">V3</a>：仅限当前应用注册的结构。</td></tr><tr><td>只有 OBJ、GLB、FBX 或 Blender 工程</td><td>不是可直接导入的成品；需整理场景、资源与交互，再导出 V2。</td></tr></tbody></table>
+<table><thead><tr><th>需求</th><th>路线</th></tr></thead><tbody><tr><td>新的单碟盒、多碟盒、纸套、书式包装</td><td><strong>优先 V2</strong>：通用几何、材质和数据轨道。</td></tr><tr><td>已有专用装配结构，资源槽与实物完全吻合</td><td><a href="v3.html">V3</a>：仅限当前应用注册的结构。</td></tr><tr><td>只有 OBJ、GLB、FBX</td><td>0.2.4 起支持<a href="source-models.html">直接导入查看</a>；要制作可拆装交互仍需整理资源与动作。</td></tr></tbody></table>
+
+Blender 工程本身不支持直接导入，需先导出支持的格式。
 
 ## 适用版本 {#baseline}
 
 
-本指南适用于 **DiscAtelier 0.2.3**。入门包包含模型制作工具、运行库、教学样例和校验脚本，可从零开始制作自己的实体模型。
+本指南适用于 **DiscAtelier 0.2.4**。入门包包含模型制作工具、运行库、教学样例和校验脚本，可从零开始制作自己的实体模型。
 
 
 首次制作可从[入门教程](quickstart.html)开始，也可以使用 [AI 制作 Skill 与提示词](ai-authoring.html)。已有制作经验时，可直接查阅[格式参考](format.html)和[导入检查](validation.html)。

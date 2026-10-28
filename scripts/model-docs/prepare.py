@@ -34,7 +34,7 @@ def zip_directory(source, target, prefix=''):
 
 def prepare():
     version = json.loads((ROOT / 'package.json').read_text(encoding='utf-8'))['version']
-    if version not in ('0.2.3',):
+    if version not in ('0.2.4',):
         raise ValueError('Review the manual and Skill compatibility baseline before updating the application version.')
     playground = PUBLIC / 'playground'
     copy_tree(ROOT / 'packages/atelier-model-runtime', playground / 'runtime')
@@ -50,7 +50,7 @@ def prepare():
     sections = '\n\n'.join(f"## {p['title']} {{#{p['id']}}}\n\n```text\n{p['text']}\n```" for p in prompts)
     page = (SOURCE / 'ai/page.md').read_text(encoding='utf-8').replace('{{PROMPTS}}', sections)
     write(SOURCE / 'guide/ai-authoring.md', page)
-    prompt_text = '# DiscAtelier AI 模型制作提示词\n\n替换方括号后使用。Skill 基线为 0.2.3，V4 需要 0.2.3 或更新的兼容播放器。\n\n' + sections + '\n'
+    prompt_text = '# DiscAtelier AI 模型制作提示词\n\n替换方括号后使用。Skill 基线为 0.2.4，V4 需要 0.2.3 或更新的兼容播放器。\n\n' + sections + '\n'
     write(PUBLIC / 'downloads/AI-PROMPTS.md', prompt_text)
     hashes = {}
     for name, folder, prefix in [('discatelier-model-starter.zip', playground, ''),

@@ -40,3 +40,5 @@ the desktop's front overview; authored dismantling and page paths are preserved.
 V3 continues through first-frame shader preparation and the existing cover fade.
 
 Local direct-interaction adaptations: the jewel-case and cassette sessions expose their actual held part in change events; the research poster opens/folds when clicked. `assembly/interaction-state.js` maps only documented state flags/action IDs to contextual returns, respecting authored disabled reasons. The original hashes in upstream.json remain provenance, not hashes of these local adaptations. Model packages and the source authoring project are unchanged.
+
+Direct-format source models use a separate version-1 internal envelope, not atelier V1. Original GLB/OBJ/FBX bytes and referenced resources remain unchanged. Lazy pinned r186 loaders feed the existing viewer; source/session.js adds optional AnimationMixer controls. The viewer frame-listener hook is empty for existing V2/V3/V4 sessions. No disassembly logic is inferred. See docs/model-dev/guide/source-models.md for the 0.2.4 support boundary.
