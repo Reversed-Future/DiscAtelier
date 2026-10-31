@@ -93,6 +93,7 @@ pub fn request_close(app: &tauri::AppHandle) {
             let _ = main.hide();
         }
         CloseAction::Ask => {
+            let _ = show_main(app);
             let _ = main.emit("window-close-request", ());
         }
     }
@@ -183,35 +184,10 @@ pub fn tray_action(
     }
     Ok(())
 }
-fn show_popup(app: &tauri::AppHandle, position: tauri::PhysicalPosition<f64>) -> tauri::Result<()> {
-    let Some(window) = app.get_webview_window("tray-panel") else {
-        return Ok(());
-    };
-    if let Some(monitor) = app.monitor_from_point(position.x, position.y)? {
-        let area = monitor.work_area();
-        let scale = monitor.scale_factor();
-        let width = (280.0 * scale) as i32;
-        let height = (326.0 * scale) as i32;
-        window.set_size(tauri::PhysicalSize::new(width as u32, height as u32))?;
-        // Anchor the menu's bottom-left beside the pointer, then keep it on-screen.
-        let gap = (8.0 * scale).round() as i32;
-        let x = (position.x as i32 + gap).clamp(
-            area.position.x,
-            (area.position.x + area.size.width as i32 - width).max(area.position.x),
-        );
-        let y = (position.y as i32 - height - gap).clamp(
-            area.position.y,
-            (area.position.y + area.size.height as i32 - height).max(area.position.y),
-        );
-        window.set_position(tauri::PhysicalPosition::new(x, y))?;
-    }
-    window.emit("tray-open", ())?;
-    window.show()?;
-    window.set_focus()
-}
 pub fn setup(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
     app.manage(ShellState::default());
+    app.manage(crate::tray_window::TrayWindowState::default());
     let popup = tauri::WebviewWindowBuilder::new(
         app,
         "tray-panel",
@@ -257,7 +233,9 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             {
                 let result = match button {
                     MouseButton::Left => show_main(tray.app_handle()),
-                    MouseButton::Right => show_popup(tray.app_handle(), position),
+                    MouseButton::Right => {
+                        crate::tray_window::show_popup(tray.app_handle(), position)
+                    }
                     _ => Ok(()),
                 };
                 if result.is_err() {

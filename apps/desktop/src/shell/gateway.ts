@@ -9,5 +9,6 @@ export const shell = {
   close: (action: CloseAction, remember: boolean) => invoke<void>('window_finish_close', { action, remember }),
   sync: (value: TrayState) => invoke<void>('tray_sync', { value }),
   snapshot: () => invoke<TrayState>('tray_snapshot'),
+  resize: (height: number) => invoke<void>('tray_resize', { height }),
   action: (action: TrayAction, sessionId = '') => invoke<void>('tray_action', { action, sessionId }),
 };

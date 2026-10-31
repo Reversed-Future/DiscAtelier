@@ -37,6 +37,14 @@ pub async fn model_choose(
 }
 
 #[tauri::command]
+pub async fn model_drop(
+    state: tauri::State<'_, LibraryState>,
+    path: PathBuf,
+) -> Result<ModelPreparation, AppError> {
+    prepare(state.inner().clone(), path).await
+}
+
+#[tauri::command]
 pub async fn model_release(
     state: tauri::State<'_, LibraryState>,
     token: String,

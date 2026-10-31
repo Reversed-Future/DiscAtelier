@@ -7,7 +7,9 @@ use std::{ffi::OsStr, fs::File, io::Read, path::Path};
 pub fn prepare(path: &Path) -> Result<PreparedModel, AppError> {
     let _total = profiling::Span::new("model.prepare_total");
     if path.is_absolute() {
-        if let Some(format @ ("glb" | "obj" | "fbx" | "skp")) = path.extension().and_then(|s| s.to_str()) {
+        if let Some(format @ ("glb" | "obj" | "fbx" | "skp")) =
+            path.extension().and_then(|s| s.to_str())
+        {
             return super::source::prepare(path, format);
         }
     }

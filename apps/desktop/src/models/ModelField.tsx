@@ -1,23 +1,31 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
 import { prepareModelPreview } from './prepare-preview';
 import { type ModelChange, type ModelPreparation } from './assets';
 import { measureAsync } from './timing';
 import { errorMessage } from '../library/gateway';
+import { ModelUploadPreview } from './ModelUploadPreview';
 
-export function ModelField({ value, title, onChange, onBusy, disabled }: {
-  value: ModelChange; title?: string | null; onChange(value: ModelChange): void;
+export function ModelField({ value, title, assetId, actionsHost, onChange, onBusy, disabled }: {
+  value: ModelChange; title?: string | null; assetId?: string | null; onChange(value: ModelChange): void;
+  actionsHost: HTMLElement | null;
   onBusy(value: boolean): void; disabled: boolean;
 }) {
   const [error, setError] = useState('');
   const [reading, setReading] = useState(false);
-  const shownTitle = value.action === 'prepared' ? value.title : value.action === 'keep' ? title : null;
-  async function choose() {
-    if (disabled || reading) return;
+  const pending = useRef(false);
+  const shownTitle = value.action === 'prepared' ? value.title : value.action === 'keep' ? title || (assetId ? '已保存模型' : null) : null;
+  async function choose(paths?: string[]) {
+    if (disabled || pending.current) return;
+    if (paths && paths.length !== 1) { setError('请一次拖入一个模型文件。'); return; }
+    pending.current = true;
     setReading(true); onBusy(true); setError('');
     let prepared: ModelPreparation | null = null;
     try {
-      prepared = await measureAsync('native_prepare', () => invoke<ModelPreparation | null>('model_choose'));
+      prepared = await measureAsync('native_prepare', () => paths
+        ? invoke<ModelPreparation>('model_drop', { path: paths[0] })
+        : invoke<ModelPreparation | null>('model_choose'));
       if (!prepared) return;
       prepared = await measureAsync('worker_validate', () => prepareModelPreview(prepared!));
       onChange({ action: 'prepared', token: prepared.token, title: prepared.title });
@@ -25,18 +33,16 @@ export function ModelField({ value, title, onChange, onBusy, disabled }: {
     } catch (cause) { setError(errorMessage(cause)); }
     finally {
       if (prepared) void invoke('model_release', { token: prepared.token }).catch(() => {});
-      setReading(false); onBusy(false);
+      pending.current = false; setReading(false); onBusy(false);
     }
   }
-  return <div className="model-field">
-    <div className="model-file-actions">
-      <button type="button" className="text-button" disabled={disabled || reading} onClick={() => void choose()}>
-        {reading ? '读取模型中' : shownTitle ? '更换模型' : '上传模型'}
-      </button>
-      {shownTitle && <><span className="model-file-title" title={shownTitle}>{shownTitle}</span>
-        <button type="button" className="text-button" disabled={disabled || reading} onClick={() => { onChange({ action: 'remove' }); setError(''); }}>移除模型</button></>}
-    </div>
-    <p className="model-format-help">支持 .ateliermodel、GLB、OBJ、FBX；模型与关联资源合计最多 50 MiB。OBJ/FBX 贴图需保持原相对路径。</p>
+  return <section className="model-field" aria-label="模型文件">
+    {shownTitle && actionsHost && createPortal(<>
+      <button type="button" className="solid-button model-action-button" disabled={disabled || reading} onClick={() => { onChange({ action: 'remove' }); setError(''); }}>移除模型</button>
+      <button type="button" className="solid-button model-action-button" title={shownTitle} disabled={disabled || reading} onClick={() => void choose()}>{reading ? '读取模型中' : '更换模型'}</button>
+    </>, actionsHost)}
+    <ModelUploadPreview value={value} assetId={assetId} disabled={disabled || reading}
+      onChoose={() => void choose()} onDrop={paths => void choose(paths)} onError={cause => setError(errorMessage(cause))}/>
     {error && <p className="form-error" role="alert">{error}</p>}
-  </div>;
+  </section>;
 }

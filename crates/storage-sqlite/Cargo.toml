@@ -14,7 +14,7 @@ chrono.workspace = true
 uuid.workspace = true
 sha2.workspace = true
 base64 = "0.22"
-image = { version = "=0.25.9", default-features = false, features = ["png", "jpeg", "webp"] }
+image = { version = "=0.25.9", default-features = false, features = ["png", "jpeg", "webp", "bmp"] }
 openskp = { git = "https://github.com/hew3d/openskp", rev = "a6788afa6386cfd4bc781998dca99c591b3fb069" }
 earcutr = "=0.5.0"
 zip = { version = "=4.6.1", default-features = false }

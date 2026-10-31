@@ -23,7 +23,7 @@ impl Glb {
         self.views
             .push(json!({"buffer":0,"byteOffset":self.binary.len(),"byteLength":bytes.len()}));
         self.binary.extend_from_slice(bytes);
-        while self.binary.len() % 4 != 0 {
+        while !self.binary.len().is_multiple_of(4) {
             self.binary.push(0);
         }
         Ok(i)

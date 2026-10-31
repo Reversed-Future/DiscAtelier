@@ -22,7 +22,7 @@ import { netease, type LinkedMusicAlbum } from '../integrations/gateway';
 export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   item: LibraryCopy; categories: Descriptor[]; carriers: Descriptor[]; onClose(): void; onSaved(categoryId: string): void;
 }) {
-  const [page, setPage] = useState<'edition' | 'content'>('edition');
+  const [page, setPage] = useState<'edition' | 'content' | 'model'>('edition');
   const [sourceOpen, setSourceOpen] = useState(false);
   const [sourceDraft, setSourceDraft] = useState<ImportPreview | null>(null);
   const [videoDraft, setVideoDraft] = useState(emptyVideo);
@@ -44,12 +44,14 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   const [busy, setBusy] = useState(false);
   const [reading, setReading] = useState(false);
   const [model, setModel] = useModelDraft();
+  const [modelActionsHost, setModelActionsHost] = useState<HTMLDivElement | null>(null);
   const [error, setError] = useState('');
   const attempt = useRef({ payload: '', requestId: crypto.randomUUID() });
   return <Modal title="编辑版本" onClose={onClose} busy={busy || reading} wide className="editor-panel">
     <nav className="detail-tabs editor-page-tabs" aria-label="编辑内容">
       <button type="button" className={page === 'edition' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('edition')}>版本</button>
       <button type="button" className={page === 'content' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('content')}>资料</button>
+      <button type="button" className={page === 'model' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('model')}>模型</button>
     </nav>
     <form className="editor-form" noValidate onSubmit={async event => {
       const dialog = event.currentTarget.closest('dialog');
@@ -79,15 +81,16 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
             if (!album) throw new Error('请先在网易云资料中关联专辑。');
             return netease.albumCover(album.albumId);
           } } : videoDraft.work ? { label: '使用作品封面', load: () => video.cover(videoDraft.work!) } : undefined}/>}
-        <ModelField value={model} title={item.modelTitle} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
         <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
       </fieldset>
-      </> : <fieldset disabled={busy || reading || !videoLoaded}>
+      </> : page === 'model' ? <fieldset disabled={busy || reading}>
+        <ModelField value={model} title={item.modelTitle} assetId={item.modelAssetId} actionsHost={modelActionsHost} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
+      </fieldset> : <fieldset disabled={busy || reading || !videoLoaded}>
         <ContentEditor edition={edition} content={content.value} onContent={content.change}
           metadata={videoDraft} onMetadata={setVideoDraft} onBusy={setReading}/>
       </fieldset>}
       <p className="form-error" role="alert">{error || content.error}</p>
-      <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading || !videoLoaded || content.pending}>{busy ? '保存中' : page === 'content' ? '保存资料' : '保存版本'}</button></footer>
+      <footer className="form-footer"><div className="model-footer-actions" ref={setModelActionsHost}/><button type="submit" className="solid-button" disabled={busy || reading || !videoLoaded || content.pending}>{busy ? '保存中' : page === 'content' ? '保存资料' : '保存版本'}</button></footer>
     </form>
     {sourceOpen && <DiscogsReplacement editionId={item.editionId} edition={edition} categories={categories} carriers={carriers}
       onClose={() => setSourceOpen(false)} onApply={value => {

@@ -43,11 +43,12 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
   const [musicOpen, setMusicOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [bundle, setBundle] = useState<LibraryCopy[]>([]);
-  const [tab, setTab] = useState(existing ? 'purchase' : 'edition');
+  const [tab, setTab] = useState<'edition' | 'model' | 'purchase'>(existing ? 'purchase' : 'edition');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [reading, setReading] = useState(false);
   const [model, setModel] = useModelDraft();
+  const [modelActionsHost, setModelActionsHost] = useState<HTMLDivElement | null>(null);
   const [cover, setCover] = useState<CoverChange>(() => imported?.cover
     ? { action: 'replace', dataUrl: imported.cover } : { action: 'keep' });
   const attempt = useRef({ payload: '', requestId: crypto.randomUUID() });
@@ -78,11 +79,11 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
     }
     setMusic(album); setMusicOpen(false);
   }
-  return <><Modal title={existing ? '再收一套' : '添加收藏'} onClose={onClose} busy={busy || reading} wide className={imported ? 'metadata-browser-panel' : ''}>
+  return <><Modal title={existing ? '再收一套' : '添加收藏'} onClose={onClose} busy={busy || reading} wide className="editor-panel">
     <form className="editor-form" noValidate onSubmit={async event => {
       event.preventDefault();
       if (busy || reading) return;
-      if (tab === 'edition') {
+      if (tab !== 'purchase') {
         if (!edition.title.trim()) { setError('请填写名称'); return; }
         if (edition.media.some(medium => !carriers.some(carrier => carrier.id === medium.carrierId))) { setError('请选择每张盘片的载体'); return; }
         setError(''); setTab('purchase'); return;
@@ -111,6 +112,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
       {onDiscogs && <button type="button" className="text-button import-back" disabled={busy || reading} onClick={onDiscogs}>从 Discogs 导入</button>}
       {!existing && <nav className="detail-tabs" aria-label="添加步骤">
         <button type="button" className={tab === 'edition' ? 'active' : ''} onClick={() => setTab('edition')} disabled={busy || reading}>版本</button>
+        <button type="button" className={tab === 'model' ? 'active' : ''} onClick={() => setTab('model')} disabled={busy || reading}>模型</button>
         <button type="button" className={tab === 'purchase' ? 'active' : ''} onClick={() => {
           if (!edition.title.trim()) setError('请填写名称');
           else if (edition.media.some(medium => !carriers.some(carrier => carrier.id === medium.carrierId))) setError('请选择每张盘片的载体');
@@ -124,14 +126,13 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
         {!imported && edition.categoryId === 'music' && <ImportMusicField manual tracks={[]} value={music} onChange={setMusic} onPick={() => setMusicOpen(true)}/>}
         {(imported || edition.categoryId !== 'video') && <CoverField edition={edition} value={cover} onChange={setCover} onBusy={setReading}
           remoteCover={music && edition.categoryId === 'music' ? { label: '使用网易云封面', load: () => netease.albumCover(music.albumId) } : edition.categoryId === 'video' && videoDraft.work ? { label: '使用作品封面', load: () => video.cover(videoDraft.work!) } : undefined}/>}
-        <ModelField value={model} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
         {imported && edition.categoryId === 'music' && <ImportMusicField tracks={importTracks} value={music} onChange={setMusic} onPick={() => setMusicOpen(true)}/>}
         <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
-      </> : <PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy} title={edition.title} creator={edition.creator} onBusy={setReading}
+      </> : tab === 'model' ? <ModelField value={model} actionsHost={modelActionsHost} onChange={setModel} onBusy={setReading} disabled={busy || reading}/> : <PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy} title={edition.title} creator={edition.creator} onBusy={setReading}
         afterDate={<BundlePicker value={bundle} onChange={setBundle}/>}/>}
       </fieldset>
       <p className="form-error" role="alert">{error}</p>
-      <footer className="form-footer"><button type="submit" className="solid-button" disabled={busy || reading}>{busy ? '保存中' : tab === 'edition' ? '下一步' : '加入收藏'}</button></footer>
+      <footer className="form-footer"><div className="model-footer-actions" ref={setModelActionsHost}/><button type="submit" className="solid-button" disabled={busy || reading}>{busy ? '保存中' : tab === 'purchase' ? '加入收藏' : '下一步'}</button></footer>
     </form>
   </Modal>{musicOpen && <NeteaseBrowser initialQuery={`${edition.title} ${edition.creator}`.trim()} autoSearch={!!edition.title.trim()} onClose={() => setMusicOpen(false)} confirmLabel="使用此资料" onConfirm={selectMusic}/>}</>;
 }

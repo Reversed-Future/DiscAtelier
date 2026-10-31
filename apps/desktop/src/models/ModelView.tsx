@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { type ModelHandle, type ModelState } from '../../../../packages/atelier-model-runtime';
-import { mountCollectionModel } from './render-client';
+import { convertFileSrc } from '@tauri-apps/api/core';
+import { mountWorkerModel } from './render-client';
 import { measureAsync } from './timing';
 import { errorMessage } from '../library/gateway';
 import { Select } from '../ui/Select';
 
-interface ModelViewProps {
-  assetId: string; fallback: ReactNode; interactive?: boolean; enabled?: boolean; visible?: boolean;
+type ModelSource = { assetId: string; preparedToken?: never } | { assetId?: never; preparedToken: string };
+type ModelViewProps = ModelSource & {
+  fallback: ReactNode; interactive?: boolean; enabled?: boolean; visible?: boolean;
   onReady?(handle: ModelHandle | null): void; onBusy?(busy: boolean): void;
 }
 export function ModelView(props: ModelViewProps) {
-  return <ModelSession key={props.assetId} {...props}/>;
+  const url = props.preparedToken !== undefined ? convertFileSrc(props.preparedToken, 'prepared-model') : convertFileSrc(props.assetId, 'collection-model');
+  return <ModelSession key={url} {...props} url={url}/>;
 }
-function ModelSession({ assetId, fallback, interactive = false, enabled = true, visible = true, onReady, onBusy }: ModelViewProps) {
+function ModelSession({ url, fallback, interactive = false, enabled = true, visible = true, onReady, onBusy }: ModelViewProps & { url: string }) {
   const host = useRef<HTMLDivElement>(null);
   const handle = useRef<ModelHandle | null>(null);
   const callbacks = useRef({ onReady, onBusy }); callbacks.current = { onReady, onBusy };
@@ -28,7 +31,7 @@ function ModelSession({ assetId, fallback, interactive = false, enabled = true, 
     setLoaded(false); setError(''); setState(null);
     async function start() {
       try {
-        const mounted = await measureAsync('display_worker', () => mountCollectionModel(host.current!, assetId, {
+        const mounted = await measureAsync('display_worker', () => mountWorkerModel(host.current!, url, {
           interactive: interaction.current, signal: controller.signal,
           onChange: next => { if (!controller.signal.aborted) { setState(next); callbacks.current.onBusy?.(next.busy); } },
           onError: cause => { if (!controller.signal.aborted) setError(errorMessage(cause)); },
@@ -54,7 +57,7 @@ function ModelSession({ assetId, fallback, interactive = false, enabled = true, 
       setLoaded(false); setState(null);
       callbacks.current.onReady?.(null); callbacks.current.onBusy?.(false);
     };
-  }, [assetId, retry, enabled]);
+  }, [url, retry, enabled]);
   useEffect(() => {
     handle.current?.setInteractive(interactive);
     if (previousInteraction.current !== interactive && interactive && error) setRetry(value => value + 1);

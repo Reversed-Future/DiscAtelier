@@ -43,6 +43,7 @@ mod playback_settings;
 mod preview_config;
 mod purchase_recognition;
 mod system_media;
+mod tray_window;
 mod updates;
 mod video_input;
 mod video_metadata;
@@ -133,6 +134,7 @@ fn main() {
             desktop_shell::window_finish_close,
             desktop_shell::tray_sync,
             desktop_shell::tray_snapshot,
+            tray_window::tray_resize,
             desktop_shell::tray_action,
             netease_lyrics::netease_lyrics,
             system_media::system_media_sync,
@@ -233,6 +235,7 @@ fn main() {
             bluray::bluray_key_import,
             bluray::bluray_key_download,
             models::model_choose,
+            models::model_drop,
             models::model_release,
             models::model_source_preview,
             commands::library_list,

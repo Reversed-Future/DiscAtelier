@@ -3,6 +3,7 @@ mod geometry;
 mod glb;
 #[cfg(test)]
 mod tests;
+mod texture;
 use super::invalid;
 use discatelier_contracts::AppError;
 use openskp::{Material, Model, Node, Side};
@@ -20,10 +21,10 @@ pub fn header(bytes: &[u8]) -> Result<(), AppError> {
         .unwrap_or("");
     if !matches!(
         (major, openskp::detect_container(bytes)),
-        ("17", openskp::Container::Carchive2017) | ("26", openskp::Container::Zip)
+        ("17", openskp::Container::Carchive2017) | (_, openskp::Container::Zip)
     ) {
         return Err(invalid(format!(
-            "暂不支持 SketchUp {version}；请另存为 SketchUp 2017 或导出 GLB、OBJ。"
+            "暂不支持这个 SketchUp {version} 文件的内部格式；支持 2017 二进制和可解析的 ZIP 容器，可另存为 SketchUp 2017 或导出 GLB、OBJ。"
         )));
     }
     Ok(())
@@ -133,21 +134,8 @@ impl Writer<'_> {
                 let data = image_bytes
                     .as_ref()
                     .ok_or_else(|| invalid("SKP 贴图缺失，请先在 SketchUp 中嵌入贴图。"))?;
-                let reader = image::ImageReader::new(std::io::Cursor::new(data))
-                    .with_guessed_format()
-                    .map_err(|_| invalid("SKP 贴图无效。"))?;
-                let mime = match reader.format() {
-                    Some(image::ImageFormat::Png) => "image/png",
-                    Some(image::ImageFormat::Jpeg) => "image/jpeg",
-                    _ => return Err(invalid("SKP 贴图必须为 PNG 或 JPEG。")),
-                };
-                let (w, h) = reader
-                    .into_dimensions()
-                    .map_err(|_| invalid("SKP 贴图无效。"))?;
-                if w > 8192 || h > 8192 {
-                    return Err(invalid("SKP 贴图单边不能超过 8192 像素。"));
-                }
-                let view = self.glb.bytes(data)?;
+                let (data, mime) = texture::prepare(data)?;
+                let view = self.glb.bytes(&data)?;
                 let image = self.glb.images.len();
                 self.glb
                     .images
