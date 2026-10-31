@@ -1,4 +1,4 @@
-# 制作契约 · DiscAtelier 0.3.0
+# 制作契约 · DiscAtelier 0.3.1
 
 路径相对创建后的工作区；使用时先读真实文件，不推断字段。`runtime/index.js` 的 `parseModel` 是应用公开校验入口，拒绝 V1。`runtime/shared/model-v2.js`、`model-v3.js` 是精确结构规则；`runtime/shared/assembly-profiles.js` 是 V3 固定结构及资源槽。`runtime-manifest.json` 记录逐文件哈希，`provenance.json` 记录制作辅助工具来源。
 
