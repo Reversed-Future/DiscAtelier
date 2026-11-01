@@ -36,6 +36,12 @@ pub struct ScannedFile {
 
 fn display_path(path: &Path) -> String {
     let value = path.to_string_lossy();
+    // `canonicalize` returns extended-length paths. UNC shares become
+    // `\\?\UNC\server\share`; stripping only the `\\?\` prefix would leave
+    // `UNC\server\share`, which is not an absolute Windows path.
+    if let Some(rest) = value.strip_prefix(r"\\?\UNC\") {
+        return format!(r"\\{rest}");
+    }
     value.strip_prefix(r"\\?\").unwrap_or(&value).to_owned()
 }
 
@@ -57,7 +63,7 @@ fn read(directory: &Path) -> Result<Vec<Binding>, AppError> {
     Ok(bindings)
 }
 
-fn validate_binding(binding: &Binding) -> Result<(), AppError> {
+fn validate_binding_shape(binding: &Binding) -> Result<(), AppError> {
     if binding.copy_id.trim().is_empty()
         || binding.copy_id.len() > 100
         || binding.path.len() > 4096
@@ -71,6 +77,10 @@ fn validate_binding(binding: &Binding) -> Result<(), AppError> {
     {
         return Err(error("本地文件关联字段无效。"));
     }
+    Ok(())
+}
+
+fn validate_binding_path(binding: &Binding) -> Result<(), AppError> {
     let path = Path::new(&binding.path);
     if !path.is_absolute() || !path.is_file() {
         return Err(error("本地文件不存在或不是绝对路径。"));
@@ -159,8 +169,18 @@ pub fn local_files_save(
     if bindings.len() > MAX_FILES {
         return Err(error("本地文件关联数量超过限制。"));
     }
+    // A previously saved binding may point at a file that has since moved.
+    // Keep it as historical data instead of blocking an unrelated save.
+    // Only new or edited bindings need the file to exist right now.
+    let existing = read(&directory.0).unwrap_or_default();
     for binding in &bindings {
-        validate_binding(binding)?;
+        validate_binding_shape(binding)?;
+        let retained = existing
+            .iter()
+            .any(|old| old.copy_id == binding.copy_id && old.path == binding.path);
+        if !retained {
+            validate_binding_path(binding)?;
+        }
     }
     let mut seen = std::collections::HashSet::new();
     for binding in &bindings {
@@ -190,4 +210,26 @@ pub fn find(directory: &Path, copy_id: &str, path: &str) -> Result<Binding, AppE
         .into_iter()
         .find(|binding| binding.copy_id == copy_id && binding.path == path)
         .ok_or_else(|| error("该文件没有关联到这个收藏。"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::display_path;
+    use std::path::Path;
+
+    #[test]
+    fn display_path_keeps_unc_shares_absolute() {
+        assert_eq!(
+            display_path(Path::new(r"\\?\UNC\server\share\live\show.mkv")),
+            r"\\server\share\live\show.mkv"
+        );
+    }
+
+    #[test]
+    fn display_path_strips_verbatim_prefix_from_local_drives() {
+        assert_eq!(
+            display_path(Path::new(r"\\?\G:\DiscAtelier\live\show.mkv")),
+            r"G:\DiscAtelier\live\show.mkv"
+        );
+    }
 }
