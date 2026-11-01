@@ -349,11 +349,23 @@ Function PageLeaveReinstall
     HideWindow
     ClearErrors
 
-    ; DiscAtelier can keep running in the notification area (tray) and while
-    ; music still plays in the background, which locks the main executable and
-    ; makes the previous version's uninstaller fail with "无法卸载！".
-    nsExec::ExecToLog 'taskkill /F /IM ${MAINBINARYNAME}.exe'
-    Sleep 1200
+    ; DiscAtelier can keep running in the notification area (tray), during
+    ; background playback, and its sidecar processes (NetEase's node.exe and
+    ; the player helpers) keep files under the install directory locked.
+    ; End the whole process tree, otherwise the previous version's uninstaller
+    ; cannot delete node_modules and only schedules them for deletion on reboot.
+    nsExec::ExecToLog 'taskkill /F /T /IM ${MAINBINARYNAME}.exe'
+    Sleep 1500
+
+    ; If the application is still alive (for example when it was started with
+    ; administrator rights), stop here with clear instructions instead of
+    ; failing inside the previous uninstaller.
+    nsExec::ExecToStack 'cmd /c tasklist /FI "IMAGENAME eq ${MAINBINARYNAME}.exe" /NH | findstr /I /C:"${MAINBINARYNAME}.exe" >nul 2>&1'
+    Pop $0
+    ${If} $0 = 0
+      MessageBox MB_ICONSTOP "$(stillRunningHint)"
+      Abort
+    ${EndIf}
     ClearErrors
 
     ${If} $WixMode = 1
@@ -495,6 +507,9 @@ FunctionEnd
 LangString uninstallHint ${LANG_SIMPCHINESE} "旧版本没能卸载干净。请先退出任务栏托盘中的 DiscAtelier（或稍等几秒），再重试；也可以返回上一页选择“不卸载直接安装”。"
 LangString uninstallHint ${LANG_TRADCHINESE} "舊版本未能解除安裝乾淨。請先結束系統匣中的 DiscAtelier（或稍候數秒），再重試；也可以返回上一頁選擇「不解除安裝直接安裝」。"
 LangString uninstallHint ${LANG_ENGLISH} "The previous version could not be removed cleanly. Quit DiscAtelier from the notification area (tray), wait a few seconds and retry, or go back and choose 'Do not uninstall'."
+LangString stillRunningHint ${LANG_SIMPCHINESE} "DiscAtelier 仍在运行，安装程序无法自动结束它。请用任务管理器结束 discatelier-desktop.exe（以及它启动的 node.exe 等子进程），或从托盘退出 DiscAtelier，然后重新运行安装程序。"
+LangString stillRunningHint ${LANG_TRADCHINESE} "DiscAtelier 仍在執行，安裝程式無法自動結束它。請用工作管理員結束 discatelier-desktop.exe（以及它啟動的 node.exe 等子程序），或從系統匣結束 DiscAtelier，然後重新執行安裝程式。"
+LangString stillRunningHint ${LANG_ENGLISH} "DiscAtelier is still running and could not be stopped automatically. End discatelier-desktop.exe (and its node.exe child processes) in Task Manager, or quit DiscAtelier from the tray, then run the installer again."
 
 Function .onInit
   ${GetOptions} $CMDLINE "/P" $PassiveMode
