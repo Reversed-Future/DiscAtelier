@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
 import type { LibraryCopy } from '../library/types';
-import { library } from '../library/gateway';
+import { errorMessage, library } from '../library/gateway';
 import { useStaticArtwork } from '../library/useStaticArtwork';
 import { Icon } from '../ui/Icon';
 import { PlaybackControls } from './PlaybackControls';
@@ -46,7 +46,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
     const load = () => {
       void invoke<LocalBinding[]>('local_files_get').then(values => {
         if (active) setBindings(values.filter(binding => binding.copyId === copyId));
-      }).catch(cause => { if (active) setError(cause instanceof Error ? cause.message : String(cause)); });
+      }).catch(cause => { if (active) setError(errorMessage(cause)); });
     };
     load();
     window.addEventListener('local-files-changed', load);

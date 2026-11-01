@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { time } from '../playback/gateway';
 import type { PlaybackController } from '../playback/usePlayback';
 import { optical, type CdTrackMetadata } from './gateway';
+import { errorMessage } from '../library/gateway';
 
 interface TrackResult {
   mount: string;
@@ -72,7 +73,7 @@ export function CdTrackSearch({ query, player }: { query: string; player: Playba
         setLoading(false);
       }).catch(cause => {
         if (!active) return;
-        setError(cause instanceof Error ? cause.message : String(cause));
+        setError(errorMessage(cause));
         setLoading(false);
       });
     }, 320);

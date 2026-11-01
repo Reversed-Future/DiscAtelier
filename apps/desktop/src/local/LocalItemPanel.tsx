@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
-import { library } from '../library/gateway';
+import { errorMessage, library } from '../library/gateway';
 import { netease } from '../integrations/gateway';
 import type { LibraryCopy } from '../library/types';
 import { isAudio, matchTrack, parseEpisode, parseTrack, trackIndexForNumber, trackNumberAt, type TrackTitle } from './match';
@@ -72,7 +72,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     invoke<Binding[]>('local_files_get').then(values => {
       if (active) { setAll(values); setLoaded(true); }
     }).catch(cause => {
-      if (active) { setError(cause instanceof Error ? cause.message : String(cause)); setLoaded(true); }
+      if (active) { setError(errorMessage(cause)); setLoaded(true); }
     });
     return () => { active = false; };
   }, []);
@@ -121,7 +121,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
       setRows(sortRows(scanned.map(file => ({ file, ...matchRow(item, file, tracks) }))));
       if (!scanned.length) setError('这个文件夹里没有找到支持的音视频文件。');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(errorMessage(cause));
     } finally { setBusy(false); }
   }
 
@@ -159,7 +159,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
       await persist();
       window.dispatchEvent(new Event('local-files-changed'));
       setFiles([]); setRows([]);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    } catch (cause) { setError(errorMessage(cause)); }
     finally { setBusy(false); }
   }
 
@@ -194,7 +194,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
   async function play(path: string) {
     setBusy(true); setError('');
     try { await invoke('playback_start_local', { copyId: item.id, path }); onClose(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    catch (cause) { setError(errorMessage(cause)); }
     finally { setBusy(false); }
   }
 
@@ -210,7 +210,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
       <div className="local-files-summary"><span>已关联 {own.length} 个文件</span><button type="button" className="text-button" disabled={busy} onClick={() => {
         setError('');
         const next = all.filter(binding => binding.copyId !== item.id);
-        void invoke('local_files_save', { bindings: next }).then(() => setAll(next)).catch(cause => setError(cause instanceof Error ? cause.message : String(cause)));
+        void invoke('local_files_save', { bindings: next }).then(() => setAll(next)).catch(cause => setError(errorMessage(cause)));
       }}>清除本收藏关联</button></div>
       <div className={files.length ? 'local-files-table-wrap local-files-saved' : 'local-files-table-wrap'}><table className="local-files-table"><thead><tr><th>文件</th><th>位置</th><th>{item.edition.categoryId === 'video' ? '章节' : '歌曲'}</th><th>操作</th></tr></thead><tbody>
         {own.map(binding => <tr key={binding.path}><td title={binding.path}><span>{binding.path.split(/[\\/]/).pop()}</span></td>

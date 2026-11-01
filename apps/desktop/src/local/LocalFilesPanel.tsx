@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
-import { library } from '../library/gateway';
+import { errorMessage, library } from '../library/gateway';
 import { netease } from '../integrations/gateway';
 import type { LibraryCopy } from '../library/types';
 import { chooseItem, matchTrack, parseEpisode, parseTrack, trackNumberAt, type TrackTitle } from './match';
@@ -55,7 +55,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       setBindings(saved);
       setLoaded(true);
     }).catch(cause => {
-      if (active) { setError(cause instanceof Error ? cause.message : String(cause)); setLoaded(true); }
+      if (active) { setError(errorMessage(cause)); setLoaded(true); }
     });
     return () => { active = false; };
   }, []);
@@ -127,7 +127,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       setFiles(scanned); propose(scanned);
       if (!scanned.length) setError('这个文件夹里没有找到支持的音视频文件。');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(errorMessage(cause));
     } finally { setBusy(false); }
   }
 
@@ -184,7 +184,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       await invoke('playback_start_local', { copyId: row.copyId, path: row.file.path });
       onClose();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(errorMessage(cause));
     } finally { setBusy(false); }
   }
 
@@ -246,7 +246,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
 
   function forget() {
     setBindings([]);
-    void invoke('local_files_save', { bindings: [] }).catch(cause => setError(String(cause)));
+    void invoke('local_files_save', { bindings: [] }).catch(cause => setError(errorMessage(cause)));
   }
 
   const bound = useMemo(() => new Set(bindings.map(binding => binding.path)), [bindings]);
@@ -302,7 +302,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       </div>
       <div className="settings-actions">
         <span className="setting-hint">识别依据：文件夹名、标题、作者和文件名；S01E01、第 01 集及开头的 01/02/03 会识别为章节或轨号。</span>
-        <button type="button" className="solid-button" disabled={busy || !matchedCount} onClick={() => void save().then(() => { setError(''); onClose(); }).catch(cause => setError(cause instanceof Error ? cause.message : String(cause)))}>保存关联</button>
+        <button type="button" className="solid-button" disabled={busy || !matchedCount} onClick={() => void save().then(() => { setError(''); onClose(); }).catch(cause => setError(errorMessage(cause)))}>保存关联</button>
       </div>
     </>}
   </Modal>;
