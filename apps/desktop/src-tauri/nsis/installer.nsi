@@ -384,20 +384,23 @@ Function PageLeaveReinstall
 
     ${IfThen} ${Errors} ${|} StrCpy $0 2 ${|} ; ExecWait failed, set fake exit code
 
-    ${If} $0 <> 0
-    ${OrIf} ${FileExists} "$INSTDIR\${MAINBINARYNAME}.exe"
-      ; User cancelled wix uninstaller? return to select un/reinstall page
-      ${If} $WixMode = 1
-      ${AndIf} $0 = 1602
-        Abort
-      ${EndIf}
+    ; User cancelled wix uninstaller? return to select un/reinstall page
+    ${If} $WixMode = 1
+    ${AndIf} $0 = 1602
+      Abort
+    ${EndIf}
 
-      ; User cancelled NSIS uninstaller? return to select un/reinstall page
-      ${If} $0 = 1
-        Abort
-      ${EndIf}
+    ; User cancelled NSIS uninstaller? return to select un/reinstall page
+    ${If} $0 = 1
+      Abort
+    ${EndIf}
 
-      ; Other errors? show generic error message and return to select un/reinstall page
+    ; The previous uninstaller can exit with a non-zero code when some
+    ; resource directories can only be removed on reboot (a normal outcome
+    ; for large resource trees). Treat the uninstall as successful as long as
+    ; the main executable is gone; only a still-present executable means the
+    ; old version is really still installed.
+    ${If} ${FileExists} "$INSTDIR\${MAINBINARYNAME}.exe"
       MessageBox MB_ICONEXCLAMATION "$(unableToUninstall)$\n$(uninstallHint)"
       Abort
     ${EndIf}

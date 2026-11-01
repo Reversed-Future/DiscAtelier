@@ -20,6 +20,12 @@ export const library: LibraryGateway = {
 };
 export const desktopAvailable = isTauri;
 export function errorMessage(error: unknown): string {
-  if (typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string') return error.message;
-  return typeof error === 'string' ? error : '操作未完成，请重试。';
+  if (typeof error === 'string') return error;
+  if (typeof error === 'object' && error !== null) {
+    const value = error as { message?: unknown; error?: unknown };
+    if (typeof value.message === 'string' && value.message) return value.message;
+    // Tauri and a few native bridges wrap the AppError one level deeper.
+    if (value.error !== undefined && value.error !== error) return errorMessage(value.error);
+  }
+  return '操作未完成，请重试。';
 }
