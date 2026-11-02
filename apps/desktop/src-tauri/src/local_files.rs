@@ -75,6 +75,18 @@ fn validate_binding_shape(binding: &Binding) -> Result<(), AppError> {
             .track
             .is_some_and(|value| !(1..=9999).contains(&value))
     {
+        crate::logging::write(
+            "error",
+            "local-files",
+            "关联字段校验失败",
+            Some(&format!(
+                "copyId={} pathLength={} labelLength={} path={}",
+                binding.copy_id,
+                binding.path.len(),
+                binding.label.chars().count(),
+                binding.path
+            )),
+        );
         return Err(error("本地文件关联字段无效。"));
     }
     Ok(())
@@ -82,7 +94,18 @@ fn validate_binding_shape(binding: &Binding) -> Result<(), AppError> {
 
 fn validate_binding_path(binding: &Binding) -> Result<(), AppError> {
     let path = Path::new(&binding.path);
-    if !path.is_absolute() || !path.is_file() {
+    let absolute = path.is_absolute();
+    let exists = path.is_file();
+    if !absolute || !exists {
+        crate::logging::write(
+            "error",
+            "local-files",
+            "本地文件路径校验失败",
+            Some(&format!(
+                "copyId={} absolute={absolute} exists={exists} path={}",
+                binding.copy_id, binding.path
+            )),
+        );
         return Err(error("本地文件不存在或不是绝对路径。"));
     }
     if !MEDIA_EXTENSIONS.contains(
@@ -93,6 +116,12 @@ fn validate_binding_path(binding: &Binding) -> Result<(), AppError> {
             .to_ascii_lowercase()
             .as_str(),
     ) {
+        crate::logging::write(
+            "error",
+            "local-files",
+            "本地文件格式校验失败",
+            Some(&format!("copyId={} path={}", binding.copy_id, binding.path)),
+        );
         return Err(error("本地文件不是支持的音视频格式。"));
     }
     Ok(())
@@ -102,11 +131,28 @@ fn validate_binding_path(binding: &Binding) -> Result<(), AppError> {
 pub fn local_files_scan(folder: String) -> Result<Vec<ScannedFile>, AppError> {
     let root = PathBuf::from(&folder);
     if !root.is_absolute() || !root.is_dir() {
+        crate::logging::write(
+            "error",
+            "local-files",
+            "扫描文件夹校验失败",
+            Some(&format!(
+                "absolute={} exists={} path={}",
+                root.is_absolute(),
+                root.is_dir(),
+                folder
+            )),
+        );
         return Err(error("请选择有效的文件夹。"));
     }
-    let root = root
-        .canonicalize()
-        .map_err(|_| error("无法访问所选文件夹。"))?;
+    let root = root.canonicalize().map_err(|cause| {
+        crate::logging::write(
+            "error",
+            "local-files",
+            "扫描文件夹无法访问",
+            Some(&format!("path={} error={cause}", folder)),
+        );
+        error("无法访问所选文件夹。")
+    })?;
     let mut pending = vec![root.clone()];
     let mut files = Vec::new();
     while let Some(directory) = pending.pop() {
