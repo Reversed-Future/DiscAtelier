@@ -27,6 +27,7 @@ pub(super) fn valid(value: &VideoMetadata) -> bool {
                 VideoSource::Bangumi => "bangumi",
                 VideoSource::TmdbMovie => "tmdbMovie",
                 VideoSource::TmdbTv => "tmdbTv",
+                VideoSource::Local => "local",
             };
             format!("{source}:{}", w.external_id)
         })

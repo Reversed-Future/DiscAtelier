@@ -16,7 +16,11 @@ export function VideoDetails({ value }: { value: VideoMetadata | null }) {
   if (genres.length) facts.push({label:'类型',values:[{text:genres.join(' · '),url:''}]});
   return <section className="video-details">{fields.length > 0 && <dl className="metadata">{fields.map(([k,v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}
     {!!works.length && <><h3>作品资料</h3><WorkFacts facts={facts}/>
-      <div className="video-actions">{works.map(work => <button key={workKey(work)} type="button" className="text-button video-source" onClick={() => void invoke('video_open_source',{url:workLink(work)}).catch(() => setError('无法打开来源网页。'))}>{sourceLabel(work.source)} ↗</button>)}</div>
+      <div className="video-actions">{works.map(work => {
+        const link = workLink(work);
+        return link ? <button key={workKey(work)} type="button" className="text-button video-source" onClick={() => void invoke('video_open_source',{url:link}).catch(() => setError('无法打开来源网页。'))}>{sourceLabel(work.source)} ↗</button>
+          : <span key={workKey(work)} className="setting-hint">{sourceLabel(work.source)}</span>;
+      })}</div>
     </>}{error && <p className="form-error" role="alert">{error}</p>}
   </section>;
 }

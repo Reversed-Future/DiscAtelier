@@ -3,10 +3,8 @@ import type { EditionContent, ReleaseCompany, ReleaseCredit } from '../metadata/
 import { errorMessage } from '../library/gateway';
 import type { EditionDraft } from '../library/types';
 import { readCover } from '../library/artwork';
-import { sourceLabel, videoImageUrl, type VideoCharacter, type VideoChapter, type VideoFact, type VideoMetadata, type VideoSource, type VideoWork } from '../video/gateway';
-import { putVideoWork, videoWorks } from '../video/sources';
-import { WorkPicker } from '../video/WorkPicker';
-import { Modal } from '../ui/Modal';
+import { sourceLabel, videoImageUrl, type VideoCharacter, type VideoChapter, type VideoFact, type VideoMetadata, type VideoWork } from '../video/gateway';
+import { videoWorks } from '../video/sources';
 import { TrackMultiSelect } from './TrackMultiSelect';
 import { Select } from '../ui/Select';
 import { ContentEditorTable } from './ContentEditorTable';
@@ -51,35 +49,8 @@ function MusicEditor({ edition, content, onChange }: { edition: EditionDraft; co
   </section>;
 }
 
-function LocalWorkDialog({ onAdd, onClose }: { onAdd(work: VideoWork): void; onClose(): void }) {
-  const [source, setSource] = useState<VideoSource>('bangumi');
-  const [id, setId] = useState('');
-  const [title, setTitle] = useState('');
-  const [error, setError] = useState('');
-  function add() {
-    const externalId = Number(id);
-    if (!Number.isSafeInteger(externalId) || externalId <= 0) { setError('请输入有效的条目 ID。'); return; }
-    if (!title.trim()) { setError('请输入作品标题。'); return; }
-    onAdd({ source, externalId, title: title.trim(), originalTitle: '', summary: '', premiereDate: '', posterUrl: '', episodeCount: null, genres: [], people: [], facts: [], characters: [], chapters: [], images: [] });
-  }
-  return <Modal title="本地关联作品" onClose={onClose} wide className="editor-panel">
-    <div className="content-editor">
-      <p className="setting-hint">不连接站点，手动填写 Bangumi 或 TMDB 条目。适合已保存的本地资料或稍后再补章节。</p>
-      <div className="content-editor-scroll">
-        <label>来源<Select label="本地关联来源" value={source} options={[{id:'bangumi',label:'Bangumi'},{id:'tmdbTv',label:'TMDB 剧集'},{id:'tmdbMovie',label:'TMDB 电影'}]} onChange={value => setSource(value as VideoSource)}/></label>
-        <label>条目 ID<input inputMode="numeric" value={id} placeholder="例如 32219538" onChange={e => setId(e.target.value)}/></label>
-        <label>作品标题<input value={title} onChange={e => setTitle(e.target.value)}/></label>
-      </div>
-      {error && <p className="form-error" role="alert">{error}</p>}
-      <footer className="settings-actions"><button type="button" className="solid-button" onClick={add}>确认本地关联</button></footer>
-    </div>
-  </Modal>;
-}
-
-function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadata; setMetadata(value: VideoMetadata): void; onBusy(value: boolean): void }) {
+function VideoEditor({ metadata, setMetadata, onBusy, onManageSources }: { metadata: VideoMetadata; setMetadata(value: VideoMetadata): void; onBusy(value: boolean): void; onManageSources?(): void }) {
   const [selected, setSelected] = useState(0);
-  const [picker, setPicker] = useState(false);
-  const [localPicker, setLocalPicker] = useState(false);
   const [imagesOpen, setImagesOpen] = useState(false);
   const [error, setError] = useState('');
   const avatarInput = useRef<HTMLInputElement>(null);
@@ -184,8 +155,7 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
 
       <div className="content-editor-heading"><h3>章节 <span className="content-editor-source-label">{sourceLabel(work.source)}</span></h3>
         <div className="content-editor-heading-actions">
-          <button type="button" className="text-button" disabled={works.length >= 8} onClick={() => setPicker(true)}>关联另一站点</button>
-          <button type="button" className="text-button" disabled={works.length >= 8} onClick={() => setLocalPicker(true)}>本地关联</button>
+          {onManageSources && <button type="button" className="text-button" onClick={onManageSources}>管理关联 →</button>}
           <button type="button" className="text-button" onClick={() => updateWork({ chapters: [...chapters, { id: Date.now(), group: '', number: String(chapters.length + 1), title: '', originalTitle: '', airDate: '', duration: '', summary: '', imageUrl: '' }] })}>添加章节</button>
         </div>
       </div>
@@ -213,19 +183,15 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
           <td><button type="button" className="content-editor-ghost-add" onClick={() => updateWork({ chapters: [{ id: Date.now(), group: '', number: '1', title: '', originalTitle: '', airDate: '', duration: '', summary: '', imageUrl: '' }] })}>添加章节</button></td>
         </tr>}
       </tbody></ContentEditorTable>
-      {picker && <WorkPicker initialQuery={work.title} existingWorks={works} onClose={() => setPicker(false)}
-        onPick={next => { setMetadata(putVideoWork(metadata, next)); setPicker(false); }}/>}
-      {localPicker && <LocalWorkDialog onClose={() => setLocalPicker(false)}
-        onAdd={next => { setMetadata(putVideoWork(metadata, next)); setLocalPicker(false); }}/>}
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
   </section>;
 }
 
-export function ContentEditor({ edition, content, onContent, metadata, onMetadata, onBusy }: {
+export function ContentEditor({ edition, content, onContent, metadata, onMetadata, onBusy, onManageSources }: {
   edition: EditionDraft; content: EditionContent | null; onContent(value: EditionContent): void;
-  metadata: VideoMetadata; onMetadata(value: VideoMetadata): void; onBusy(value: boolean): void;
+  metadata: VideoMetadata; onMetadata(value: VideoMetadata): void; onBusy(value: boolean): void; onManageSources?(): void;
 }) {
-  if (edition.categoryId === 'video') return <VideoEditor metadata={metadata} setMetadata={onMetadata} onBusy={onBusy}/>;
+  if (edition.categoryId === 'video') return <VideoEditor metadata={metadata} setMetadata={onMetadata} onBusy={onBusy} onManageSources={onManageSources}/>;
   return content ? <MusicEditor edition={edition} content={content} onChange={onContent}/> : <p className="utility-copy">正在读取资料…</p>;
 }

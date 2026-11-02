@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { CreateCopy, UpdateEdition } from '../library/types';
-export type VideoSource = 'tmdbMovie' | 'tmdbTv' | 'bangumi';
+export type VideoSource = 'tmdbMovie' | 'tmdbTv' | 'bangumi' | 'local';
 export interface VideoFact { label: string; values: { text: string; url: string }[] }
 export interface VideoCharacter { name: string; role: string; actors: string[]; portraitUrl?: string; avatar?: string; facts?: VideoFact[]; actorPortraits?: { name: string; portraitUrl: string }[] }
 export interface VideoImage { kind: 'poster' | 'backdrop'; url: string; previewUrl: string; width: number; height: number; language: string }
@@ -26,9 +26,10 @@ export const video = {
   recognize: (pictures: string[]) => invoke<Recognition>('video_recognize', { pictures }),
 };
 export function workLink(work: VideoWork) {
+  if (work.source === 'local') return '';
   return work.source === 'bangumi' ? `https://bgm.tv/subject/${work.externalId}` : `https://www.themoviedb.org/${work.source === 'tmdbMovie' ? 'movie' : 'tv'}/${work.externalId}`;
 }
-export const sourceLabel = (source: VideoSource) => source === 'bangumi' ? 'Bangumi' : 'TMDB';
+export const sourceLabel = (source: VideoSource) => source === 'bangumi' ? 'Bangumi' : source === 'local' ? '本地' : 'TMDB';
 export function posterUrl(work: VideoWork) { return videoImageUrl(work.posterUrl); }
 export function videoImageUrl(value: string) {
   try { const u = new URL(value); return u.protocol === 'https:' && ['image.tmdb.org', 'lain.bgm.tv'].includes(u.hostname) && !u.port && !u.username && !u.password ? u.href : ''; } catch { return ''; }

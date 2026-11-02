@@ -3,7 +3,7 @@ import type { VideoChapter, VideoWork } from './gateway';
 export interface MergedEpisode extends VideoChapter { key: string; sources: string[] }
 interface EpisodeGroup { key: string; label: string; work: VideoWork; rows: VideoChapter[] }
 export interface MergedEpisodeGroup { key: string; label: string; rows: MergedEpisode[] }
-const sourceName = (work: VideoWork) => work.source === 'bangumi' ? 'Bangumi' : 'TMDB';
+const sourceName = (work: VideoWork) => work.source === 'bangumi' ? 'Bangumi' : work.source === 'local' ? '本地' : 'TMDB';
 const identity = (work: VideoWork) => `${work.source}:${work.externalId}`;
 
 // Only explicit provider season/type fields participate. Localized group titles are display text.

@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { DatePicker } from '../ui/DatePicker';
 import type { CoverChange, EditionDraft } from '../library/types';
 import type { VideoMetadata } from './gateway';
-import { VideoSourcesEditor } from './VideoSourcesEditor';
 import { videoWorks, workKey, sourceCaption } from './sources';
 import { Select } from '../ui/Select';
 import { PackagingImages } from './PackagingImages';
@@ -13,9 +12,8 @@ export function VideoFields({ value, onChange, edition, onEdition, onCover, cove
   const [pictures, setPictures] = useState(false), [coverSource, setCoverSource] = useState('');
   const works = videoWorks(value), coverWork = works.find(w => workKey(w) === coverSource) || works[0];
   return <><section className="video-draft">
-    <VideoSourcesEditor value={value} initialQuery={edition.title} onChange={onChange} onFirstWork={work => { if (!edition.title.trim()) onEdition({...edition, title: work.title}); }}/>
     <button type="button" className="text-button" onClick={() => setPictures(true)}>识别包装</button>
-    {!value.parts?.length && <div className="video-cover-choice"><h3>封面</h3>{works.length > 1 && <Select label="封面资料来源" value={workKey(coverWork)} options={works.map(w => ({id: workKey(w), label: sourceCaption(w, works)}))} onChange={setCoverSource}/>}<CoverField edition={edition} assetId={assetId} value={cover} onChange={onCover} onBusy={onBusy} remoteCover={coverWork ? { label: '使用作品封面', load: () => video.cover(coverWork) } : undefined}/></div>}
+    {!value.parts?.length && <div className="video-cover-choice"><h3>封面</h3>{works.length > 1 && <Select label="封面资料来源" value={workKey(coverWork)} options={works.map(w => ({id: workKey(w), label: sourceCaption(w, works)}))} onChange={setCoverSource}/>}<CoverField edition={edition} assetId={assetId} value={cover} onChange={onCover} onBusy={onBusy} remoteCover={coverWork && coverWork.source !== 'local' ? { label: '使用作品封面', load: () => video.cover(coverWork) } : undefined}/></div>}
     <VideoPartsEditor value={value} onChange={onChange}/>
     <h3>实体版本</h3><div className="form-row"><label>地区<input value={value.physical.territory} maxLength={200} onChange={e => onChange({ ...value, physical: { ...value.physical, territory: e.target.value } })}/></label><label>卷号<input placeholder="如：第 1 卷" value={value.physical.volume} maxLength={200} onChange={e => onChange({ ...value, physical: { ...value.physical, volume: e.target.value } })}/></label></div>
     <div className="date-field"><span>本版发行日期</span><DatePicker label="本版发行日期" value={value.physical.releaseDate} onChange={releaseDate => onChange({ ...value, physical: { ...value.physical, releaseDate } })}/></div>

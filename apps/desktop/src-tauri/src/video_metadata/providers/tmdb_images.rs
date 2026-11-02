@@ -65,6 +65,7 @@ pub fn fetch(source: VideoSource, id: u64) -> Result<Vec<VideoImage>, AppError> 
         VideoSource::TmdbMovie => "movie",
         VideoSource::TmdbTv => "tv",
         VideoSource::Bangumi => return Ok(vec![]),
+        VideoSource::Local => return Ok(vec![]),
     };
     // No language filter: include untranslated posters and backdrops as well.
     normalize(

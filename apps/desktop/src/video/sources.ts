@@ -2,7 +2,7 @@ import type { VideoMetadata, VideoWork } from './gateway';
 
 export const workKey = (work: VideoWork) => `${work.source}:${work.externalId}`;
 export const videoWorks = (value?: VideoMetadata | null): VideoWork[] => value?.work ? [value.work, ...(value.additionalWorks || [])] : [];
-export const workSourceName = (work: VideoWork) => work.source === 'bangumi' ? 'Bangumi' : work.source === 'tmdbTv' ? 'TMDB 剧集' : 'TMDB 电影';
+export const workSourceName = (work: VideoWork) => work.source === 'bangumi' ? 'Bangumi' : work.source === 'tmdbTv' ? 'TMDB 剧集' : work.source === 'local' ? '本地' : 'TMDB 电影';
 export function sourceCaption(work: VideoWork, works: VideoWork[]) {
   return works.filter(w => w.source === work.source).length > 1 ? `${workSourceName(work)} · ${work.originalTitle || work.title}` : workSourceName(work);
 }

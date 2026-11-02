@@ -9,7 +9,7 @@ export function VideoChapters({ work, enabled = true, onChange, onSave }: { work
   const live = useRef(true), pending = useRef(false);
   useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
   async function load() {
-    if (pending.current) return;
+    if (pending.current || work.source === 'local') return;
     pending.current = true; setBusy(true); setError('');
     try { const next = await video.chapters(work); if (live.current) { setRows(next); setChanged(true); onChange?.(next); } }
     catch (cause) { if (live.current) setError(errorMessage(cause)); }

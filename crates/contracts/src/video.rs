@@ -10,6 +10,8 @@ pub enum VideoSource {
     TmdbMovie,
     TmdbTv,
     Bangumi,
+    /// A manually created, local-only work with no provider lookup.
+    Local,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

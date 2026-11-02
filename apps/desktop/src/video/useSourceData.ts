@@ -4,7 +4,7 @@ import { video, type VideoWork } from './gateway';
 import { workKey, workSourceName } from './sources';
 
 export type SourceDataKind = 'chapters' | 'images' | 'characters';
-const supported = (work: VideoWork, kind: SourceDataKind) => kind === 'characters' ? work.source === 'bangumi' : kind === 'images' ? work.source !== 'bangumi' : work.source !== 'tmdbMovie';
+const supported = (work: VideoWork, kind: SourceDataKind) => work.source === 'local' ? false : kind === 'characters' ? work.source === 'bangumi' : kind === 'images' ? work.source !== 'bangumi' : work.source !== 'tmdbMovie';
 function missing(work: VideoWork, kind: SourceDataKind) {
   return work[kind] == null;
 }

@@ -1,7 +1,7 @@
 import type { VideoFact, VideoWork } from './gateway';
 
 export interface GalleryPicture { key:string; kind:string; url:string; previewUrl:string; label:string; sources:string[] }
-const sourceName = (work:VideoWork) => work.source === 'bangumi' ? 'Bangumi' : 'TMDB';
+const sourceName = (work:VideoWork) => work.source === 'bangumi' ? 'Bangumi' : work.source === 'local' ? '本地' : 'TMDB';
 export function galleryPictures(works:VideoWork[]):GalleryPicture[] {
   const pictures = new Map<string,GalleryPicture>();
   function add(work:VideoWork, picture:Omit<GalleryPicture,'key'|'sources'>) {

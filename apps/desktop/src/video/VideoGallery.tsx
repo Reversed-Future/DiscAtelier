@@ -11,7 +11,7 @@ export function VideoGallery({ work, enabled = true, onChange, onSave }: { work:
   const live = useRef(true), pending = useRef(false);
   useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
   async function load() {
-    if (pending.current || work.source === 'bangumi') return;
+    if (pending.current || work.source === 'bangumi' || work.source === 'local') return;
     pending.current = true; setBusy(true); setError('');
     try { const next = await video.images(work); if (live.current) { setRows(next); setChanged(true); onChange?.(next); } }
     catch (cause) { if (live.current) setError(errorMessage(cause)); }
@@ -36,7 +36,7 @@ export function VideoGallery({ work, enabled = true, onChange, onSave }: { work:
       <div className="video-heading-actions">
         {onSave && changed && rows && !saving && <button type="button" className="text-button" disabled={busy} onClick={() => void save()}>确认保存此图库</button>}
         {saving && <span className="setting-hint">保存中…</span>}
-        {work.source !== 'bangumi' && <button type="button" className="text-button" disabled={busy || saving} onClick={() => void load()}>{busy ? '读取图片中…' : '刷新图库'}</button>}
+        {work.source !== 'bangumi' && work.source !== 'local' && <button type="button" className="text-button" disabled={busy || saving} onClick={() => void load()}>{busy ? '读取图片中…' : '刷新图库'}</button>}
       </div>
     </div>
     <nav className="disc-tabs" aria-label="图片分类">{kinds.map(kind => <button type="button" key={kind.id} aria-selected={active === kind.id} onClick={() => setFilter(kind.id)}>{kind.label} · {pictures.filter(p => p.kind === kind.id).length}</button>)}</nav>

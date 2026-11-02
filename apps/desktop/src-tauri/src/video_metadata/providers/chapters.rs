@@ -165,6 +165,7 @@ pub fn fetch(source: VideoSource, id: u64) -> Result<Vec<VideoChapter>, AppError
             )?)
         }),
         VideoSource::TmdbMovie => Ok(vec![]),
+        VideoSource::Local => Ok(vec![]),
         VideoSource::TmdbTv => {
             let series: Series = json(tmdb::get(&format!("tv/{id}"))?)?;
             if series.id != id || series.seasons.len() > 100 {
