@@ -17,6 +17,7 @@
 .settings-content > h3 { font-size: 16px; font-weight: 400; margin: 0 0 28px; }
 .setting-row { display: flex; justify-content: space-between; align-items: center; gap: 18px; min-height: 44px; font-size: 12px; }
 .setting-row .text-button { padding-right: 0; color: var(--muted); white-space: nowrap; }
+.settings-inline-actions { display: flex; align-items: center; gap: 16px; }
 .settings-section { border-top: 1px solid var(--line); margin-top: 30px; padding-top: 16px; }
 .netease-account { margin-top: 24px; }
 .netease-account h4 { font-size: 11px; font-weight: 400; color: var(--muted); margin: 0 0 14px; }

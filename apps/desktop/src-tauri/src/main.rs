@@ -13,6 +13,7 @@ mod discogs;
 mod exchange;
 mod integration_settings;
 mod local_files;
+mod logging;
 mod menu_surface;
 mod mobile_bridge;
 mod model_picker;
@@ -87,6 +88,8 @@ fn main() {
             let directory = std::env::var_os("DISCATELIER_TEST_DATA_DIR")
                 .map(std::path::PathBuf::from)
                 .unwrap_or(directory);
+            logging::init(&directory).map_err(|error| error.message)?;
+            logging::install_panic_hook();
             let service = SqliteLibrary::open(&directory).and_then(|mut repository| {
                 repository.interrupt_playback()?;
                 Ok(LibraryService::new(repository))
@@ -202,6 +205,10 @@ fn main() {
             backups::backup_inventory,
             backups::backup_delete_one,
             data_location::data_open_directory,
+            logging::log_write,
+            logging::logs_info,
+            logging::logs_open,
+            logging::logs_export,
             updates::update_status,
             updates::update_save_token,
             updates::update_forget_token,

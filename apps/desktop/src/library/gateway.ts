@@ -1,5 +1,6 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import type { LibraryGateway } from './types';
+import { logEvent } from '../logging';
 
 /** All storage access crosses this port; UI cannot issue SQL or filesystem calls. */
 export const library: LibraryGateway = {
@@ -20,12 +21,16 @@ export const library: LibraryGateway = {
 };
 export const desktopAvailable = isTauri;
 export function errorMessage(error: unknown): string {
-  if (typeof error === 'string') return error;
-  if (typeof error === 'object' && error !== null) {
+  let message = '操作未完成，请重试。';
+  if (typeof error === 'string') message = error;
+  else if (typeof error === 'object' && error !== null) {
     const value = error as { message?: unknown; error?: unknown };
-    if (typeof value.message === 'string' && value.message) return value.message;
+    if (typeof value.message === 'string' && value.message) message = value.message;
     // Tauri and a few native bridges wrap the AppError one level deeper.
-    if (value.error !== undefined && value.error !== error) return errorMessage(value.error);
+    else if (value.error !== undefined && value.error !== error) message = errorMessage(value.error);
   }
-  return '操作未完成，请重试。';
+  let detail = '';
+  try { detail = typeof error === 'object' ? JSON.stringify(error) : String(error); } catch { /* keep the readable message only */ }
+  logEvent('warn', 'ui', message, detail);
+  return message;
 }

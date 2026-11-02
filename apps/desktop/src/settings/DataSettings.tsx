@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { save } from '@tauri-apps/plugin-dialog';
 import { library, errorMessage } from '../library/gateway';
-import { settings, type DataLocation } from './gateway';
+import { settings, type DataLocation, type LogInfo } from './gateway';
 import { BackupManager } from './BackupManager';
 
 export function DataSettings({ libraryAvailable, onRestore, onBusy }: {
@@ -12,9 +13,14 @@ export function DataSettings({ libraryAvailable, onRestore, onBusy }: {
   const [revision, setRevision] = useState(0);
   const [saved, setSaved] = useState('');
   const [error, setError] = useState('');
+  const [logs, setLogs] = useState<LogInfo | null>(null);
+  const [logBusy, setLogBusy] = useState(false);
+  const [logNotice, setLogNotice] = useState('');
   useEffect(() => {
     let active = true;
     void settings.location().then(value => { if (active) setLocation(value); })
+      .catch(cause => { if (active) setError(errorMessage(cause)); });
+    void settings.logsInfo().then(value => { if (active) setLogs(value); })
       .catch(cause => { if (active) setError(errorMessage(cause)); });
     return () => { active = false; };
   }, []);
@@ -24,6 +30,27 @@ export function DataSettings({ libraryAvailable, onRestore, onBusy }: {
     try { setSaved(await library.backup()); setRevision(v => v + 1); }
     catch (cause) { setError(errorMessage(cause)); }
     finally { setBusy(false); onBusy(false); }
+  }
+  async function copyLogs() {
+    if (!logs?.recent || logBusy) return;
+    setLogNotice(''); setError('');
+    try {
+      await navigator.clipboard.writeText(logs.recent);
+      setLogNotice('最近日志已复制，可直接粘贴发送。');
+    } catch (cause) { setError(errorMessage(cause)); }
+  }
+  async function exportLogs() {
+    if (logBusy) return;
+    setLogNotice(''); setError('');
+    try {
+      const path = await save({ defaultPath: 'DiscAtelier-diagnostics.log', filters: [{ name: '日志', extensions: ['log', 'txt'] }] });
+      if (!path) return;
+      setLogBusy(true); onBusy(true);
+      const exported = await settings.exportLogs(path);
+      setLogNotice(`日志已导出：${exported}`);
+      setLogs(await settings.logsInfo());
+    } catch (cause) { setError(errorMessage(cause)); }
+    finally { setLogBusy(false); onBusy(false); }
   }
   return <div className="data-settings">
     <div className="setting-row"><span>数据位置</span><button className="text-button" disabled={!location || busy} onClick={() => {
@@ -36,6 +63,18 @@ export function DataSettings({ libraryAvailable, onRestore, onBusy }: {
       <div className="setting-row"><span>恢复收藏</span><button className="text-button" disabled={!libraryAvailable || busy || managing} onClick={onRestore}>选择备份</button></div>
       <p className="setting-hint">备份不会自动清理，可在下方选择删除。每份备份包含当时的收藏、封面和模型。</p>
       <BackupManager revision={revision} busy={busy} onBusy={value => { setManaging(value); onBusy(value); }} />
+    </div>
+    <div className="settings-section">
+      <div className="setting-row"><span>诊断日志</span><button className="text-button" disabled={logBusy} onClick={() => {
+        void settings.openLogs().catch(cause => setError(errorMessage(cause)));
+      }}>打开日志目录 ↗</button></div>
+      <p className="data-path">{logs?.file || '读取中'}</p>
+      <p className="setting-hint">遇到报错时，复制最近日志或导出后发送给开发者。日志包含本地路径和错误信息，不包含密码或 Token。</p>
+      <div className="setting-row"><span>日志操作</span><span className="settings-inline-actions">
+        <button className="text-button" disabled={!logs?.recent || logBusy} onClick={() => void copyLogs()}>复制最近日志</button>
+        <button className="text-button" disabled={logBusy} onClick={() => void exportLogs()}>{logBusy ? '导出中…' : '导出诊断日志'}</button>
+      </span></div>
+      {logNotice && <p className="setting-hint" role="status">{logNotice}</p>}
     </div>
     <div className="settings-feedback" aria-live="polite">
       {saved && <><span>备份已保存</span><p className="data-path">{saved}</p></>}

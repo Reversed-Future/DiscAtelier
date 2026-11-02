@@ -8,9 +8,13 @@ export interface UpdateStatus {
 }
 export interface DownloadProgress { received: number; total: number | null }
 export interface DataLocation { directory: string; database: string; backups: string }
+export interface LogInfo { directory: string; file: string; bytes: number; recent: string }
 export const settings = {
   location: () => invoke<DataLocation>('data_location'),
   openDirectory: () => invoke('data_open_directory'),
+  logsInfo: () => invoke<LogInfo>('logs_info'),
+  openLogs: () => invoke('logs_open'),
+  exportLogs: (path: string) => invoke<string>('logs_export', { path }),
 };
 export const updates = {
   status: () => invoke<UpdateStatus>('update_status'),
