@@ -90,13 +90,20 @@ pub async fn discogs_prepare_import(
         service.source_copy(&lookup.provider_id, &lookup.external_id)
     })
     .await?;
-    let cover = if existing.is_none() || refresh_cover.unwrap_or(false) {
-        run(state.inner().clone(), move |service| {
+    // The Discogs image CDN can reject non-browser clients (Cloudflare),
+    // even though the preview <img> in the webview displays the same URL.
+    // A cover is optional, so never block the release import on it.
+    let (cover, cover_error) = if existing.is_none() || refresh_cover.unwrap_or(false) {
+        match run(state.inner().clone(), move |service| {
             service.provider.cover(&images)
         })
-        .await?
+        .await
+        {
+            Ok(cover) => (cover, None),
+            Err(_) => (None, Some("封面未能保存，可稍后手动选择封面。".to_string())),
+        }
     } else {
-        None
+        (None, None)
     };
     Ok(ImportPreview {
         token,
@@ -104,6 +111,7 @@ pub async fn discogs_prepare_import(
         source,
         existing,
         cover,
+        cover_error,
     })
 }
 

@@ -47,6 +47,8 @@ pub struct ImportPreview {
     pub source: EditionSource,
     pub existing: Option<LibraryCopy>,
     pub cover: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover_error: Option<String>,
 }
 
 /// Only assembled by the provider/application boundary, not accepted as raw IPC.

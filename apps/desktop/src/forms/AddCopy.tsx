@@ -120,6 +120,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
         }} disabled={busy || reading}>购入</button>
       </nav>}
       {existing && <p className="existing-edition">{edition.title}<span>{edition.editionLabel}</span>{imported && <span>已收藏 {existing.editionCopyCount} 套</span>}</p>}
+      {imported?.coverError && <p className="form-note" role="status">{imported.coverError}</p>}
       <fieldset disabled={busy || reading} ref={fields}>
       {tab === 'edition' ? <>
         {!imported && edition.categoryId === 'video' && <VideoFields value={videoDraft} onChange={setVideoDraft} edition={edition} onEdition={setEdition} onCover={setCover} cover={cover} onBusy={setReading}/>}

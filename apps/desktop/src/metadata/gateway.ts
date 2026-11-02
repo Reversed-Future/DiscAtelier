@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { CopyDraft, EditionDraft, EditionSource, LibraryCopy } from '../library/types';
-export interface ImportPreview { token: string; edition: EditionDraft; source: EditionSource; existing: LibraryCopy | null; cover: string | null }
+export interface ImportPreview { token: string; edition: EditionDraft; source: EditionSource; existing: LibraryCopy | null; cover: string | null; coverError?: string | null }
 export interface ImportCopyRequest {
   neteaseAlbumId?: number | null;
   requestId: string; token: string; edition: EditionDraft; copy: CopyDraft; cover: string | null; model: string | null; modelToken?: string | null;
