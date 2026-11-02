@@ -5,6 +5,8 @@
 .panel-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 .panel-body:has(> .editor-form) { overflow: hidden; display: flex; flex-direction: column; }
 .editor-panel { width: min(1180px, calc(100vw - 56px)); max-width: calc(100vw - 56px); }
+.editor-source-toolbar { margin: 8px 0 2px; min-height: 24px; }
+.editor-source-toolbar .form-note { margin: 0; }
 .editor-panel > .panel-body { display: flex; flex-direction: column; overflow: hidden; }
 .editor-page-tabs { flex: 0 0 auto; margin-top: 0; }
 .content-editor { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -23,6 +25,13 @@
 .content-editor textarea { resize: vertical; }
 .content-editor-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 8px; }
 .content-editor-heading h3 { margin: 0; font-size: 12px; font-weight: 400; color: var(--muted); }
+.content-editor-heading-actions { display: flex; align-items: center; gap: 16px; }
+.content-editor-source-label { display: inline-block; padding: 2px 6px; border: 1px solid var(--line); border-radius: 2px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.content-editor-source-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.content-editor-source-tabs button { padding: 4px 0; color: var(--muted); font-size: 11px; border-bottom: 1px solid transparent; }
+.content-editor-source-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.content-editor-chapter-image { min-width: 190px; }
+.content-editor-chapter-image img { display: block; width: 88px; height: 50px; margin-top: 5px; object-fit: cover; border: 1px solid var(--line); background: #111; }
 .content-editor-table-wrap { overflow: auto; border-block: 1px solid var(--line); }
 .content-editor-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 11px; }
 .content-editor-table-tracks { min-width: 640px; }

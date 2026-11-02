@@ -3,8 +3,9 @@ import type { EditionContent, ReleaseCompany, ReleaseCredit } from '../metadata/
 import { errorMessage } from '../library/gateway';
 import type { EditionDraft } from '../library/types';
 import { readCover } from '../library/artwork';
-import { type VideoCharacter, type VideoChapter, type VideoFact, type VideoMetadata, type VideoWork } from '../video/gateway';
-import { videoWorks } from '../video/sources';
+import { sourceLabel, videoImageUrl, type VideoCharacter, type VideoChapter, type VideoFact, type VideoMetadata, type VideoWork } from '../video/gateway';
+import { putVideoWork, videoWorks } from '../video/sources';
+import { WorkPicker } from '../video/WorkPicker';
 import { TrackMultiSelect } from './TrackMultiSelect';
 import { Select } from '../ui/Select';
 import { ContentEditorTable } from './ContentEditorTable';
@@ -51,6 +52,7 @@ function MusicEditor({ edition, content, onChange }: { edition: EditionDraft; co
 
 function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadata; setMetadata(value: VideoMetadata): void; onBusy(value: boolean): void }) {
   const [selected, setSelected] = useState(0);
+  const [picker, setPicker] = useState(false);
   const [error, setError] = useState('');
   const avatarInput = useRef<HTMLInputElement>(null);
   const [avatarRow, setAvatarRow] = useState(-1);
@@ -84,7 +86,10 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
   return <section className="content-editor">
     <p className="setting-hint">编辑已保存的作品、人物、角色和章节。角色头像可以填网络地址，也可以从本地选择图片；本地头像只保存在这份收藏资料里。</p>
     <div className="content-editor-scroll">
-      {works.length > 1 && <label>编辑作品<Select label="编辑作品" value={String(selected)} onChange={value => setSelected(Number(value))} options={works.map((row, i) => ({id:String(i),label:row.title}))}/></label>}
+      {works.length > 1 && <div className="content-editor-source-tabs" role="tablist" aria-label="作品来源">
+        {works.map((row, index) => <button type="button" key={`${row.source}:${row.externalId}`} role="tab" aria-selected={index === selected}
+          onClick={() => setSelected(index)}>{sourceLabel(row.source)} · {row.title}</button>)}
+      </div>}
       <label>标题<input value={work.title} onChange={e => updateWork({ title: e.target.value })}/></label>
       <label>原名<input value={work.originalTitle} onChange={e => updateWork({ originalTitle: e.target.value })}/></label>
       <label>简介<textarea rows={4} value={work.summary} onChange={e => updateWork({ summary: e.target.value })}/></label>
@@ -144,10 +149,29 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
         } catch (cause) { setError(errorMessage(cause)); } finally { onBusy(false); }
       }}/>
 
-      <div className="content-editor-heading"><h3>章节</h3><button type="button" className="text-button" onClick={() => updateWork({ chapters: [...chapters, { id: Date.now(), group: '', number: String(chapters.length + 1), title: '', originalTitle: '', airDate: '', duration: '', summary: '', imageUrl: '' }] })}>添加章节</button></div>
-      <ContentEditorTable kind="chapters"><thead><tr><th>组</th><th>编号</th><th>标题</th><th>原名</th><th>日期</th><th>时长</th><th>简介</th><th/></tr></thead><tbody>
-        {chapters.map((row, i) => <tr key={`${row.id}:${i}`}><td><input value={row.group} onChange={e => chapter(i, { group: e.target.value })}/></td><td><input value={row.number} onChange={e => chapter(i, { number: e.target.value })}/></td><td><input value={row.title} onChange={e => chapter(i, { title: e.target.value })}/></td><td><input value={row.originalTitle} onChange={e => chapter(i, { originalTitle: e.target.value })}/></td><td><input value={row.airDate} onChange={e => chapter(i, { airDate: e.target.value })}/></td><td><input value={row.duration} onChange={e => chapter(i, { duration: e.target.value })}/></td><td><input value={row.summary || ''} onChange={e => chapter(i, { summary: e.target.value })}/></td><td><button type="button" className="text-button" onClick={() => updateWork({ chapters: chapters.filter((_, at) => at !== i) })}>移除</button></td></tr>)}
+      <div className="content-editor-heading"><h3>章节 <span className="content-editor-source-label">{sourceLabel(work.source)}</span></h3>
+        <div className="content-editor-heading-actions">
+          <button type="button" className="text-button" disabled={works.length >= 8} onClick={() => setPicker(true)}>关联另一站点</button>
+          <button type="button" className="text-button" onClick={() => updateWork({ chapters: [...chapters, { id: Date.now(), group: '', number: String(chapters.length + 1), title: '', originalTitle: '', airDate: '', duration: '', summary: '', imageUrl: '' }] })}>添加章节</button>
+        </div>
+      </div>
+      <p className="setting-hint">两个站点可分别关联；章节按来源显示，同作品会按集数/日期自动对应。</p>
+      <ContentEditorTable kind="chapters"><thead><tr><th>来源</th><th>组</th><th>编号</th><th>标题</th><th>原名</th><th>日期</th><th>时长</th><th>简介</th><th>图片</th><th/></tr></thead><tbody>
+        {chapters.map((row, i) => <tr key={`${row.id}:${i}`}>
+          <td><span className="content-editor-source-label">{sourceLabel(work.source)}</span></td>
+          <td><input value={row.group} onChange={e => chapter(i, { group: e.target.value })}/></td>
+          <td><input value={row.number} onChange={e => chapter(i, { number: e.target.value })}/></td>
+          <td><input value={row.title} onChange={e => chapter(i, { title: e.target.value })}/></td>
+          <td><input value={row.originalTitle} onChange={e => chapter(i, { originalTitle: e.target.value })}/></td>
+          <td><input value={row.airDate} onChange={e => chapter(i, { airDate: e.target.value })}/></td>
+          <td><input value={row.duration} onChange={e => chapter(i, { duration: e.target.value })}/></td>
+          <td><input value={row.summary || ''} onChange={e => chapter(i, { summary: e.target.value })}/></td>
+          <td className="content-editor-chapter-image"><input value={row.imageUrl || ''} placeholder="图片地址" onChange={e => chapter(i, { imageUrl: e.target.value })}/>
+            {row.imageUrl && <img src={videoImageUrl(row.imageUrl)} alt="" onError={event => { event.currentTarget.style.display = 'none'; }}/>}</td>
+          <td><button type="button" className="text-button" onClick={() => updateWork({ chapters: chapters.filter((_, at) => at !== i) })}>移除</button></td>
+        </tr>)}
         {!chapters.length && <tr className="content-editor-ghost">
+          <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
@@ -155,6 +179,8 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
           <td><button type="button" className="content-editor-ghost-add" onClick={() => updateWork({ chapters: [{ id: Date.now(), group: '', number: '1', title: '', originalTitle: '', airDate: '', duration: '', summary: '', imageUrl: '' }] })}>添加章节</button></td>
         </tr>}
       </tbody></ContentEditorTable>
+      {picker && <WorkPicker initialQuery={work.title} existingWorks={works} onClose={() => setPicker(false)}
+        onPick={next => { setMetadata(putVideoWork(metadata, next)); setPicker(false); }}/>}
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
   </section>;

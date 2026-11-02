@@ -1,6 +1,8 @@
 import { partsError } from '../video/parts';
 import { video, emptyVideo } from '../video/gateway';
 import { VideoFields } from '../video/VideoFields';
+import { WorkPicker } from '../video/WorkPicker';
+import { putVideoWork, videoWorks } from '../video/sources';
 import { leave } from '../ui/motion';
 import { measureAsync, measureSync } from '../models/timing';
 import { useEffect, useRef, useState } from 'react';
@@ -24,6 +26,7 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
 }) {
   const [page, setPage] = useState<'edition' | 'content' | 'model'>('edition');
   const [sourceOpen, setSourceOpen] = useState(false);
+  const [videoSourceOpen, setVideoSourceOpen] = useState(false);
   const [sourceDraft, setSourceDraft] = useState<ImportPreview | null>(null);
   const [videoDraft, setVideoDraft] = useState(emptyVideo);
   const [videoLoaded, setVideoLoaded] = useState(item.edition.categoryId !== 'video');
@@ -68,7 +71,11 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
       } catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
     }}>
       {page === 'edition' ? <>
-      <div className="metadata-toolbar"><button type="button" className="text-button" disabled={busy || reading} onClick={() => setSourceOpen(true)}>更换 Discogs 资料</button>
+      <div className="metadata-toolbar editor-source-toolbar">
+        <button type="button" className="text-button" disabled={busy || reading}
+          onClick={() => edition.categoryId === 'video' ? setVideoSourceOpen(true) : setSourceOpen(true)}>
+          {edition.categoryId === 'video' ? '搜索 Bangumi / TMDB 资料' : '更换 Discogs 资料'}
+        </button>
         {sourceDraft && <span className="form-note">已选择 Discogs #{sourceDraft.source.externalId} · 保存后生效</span>}
       </div>
       {item.editionCopyCount > 1 && <p className="form-note">本版本共 {item.editionCopyCount} 套，资料、封面与模型会同步更新。</p>}
@@ -92,7 +99,13 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
       <p className="form-error" role="alert">{error || content.error}</p>
       <footer className="form-footer"><div className="model-footer-actions" ref={setModelActionsHost}/><button type="submit" className="solid-button" disabled={busy || reading || !videoLoaded || content.pending}>{busy ? '保存中' : page === 'content' ? '保存资料' : '保存版本'}</button></footer>
     </form>
-    {sourceOpen && <DiscogsReplacement editionId={item.editionId} edition={edition} categories={categories} carriers={carriers}
+    {videoSourceOpen && edition.categoryId === 'video' && <WorkPicker initialQuery={edition.title} existingWorks={videoWorks(videoDraft)}
+      onClose={() => setVideoSourceOpen(false)} onPick={work => {
+        setVideoDraft(current => putVideoWork(current, work));
+        if (!edition.title.trim()) setEdition(current => ({ ...current, title: work.title }));
+        setVideoSourceOpen(false);
+      }}/>}
+    {sourceOpen && edition.categoryId !== 'video' && <DiscogsReplacement editionId={item.editionId} edition={edition} categories={categories} carriers={carriers}
       onClose={() => setSourceOpen(false)} onApply={value => {
         setEdition(value.preview.edition); content.change(value.content); setSourceDraft(value.preview);
         if (value.preview.cover) setCover({ action: 'replace', dataUrl: value.preview.cover });
