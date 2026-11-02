@@ -51,6 +51,8 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
   const [modelActionsHost, setModelActionsHost] = useState<HTMLDivElement | null>(null);
   const [cover, setCover] = useState<CoverChange>(() => imported?.cover
     ? { action: 'replace', dataUrl: imported.cover } : { action: 'keep' });
+  const [coverWarning, setCoverWarning] = useState(imported?.coverError || '');
+  const [retryingCover, setRetryingCover] = useState(false);
   const attempt = useRef({ payload: '', requestId: crypto.randomUUID() });
   const automaticCover = useRef<string | null>(null);
   const fields = useRef<HTMLFieldSetElement>(null);
@@ -65,6 +67,16 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
     }).catch(() => { /* The selected album still fills the text fields without a cover. */ });
     return () => { active = false; };
   }, []);
+  async function retryCover() {
+    if (!imported || retryingCover) return;
+    setRetryingCover(true); setCoverWarning(''); setError('');
+    try {
+      const dataUrl = await discogs.retryCover(Number(imported.source.externalId));
+      if (dataUrl) setCover({ action: 'replace', dataUrl });
+      else setCoverWarning('这个发行没有可用封面，可手动选择本地图片。');
+    } catch (cause) { setCoverWarning(errorMessage(cause)); }
+    finally { setRetryingCover(false); }
+  }
   async function selectMusic(album: MusicSupplement) {
     setError('');
     if (!imported) {
@@ -79,7 +91,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
     }
     setMusic(album); setMusicOpen(false);
   }
-  return <><Modal title={existing ? '再收一套' : '添加收藏'} onClose={onClose} busy={busy || reading} wide className="editor-panel">
+  return <><Modal title={existing ? '再收一套' : '添加收藏'} onClose={onClose} busy={busy || reading || retryingCover} wide className="editor-panel">
     <form className="editor-form" noValidate onSubmit={async event => {
       event.preventDefault();
       if (busy || reading) return;
@@ -120,8 +132,12 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
         }} disabled={busy || reading}>购入</button>
       </nav>}
       {existing && <p className="existing-edition">{edition.title}<span>{edition.editionLabel}</span>{imported && <span>已收藏 {existing.editionCopyCount} 套</span>}</p>}
-      {imported?.coverError && <p className="form-note" role="status">{imported.coverError}</p>}
-      <fieldset disabled={busy || reading} ref={fields}>
+      {imported && cover.action !== 'replace' && (coverWarning || retryingCover) && <p className="form-note cover-retry-note" role="status">
+        {retryingCover ? <><span className="button-spinner" aria-hidden="true"/>正在重试封面…</> : <>
+          <span>{coverWarning}</span><button type="button" className="text-button" onClick={() => void retryCover()}>重试封面</button>
+        </>}
+      </p>}
+      <fieldset disabled={busy || reading || retryingCover} ref={fields}>
       {tab === 'edition' ? <>
         {!imported && edition.categoryId === 'video' && <VideoFields value={videoDraft} onChange={setVideoDraft} edition={edition} onEdition={setEdition} onCover={setCover} cover={cover} onBusy={setReading}/>}
         {!imported && edition.categoryId === 'music' && <ImportMusicField manual tracks={[]} value={music} onChange={setMusic} onPick={() => setMusicOpen(true)}/>}
@@ -133,7 +149,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
         afterDate={<BundlePicker value={bundle} onChange={setBundle}/>}/>}
       </fieldset>
       <p className="form-error" role="alert">{error}</p>
-      <footer className="form-footer"><div className="model-footer-actions" ref={setModelActionsHost}/><button type="submit" className="solid-button" disabled={busy || reading}>{busy ? '保存中' : tab === 'purchase' ? '加入收藏' : '下一步'}</button></footer>
+      <footer className="form-footer"><div className="model-footer-actions" ref={setModelActionsHost}/><button type="submit" className="solid-button" disabled={busy || reading || retryingCover}>{busy ? '保存中' : tab === 'purchase' ? '加入收藏' : '下一步'}</button></footer>
     </form>
   </Modal>{musicOpen && <NeteaseBrowser initialQuery={`${edition.title} ${edition.creator}`.trim()} autoSearch={!!edition.title.trim()} onClose={() => setMusicOpen(false)} confirmLabel="使用此资料" onConfirm={selectMusic}/>}</>;
 }

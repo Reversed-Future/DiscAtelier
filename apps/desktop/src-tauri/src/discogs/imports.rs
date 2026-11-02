@@ -116,6 +116,26 @@ pub async fn discogs_prepare_import(
 }
 
 #[tauri::command]
+pub async fn discogs_retry_cover(
+    state: tauri::State<'_, DiscogsState>,
+    id: u64,
+) -> Result<Option<String>, AppError> {
+    run(state.inner().clone(), move |service| {
+        if id == 0 || id > 9_007_199_254_740_991 {
+            return Err(AppError::new("validation", "发行 ID 无效。"));
+        }
+        let images = service
+            .release
+            .as_ref()
+            .filter(|snapshot| snapshot.release.id == id && snapshot.received.elapsed() < MAX_AGE)
+            .map(|snapshot| snapshot.release.images.clone())
+            .ok_or_else(|| AppError::new("expired", "资料已过期，请重新查询这个发行。"))?;
+        service.provider.cover(&images)
+    })
+    .await
+}
+
+#[tauri::command]
 pub async fn discogs_import(
     state: tauri::State<'_, DiscogsState>,
     library: tauri::State<'_, LibraryState>,

@@ -102,6 +102,11 @@
 .disc-tabs button[aria-selected="true"]::after { transform: scaleX(1); }
 .disc-tabs button:focus-visible { outline: none; color: var(--ink); }
 .disc-tabs button:focus-visible::after { transform: scaleX(1); }
+.cover-retry-note { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.cover-retry-note .text-button { color: var(--ink); }
+.button-spinner { width: 11px; height: 11px; display: inline-block; border: 1px solid #ffffff40; border-top-color: var(--ink); border-radius: 50%; animation: button-spin 700ms linear infinite; }
+@keyframes button-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .button-spinner { animation: none; } }
 .release-footer { gap: 14px; align-items: center; position: relative; }
 .source-attribution.source-button { margin: 0; padding: 11px 16px; border: 1px solid var(--line); border-radius: 2px; color: var(--muted); text-decoration: none; background: #ffffff06; transition: color 160ms ease, background-color 160ms ease; }
 .release-footer > .form-error { position: absolute; bottom: 100%; right: 0; background: var(--surface); }

@@ -261,6 +261,7 @@ fn main() {
             discogs::discogs_open_release,
             discogs::discogs_open_token_page,
             discogs::imports::discogs_prepare_import,
+            discogs::imports::discogs_retry_cover,
             discogs::imports::discogs_import,
             discogs::imports::discogs_update_edition
         ])
