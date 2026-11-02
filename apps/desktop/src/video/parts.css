@@ -23,7 +23,7 @@
 }
 .video-part-cards { position: absolute; inset: 2% 5% 2% 0; perspective: 1400px; }
 .video-part-flipper { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateY(var(--turn, 0deg)); transition: transform 520ms cubic-bezier(.2,.8,.2,1); will-change: transform; }
-.video-part-card { position: absolute; inset: 0; background: var(--surface); box-shadow: 0 8px 20px #0006; backface-visibility: hidden; }
+.video-part-card { position: absolute; inset: 0; background: var(--surface); backface-visibility: hidden; }
 .video-part-card[data-side="back"] { transform: rotateY(180deg); }
 .video-part-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: var(--surface); }
 .video-part-fallback { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 12%; overflow: hidden; background: linear-gradient(145deg, #262626, #141414); color: var(--ink); }

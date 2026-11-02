@@ -3,9 +3,10 @@ import type { EditionContent, ReleaseCompany, ReleaseCredit } from '../metadata/
 import { errorMessage } from '../library/gateway';
 import type { EditionDraft } from '../library/types';
 import { readCover } from '../library/artwork';
-import { sourceLabel, videoImageUrl, type VideoCharacter, type VideoChapter, type VideoFact, type VideoMetadata, type VideoWork } from '../video/gateway';
+import { sourceLabel, videoImageUrl, type VideoCharacter, type VideoChapter, type VideoFact, type VideoMetadata, type VideoSource, type VideoWork } from '../video/gateway';
 import { putVideoWork, videoWorks } from '../video/sources';
 import { WorkPicker } from '../video/WorkPicker';
+import { Modal } from '../ui/Modal';
 import { TrackMultiSelect } from './TrackMultiSelect';
 import { Select } from '../ui/Select';
 import { ContentEditorTable } from './ContentEditorTable';
@@ -50,9 +51,36 @@ function MusicEditor({ edition, content, onChange }: { edition: EditionDraft; co
   </section>;
 }
 
+function LocalWorkDialog({ onAdd, onClose }: { onAdd(work: VideoWork): void; onClose(): void }) {
+  const [source, setSource] = useState<VideoSource>('bangumi');
+  const [id, setId] = useState('');
+  const [title, setTitle] = useState('');
+  const [error, setError] = useState('');
+  function add() {
+    const externalId = Number(id);
+    if (!Number.isSafeInteger(externalId) || externalId <= 0) { setError('请输入有效的条目 ID。'); return; }
+    if (!title.trim()) { setError('请输入作品标题。'); return; }
+    onAdd({ source, externalId, title: title.trim(), originalTitle: '', summary: '', premiereDate: '', posterUrl: '', episodeCount: null, genres: [], people: [], facts: [], characters: [], chapters: [], images: [] });
+  }
+  return <Modal title="本地关联作品" onClose={onClose} wide className="editor-panel">
+    <div className="content-editor">
+      <p className="setting-hint">不连接站点，手动填写 Bangumi 或 TMDB 条目。适合已保存的本地资料或稍后再补章节。</p>
+      <div className="content-editor-scroll">
+        <label>来源<Select label="本地关联来源" value={source} options={[{id:'bangumi',label:'Bangumi'},{id:'tmdbTv',label:'TMDB 剧集'},{id:'tmdbMovie',label:'TMDB 电影'}]} onChange={value => setSource(value as VideoSource)}/></label>
+        <label>条目 ID<input inputMode="numeric" value={id} placeholder="例如 32219538" onChange={e => setId(e.target.value)}/></label>
+        <label>作品标题<input value={title} onChange={e => setTitle(e.target.value)}/></label>
+      </div>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <footer className="settings-actions"><button type="button" className="solid-button" onClick={add}>确认本地关联</button></footer>
+    </div>
+  </Modal>;
+}
+
 function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadata; setMetadata(value: VideoMetadata): void; onBusy(value: boolean): void }) {
   const [selected, setSelected] = useState(0);
   const [picker, setPicker] = useState(false);
+  const [localPicker, setLocalPicker] = useState(false);
+  const [imagesOpen, setImagesOpen] = useState(false);
   const [error, setError] = useState('');
   const avatarInput = useRef<HTMLInputElement>(null);
   const [avatarRow, setAvatarRow] = useState(-1);
@@ -103,8 +131,13 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
         {!facts.length && <tr className="content-editor-ghost"><td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td><td><button type="button" className="content-editor-ghost-add" onClick={() => updateWork({ facts: [{ label: '', values: [] }] })}>添加资料</button></td></tr>}
       </tbody></ContentEditorTable>
 
-      <div className="content-editor-heading"><h3>图片</h3><button type="button" className="text-button" onClick={() => updateWork({ images: [...images, { kind: 'backdrop', url: '', previewUrl: '', width: 1, height: 1, language: '' }] })}>添加</button></div>
-      <ContentEditorTable kind="images"><thead><tr><th>类型</th><th>地址</th><th>预览地址</th><th>语言</th><th>宽</th><th>高</th><th/></tr></thead><tbody>
+      <div className="content-editor-heading"><h3>图片 <span className="content-editor-source-label">{images.length} 张</span></h3>
+        <div className="content-editor-heading-actions">
+          <button type="button" className="text-button" onClick={() => setImagesOpen(open => !open)}>{imagesOpen ? '收起' : '展开'}</button>
+          <button type="button" className="text-button" onClick={() => { setImagesOpen(true); updateWork({ images: [...images, { kind: 'backdrop', url: '', previewUrl: '', width: 1, height: 1, language: '' }] }); }}>添加</button>
+        </div>
+      </div>
+      {imagesOpen && <ContentEditorTable kind="images"><thead><tr><th>类型</th><th>地址</th><th>预览地址</th><th>语言</th><th>宽</th><th>高</th><th/></tr></thead><tbody>
         {images.map((row, i) => <tr key={i}><td><Select label={`第 ${i + 1} 张图片类型`} value={row.kind} options={[{id:'poster',label:'海报'},{id:'backdrop',label:'剧照'}]} onChange={value => { if (value === 'poster' || value === 'backdrop') updateWork({ images: images.map((image, at) => at === i ? { ...image, kind: value } : image) }); }}/></td><td><input value={row.url} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, url: e.target.value } : image) })}/></td><td><input value={row.previewUrl} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, previewUrl: e.target.value } : image) })}/></td><td><input value={row.language} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, language: e.target.value } : image) })}/></td><td><input type="number" min="1" value={row.width} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, width: Number(e.target.value) } : image) })}/></td><td><input type="number" min="1" value={row.height} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, height: Number(e.target.value) } : image) })}/></td><td><button type="button" className="text-button" onClick={() => updateWork({ images: images.filter((_, at) => at !== i) })}>移除</button></td></tr>)}
         {!images.length && <tr className="content-editor-ghost">
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
@@ -112,7 +145,7 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
           <td><button type="button" className="content-editor-ghost-add" onClick={() => updateWork({ images: [{ kind: 'backdrop', url: '', previewUrl: '', width: 1, height: 1, language: '' }] })}>添加图片</button></td>
         </tr>}
-      </tbody></ContentEditorTable>
+      </tbody></ContentEditorTable>}
 
       <div className="content-editor-heading"><h3>人物</h3><button type="button" className="text-button" onClick={() => updateWork({ people: [...people, { name: '', role: '' }] })}>添加</button></div>
       <ContentEditorTable kind="people"><thead><tr><th>姓名</th><th>角色</th><th/></tr></thead><tbody>
@@ -152,6 +185,7 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
       <div className="content-editor-heading"><h3>章节 <span className="content-editor-source-label">{sourceLabel(work.source)}</span></h3>
         <div className="content-editor-heading-actions">
           <button type="button" className="text-button" disabled={works.length >= 8} onClick={() => setPicker(true)}>关联另一站点</button>
+          <button type="button" className="text-button" disabled={works.length >= 8} onClick={() => setLocalPicker(true)}>本地关联</button>
           <button type="button" className="text-button" onClick={() => updateWork({ chapters: [...chapters, { id: Date.now(), group: '', number: String(chapters.length + 1), title: '', originalTitle: '', airDate: '', duration: '', summary: '', imageUrl: '' }] })}>添加章节</button>
         </div>
       </div>
@@ -181,6 +215,8 @@ function VideoEditor({ metadata, setMetadata, onBusy }: { metadata: VideoMetadat
       </tbody></ContentEditorTable>
       {picker && <WorkPicker initialQuery={work.title} existingWorks={works} onClose={() => setPicker(false)}
         onPick={next => { setMetadata(putVideoWork(metadata, next)); setPicker(false); }}/>}
+      {localPicker && <LocalWorkDialog onClose={() => setLocalPicker(false)}
+        onAdd={next => { setMetadata(putVideoWork(metadata, next)); setLocalPicker(false); }}/>}
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
   </section>;

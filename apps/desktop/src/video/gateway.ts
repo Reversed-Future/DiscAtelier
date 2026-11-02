@@ -17,6 +17,7 @@ export const video = {
   images: (work: VideoWork) => invoke<VideoImage[]>('video_images', {source: work.source, id: work.externalId}),
   chapters: (work: VideoWork) => invoke<VideoChapter[]>('video_chapters', { source: work.source, id: work.externalId }),
   cover: (work: VideoWork) => invoke<string>('video_cover', { url: posterUrl(work) }),
+  imageData: (url: string) => invoke<string>('video_cover', { url }),
   search: (source: VideoSource, query: string, page: number) => invoke<{ items: VideoWork[]; page: number; hasMore: boolean }>('video_search', { source, query, page }),
   work: (source: VideoSource, id: number) => invoke<VideoWork>('video_work', { source, id }),
   metadata: (editionId: string) => invoke<VideoMetadata | null>('video_metadata', { editionId }),
