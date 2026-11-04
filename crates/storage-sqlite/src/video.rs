@@ -103,6 +103,7 @@ pub fn save(connection: &Connection, edition: &str, value: &VideoMetadata) -> Re
     connection.execute("INSERT INTO video_work_metadata(work_id,payload) VALUES(?1,?2) ON CONFLICT(work_id) DO UPDATE SET payload=excluded.payload", params![work_id,snapshots::encode(value)?]).map_err(db_error)?;
     connection.execute("INSERT INTO video_edition_details(edition_id,payload) VALUES(?1,?2) ON CONFLICT(edition_id) DO UPDATE SET payload=excluded.payload", params![edition,serde_json::to_string(&value.physical).map_err(|_|invalid())?]).map_err(db_error)?;
     connection.execute("INSERT INTO video_edition_parts(edition_id,payload) VALUES(?1,?2) ON CONFLICT(edition_id) DO UPDATE SET payload=excluded.payload", params![edition,serde_json::to_string(&value.parts).map_err(|_|invalid())?]).map_err(db_error)?;
+    connection.execute("INSERT INTO video_edition_chapter_links(edition_id,payload) VALUES(?1,?2) ON CONFLICT(edition_id) DO UPDATE SET payload=excluded.payload", params![edition,serde_json::to_string(&value.chapter_links).map_err(|_|invalid())?]).map_err(db_error)?;
     Ok(())
 }
 fn read(connection: &Connection, edition: &str) -> Result<Option<VideoMetadata>, AppError> {
@@ -119,6 +120,18 @@ fn read(connection: &Connection, edition: &str) -> Result<Option<VideoMetadata>,
             .optional()
             .map_err(db_error)?;
         value.parts = parts
+            .map(|text| serde_json::from_str(&text).map_err(|_| invalid()))
+            .transpose()?
+            .unwrap_or_default();
+        let chapter_links: Option<String> = connection
+            .query_row(
+                "SELECT payload FROM video_edition_chapter_links WHERE edition_id=?1",
+                [edition],
+                |r| r.get(0),
+            )
+            .optional()
+            .map_err(db_error)?;
+        value.chapter_links = chapter_links
             .map(|text| serde_json::from_str(&text).map_err(|_| invalid()))
             .transpose()?
             .unwrap_or_default();
@@ -145,6 +158,19 @@ pub fn validate(connection: &Connection) -> Result<(), AppError> {
         .map_err(db_error)?
     {
         read(connection, &id.map_err(db_error)?)?.ok_or_else(invalid)?;
+    }
+    let mut links = connection
+        .prepare("SELECT payload FROM video_edition_chapter_links")
+        .map_err(db_error)?;
+    for row in links
+        .query_map([], |r| r.get::<_, String>(0))
+        .map_err(db_error)?
+    {
+        let value: Vec<VideoChapterLink> =
+            serde_json::from_str(&row.map_err(db_error)?).map_err(|_| invalid())?;
+        if !validate_chapter_links(&value) {
+            return Err(invalid());
+        }
     }
     Ok(())
 }

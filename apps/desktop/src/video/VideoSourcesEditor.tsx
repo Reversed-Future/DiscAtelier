@@ -5,8 +5,9 @@ import { WorkPicker } from './WorkPicker';
 import { LocalWorkDialog } from './LocalWorkDialog';
 import { WorkCard } from './WorkCard';
 import { VideoIntroduction } from './VideoIntroduction';
+import { ChapterLinkEditor } from './ChapterLinkEditor';
 
-export function VideoSourcesEditor({ value, initialQuery, onChange, onFirstWork }: { value: VideoMetadata; initialQuery: string; onChange(value: VideoMetadata): void; onFirstWork(work: VideoWork): void }) {
+export function VideoSourcesEditor({ value, initialQuery, onChange, onFirstWork, showChapterLinks = true }: { value: VideoMetadata; initialQuery: string; onChange(value: VideoMetadata): void; onFirstWork(work: VideoWork): void; showChapterLinks?: boolean }) {
   const [picker, setPicker] = useState(false), [local, setLocal] = useState(false);
   const works = videoWorks(value);
   return <>
@@ -20,6 +21,7 @@ export function VideoSourcesEditor({ value, initialQuery, onChange, onFirstWork 
       {works.map(work => <div className="video-linked-work" key={workKey(work)}><WorkCard work={work} compact/>
         <div className="video-actions">{workKey(work) === workKey(value.work!) ? <span className="setting-hint">标题来源</span> : <button type="button" className="text-button" onClick={() => onChange(primaryVideoWork(value,workKey(work)))}>用作标题来源</button>}<button type="button" className="text-button" onClick={() => onChange(removeVideoWork(value,workKey(work)))}>取消此来源关联</button></div>
       </div>)}
+      {showChapterLinks && <ChapterLinkEditor works={works} links={value.chapterLinks || []} onChange={chapterLinks => onChange({...value,chapterLinks})}/>}
       <VideoIntroduction works={works}/>
     </> : <p className="form-note">可以只填写实体资料。关联作品资料后，核对并保存。</p>}
     {picker && <WorkPicker initialQuery={initialQuery} existingWorks={works} onClose={() => setPicker(false)} onPick={work => {onChange(putVideoWork(value, work)); if (!value.work) onFirstWork(work); setPicker(false);}}/>}

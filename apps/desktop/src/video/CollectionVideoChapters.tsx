@@ -42,7 +42,7 @@ export function CollectionVideoChapters({ item, metadata, enabled, physical, has
   return <div className="collection-video-chapters">
     {hasPhysical && <nav className="disc-tabs" aria-label="章节内容"><button aria-selected={tab === 'physical'} onClick={() => setTab('physical')}>实体收录</button><button aria-selected={tab === 'work'} onClick={() => setTab('work')}>作品分集</button></nav>}
     {hasPhysical && tab === 'physical' ? physical : <CollectionSourceData sourceKeys={sourceKeys} item={item} metadata={metadata} kind="chapters" enabled={enabled} onSaved={onSaved} onBusy={onBusy}>{works => {
-      const groups = mergeEpisodes(works);
+      const groups = mergeEpisodes(works, metadata.chapterLinks || []);
       return groups.length ? <EpisodeList groups={groups} localPlayback={localPlayback}/> : <p className="utility-copy">暂无作品分集信息。</p>;
     }}</CollectionSourceData>}
   </div>;

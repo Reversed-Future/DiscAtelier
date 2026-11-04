@@ -139,7 +139,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
       </p>}
       <fieldset disabled={busy || reading || retryingCover} ref={fields}>
       {tab === 'edition' ? <>
-        {!imported && edition.categoryId === 'video' && <VideoFields value={videoDraft} onChange={setVideoDraft} edition={edition} onEdition={setEdition} onCover={setCover} cover={cover} onBusy={setReading}/>}
+        {!imported && edition.categoryId === 'video' && <VideoFields value={videoDraft} onChange={setVideoDraft} edition={edition} onEdition={setEdition} onCover={setCover} cover={cover} onBusy={setReading} showSources/>}
         {!imported && edition.categoryId === 'music' && <ImportMusicField manual tracks={[]} value={music} onChange={setMusic} onPick={() => setMusicOpen(true)}/>}
         {(imported || edition.categoryId !== 'video') && <CoverField edition={edition} value={cover} onChange={setCover} onBusy={setReading}
           remoteCover={music && edition.categoryId === 'music' ? { label: '使用网易云封面', load: () => netease.albumCover(music.albumId) } : edition.categoryId === 'video' && videoDraft.work ? { label: '使用作品封面', load: () => video.cover(videoDraft.work!) } : undefined}/>}

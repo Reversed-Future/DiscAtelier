@@ -89,3 +89,37 @@ test('titles can disambiguate equal dates but pairing must agree in both directi
   const rows=mergeEpisodes([a,second,b]).flatMap(g=>g.rows);
   assert.equal(rows.length,2);assert.deepEqual(rows[0].sources,['Bangumi','TMDB']);assert.deepEqual(rows[1].sources,['Bangumi']);
 });
+test('explicit chapter links pair episodes without matching dates and keep Bangumi-first presentation',()=>{
+  const a=bg([episode(1,3,{airDate:'2010-10-18'})]);
+  const b=tv([episode(31,3,{airDate:'2010-10-19',summary:'手动对应',imageUrl:'manual-still'})]);
+  const before=JSON.stringify([a,b]);
+  const rows=mergeEpisodes([b,a],[{bangumi:'1',tmdb:'31'}]).flatMap(g=>g.rows);
+  assert.equal(rows.length,1);assert.deepEqual(rows[0].sources,['Bangumi','TMDB']);
+  assert.equal(rows[0].originalTitle,'原名 3');assert.equal(rows[0].summary,'手动对应');assert.equal(rows[0].imageUrl,'manual-still');
+  assert.deepEqual(rows[0].chapterLink,{bangumi:'1',tmdb:'31'});
+  assert.equal(JSON.stringify([a,b]),before);
+});
+test('an explicit link wins over automatic matching without duplicating either episode',()=>{
+  const a=bg([episode(1,1,{airDate:'2010-10-04'}),episode(2,2,{airDate:'2010-10-11'})]);
+  const b=tv([episode(31,1,{airDate:'2010-10-04'}),episode(32,2,{airDate:'2010-10-12'})]);
+  const rows=mergeEpisodes([a,b],[{bangumi:'2',tmdb:'31'}]).flatMap(g=>g.rows);
+  assert.equal(rows.length,3);
+  const manual=rows.filter(row=>row.chapterLink);
+  assert.equal(manual.length,1);assert.equal(manual[0].number,'2');assert.deepEqual(manual[0].sources,['Bangumi','TMDB']);
+  assert.deepEqual(manual[0].chapterLink,{bangumi:'2',tmdb:'31'});
+  assert.deepEqual(rows.find(row=>row.source==='bangumi'&&row.number==='1').candidates.map(c=>c.id),['32']);
+  assert.deepEqual(rows.find(row=>row.source==='tmdbTv').candidates.map(c=>c.id),['1']);
+});
+test('unmatched rows list only unpaired episodes from the other site',()=>{
+  const a=bg([episode(1,1),episode(2,2),episode(3,3)]),b=tv([episode(31,1),episode(32,2)]);
+  const rows=mergeEpisodes([a,b]).flatMap(g=>g.rows);
+  assert.equal(rows.length,5);
+  const third=rows.find(row=>row.source==='bangumi'&&row.number==='3');
+  assert.equal(third.unmatched,true);assert.deepEqual(third.candidates.map(c=>c.id),['31','32']);
+  assert.match(third.candidates[0].label,/TMDB · 显示名称 · 第 1 集 · 原名 1/);
+  const firstTmdb=rows.find(row=>row.source==='tmdbTv'&&row.number==='1');
+  assert.equal(firstTmdb.unmatched,true);assert.deepEqual(firstTmdb.candidates.map(c=>c.id),['1','2','3']);
+  const linked=mergeEpisodes([a,b],[{bangumi:'1',tmdb:'31'}]).flatMap(g=>g.rows);
+  assert.deepEqual(linked.find(row=>row.source==='bangumi'&&row.number==='3').candidates.map(c=>c.id),['32']);
+  assert.deepEqual(linked.find(row=>row.source==='tmdbTv').candidates.map(c=>c.id),['2','3']);
+});

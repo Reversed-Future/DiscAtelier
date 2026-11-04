@@ -1,4 +1,5 @@
 import { VideoPartsEditor } from './VideoPartsEditor';
+import { VideoSourcesEditor } from './VideoSourcesEditor';
 import { CoverField } from '../forms/CoverField';
 import { video } from './gateway';
 import { useState } from 'react';
@@ -8,10 +9,11 @@ import type { VideoMetadata } from './gateway';
 import { videoWorks, workKey, sourceCaption } from './sources';
 import { Select } from '../ui/Select';
 import { PackagingImages } from './PackagingImages';
-export function VideoFields({ value, onChange, edition, onEdition, onCover, cover, assetId, onBusy }: { cover: CoverChange; assetId?: string | null; onBusy(value: boolean): void; value: VideoMetadata; onChange(value: VideoMetadata): void; edition: EditionDraft; onEdition(value: EditionDraft): void; onCover(value: CoverChange): void }) {
+export function VideoFields({ value, onChange, edition, onEdition, onCover, cover, assetId, onBusy, showSources = false }: { cover: CoverChange; assetId?: string | null; onBusy(value: boolean): void; value: VideoMetadata; onChange(value: VideoMetadata): void; edition: EditionDraft; onEdition(value: EditionDraft): void; onCover(value: CoverChange): void; showSources?: boolean }) {
   const [pictures, setPictures] = useState(false), [coverSource, setCoverSource] = useState('');
   const works = videoWorks(value), coverWork = works.find(w => workKey(w) === coverSource) || works[0];
   return <><section className="video-draft">
+    {showSources && <VideoSourcesEditor value={value} initialQuery={edition.title} onChange={onChange} onFirstWork={work => { if (!edition.title.trim()) onEdition({...edition, title: work.title}); }} showChapterLinks={false}/>}
     <button type="button" className="text-button" onClick={() => setPictures(true)}>识别包装</button>
     {!value.parts?.length && <div className="video-cover-choice"><h3>封面</h3>{works.length > 1 && <Select label="封面资料来源" value={workKey(coverWork)} options={works.map(w => ({id: workKey(w), label: sourceCaption(w, works)}))} onChange={setCoverSource}/>}<CoverField edition={edition} assetId={assetId} value={cover} onChange={onCover} onBusy={onBusy} remoteCover={coverWork && coverWork.source !== 'local' ? { label: '使用作品封面', load: () => video.cover(coverWork) } : undefined}/></div>}
     <VideoPartsEditor value={value} onChange={onChange}/>

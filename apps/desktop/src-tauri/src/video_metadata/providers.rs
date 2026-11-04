@@ -45,6 +45,7 @@ pub fn detail(source: VideoSource, id: u64) -> Result<VideoWork, AppError> {
         physical: Default::default(),
         additional_works: vec![],
         parts: vec![],
+        chapter_links: vec![],
     })?;
     Ok(value)
 }

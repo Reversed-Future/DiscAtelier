@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { PlaybackControls } from './PlaybackControls';
 import type { PlaybackController } from './usePlayback';
 import { playback } from './gateway';
-import { useVideoSurface } from './useVideoSurface';
+import { useVideoSurface, type OverlayRect } from './useVideoSurface';
 import { usePlayerChrome } from './usePlayerChrome';
 import { useNativeVideoKeys } from './useNativeVideoKeys';
+import { useLocalVideoQueue, type LocalVideoItem } from './useLocalVideoQueue';
 import type { MenuDirection } from './gateway';
 import { errorMessage } from '../library/gateway';
 import { Icon } from '../ui/Icon';
@@ -14,12 +15,42 @@ export function PlayerView({ player }: { player: PlaybackController }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [error, setError] = useState('');
+  const [playlistOpen, setPlaylistOpen] = useState(false), [popoverOpen, setPopoverOpen] = useState(false), [volumeOpen, setVolumeOpen] = useState(false);
+  const localVideo = useLocalVideoQueue(player.snapshot?.source);
+  const localIndex = localVideo.currentIndex;
   const back = useRef<HTMLButtonElement>(null);
-  const live = useRef({ player, fullscreen, closing });
-  live.current = { player, fullscreen, closing };
+  const live = useRef({ player, fullscreen, closing, playlistOpen });
+  live.current = { player, fullscreen, closing, playlistOpen };
   const chrome = usePlayerChrome(fullscreen);
   const menu = player.snapshot?.source.playlist === 'dvd-menu' || player.snapshot?.source.playlist === 'bd-menu';
-  const { surface, header, footer, error: surfaceError } = useVideoSurface(player.active && !closing, fullscreen, chrome.visible, menu);
+  const overlayOpen = playlistOpen || popoverOpen || volumeOpen;
+  function overlayRects(): OverlayRect[] {
+    const rects: OverlayRect[] = [...document.querySelectorAll<HTMLElement>('[popover]:popover-open')].map(element => element.getBoundingClientRect());
+    const playlist = document.querySelector<HTMLElement>('.player-playlist');
+    if (playlist) rects.push(playlist.getBoundingClientRect());
+    const volume = document.querySelector<HTMLElement>('.playback-volume-flyout');
+    if (volume && getComputedStyle(volume).opacity !== '0') rects.push(volume.getBoundingClientRect());
+    return rects;
+  }
+  const { surface, header, footer, error: surfaceError } = useVideoSurface(player.active && !closing, fullscreen, chrome.visible, menu, overlayOpen, overlayRects);
+  useEffect(() => {
+    const sync = () => setPopoverOpen(!!document.querySelector('[popover]:popover-open'));
+    document.addEventListener('toggle', sync, true);
+    return () => document.removeEventListener('toggle', sync, true);
+  }, []);
+  useEffect(() => { if (!localVideo.items.length || !player.active) setPlaylistOpen(false); }, [localVideo.items.length, player.active]);
+  function playLocal(index: number) {
+    const item = localVideo.items[index];
+    if (!item) return;
+    setPlaylistOpen(false);
+    if (index === localIndex) return;
+    void player.startLocal(item.copyId, item.path);
+  }
+  function playRelative(offset: number) { playLocal(localIndex + offset); }
+  function episodeTitle(item: LocalVideoItem, index: number) {
+    const detail = item.label.split(' · ').slice(1).join(' · ');
+    return detail.replace(/^第 \d+ [章轨集](?: · )?/, '').trim() || detail || item.path.split(/[\\/]/).pop() || `第 ${item.episode ?? index + 1} 集`;
+  }
   function navigate(key: string) {
     const directions: Record<string, MenuDirection> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Enter: 'activate' };
     const current = live.current.player;
@@ -31,7 +62,8 @@ export function PlayerView({ player }: { player: PlaybackController }) {
   useNativeVideoKeys(menu && player.active && !closing, key => {
     chrome.wake();
     if (key === 'Escape') {
-      if (live.current.fullscreen) void toggleFullscreen(); else void close();
+      if (live.current.playlistOpen) setPlaylistOpen(false);
+      else if (live.current.fullscreen) void toggleFullscreen(); else void close();
     } else if (key === 'f') void toggleFullscreen();
     else if (key === ' ') void live.current.player.control({ action: 'pause', paused: !live.current.player.snapshot?.paused });
     else navigate(key);
@@ -64,6 +96,7 @@ export function PlayerView({ player }: { player: PlaybackController }) {
       const target = event.target as HTMLElement;
       if (event.key === 'Escape') {
         event.preventDefault();
+        if (live.current.playlistOpen) { setPlaylistOpen(false); return; }
         if (full) void toggleFullscreen(); else void close();
       } else if (!['INPUT', 'TEXTAREA'].includes(target.tagName)) {
         if (target.closest('.player-picture') && navigate(event.key)) {
@@ -87,8 +120,19 @@ export function PlayerView({ player }: { player: PlaybackController }) {
     <div className="player-picture" ref={surface} tabIndex={0} aria-label="视频画面">
       {!player.active && <span>{player.snapshot?.phase === 'failed' ? '无法播放' : '已停止'}</span>}
     </div>
+    {playlistOpen && !!localVideo.items.length && <aside className="player-playlist" aria-label="播放列表">
+      <header><strong>播放列表</strong><span>{localIndex >= 0 ? `${localIndex + 1} / ${localVideo.items.length}` : `${localVideo.items.length} 集`}</span><button type="button" className="player-icon-button" aria-label="关闭播放列表" title="关闭播放列表" onClick={() => setPlaylistOpen(false)}><Icon name="close"/></button></header>
+      <div className="player-playlist-list">{localVideo.items.map((item, index) => <button type="button" key={item.path} aria-current={index === localIndex ? 'true' : undefined} onClick={() => playLocal(index)}>
+        <span>{item.episode ?? index + 1}</span><strong title={item.path}>{episodeTitle(item, index)}</strong>
+      </button>)}</div>
+    </aside>}
     <footer className="player-footer" ref={footer} inert={!chrome.visible}>
-      <PlaybackControls player={player} extended showTitle={false} fullscreen={fullscreen} onToggleFullscreen={() => void toggleFullscreen()} onMenu={() => surface.current?.focus()}/>
+      <PlaybackControls player={player} extended showTitle={false} fullscreen={fullscreen} onToggleFullscreen={() => void toggleFullscreen()} onMenu={() => surface.current?.focus()}
+        navigation="episode" playlistOpen={playlistOpen}
+        onPrevious={localVideo.items.length ? () => playRelative(-1) : undefined}
+        onNext={localVideo.items.length ? () => playRelative(1) : undefined}
+        canPrevious={localIndex > 0} canNext={localIndex >= 0 && localIndex < localVideo.items.length - 1}
+        onTogglePlaylist={localVideo.items.length ? () => setPlaylistOpen(value => !value) : undefined} onVolumeOverlay={setVolumeOpen}/>
       {(error || surfaceError || player.error) && <p className="form-error" role="alert">{error || surfaceError || player.error}</p>}
     </footer>
   </section>;

@@ -2,15 +2,17 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { playback } from './gateway';
 import { errorMessage } from '../library/gateway';
 
-// The video is native. Only its rectangle crosses IPC; no decoded pixels do.
-export function useVideoSurface(visible: boolean, fullscreen: boolean, chromeVisible: boolean, interactive = false) {
+export interface OverlayRect { x: number; y: number; width: number; height: number }
+
+// The video is native. Only its rectangle and overlay cut-outs cross IPC; no decoded pixels do.
+export function useVideoSurface(visible: boolean, fullscreen: boolean, chromeVisible: boolean, interactive = false, masked = false, overlays?: () => OverlayRect[]) {
   const surface = useRef<HTMLDivElement>(null);
   const header = useRef<HTMLElement>(null), footer = useRef<HTMLElement>(null);
   const [error, setError] = useState('');
-  const current = useRef({ visible, fullscreen, interactive });
-  current.current = { visible, fullscreen, interactive };
+  const current = useRef({ visible, fullscreen, interactive, masked, overlays });
+  current.current = { visible, fullscreen, interactive, masked, overlays };
   const refresh = useRef(() => {});
-  useLayoutEffect(() => { refresh.current(); }, [visible, fullscreen, chromeVisible, interactive]);
+  useLayoutEffect(() => { refresh.current(); }, [visible, fullscreen, chromeVisible, interactive, masked]);
   useEffect(() => {
     let disposed = false, running = false, dirty = false, frame = 0, until = 0, last = '';
     async function update() {
@@ -18,10 +20,17 @@ export function useVideoSurface(visible: boolean, fullscreen: boolean, chromeVis
       if (disposed || !surface.current) return;
       const rect = surface.current.getBoundingClientRect(), scale = window.devicePixelRatio;
       const top = header.current?.getBoundingClientRect(), bottom = footer.current?.getBoundingClientRect();
+      const holes = current.current.masked && current.current.overlays ? current.current.overlays().flatMap(hole => {
+        const left = Math.max(rect.left, hole.x), top = Math.max(rect.top, hole.y);
+        const right = Math.min(rect.right, hole.x + hole.width), bottom = Math.min(rect.bottom, hole.y + hole.height);
+        if (right <= left || bottom <= top) return [];
+        return [{ x: Math.round((left - rect.left) * scale), y: Math.round((top - rect.top) * scale),
+          width: Math.round((right - left) * scale), height: Math.round((bottom - top) * scale) }];
+      }) : [];
       const viewport = { x: Math.round(rect.x * scale), y: Math.round(rect.y * scale),
         width: Math.round(rect.width * scale), height: Math.round(rect.height * scale), visible: current.current.visible, interactive: current.current.interactive,
         clipTop: current.current.fullscreen && top ? Math.max(0, Math.round((top.bottom-rect.top)*scale)) : 0,
-        clipBottom: current.current.fullscreen && bottom ? Math.max(0, Math.round((rect.bottom-bottom.top)*scale)) : 0 };
+        clipBottom: current.current.fullscreen && bottom ? Math.max(0, Math.round((rect.bottom-bottom.top)*scale)) : 0, holes };
       const key = JSON.stringify(viewport);
       if (key === last) return;
       running = true;

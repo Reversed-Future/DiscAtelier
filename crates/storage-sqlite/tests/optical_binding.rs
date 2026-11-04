@@ -164,7 +164,7 @@ fn schema_fifteen_binding_is_preserved_and_backed_up_before_upgrade() {
         .unwrap();
     drop(service);
     let connection = rusqlite::Connection::open(dir.path().join("library.sqlite3")).unwrap();
-    connection.execute_batch("ALTER TABLE optical_bindings DROP COLUMN disc_key; ALTER TABLE optical_bindings DROP COLUMN disc_label; DELETE FROM schema_migrations WHERE version=16; PRAGMA user_version=15;").unwrap();
+    connection.execute_batch("DROP TABLE video_edition_chapter_links; ALTER TABLE optical_bindings DROP COLUMN disc_key; ALTER TABLE optical_bindings DROP COLUMN disc_label; DELETE FROM schema_migrations WHERE version>=16; PRAGMA user_version=15;").unwrap();
     drop(connection);
     let service = LibraryService::new(SqliteLibrary::open(dir.path()).unwrap());
     let saved = service.optical_binding("old-disc").unwrap().unwrap();

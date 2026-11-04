@@ -88,6 +88,31 @@ pub struct VideoImage {
     pub height: u32,
     pub language: String,
 }
+/// Explicit user pairing between one Bangumi episode and one TMDB episode.
+/// Provider episode IDs are stored as canonical decimal strings so the same
+/// table can be written by the UI without guessing a numeric type.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct VideoChapterLink {
+    pub bangumi: String,
+    pub tmdb: String,
+}
+pub fn validate_chapter_links(links: &[VideoChapterLink]) -> bool {
+    let valid_id = |value: &str| {
+        value
+            .parse::<u64>()
+            .is_ok_and(|id| id > 0 && id <= 9_007_199_254_740_991 && id.to_string() == value)
+    };
+    let mut bangumi = std::collections::HashSet::new();
+    let mut tmdb = std::collections::HashSet::new();
+    links.len() <= 5000
+        && links.iter().all(|link| {
+            valid_id(&link.bangumi)
+                && valid_id(&link.tmdb)
+                && bangumi.insert(&link.bangumi)
+                && tmdb.insert(&link.tmdb)
+        })
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct VideoWork {
@@ -128,6 +153,10 @@ pub struct VideoMetadata {
     pub physical: VideoEditionDetails,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub additional_works: Vec<VideoWork>,
+    /// Optional manual fallback for episodes that number/date matching cannot
+    /// pair. Automatic matching still runs for every row without an entry.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub chapter_links: Vec<VideoChapterLink>,
 }
 
 pub fn validate_video(value: &VideoMetadata) -> Result<(), AppError> {
@@ -226,7 +255,11 @@ pub fn validate_video(value: &VideoMetadata) -> Result<(), AppError> {
                         })
                 })
         });
-    if !valid_physical || !valid_work || !parts::valid(value) {
+    if !valid_physical
+        || !valid_work
+        || !parts::valid(value)
+        || !validate_chapter_links(&value.chapter_links)
+    {
         return Err(AppError::new("validation", "作品或实体版本资料无效。"));
     }
     Ok(())

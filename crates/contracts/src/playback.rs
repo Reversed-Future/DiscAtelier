@@ -3,6 +3,14 @@ use serde::{Deserialize, Serialize};
 /// App-defined physical client coordinates. Native handles never come from the webview.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct VideoHole {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct VideoViewport {
     pub x: i32,
     pub y: i32,
@@ -15,6 +23,9 @@ pub struct VideoViewport {
     pub clip_top: i32,
     #[serde(default)]
     pub clip_bottom: i32,
+    /// Transparent cut-outs for DOM popovers and drawers above the native video.
+    #[serde(default)]
+    pub holes: Vec<VideoHole>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

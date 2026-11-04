@@ -99,7 +99,7 @@ fn schema_ten_gets_backup_and_existing_collection_is_unchanged() {
     let before = service.list(query()).unwrap().copies.remove(0);
     drop(service);
     let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
-    conn.execute_batch("DROP TABLE optical_bindings; DROP TABLE collection_order; DROP TABLE video_edition_parts; DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DELETE FROM schema_migrations WHERE version>=11; PRAGMA user_version=10;").unwrap();
+    conn.execute_batch("DROP TABLE video_edition_chapter_links; DROP TABLE optical_bindings; DROP TABLE collection_order; DROP TABLE video_edition_parts; DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DELETE FROM schema_migrations WHERE version>=11; PRAGMA user_version=10;").unwrap();
     drop(conn);
     let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
     let after = service.list(query()).unwrap().copies.remove(0);
@@ -360,7 +360,7 @@ fn schema_eleven_migrates_with_backup_and_no_automatic_parts() {
     let before = service.list(query()).unwrap().copies.remove(0);
     drop(service);
     let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
-    connection.execute_batch("DROP TABLE optical_bindings; DROP TABLE collection_order; DROP TABLE video_edition_parts; DELETE FROM schema_migrations WHERE version>=12; PRAGMA user_version=11;").unwrap();
+    connection.execute_batch("DROP TABLE video_edition_chapter_links; DROP TABLE optical_bindings; DROP TABLE collection_order; DROP TABLE video_edition_parts; DELETE FROM schema_migrations WHERE version>=12; PRAGMA user_version=11;").unwrap();
     drop(connection);
     let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
     assert!(service
@@ -380,5 +380,66 @@ fn schema_eleven_migrates_with_backup_and_no_automatic_parts() {
         old.pragma_query_value::<i64, _>(None, "user_version", |row| row.get(0))
             .unwrap(),
         11
+    );
+}
+
+#[test]
+fn optional_chapter_links_roundtrip_restore_and_validation() {
+    let mut value = metadata();
+    assert!(!to_value(&value)
+        .unwrap()
+        .as_object()
+        .unwrap()
+        .contains_key("chapterLinks"));
+    value.chapter_links = vec![
+        serde_json::from_value(json!({"bangumi":"52323","tmdb":"63056"})).unwrap(),
+        serde_json::from_value(json!({"bangumi":"52324","tmdb":"63057"})).unwrap(),
+    ];
+    let mut duplicate = value.clone();
+    duplicate
+        .chapter_links
+        .push(serde_json::from_value(json!({"bangumi":"52323","tmdb":"63058"})).unwrap());
+    assert!(validate_video(&duplicate).is_err());
+    let mut non_canonical = value.clone();
+    non_canonical.chapter_links[0].bangumi = "052323".into();
+    assert!(validate_video(&non_canonical).is_err());
+    let mut same_tmdb = value.clone();
+    same_tmdb.chapter_links[1].tmdb = "63056".into();
+    assert!(validate_video(&same_tmdb).is_err());
+    assert!(validate_video(&value).is_ok());
+
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    service.create_video(request(), value.clone()).unwrap();
+    let item = service.list(query()).unwrap().copies.remove(0);
+    assert_eq!(
+        to_value(service.video_metadata(&item.edition_id).unwrap().unwrap()).unwrap(),
+        to_value(&value).unwrap()
+    );
+    let backup = service.backup().unwrap();
+    drop(service);
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let restore = service.prepare_restore(backup).unwrap();
+    service.restore(restore.token).unwrap();
+    assert_eq!(
+        to_value(service.video_metadata(&item.edition_id).unwrap().unwrap()).unwrap(),
+        to_value(&value).unwrap()
+    );
+    let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
+    assert_eq!(
+        connection
+            .query_row::<i64, _, _>(
+                "SELECT count(*) FROM video_edition_chapter_links",
+                [],
+                |row| row.get(0)
+            )
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        connection
+            .pragma_query_value::<i64, _>(None, "user_version", |row| row.get(0))
+            .unwrap(),
+        17
     );
 }

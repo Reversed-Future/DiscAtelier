@@ -97,6 +97,7 @@ fn delete_edition(
         "DELETE FROM edition_music_albums WHERE edition_id=?1",
         "DELETE FROM video_edition_details WHERE edition_id=?1",
         "DELETE FROM video_edition_parts WHERE edition_id=?1",
+        "DELETE FROM video_edition_chapter_links WHERE edition_id=?1",
     ] {
         transaction.execute(sql, [edition_id]).map_err(db_error)?;
     }

@@ -191,6 +191,12 @@ fn deleting_the_last_copy_removes_edition_scoped_data_and_unused_assets() {
         .unwrap();
     connection
         .execute(
+            "INSERT INTO video_edition_chapter_links VALUES (?1,'[]')",
+            [&first.edition_id],
+        )
+        .unwrap();
+    connection
+        .execute(
             "INSERT INTO playback_sessions VALUES ('history-1','2026-10-22','{}')",
             [],
         )
@@ -279,6 +285,13 @@ fn deleting_the_last_copy_removes_edition_scoped_data_and_unused_assets() {
     assert_eq!(
         count(&format!(
             "SELECT count(*) FROM video_edition_parts WHERE edition_id='{}'",
+            first.edition_id
+        )),
+        0
+    );
+    assert_eq!(
+        count(&format!(
+            "SELECT count(*) FROM video_edition_chapter_links WHERE edition_id='{}'",
             first.edition_id
         )),
         0

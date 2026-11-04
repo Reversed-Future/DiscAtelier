@@ -5,7 +5,8 @@ use windows_sys::{
     Win32::{
         Foundation::{POINT, RECT},
         Graphics::Gdi::{
-            CreateRectRgn, DeleteObject, GetStockObject, ScreenToClient, SetWindowRgn, BLACK_BRUSH,
+            CombineRgn, CreateRectRgn, DeleteObject, GetStockObject, ScreenToClient, SetWindowRgn,
+            BLACK_BRUSH, RGN_DIFF,
         },
         System::LibraryLoader::GetModuleHandleW,
         UI::WindowsAndMessaging::*,
@@ -98,6 +99,26 @@ impl VideoSurface {
                 let region = CreateRectRgn(0, top, width, height - bottom);
                 if region.is_null() {
                     return Err(error());
+                }
+                for hole in &viewport.holes {
+                    let left = hole.x.clamp(0, width);
+                    let hole_top = hole.y.clamp(0, height);
+                    let right = (hole.x + hole.width).clamp(0, width);
+                    let hole_bottom = (hole.y + hole.height).clamp(0, height);
+                    if right <= left || hole_bottom <= hole_top {
+                        continue;
+                    }
+                    let cut = CreateRectRgn(left, hole_top, right, hole_bottom);
+                    if cut.is_null() {
+                        DeleteObject(region);
+                        return Err(error());
+                    }
+                    if CombineRgn(region, region, cut, RGN_DIFF) == 0 {
+                        DeleteObject(cut);
+                        DeleteObject(region);
+                        return Err(error());
+                    }
+                    DeleteObject(cut);
                 }
                 if SetWindowRgn(self.host as _, region, 1) == 0 {
                     DeleteObject(region);

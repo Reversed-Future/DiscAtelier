@@ -163,6 +163,22 @@
 .video-episode-details p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.9; }
 .video-episode-details button { margin: 0; max-width: 360px; text-align: left; }
 .video-episode-details img { display: block; aspect-ratio: 16 / 9; max-height: none; object-fit: contain; background: var(--surface); }
+.video-chapter-links-editor { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
+.video-chapter-links-editor > .video-section-heading { align-items: baseline; margin-bottom: 12px; }
+.video-chapter-links-editor > .video-section-heading h3 { margin: 0; }
+.video-chapter-links-editor > .video-section-heading .setting-hint { margin: 0; }
+.video-chapter-link-group { margin-top: 16px; }
+.video-chapter-link-group h4 { margin: 0 0 6px; font-size: 12px; font-weight: 500; }
+.video-chapter-link-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(190px, 320px); gap: 14px; align-items: start; padding: 10px 0; font-size: 12px; border-bottom: 1px solid var(--line); }
+.video-chapter-link-row:last-child { border-bottom: 0; }
+.video-chapter-link-row > span { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; padding-top: 1px; }
+.video-chapter-link-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.video-chapter-link-copy strong { font-weight: 500; overflow-wrap: anywhere; }
+.video-chapter-link-copy small { color: var(--muted); font-size: 11px; line-height: 1.7; }
+.video-chapter-link-copy .text-button { align-self: flex-start; padding: 2px 0; font-size: 11px; }
+.video-chapter-link-action { min-width: 0; }
+.video-chapter-link-action .select-trigger { font-size: 11px; }
+@media (max-width: 720px) { .video-chapter-link-row { grid-template-columns: 24px minmax(0, 1fr); } .video-chapter-link-action { grid-column: 2; } }
 .unified-gallery { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); align-items: start; margin-top: 4px; }
 .unified-gallery .poster img, .unified-gallery .poster .video-picture-missing { aspect-ratio: 2 / 3; }
 .unified-gallery .still img, .unified-gallery .still .video-picture-missing { aspect-ratio: 16 / 9; }

@@ -51,11 +51,13 @@ function useSmoothPosition(s: PlaybackController['snapshot'], active: boolean) {
   return position;
 }
 
-export function PlaybackControls({ player, onMenu, title, extended = false, showVolume = false, showTitle = true, fullscreen = false, onToggleFullscreen, onPrevious, onNext, canPrevious = true, canNext = true, repeat, onRepeat }: {
+export function PlaybackControls({ player, onMenu, title, extended = false, showVolume = false, showTitle = true, fullscreen = false, onToggleFullscreen, onPrevious, onNext, canPrevious = true, canNext = true, repeat, onRepeat, navigation = 'track', onTogglePlaylist, playlistOpen = false, onVolumeOverlay }: {
   player: PlaybackController; onMenu?(): void; title?: string | null; extended?: boolean; showVolume?: boolean; showTitle?: boolean; fullscreen?: boolean; onToggleFullscreen?(): void;
   onPrevious?(): void; onNext?(): void; canPrevious?: boolean; canNext?: boolean; repeat?: 'list' | 'one'; onRepeat?(): void;
+  navigation?: 'track' | 'episode'; onTogglePlaylist?(): void; playlistOpen?: boolean; onVolumeOverlay?(value: boolean): void;
 }) {
   const s = player.snapshot;
+  const previousLabel = navigation === 'episode' ? '上一集' : '上一首', nextLabel = navigation === 'episode' ? '下一集' : '下一首';
   const smoothPosition = useSmoothPosition(s, player.active);
   const [draft, setDraft] = useState<number | null>(null);
   const [volume, setVolume] = useState<number | null>(null);
@@ -152,7 +154,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
       <div className="playback-transport">
         <button type="button" className="player-icon-button" aria-label="停止" title="停止" disabled={stopping || player.busy}
           onClick={() => void player.control({ action: 'stop' })}><Icon name="stop"/></button>
-        {onPrevious && <button type="button" className="player-icon-button" aria-label="上一首" title="上一首"
+        {onPrevious && <button type="button" className="player-icon-button" aria-label={previousLabel} title={previousLabel}
           disabled={loading || stopping || player.busy || !canPrevious} onClick={onPrevious}><Icon name="previous"/></button>}
         <button type="button" className={`player-icon-button${loading || stopping ? ' is-spinning' : ''}`}
           aria-label={loading ? '读取中' : stopping ? '停止中' : s.paused ? '继续' : '暂停'}
@@ -160,13 +162,15 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
           disabled={loading || stopping || player.busy} onClick={() => void player.control({ action: 'pause', paused: !s.paused })}>
           <Icon name={loading || stopping ? 'disc' : s.paused ? 'play' : 'pause'}/>
         </button>
-        {onNext && <button type="button" className="player-icon-button" aria-label="下一首" title="下一首"
+        {onNext && <button type="button" className="player-icon-button" aria-label={nextLabel} title={nextLabel}
           disabled={loading || stopping || player.busy || !canNext} onClick={onNext}><Icon name="next"/></button>}
       </div>
       <div className="playback-options">
         {menu && <button type="button" className="player-icon-button" aria-label="菜单" title="菜单"
           disabled={loading || stopping || player.busy} onClick={async () => { if (await player.control({ action: 'menu', direction: 'root' })) onMenu?.(); }}><Icon name="menu"/></button>}
-        {(extended || showVolume) && <div className="playback-volume">
+        {(extended || showVolume) && <div className="playback-volume" onPointerEnter={() => onVolumeOverlay?.(true)}
+          onPointerLeave={() => onVolumeOverlay?.(false)} onFocusCapture={() => onVolumeOverlay?.(true)}
+          onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onVolumeOverlay?.(false); }}>
           <button type="button" className="player-icon-button" aria-label={`音量 ${shownVolume}%`} title={`音量 ${shownVolume}%`}>
             <Icon name={shownVolume > 0 ? 'volume' : 'mute'}/>
           </button>
@@ -186,6 +190,8 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
           options={s.audioTracks.map(track => ({ id: String(track.id), label: `${track.id} · ${track.title || track.language || track.codec || '音轨'}` }))}
           disabled={loading || stopping || player.busy || !s.audioTracks.length}
           onChange={id => void player.control({ action: 'audio', id: Number(id) })}/>}
+        {onTogglePlaylist && <button type="button" className="player-icon-button playback-playlist" aria-label="播放列表" title="播放列表"
+          aria-pressed={playlistOpen} disabled={loading || stopping || player.busy} onClick={onTogglePlaylist}><Icon name="list"/></button>}
         {onToggleFullscreen && <button type="button" className="player-icon-button" aria-label={fullscreen ? '退出全屏' : '全屏'} title={fullscreen ? '退出全屏' : '全屏'}
           disabled={stopping} onClick={onToggleFullscreen}><Icon name={fullscreen ? 'fullscreenExit' : 'fullscreen'}/></button>}
         {onRepeat && <button type="button" className="player-icon-button playback-repeat" aria-label={repeat === 'one' ? '单曲循环，切换为列表循环' : '列表循环，切换为单曲循环'}
