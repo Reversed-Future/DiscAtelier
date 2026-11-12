@@ -1,7 +1,7 @@
 {
   "build": {
     "beforeBuildCommand": "npm run build:release",
-    "frontendDist": "../dist-release/0.3.3"
+    "frontendDist": "../dist-release/0.4.0"
   },
   "bundle": {
     "active": true,
