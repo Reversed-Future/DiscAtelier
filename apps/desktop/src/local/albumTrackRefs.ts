@@ -1,6 +1,7 @@
 import type { ReleaseTrack } from '../metadata/gateway';
 import type { MediumDraft } from '../library/types';
 import { discPages } from '../metadata/discTracks.ts';
+import { trackKey } from '../integrations/trackMatches.ts';
 import { normalized, parseTrack, positionNumber, trackNumberAt, type TrackTitle } from './match.ts';
 
 export interface AlbumTrackRef extends TrackTitle {
@@ -110,6 +111,36 @@ export function matchAlbumTrack(name: string, tracks: TrackTitle[], hintText = '
   }
   const chosen = byNumber(pool);
   return chosen ? albumRef(chosen.track, chosen.number) : null;
+}
+
+export interface LocalBindingRef {
+  label: string;
+  track?: number | null;
+  disc?: string | null;
+}
+
+/** Map saved local bindings onto the page rows by title, then unique track number. */
+export function localBindingByTrack<T extends LocalBindingRef>(pages: { key: string; tracks: ReleaseTrack[] }[], bindings: T[]): Map<string, T> {
+  const result = new Map<string, T>();
+  const entries = pages.flatMap(page => {
+    const tracks = page.tracks.filter(track => track.type_ !== 'heading');
+    return tracks.map((track, index) => ({
+      track,
+      page,
+      number: trackNumberAt(tracks, index) ?? positionNumber(track.position) ?? index + 1,
+    }));
+  });
+  for (const binding of bindings) {
+    const titles = entries.filter(entry => !!binding.label && binding.label.includes(` · ${entry.track.title}`)
+      && (!binding.disc || entry.page.key === binding.disc));
+    if (titles.length === 1) { result.set(trackKey(titles[0].track), binding); continue; }
+    // Repeats such as "Grand Escape" on CD and DVD are disambiguated by the
+    // unique track number; only ambiguous numbers remain unassociated.
+    const pool = titles.length ? titles : binding.disc ? entries.filter(entry => entry.page.key === binding.disc) : entries;
+    const numbers = binding.track != null ? pool.filter(entry => entry.number === binding.track) : [];
+    if (numbers.length === 1) result.set(trackKey(numbers[0].track), binding);
+  }
+  return result;
 }
 
 function albumRef(track: TrackTitle, number: number): AlbumTrackRef {

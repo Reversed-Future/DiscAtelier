@@ -9,7 +9,7 @@ import { trackKey } from '../integrations/trackMatches';
 import type { PlaybackController } from '../playback/usePlayback';
 import type { LibraryCopy } from '../library/types';
 import type { TrackPlayback } from '../metadata/TrackRow';
-import { positionNumber, trackNumberAt } from '../local/match';
+import { localBindingByTrack } from '../local/albumTrackRefs';
 
 interface LocalBinding { copyId: string; path: string; label: string; episode?: number | null; track?: number | null; disc?: string | null }
 
@@ -32,27 +32,7 @@ export function CollectionTracks({ rows, albums, links, bindings, item, player }
     const all = albumRows(entry);
     return discs.map(disc => ({ key: `${entry.album.albumId}:${disc}`, name: entry.album.title + (discs.length > 1 ? ` · Disc ${disc}` : ''), numbered: false, tracks: all.filter((_, i) => entry.album.tracks[i].disc === disc) }));
   }), [rows, albums, item.edition.title, item.edition.media]);
-  const localByTrack = useMemo(() => {
-    const result = new Map<string, LocalBinding>();
-    const entries = pages.flatMap(page => {
-      const tracks = page.tracks.filter(track => track.type_ !== 'heading');
-      return tracks.map((track, index) => ({
-        track,
-        page,
-        number: trackNumberAt(tracks, index) ?? positionNumber(track.position) ?? index + 1,
-      }));
-    });
-    for (const binding of local) {
-      const titles = entries.filter(entry => !!binding.label && binding.label.includes(` · ${entry.track.title}`)
-        && (!binding.disc || entry.page.key === binding.disc));
-      if (titles.length === 1) { result.set(trackKey(titles[0].track), binding); continue; }
-      if (titles.length > 1) continue;
-      const pool = binding.disc ? entries.filter(entry => entry.page.key === binding.disc) : entries;
-      const numbers = binding.track != null ? pool.filter(entry => entry.number === binding.track) : [];
-      if (numbers.length === 1) result.set(trackKey(numbers[0].track), binding);
-    }
-    return result;
-  }, [local, pages]);
+  const localByTrack = useMemo(() => localBindingByTrack(pages, local), [local, pages]);
   function localPlayback(track: ReleaseTrack): TrackPlayback | undefined {
     const binding = localByTrack.get(trackKey(track));
     if (!binding) return undefined;
