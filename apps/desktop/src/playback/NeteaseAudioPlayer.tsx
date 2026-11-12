@@ -8,6 +8,7 @@ import type { PlaybackController } from './usePlayback';
 import { time } from './gateway';
 import { usePlayerClose } from './usePlayerClose';
 import { useSpacePause } from './useSpacePause';
+import { useSystemMediaSource } from './useSystemMediaSource';
 
 export function NeteaseAudioPlayer({ player }: { player: PlaybackController }) {
   useSpacePause(player);
@@ -23,6 +24,7 @@ export function NeteaseAudioPlayer({ player }: { player: PlaybackController }) {
     return () => { live = false; };
   }, [album?.editionId]);
   const artwork = useStaticArtwork('cover', cover?.editionId === album?.editionId ? cover?.id || null : null);
+  useSystemMediaSource(player, { title: album?.title || player.snapshot?.title || '', artist: album?.artists.join('、') || '', album: album?.title || '', coverAssetId: cover?.editionId === album?.editionId ? cover?.id || undefined : undefined, previous: album ? () => queue.step(-1) : undefined, next: album ? () => queue.step(1) : undefined, repeat: queue.mode, setRepeat: mode => queue.setMode(mode) });
   return <section className="player-view audio-player" aria-label="网易云音乐播放器" data-enter="soft" data-closing={closing} aria-busy={closing}>
     <header className="player-header"><button className="text-button" onClick={close} disabled={closing || player.busy}><Icon name="back"/>返回</button></header>
     <div className="audio-body">

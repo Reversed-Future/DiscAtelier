@@ -14,6 +14,7 @@ impl PlaybackExit {
 pub fn event(app: &tauri::AppHandle, event: &tauri::RunEvent) {
     if matches!(event, tauri::RunEvent::Exit) {
         crate::system_media::shutdown(app);
+        crate::taskbar::shutdown();
         app.state::<std::sync::Arc<discatelier_netease_runtime::Runtime>>()
             .shutdown();
         return;
@@ -45,6 +46,7 @@ pub fn event(app: &tauri::AppHandle, event: &tauri::RunEvent) {
         return;
     }
     crate::system_media::shutdown(app);
+    crate::taskbar::shutdown();
     let player = app
         .state::<crate::playback::PlaybackState>()
         .inner()

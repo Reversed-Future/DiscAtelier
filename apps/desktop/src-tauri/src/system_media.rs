@@ -1,4 +1,5 @@
 //! Windows SMTC adapter. Native state is updated on the main window thread.
+use base64::{engine::general_purpose::STANDARD, Engine};
 use discatelier_contracts::{AppError, PlaybackSnapshot};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -21,6 +22,8 @@ pub struct Metadata {
     pub album: String,
     pub previous: bool,
     pub next: bool,
+    #[serde(default)]
+    pub cover_asset_id: Option<String>,
 }
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -43,6 +46,10 @@ fn ticks(seconds: f64) -> TimeSpan {
     TimeSpan {
         Duration: (seconds.max(0.0) * 10_000_000.0).min(i64::MAX as f64) as i64,
     }
+}
+fn cover_bytes(data_url: &str) -> Option<Vec<u8>> {
+    let (_, payload) = data_url.split_once(',')?;
+    STANDARD.decode(payload).ok()
 }
 fn emit(
     app: &tauri::AppHandle,
@@ -267,9 +274,25 @@ pub async fn system_media_sync(
         || metadata.title.len() > 4000
         || metadata.artist.len() > 4000
         || metadata.album.len() > 4000
+        || metadata.cover_asset_id.as_ref().is_some_and(|id| id.len() != 64)
     {
         return Err(error("Invalid metadata"));
     }
+    let cover_update = match metadata.cover_asset_id.clone() {
+        Some(id) if crate::taskbar::cover_needed(&id) => {
+            let state = window
+                .state::<crate::commands::LibraryState>()
+                .inner()
+                .clone();
+            let asset = id.clone();
+            let data = crate::commands::run(state, move |service| service.cover(asset))
+                .await
+                .ok();
+            Some((id, data.as_deref().and_then(cover_bytes)))
+        }
+        None if crate::taskbar::cover_needed("") => Some((String::new(), None)),
+        _ => None,
+    };
     let player = window
         .state::<crate::playback::PlaybackState>()
         .inner()
@@ -285,6 +308,7 @@ pub async fn system_media_sync(
     .await
     .map_err(error)??;
     let owner = window.clone();
+    let taskbar_metadata = metadata.clone();
     let (send, receive) = tokio::sync::oneshot::channel();
     window
         .run_on_main_thread(move || {
@@ -305,6 +329,7 @@ pub async fn system_media_sync(
                     Ok(())
                 }
             });
+            let _ = crate::taskbar::update(snapshot.as_ref(), &taskbar_metadata, cover_update);
             let _ = send.send(result);
         })
         .map_err(error)?;

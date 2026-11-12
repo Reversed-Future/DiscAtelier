@@ -44,6 +44,8 @@ mod playback_settings;
 mod preview_config;
 mod purchase_recognition;
 mod system_media;
+mod taskbar;
+mod taskbar_icons;
 mod tray_window;
 mod updates;
 mod video_input;
@@ -128,6 +130,9 @@ fn main() {
             app.manage(menu_surface::MenuSurface::create().map_err(|error| error.message)?);
             app.manage(playback_exit::PlaybackExit::default());
             app.manage(system_media::State::default());
+            if let Err(error) = taskbar::setup(app.handle()) {
+                let _ = crate::logging::write("warn", "taskbar", "任务栏控制初始化失败", Some(&error));
+            }
             desktop_shell::setup(app.handle())?;
             Ok(())
         })

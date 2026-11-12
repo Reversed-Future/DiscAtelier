@@ -67,7 +67,7 @@ export function AudioPlayer({ player }: { player: PlaybackController }) {
   function play(index: number) {
     if (source && tracks[index]) void player.start(source.mountPoint, source.mediaToken, `cd-track:${tracks[index].number}`, 0, null, player.open);
   }
-  useSystemMediaSource(player, { title: currentMetadata?.title || player.snapshot?.title || '', artist: currentMetadata?.artist || '', album: currentMetadata?.album || '', previous: current > 0 ? () => play(current - 1) : undefined, next: current >= 0 && current < tracks.length - 1 ? () => play(current + 1) : undefined });
+  useSystemMediaSource(player, { title: currentMetadata?.title || player.snapshot?.title || '', artist: currentMetadata?.artist || '', album: currentMetadata?.album || '', coverAssetId: linkedCopy?.coverAssetId || undefined, previous: current > 0 ? () => play(current - 1) : undefined, next: current >= 0 && current < tracks.length - 1 ? () => play(current + 1) : undefined });
   if (!player.open) return null;
   return <section className="player-view audio-player" aria-label="CD 播放器" aria-busy={closing} data-closing={closing} data-enter="soft">
     <header className="player-header"><button className="text-button" onClick={() => void close()} disabled={closing || player.busy}><Icon name="back"/>返回</button></header>

@@ -179,7 +179,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
     if (next >= 0) play(next, !player.open);
   }, [player.snapshot?.phase, player.snapshot?.sessionId, current, tracks, copyId, player, repeat]);
 
-  useSystemMediaSource(player, { repeat, setRepeat, title: currentTitle || player.snapshot?.title || '', artist: copy?.edition.creator || '', album: copy?.edition.title || '', previous: canPrevious ? () => step(-1, !player.open) : undefined, next: canNext ? () => step(1, !player.open) : undefined });
+  useSystemMediaSource(player, { repeat, setRepeat, title: currentTitle || player.snapshot?.title || '', artist: copy?.edition.creator || '', album: copy?.edition.title || '', coverAssetId: copy?.coverAssetId || undefined, previous: canPrevious ? () => step(-1, !player.open) : undefined, next: canNext ? () => step(1, !player.open) : undefined });
 
   if (!player.snapshot || source?.mediaToken !== 'local-audio') return null;
 

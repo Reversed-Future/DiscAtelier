@@ -5,11 +5,13 @@ import { desktopAvailable, errorMessage } from '../library/gateway';
 import type { Control, Snapshot } from './gateway';
 import type { MusicQueueController } from './useMusicQueue';
 
-export interface SystemMediaSource { sessionId: string; title: string; artist: string; album: string; previous?: () => void; next?: () => void; repeat?: 'list' | 'one'; setRepeat?: (mode: 'list' | 'one') => void }
+export interface SystemMediaSource { sessionId: string; title: string; artist: string; album: string; coverAssetId?: string; previous?: () => void; next?: () => void; repeat?: 'list' | 'one'; setRepeat?: (mode: 'list' | 'one') => void }
 interface MediaCommand { sessionId: string; action: 'play' | 'pause' | 'stop' | 'previous' | 'next' | 'seek'; seconds: number | null }
+interface TaskbarCommand { sessionId: string; action: 'toggle' | 'previous' | 'next' }
 export function useSystemMedia(snapshot: Snapshot | null, busy: boolean, control: (value: Control) => Promise<boolean>, queue: MusicQueueController) {
   const source = useRef<SystemMediaSource | null>(null), pending = useRef(false), mounted = useRef(true);
   const [enabled, setEnabled] = useState(false), [error, setError] = useState('');
+  const [syncVersion, setSyncVersion] = useState(0);
   const latest = useRef({ snapshot, busy, control, queue, enabled }); latest.current = { snapshot, busy, control, queue, enabled };
   useEffect(() => {
     mounted.current = true;
@@ -29,16 +31,23 @@ export function useSystemMedia(snapshot: Snapshot | null, busy: boolean, control
       else if (command.action === 'stop') void state.control({ action: 'stop' });
       else if (command.seconds !== null && Number.isFinite(command.seconds) && s.seekable) void state.control({ action: 'seek', seconds: Math.min(s.durationSeconds ?? command.seconds, Math.max(0, command.seconds)) });
     }).catch(failed);
-    return () => { live = false; mounted.current = false; void settings.then(stop => stop?.()); void commands.then(stop => stop?.()); };
+    const taskbarCommands = listen<TaskbarCommand>('taskbar-command', event => {
+      const state = latest.current, s = state.snapshot, command = event.payload;
+      if (!live || !s || state.busy || command.sessionId !== s.sessionId) return;
+      if (command.action === 'toggle') void state.control({ action: 'pause', paused: !s.paused });
+      else if (s.source.playlist.startsWith('netease-song:')) state.queue.step(command.action === 'previous' ? -1 : 1);
+      else if (source.current?.sessionId === s.sessionId) source.current[command.action]?.();
+    }).catch(failed);
+    return () => { live = false; mounted.current = false; void settings.then(stop => stop?.()); void commands.then(stop => stop?.()); void taskbarCommands.then(stop => stop?.()); };
   }, []);
   useEffect(() => {
-    if (!enabled || pending.current) return;
+    if (pending.current) return;
     const online = snapshot?.source.playlist.startsWith('netease-song:');
     const details = !online && source.current?.sessionId === snapshot?.sessionId ? source.current : null;
     const song = queue.current?.tracks.find(track => track.id === queue.songId);
     pending.current = true;
-    void invoke('system_media_sync', { metadata: { sessionId: snapshot?.sessionId || '', title: details?.title || snapshot?.title || '', artist: details?.artist || (online ? song?.artists.join('，') || '' : ''), album: details?.album || (online ? queue.current?.title || '' : ''), previous: online ? !!queue.current : !!details?.previous, next: online ? !!queue.current : !!details?.next } })
+    void invoke('system_media_sync', { metadata: { sessionId: snapshot?.sessionId || '', title: details?.title || snapshot?.title || '', artist: details?.artist || (online ? song?.artists.join('，') || '' : ''), album: details?.album || (online ? queue.current?.title || '' : ''), previous: online ? !!queue.current : !!details?.previous, next: online ? !!queue.current : !!details?.next, coverAssetId: details?.coverAssetId || null } })
       .then(() => { if (mounted.current) setError(''); }).catch(cause => { if (mounted.current) setError(errorMessage(cause)); }).finally(() => { pending.current = false; });
-  }, [snapshot, enabled, queue.current]);
-  return { error, source };
+  }, [snapshot, enabled, queue.current, syncVersion, source.current?.coverAssetId]);
+  return { error, source, refresh: () => setSyncVersion(value => value + 1) };
 }
