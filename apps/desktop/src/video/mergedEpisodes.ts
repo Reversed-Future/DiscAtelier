@@ -16,6 +16,24 @@ interface EpisodeGroup { key: string; label: string; work: VideoWork; rows: Vide
 export interface MergedEpisodeGroup { key: string; label: string; rows: MergedEpisode[] }
 const sourceName = (work: VideoWork) => work.source === 'bangumi' ? 'Bangumi' : work.source === 'local' ? '本地' : 'TMDB';
 const identity = (work: VideoWork) => `${work.source}:${work.externalId}`;
+const normalizeTitle = (value?: string | null) => (value || '')
+  .normalize('NFKC')
+  .toLowerCase()
+  .replace(/[\s\p{P}\p{S}]+/gu, '');
+const titlesMatch = (a?: string | null, b?: string | null) => {
+  const left = normalizeTitle(a), right = normalizeTitle(b);
+  if (!left || !right) return false;
+  return left === right || (left.length >= 4 && right.length >= 4 && (left.includes(right) || right.includes(left)));
+};
+const episodeTitlesMatch = (a: VideoChapter, b: VideoChapter) =>
+  [a.title, a.originalTitle].some(left => [b.title, b.originalTitle].some(right => titlesMatch(left, right)));
+const workTitlesMatch = (a: VideoWork, b: VideoWork) =>
+  [a.title, a.originalTitle].some(left => [b.title, b.originalTitle].some(right => titlesMatch(left, right)));
+const dayNumber = (value?: string) => {
+  if (!value) return null;
+  const time = Date.parse(`${value.slice(0, 10)}T00:00:00Z`);
+  return Number.isFinite(time) ? Math.round(time / 86_400_000) : null;
+};
 
 // Only explicit provider season/type fields participate. Localized group titles are display text.
 function groups(works: VideoWork[]): EpisodeGroup[] {
@@ -30,16 +48,61 @@ function groups(works: VideoWork[]): EpisodeGroup[] {
     return [...result.values()];
   });
 }
-function corresponds(a: EpisodeGroup, b: EpisodeGroup) {
+/**
+ * Score a Bangumi group against a TMDB season. A season can still correspond
+ * when some dates or translations differ; exact numbers/counts, nearby dates,
+ * shared original/translated titles and the work title all contribute.
+ */
+function groupScore(a: EpisodeGroup, b: EpisodeGroup): number | null {
   if (a.work.source !== 'bangumi' || b.work.source !== 'tmdbTv' ||
-      !a.rows.every(r => r.episodeKind === 0) || !b.rows.every(r => r.seasonNumber !== undefined && r.seasonNumber > 0)) return false;
+      !a.rows.every(r => r.episodeKind === 0) || !b.rows.every(r => r.seasonNumber !== undefined && r.seasonNumber > 0)) return null;
   const left = new Map(a.rows.map(r => [r.number, r])), right = new Map(b.rows.map(r => [r.number, r]));
-  if (left.size !== a.rows.length || right.size !== b.rows.length) return false;
-  const pairs = [...left].flatMap(([n, row]) => right.has(n) ? [[row, right.get(n)!]] : []);
-  if (!pairs.length || pairs.some(([x, y]) => x.airDate && y.airDate && x.airDate !== y.airDate)) return false;
-  // Partial sets require a shared exact air date. Complete equal sets allow dates to be absent.
-  return pairs.some(([x, y]) => x.airDate && x.airDate === y.airDate) ||
-    (left.size === right.size && pairs.length === left.size);
+  if (left.size !== a.rows.length || right.size !== b.rows.length) return null;
+  const shared = [...left.keys()].filter(number => right.has(number));
+  if (!shared.length) return null;
+  let exactDates = 0, nearDates = 0, distantDates = 0, matchingTitles = 0;
+  for (const number of shared) {
+    const x = left.get(number)!, y = right.get(number)!;
+    const dx = dayNumber(x.airDate), dy = dayNumber(y.airDate);
+    if (dx !== null && dy !== null) {
+      const difference = Math.abs(dx - dy);
+      if (difference === 0) exactDates++;
+      else if (difference <= 2) nearDates++;
+      else if (difference > 7) distantDates++;
+    }
+    if (episodeTitlesMatch(x, y)) matchingTitles++;
+  }
+  const sameSize = a.rows.length === b.rows.length;
+  const minCount = Math.min(a.rows.length, b.rows.length), maxCount = Math.max(a.rows.length, b.rows.length);
+  const workMatch = workTitlesMatch(a.work, b.work);
+  const evidence = exactDates + nearDates + matchingTitles;
+  // A single episode must not merge across a clearly different date, and a
+  // single undated episode needs a matching title (not just a shared number).
+  if (maxCount === 1 && distantDates > 0) return null;
+  if (maxCount === 1 && exactDates + nearDates === 0 && matchingTitles === 0) return null;
+  // Partial sets need date/title evidence or matching work titles.
+  if (!sameSize && evidence < 1 && !workMatch) return null;
+  // Uneven partial sets need at least one date, two title matches or work title.
+  if (!sameSize && exactDates + nearDates === 0 && matchingTitles < 2 && !workMatch) return null;
+  // Complete sets may omit dates, but missing rows need date/title evidence.
+  if (sameSize && shared.length < minCount && evidence === 0) return null;
+  if (shared.length < Math.ceil(minCount * 0.6)) return null;
+  // Some episodes may disagree; a majority of distant dates is still a different season.
+  if (distantDates > evidence) return null;
+  let score = shared.length * 2 + exactDates * 3 + nearDates * 2 + matchingTitles * 2 - distantDates * 2;
+  if (sameSize && shared.length === minCount) score += 2;
+  if (workMatch) score += 2;
+  return score;
+}
+function bestScored<T>(items: T[], score: (item: T) => number | null) {
+  let best: T | null = null, bestScore = -Infinity, tied = false;
+  for (const item of items) {
+    const value = score(item);
+    if (value === null) continue;
+    if (value > bestScore) { best = item; bestScore = value; tied = false; }
+    else if (value === bestScore) tied = true;
+  }
+  return { best, bestScore, tied };
 }
 interface EpisodeRef { key:string; group:EpisodeGroup; row:VideoChapter }
 const refKey = (group:EpisodeGroup, row:VideoChapter) => `${group.key}:${row.id}`;
@@ -113,10 +176,26 @@ export function mergeEpisodes(works: VideoWork[], chapterLinks: VideoChapterLink
   const manual = manualPairs(refs, chapterLinks), locked = new Set<string>();
   for (const {bangumi,tmdb} of manual.pairs.values()) { locked.add(bangumi.group.key); locked.add(tmdb.group.key); }
   const paired = new Map<string, EpisodeGroup>(), consumed = new Set<string>();
-  for (const group of all.filter(g => g.work.source === 'bangumi' && !locked.has(g.key))) {
-    const matches = all.filter(other => !locked.has(other.key) && corresponds(group, other));
-    if (matches.length !== 1 || all.filter(other => !locked.has(other.key) && corresponds(other, matches[0])).length !== 1) continue;
-    paired.set(group.key, matches[0]); consumed.add(matches[0].key);
+  const bangumiGroups = all.filter(g => g.work.source === 'bangumi' && !locked.has(g.key));
+  const tmdbGroups = all.filter(g => g.work.source === 'tmdbTv' && !locked.has(g.key));
+  const scores = new Map<string, Map<string, number>>();
+  for (const group of bangumiGroups) {
+    const row = new Map<string, number>();
+    for (const other of tmdbGroups) {
+      const score = groupScore(group, other);
+      if (score !== null) row.set(other.key, score);
+    }
+    scores.set(group.key, row);
+  }
+  // Pair only when each side is the other side's unique best candidate.
+  for (const group of bangumiGroups) {
+    if (paired.has(group.key)) continue;
+    const forward = bestScored(tmdbGroups.filter(other => !consumed.has(other.key)), other => scores.get(group.key)?.get(other.key) ?? null);
+    const target = forward.best;
+    if (!target || forward.tied) continue;
+    const reverse = bestScored(bangumiGroups.filter(other => !paired.has(other.key)), other => scores.get(other.key)?.get(target.key) ?? null);
+    if (reverse.best !== group || reverse.tied) continue;
+    paired.set(group.key, target); consumed.add(target.key);
   }
   const autoRefs:EpisodeRef[] = all.filter(g => !paired.has(g.key) && !consumed.has(g.key))
     .flatMap(group => group.rows.map(row => ({key:refKey(group,row),group,row})))

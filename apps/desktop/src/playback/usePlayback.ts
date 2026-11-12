@@ -5,6 +5,20 @@ import { isActive, playback, type Control, type Snapshot } from './gateway';
 import { useMusicQueue } from './useMusicQueue';
 import { useSystemMedia } from './useSystemMedia';
 
+const VOLUME_KEY = 'discatelier.playback.volume';
+const clampVolume = (value: number) => Math.min(100, Math.max(0, Math.round(value)));
+function rememberedVolume() {
+  try {
+    const raw = localStorage.getItem(VOLUME_KEY);
+    if (raw === null) return 100;
+    const value = Number(raw);
+    return Number.isFinite(value) ? clampVolume(value) : 100;
+  } catch { return 100; }
+}
+function rememberVolume(value: number) {
+  try { localStorage.setItem(VOLUME_KEY, String(clampVolume(value))); } catch { /* storage may be unavailable */ }
+}
+
 export function usePlayback() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [busy, setBusy] = useState(false);
@@ -12,6 +26,24 @@ export function usePlayback() {
   const [open, setOpen] = useState(false);
   const advanced = useRef('');
   const revision = useRef(0), pending = useRef(false), alive = useRef(true);
+  const preferredVolume = useRef(rememberedVolume());
+  const volumeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pendingVolume = useRef<{ sessionId: string; value: number } | null>(null);
+  const snapshotRef = useRef<Snapshot | null>(snapshot);
+  snapshotRef.current = snapshot;
+  useEffect(() => () => { if (volumeTimer.current) clearTimeout(volumeTimer.current); }, []);
+  useEffect(() => {
+    const current = snapshot;
+    if (!current?.sessionId || current.volume === preferredVolume.current) return;
+    // New media sessions start at the backend default. Re-apply the user's
+    // last volume so switching songs or discs does not jump back to 100%.
+    let live = true;
+    void playback.control(current.sessionId, { action: 'volume', volume: preferredVolume.current })
+      .then(() => playback.snapshot())
+      .then(value => { if (live && alive.current && value?.sessionId === current.sessionId) setSnapshot(value); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [snapshot?.sessionId]);
   useEffect(() => {
     alive.current = true;
     if (!desktopAvailable()) return;
@@ -54,9 +86,34 @@ export function usePlayback() {
     if (!snapshot) return;
     revision.current++;
     await playback.control(snapshot.sessionId, command);
+    if (command.action === 'volume') {
+      preferredVolume.current = clampVolume(command.volume);
+      rememberVolume(command.volume);
+    }
     const value = await playback.snapshot();
     if (alive.current) setSnapshot(value);
   });
+  const setVolume = (value: number) => {
+    const next = clampVolume(value);
+    preferredVolume.current = next;
+    rememberVolume(next);
+    setSnapshot(current => current && current.volume !== next ? { ...current, volume: next } : current);
+    const sessionId = snapshotRef.current?.sessionId;
+    if (!sessionId) return;
+    pendingVolume.current = { sessionId, value: next };
+    if (volumeTimer.current) return;
+    const flush = async () => {
+      volumeTimer.current = undefined;
+      const pending = pendingVolume.current;
+      pendingVolume.current = null;
+      if (pending) {
+        try { await playback.control(pending.sessionId, { action: 'volume', volume: pending.value }); }
+        catch { /* next poll will report the actual volume */ }
+      }
+      if (pendingVolume.current && !volumeTimer.current) volumeTimer.current = setTimeout(flush, 40);
+    };
+    volumeTimer.current = setTimeout(flush, 40);
+  };
   const musicQueue = useMusicQueue({ snapshot, busy, control,
     start: (editionId: string, songId: number) => execute(async () => {
       revision.current++;
@@ -80,7 +137,7 @@ export function usePlayback() {
       const value = await playback.startLocal(copyId, path);
       if (alive.current) { setSnapshot(value); setOpen(open); }
     }),
-    control,
+    control, setVolume,
   };
 }
 export type PlaybackController = ReturnType<typeof usePlayback>;

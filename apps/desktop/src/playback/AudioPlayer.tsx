@@ -13,8 +13,10 @@ import type { LibraryCopy } from '../library/types';
 import { AudioContentTabs } from './AudioContentTabs';
 import { useLinkedLyricSong } from './useLinkedLyricSong';
 import { useSystemMediaSource } from './useSystemMediaSource';
+import { useSpacePause } from './useSpacePause';
 
 export function AudioPlayer({ player }: { player: PlaybackController }) {
+  useSpacePause(player, player.open);
   const [tracks, setTracks] = useState<CdTrack[]>([]);
   const [error, setError] = useState('');
   const { closing, close } = usePlayerClose(player);
@@ -82,7 +84,7 @@ export function AudioPlayer({ player }: { player: PlaybackController }) {
         {(currentMetadata?.date || currentMetadata?.genre) && <p>{[currentMetadata?.date, currentMetadata?.genre].filter(Boolean).join(' · ')}</p>}
       </div>
       <AudioContentTabs player={player} {...lyric}><div className="audio-track-list" aria-label="光盘曲目">{tracks.map((track, index) =>
-        <button key={track.number} aria-current={index === current ? 'true' : undefined} disabled={player.busy}
+        <button key={track.number} aria-current={index === current ? 'true' : undefined}
           onClick={() => play(index)}><span>{String(track.number).padStart(2, '0')}</span><strong>{metadata.tracks.find(item => item.number === track.number)?.title || `曲目 ${track.number}`}</strong><time>{time(track.durationSeconds)}</time></button>)}
       </div>
       <div className="cd-metadata-status"><span>{tracks[current]?.number || 0} / {currentMetadata?.trackTotal || tracks.length} 首</span>{metadata.loading ? <span role="status">正在识别曲目资料…</span> : <button className="text-button" onClick={metadata.refresh}>重新识别</button>}
@@ -90,7 +92,7 @@ export function AudioPlayer({ player }: { player: PlaybackController }) {
       </div>
     </div>
     <footer className="player-footer">
-      <PlaybackControls player={player} title={currentMetadata?.title} showVolume
+      <PlaybackControls player={player} title={currentMetadata?.title} showVolume volumeLayout="vertical"
         onPrevious={() => play(current - 1)} onNext={() => play(current + 1)}
         canPrevious={current > 0} canNext={current >= 0 && current < tracks.length - 1}/>
       {(error || player.error) && <p className="form-error" role="alert">{error || player.error}</p>}

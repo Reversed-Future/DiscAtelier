@@ -276,6 +276,9 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
             {rows.map((row, index) => {
               const item = items.find(entry => entry.id === row.copyId);
               const saved = bound.has(row.file.path);
+              const associated = !!item && (item.edition.categoryId === 'video'
+                ? row.episode != null || !!row.trackTitle
+                : row.track != null || !!row.trackTitle);
               return <tr key={row.file.path}>
                 <td title={row.file.relativePath}><span>{row.file.relativePath}</span></td>
                 <td><Select label={`${row.file.name} 的收藏条目`} value={row.copyId} disabled={busy}
@@ -294,7 +297,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
                     onChange={value => updateTrackTitle(index, value)}/>
                   : <span className="local-track-title" title={row.trackTitle || undefined}>{row.trackTitle || (row.episode ? `第 ${row.episode} 章` : item?.edition.categoryId === 'video' ? '未匹配到章节' : '—')}</span>}</td>
                 <td>{row.episode ? `第 ${row.episode} 章` : row.track ? `第 ${row.track} 轨` : '—'}</td>
-                <td>{saved ? <button type="button" className="text-button" disabled={busy} onClick={() => void saveAndPlay(row)}>播放</button> : item ? <span className="local-files-ok">已识别</span> : <span className="local-files-miss">未匹配</span>}</td>
+                <td>{saved && associated ? <button type="button" className="text-button" disabled={busy} onClick={() => void saveAndPlay(row)}>播放</button> : item && associated ? <span className="local-files-ok">已识别</span> : <span className="local-files-miss">未关联</span>}</td>
               </tr>;
             })}
           </tbody>

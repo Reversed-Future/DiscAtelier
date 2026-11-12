@@ -51,10 +51,11 @@ function useSmoothPosition(s: PlaybackController['snapshot'], active: boolean) {
   return position;
 }
 
-export function PlaybackControls({ player, onMenu, title, extended = false, showVolume = false, showTitle = true, fullscreen = false, onToggleFullscreen, onPrevious, onNext, canPrevious = true, canNext = true, repeat, onRepeat, navigation = 'track', onToggleEpisodes, episodesOpen = false }: {
+export function PlaybackControls({ player, onMenu, title, extended = false, showVolume = false, showTitle = true, fullscreen = false, onToggleFullscreen, onPrevious, onNext, canPrevious = true, canNext = true, repeat, onRepeat, navigation = 'track', onToggleEpisodes, episodesOpen = false, volumeLayout = 'horizontal' }: {
   player: PlaybackController; onMenu?(): void; title?: string | null; extended?: boolean; showVolume?: boolean; showTitle?: boolean; fullscreen?: boolean; onToggleFullscreen?(): void;
   onPrevious?(): void; onNext?(): void; canPrevious?: boolean; canNext?: boolean; repeat?: 'list' | 'one'; onRepeat?(): void;
   navigation?: 'track' | 'episode'; onToggleEpisodes?(): void; episodesOpen?: boolean;
+  volumeLayout?: 'horizontal' | 'vertical';
 }) {
   const s = player.snapshot;
   const previousLabel = navigation === 'episode' ? '上一集' : '上一首', nextLabel = navigation === 'episode' ? '下一集' : '下一首';
@@ -81,7 +82,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
       .catch(() => { /* 非标准 IFO 或光驱已变化时退回普通进度条。 */ });
     return () => { live = false; };
   }, [s?.sessionId, s?.source.playlist, s?.source.mountPoint, s?.source.mediaToken, s?.dvdTitle, s?.dvdMenu]);
-  useEffect(() => { setDraft(null); latest.current = null; setVolume(null); setRate(null); latestVolume.current = null; setHoveredChapter(-1); seekStart.current = null; seekMoved.current = false; }, [s?.sessionId, s?.dvdTitle, s?.dvdMenu]);
+  useEffect(() => { setDraft(null); latest.current = null; setRate(null); latestVolume.current = null; setHoveredChapter(-1); seekStart.current = null; seekMoved.current = false; }, [s?.sessionId, s?.dvdTitle, s?.dvdMenu]);
   useEffect(() => { if (s?.volume && s.volume > 0) lastVolume.current = s.volume; }, [s?.volume]);
   useLayoutEffect(() => {
     const measure = () => {
@@ -127,12 +128,12 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
     setRate(value);
     if (!await player.control({ action: 'rate', rate: value })) setRate(null);
   }
-  async function toggleMute() {
+  function toggleMute() {
     const next = shownVolume > 0 ? 0 : (lastVolume.current || 100);
     if (shownVolume > 0) lastVolume.current = shownVolume;
     setVolume(next);
     latestVolume.current = next;
-    if (!await player.control({ action: 'volume', volume: next })) setVolume(null);
+    player.setVolume(next);
   }
   return <section className="playback-controls" aria-label="播放控制"
     style={{ '--playback-popover-max': `${popoverMax}px` } as CSSProperties}>
@@ -146,7 +147,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
         })}
       </div>}
       <input className="playback-seek" type="range" aria-label="播放进度" min="0" max={duration || 1} step="any"
-        value={Math.min(position, duration)} disabled={!player.active || !s.seekable || !duration || loading || stopping || player.busy}
+        value={Math.min(position, duration)} disabled={!player.active || !s.seekable || !duration}
         aria-valuetext={`${time(position)} / ${time(duration)}`}
         style={{ '--progress': `${duration ? Math.min(100, position / duration * 100) : 0}%` } as CSSProperties}
         onChange={event => { const value = Number(event.target.value); latest.current = value; setDraft(value); }}
@@ -179,52 +180,58 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
     <div className="playback-times"><span>{time(position)}</span>{chaptered && <span>第 {currentChapter + 1} / {chapters.length} 章</span>}<span>{time(s.durationSeconds)}</span></div>
     {player.active && <div className="playback-actions" ref={actions}>
       <div className="playback-transport">
-        <button type="button" className="player-icon-button" aria-label="停止" title="停止" disabled={stopping || player.busy}
+        <button type="button" className="player-icon-button" aria-label="停止" title="停止" disabled={stopping}
           onClick={() => void player.control({ action: 'stop' })}><Icon name="stop"/></button>
         {onPrevious && <button type="button" className="player-icon-button" aria-label={previousLabel} title={previousLabel}
-          disabled={loading || stopping || player.busy || !canPrevious} onClick={onPrevious}><Icon name="previous"/></button>}
+          disabled={!canPrevious} onClick={onPrevious}><Icon name="previous"/></button>}
         <button type="button" className={`player-icon-button${loading || stopping ? ' is-spinning' : ''}`}
           aria-label={loading ? '读取中' : stopping ? '停止中' : s.paused ? '继续' : '暂停'}
           title={loading ? '读取中' : stopping ? '停止中' : s.paused ? '继续' : '暂停'}
-          disabled={loading || stopping || player.busy} onClick={() => void player.control({ action: 'pause', paused: !s.paused })}>
+          disabled={loading || stopping} onClick={() => void player.control({ action: 'pause', paused: !s.paused })}>
           <Icon name={loading || stopping ? 'disc' : s.paused ? 'play' : 'pause'}/>
         </button>
         {onNext && <button type="button" className="player-icon-button" aria-label={nextLabel} title={nextLabel}
-          disabled={loading || stopping || player.busy || !canNext} onClick={onNext}><Icon name="next"/></button>}
+          disabled={!canNext} onClick={onNext}><Icon name="next"/></button>}
       </div>
       <div className="playback-options">
         {menu && <button type="button" className="player-icon-button" aria-label="菜单" title="菜单"
-          disabled={loading || stopping || player.busy} onClick={async () => { if (await player.control({ action: 'menu', direction: 'root' })) onMenu?.(); }}><Icon name="menu"/></button>}
+          disabled={stopping} onClick={async () => { if (await player.control({ action: 'menu', direction: 'root' })) onMenu?.(); }}><Icon name="menu"/></button>}
         {(extended || showVolume) && <div className="playback-volume">
           <button type="button" className="player-icon-button playback-volume-toggle"
             aria-label={shownVolume > 0 ? `静音（当前音量 ${shownVolume}%）` : '取消静音'} title={shownVolume > 0 ? '静音' : '取消静音'}
-            aria-pressed={shownVolume === 0} disabled={loading || stopping || player.busy} onClick={() => void toggleMute()}>
+            aria-pressed={shownVolume === 0} disabled={stopping} onClick={toggleMute}>
             <Icon name={shownVolume > 0 ? 'volume' : 'mute'}/>
           </button>
-          <div className="playback-volume-flyout" role="group" aria-label="音量">
+          <div className={`playback-volume-flyout${volumeLayout === 'vertical' ? ' is-vertical' : ''}`} role="group" aria-label="音量">
             <input className="playback-volume-range" type="range" aria-label="音量" min="0" max="100" step="1" value={shownVolume}
-              disabled={loading || stopping || player.busy} aria-valuetext={`${shownVolume}%`}
+              disabled={stopping} aria-valuetext={`${shownVolume}%`}
               style={{ '--volume': `${shownVolume}%` } as CSSProperties}
-              onChange={event => { const value = Number(event.target.value); latestVolume.current = value; if (value > 0) lastVolume.current = value; setVolume(value); }}
+              onChange={event => {
+                const value = Number(event.target.value);
+                latestVolume.current = value;
+                if (value > 0) lastVolume.current = value;
+                setVolume(value);
+                player.setVolume(value);
+              }}
               onPointerUp={() => void commitVolume()} onKeyUp={event => { if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) void commitVolume(); }}
               onPointerCancel={() => { latestVolume.current = null; setVolume(null); }} onBlur={() => { if (latestVolume.current !== null) void commitVolume(); }}/>
             <span>{shownVolume}</span>
           </div>
         </div>}
         {extended && <Select label="播放速度" value={String(shownRate)} options={RATES} columns={3} placement="above"
-          maxHeight={Math.max(popoverMax, 82)} disabled={loading || stopping || player.busy}
+          maxHeight={Math.max(popoverMax, 82)} disabled={stopping}
           onChange={id => void changeRate(Number(id))}/>}
-        {!s.source.playlist.startsWith('cd-track:') && !s.source.playlist.startsWith('netease-song:') && <Select label="音轨" value={s.selectedAudio === null ? '' : String(s.selectedAudio)}
+        {extended && <Select label="音轨" value={s.selectedAudio === null ? '' : String(s.selectedAudio)}
           options={s.audioTracks.map(track => ({ id: String(track.id), label: `${track.id} · ${track.title || track.language || track.codec || '音轨'}` }))}
           columns={2} maxHeight={popoverMax} placement="above"
-          disabled={loading || stopping || player.busy || !s.audioTracks.length}
+          disabled={stopping || !s.audioTracks.length}
           onChange={id => void player.control({ action: 'audio', id: Number(id) })}/>}
         {onToggleEpisodes && <button type="button" className="player-icon-button playback-episodes-toggle" aria-label="选集" title="选集"
-          aria-pressed={episodesOpen} disabled={loading || stopping || player.busy} onClick={onToggleEpisodes}><Icon name="list"/></button>}
+          aria-pressed={episodesOpen} disabled={stopping} onClick={onToggleEpisodes}><Icon name="list"/></button>}
         {onToggleFullscreen && <button type="button" className="player-icon-button" aria-label={fullscreen ? '退出全屏' : '全屏'} title={fullscreen ? '退出全屏' : '全屏'}
           disabled={stopping} onClick={onToggleFullscreen}><Icon name={fullscreen ? 'fullscreenExit' : 'fullscreen'}/></button>}
         {onRepeat && <button type="button" className="player-icon-button playback-repeat" aria-label={repeat === 'one' ? '单曲循环，切换为列表循环' : '列表循环，切换为单曲循环'}
-          title={repeat === 'one' ? '单曲循环' : '列表循环'} disabled={loading || stopping || player.busy} onClick={onRepeat}><Icon name={repeat === 'one' ? 'repeatOne' : 'repeat'}/></button>}
+          title={repeat === 'one' ? '单曲循环' : '列表循环'} disabled={stopping} onClick={onRepeat}><Icon name={repeat === 'one' ? 'repeatOne' : 'repeat'}/></button>}
       </div>
     </div>}
     {!player.active && onToggleFullscreen && <div className="playback-actions">

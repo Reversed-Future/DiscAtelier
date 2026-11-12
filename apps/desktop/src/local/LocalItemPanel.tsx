@@ -207,16 +207,21 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     {error && <p className="form-error" role="alert">{error}</p>}
     {!loaded && <p className="utility-copy">正在读取关联…</p>}
     {!!own.length && !files.length && <>
-      <div className="local-files-summary"><span>已关联 {own.length} 个文件</span><button type="button" className="text-button" disabled={busy} onClick={() => {
+      <div className="local-files-summary"><span>已扫描到 {own.length} 个文件</span><button type="button" className="text-button" disabled={busy} onClick={() => {
         setError('');
         const next = all.filter(binding => binding.copyId !== item.id);
         void invoke('local_files_save', { bindings: next }).then(() => setAll(next)).catch(cause => setError(errorMessage(cause)));
       }}>清除本收藏关联</button></div>
       <div className={files.length ? 'local-files-table-wrap local-files-saved' : 'local-files-table-wrap'}><table className="local-files-table"><thead><tr><th>文件</th><th>位置</th><th>{item.edition.categoryId === 'video' ? '章节' : '歌曲'}</th><th>操作</th></tr></thead><tbody>
-        {own.map(binding => <tr key={binding.path}><td title={binding.path}><span>{binding.path.split(/[\\/]/).pop()}</span></td>
+        {own.map(binding => {
+          const associated = item.edition.categoryId === 'video'
+            ? binding.episode != null || !!savedTitle(binding)
+            : binding.track != null || !!savedTitle(binding);
+          return <tr key={binding.path}><td title={binding.path}><span>{binding.path.split(/[\\/]/).pop()}</span></td>
           <td>{binding.episode ? `第 ${binding.episode} 章` : binding.track ? `第 ${binding.track} 轨` : '—'}</td>
           <td><span className="local-track-title">{item.edition.categoryId === 'video' ? (savedTitle(binding) || (binding.episode ? `第 ${binding.episode} 章` : '—')) : savedTitle(binding) || '—'}</span></td>
-          <td><button type="button" className="text-button" disabled={busy} onClick={() => void play(binding.path)}>播放</button></td></tr>)}
+          <td>{associated ? <button type="button" className="text-button" disabled={busy} onClick={() => void play(binding.path)}>播放</button> : <span className="local-files-miss">未关联</span>}</td></tr>;
+        })}
       </tbody></table></div>
     </>}
     {!!files.length && <>

@@ -48,11 +48,12 @@ test('reported legacy episode merges offline by exact number, translated title a
   assert.equal(merged[0].rows[0].originalTitle,'ハルカナキオク');assert.equal(merged[0].rows[0].summary,'已保存的单集简介');assert.equal(merged[0].rows[0].imageUrl,'saved-still');
   assert.deepEqual(merged[0].rows[0].sources,['Bangumi','TMDB']);assert.equal(JSON.stringify([a,b]),before);
 });
-test('a different episode date cannot block an individually proven match',()=>{
+test('a nearby date does not block an otherwise proven season match',()=>{
   const a=bg([episode(1,1,{airDate:'2010-10-04'}),episode(2,2,{airDate:'2010-10-11'})]);
   const b=tv([episode(31,1,{airDate:'2010-10-04',summary:'第一集'}),episode(32,2,{airDate:'2010-10-12'})]);
   const rows=mergeEpisodes([a,b]).flatMap(g=>g.rows);
-  assert.equal(rows.length,3);assert.equal(rows[0].summary,'第一集');assert.deepEqual(rows[0].sources,['Bangumi','TMDB']);
+  assert.equal(rows.length,2);assert.equal(rows[0].summary,'第一集');assert.deepEqual(rows[0].sources,['Bangumi','TMDB']);
+  assert.deepEqual(rows[1].sources,['Bangumi','TMDB']);
 });
 test('legacy date matching rejects ambiguity, missing evidence and explicitly incompatible kinds',()=>{
   const a=work('bangumi',7157,[episode(1,1,{airDate:'2010-10-04'})]);
@@ -111,7 +112,8 @@ test('an explicit link wins over automatic matching without duplicating either e
   assert.deepEqual(rows.find(row=>row.source==='tmdbTv').candidates.map(c=>c.id),['1']);
 });
 test('unmatched rows list only unpaired episodes from the other site',()=>{
-  const a=bg([episode(1,1),episode(2,2),episode(3,3)]),b=tv([episode(31,1),episode(32,2)]);
+  const a=bg([episode(1,1),episode(2,2),episode(3,3)]);
+  const b=tv([episode(31,1),episode(32,2,{title:'完全不同',originalTitle:'完全不同'})]);
   const rows=mergeEpisodes([a,b]).flatMap(g=>g.rows);
   assert.equal(rows.length,5);
   const third=rows.find(row=>row.source==='bangumi'&&row.number==='3');
@@ -122,4 +124,50 @@ test('unmatched rows list only unpaired episodes from the other site',()=>{
   const linked=mergeEpisodes([a,b],[{bangumi:'1',tmdb:'31'}]).flatMap(g=>g.rows);
   assert.deepEqual(linked.find(row=>row.source==='bangumi'&&row.number==='3').candidates.map(c=>c.id),['32']);
   assert.deepEqual(linked.find(row=>row.source==='tmdbTv').candidates.map(c=>c.id),['2','3']);
+});
+const summerDate = (offset) => new Date(Date.UTC(2022, 3, 15) + offset * 86_400_000).toISOString().slice(0, 10);
+const summerWork = (source, externalId, title, originalTitle, rows) => ({ source, externalId, title, originalTitle, chapters: rows });
+test('Summer Time Rendering links across translated titles, missing dates and an isolated date drift',()=>{
+  const bangumiRows = Array.from({length: 25}, (_, index) => {
+    const number = index + 1;
+    return episode(1000 + number, number, {
+      episodeKind: 0, group: '本篇', title: `夏日重现 ${number}`, originalTitle: `サマータイムレンダ ${number}`,
+      airDate: index === 10 ? '' : summerDate(index * 7), duration: '00:24:00',
+    });
+  });
+  const tmdbRows = Array.from({length: 25}, (_, index) => {
+    const number = index + 1;
+    return episode(2000 + number, number, {
+      seasonNumber: 1, group: '第 1 季', title: `Summer Time Rendering ${number}`, originalTitle: `Summer Time Rendering ${number}`,
+      airDate: index === 10 ? '' : summerDate(index * 7 + (index === 20 ? 8 : 1)),
+      duration: '24 分钟', summary: `第 ${number} 集简介`, imageUrl: `still-${number}`,
+    });
+  });
+  const groups = mergeEpisodes([
+    summerWork('tmdbTv', 9, 'Summer Time Rendering', 'サマータイムレンダ', tmdbRows),
+    summerWork('bangumi', 7157, '夏日重现', 'サマータイムレンダ', bangumiRows),
+  ]);
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].rows.length, 25);
+  assert.deepEqual(groups[0].rows[0].sources, ['Bangumi', 'TMDB']);
+  assert.equal(groups[0].rows[0].summary, '第 1 集简介');
+  assert.equal(groups[0].rows[24].imageUrl, 'still-25');
+});
+test('work-title identity and episode counts keep an uneven season set linkable',()=>{
+  const bangumiRows = Array.from({length: 24}, (_, index) => episode(3000 + index + 1, index + 1, {
+    episodeKind: 0, group: '本篇', title: `夏日重现 ${index + 1}`, originalTitle: `サマータイムレンダ ${index + 1}`,
+    airDate: summerDate(index * 7),
+  }));
+  const tmdbRows = Array.from({length: 25}, (_, index) => episode(4000 + index + 1, index + 1, {
+    seasonNumber: 1, group: '第 1 季', title: `Episode ${index + 1}`, originalTitle: `Episode ${index + 1}`,
+    airDate: summerDate(index * 7), summary: `简介 ${index + 1}`,
+  }));
+  const groups = mergeEpisodes([
+    summerWork('bangumi', 7157, '夏日重现', 'サマータイムレンダ', bangumiRows),
+    summerWork('tmdbTv', 9, 'Summer Time Rendering', 'サマータイムレンダ', tmdbRows),
+  ]);
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].rows.length, 25);
+  assert.deepEqual(groups[0].rows[0].sources, ['Bangumi', 'TMDB']);
+  assert.deepEqual(groups[0].rows[24].sources, ['TMDB']);
 });

@@ -56,6 +56,8 @@
 .track-list .release-details { margin: 0 0 10px 54px; }
 /* A credit disclosure belongs to the track; only track boundaries get rules. */
 .track-list > li:not(.track-heading) { border-bottom: 1px solid var(--line); }
+/* Keep the footer action divider as the only closing line. */
+.release-track-scroll .track-list > li:last-child { border-bottom: 0; }
 .track-row { position: relative; align-items: center; }
 .track-position, .track-heading-content, .track-duration { pointer-events: none; display: flex; align-items: center; min-height: 26px; }
 .track-duration { justify-content: flex-end; }

@@ -7,8 +7,10 @@ import { PlaybackControls } from './PlaybackControls';
 import type { PlaybackController } from './usePlayback';
 import { time } from './gateway';
 import { usePlayerClose } from './usePlayerClose';
+import { useSpacePause } from './useSpacePause';
 
 export function NeteaseAudioPlayer({ player }: { player: PlaybackController }) {
+  useSpacePause(player);
   const { closing, close } = usePlayerClose(player);
   const queue = player.musicQueue, album = queue.current;
   const [cover, setCover] = useState<{ editionId: string; id: string | null } | null>(null);
@@ -28,11 +30,11 @@ export function NeteaseAudioPlayer({ player }: { player: PlaybackController }) {
       <div className="audio-cd-content">
         <div className="local-audio-meta"><h2>{album?.title || player.snapshot?.title}</h2><p>{album?.artists.join('，')}</p></div>
         <AudioContentTabs player={player} songId={queue.songId}>
-          <div className="audio-track-list" aria-label="网易云曲目">{album?.tracks.map((track, index) => <button key={track.id} disabled={player.busy} aria-current={track.id === queue.songId ? 'true' : undefined} onClick={() => void queue.start(album.editionId, track.id)}><span>{String(index + 1).padStart(2, '0')}</span><strong>{track.title}</strong><time>{time(track.durationMs / 1000)}</time></button>)}</div>
+          <div className="audio-track-list" aria-label="网易云曲目">{album?.tracks.map((track, index) => <button key={track.id} aria-current={track.id === queue.songId ? 'true' : undefined} onClick={() => void queue.start(album.editionId, track.id)}><span>{String(index + 1).padStart(2, '0')}</span><strong>{track.title}</strong><time>{time(track.durationMs / 1000)}</time></button>)}</div>
           <div className="cd-metadata-status">{album ? `${album.tracks.length} 首` : '正在读取曲目…'}</div>
         </AudioContentTabs>
       </div>
     </div>
-    <footer className="player-footer"><PlaybackControls player={player} showVolume onPrevious={() => queue.step(-1)} onNext={() => queue.step(1)} canPrevious={!!album} canNext={!!album} repeat={queue.mode} onRepeat={() => queue.setMode(queue.mode === 'list' ? 'one' : 'list')}/>{player.error && <p className="form-error" role="alert">{player.error}</p>}</footer>
+    <footer className="player-footer"><PlaybackControls player={player} showVolume volumeLayout="vertical" onPrevious={() => queue.step(-1)} onNext={() => queue.step(1)} canPrevious={!!album} canNext={!!album} repeat={queue.mode} onRepeat={() => queue.setMode(queue.mode === 'list' ? 'one' : 'list')}/>{player.error && <p className="form-error" role="alert">{player.error}</p>}</footer>
   </section>;
 }

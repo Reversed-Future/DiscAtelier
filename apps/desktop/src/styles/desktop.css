@@ -92,7 +92,8 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
 .local-files-table-wrap { max-height: min(56vh, 620px); overflow: auto; border-block: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
 .local-files-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .local-files-table th { position: sticky; top: 0; z-index: 1; padding: 10px 12px; text-align: left; font-weight: 400; color: var(--muted); background: var(--surface, #171717); }
-.local-files-table td { padding: 8px 12px; border-top: 1px solid color-mix(in srgb, currentColor 9%, transparent); vertical-align: middle; }
+.local-files-table tr { height: 54px; }
+.local-files-table td { height: 54px; padding: 8px 12px; border-top: 1px solid color-mix(in srgb, currentColor 9%, transparent); vertical-align: middle; }
 .local-files-table td:first-child { max-width: 290px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .local-files-table .select-control { width: min(420px, 42vw); }
 .local-files-table td:nth-child(2) .select-control { width: min(340px, 30vw); }

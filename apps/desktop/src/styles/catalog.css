@@ -198,8 +198,8 @@
 .audio-disc.has-artwork span { border-color: #ffffff52; box-shadow: 0 0 0 1px #00000066; }
 @media (prefers-reduced-motion: reduce) { .audio-disc.is-loading::after { animation: none; opacity: .25; } .audio-disc-artwork { transition: none; } }
 .audio-track-list { max-height: 48vh; overflow: auto; scrollbar-width: none; margin-top: 14px; }
-.audio-track-list button { display: flex; align-items: center; width: 100%; gap: 24px; padding: 15px 12px; border-bottom: 1px solid var(--line); color: var(--muted); transition: color 160ms, background 160ms; }
-.audio-track-list button[aria-current] { color: var(--ink); background: #ffffff07; }
+.audio-track-list button { display: flex; align-items: center; width: 100%; gap: 24px; padding: 15px 12px; border-bottom: 1px solid var(--line); border-radius: 3px; color: var(--muted); transition: color 160ms, background-color 200ms ease, box-shadow 200ms ease; }
+.audio-track-list button[aria-current] { color: var(--ink); background: #ffffff0b; box-shadow: inset 0 0 0 1px #ffffff17; }
 .audio-track-list time { margin-left: auto; }
 
 .content-editor-disc + .content-editor-disc { margin-top: 24px; }

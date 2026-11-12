@@ -72,7 +72,7 @@
 .video-facts dd > span + span { margin-top: 5px; }
 .video-reference { color: inherit; font: inherit; text-align: left; padding: 0; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .video-reference:hover { color: var(--muted); }
-.video-characters { list-style: none; padding: 0; margin: 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.video-characters { list-style: none; padding: 0; margin: 0; font-size: 12px; }
 .video-characters li { padding: 14px 0; }
 .video-characters li:not(:last-child) { border-bottom: 1px solid var(--line); }
 .video-characters li:first-child { padding-top: 0; }
@@ -89,7 +89,9 @@
 .video-chapters > :not(.video-chapter-scroll) { flex-shrink: 0; }
 .video-chapters .setting-hint { margin: 0 0 10px; }
 .video-chapter-scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; }
-.video-chapter-list { list-style: none; padding: 0; margin: 8px 0 0; border-bottom: 1px solid var(--line); }
+.video-chapter-list { list-style: none; padding: 0; margin: 8px 0 0; }
+/* The last group keeps no trailing divider; the footer action border is the only closing line. */
+.video-chapter-scroll > section:not(:last-child) .video-chapter-list { border-bottom: 1px solid var(--line); }
 .video-chapter-list li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 16px; padding: 14px 0; font-size: 12px; }
 .video-chapter-list li:not(:last-child) { border-bottom: 1px solid var(--line); }
 .video-chapter-list strong { font-weight: 500; }
@@ -157,7 +159,8 @@
 .video-source-data.video-chapters > .video-section-heading { margin-bottom: 2px; }
 .video-source-data.video-chapters .video-chapter-list { margin-top: 0; }
 .video-source-data.video-chapters .video-chapter-list li:first-child { padding-top: 4px; }
-.video-source-data.video-chapters .video-episode-group { margin: 2px 0; }
+.video-source-data.video-chapters .video-episode-group { margin: 18px 0 8px; }
+.video-source-data.video-chapters .video-chapter-scroll > section:first-child .video-episode-group { margin-top: 2px; }
 .video-episode-copy { min-width: 0; }
 .video-episode-details { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
 .video-episode-details p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.9; }

@@ -88,7 +88,7 @@ export function PlayerView({ player }: { player: PlaybackController }) {
       } else if (!['INPUT', 'TEXTAREA'].includes(target.tagName)) {
         if (target.closest('.player-picture') && navigate(event.key)) {
           event.preventDefault();
-        } else if (event.code === 'Space' && target.tagName !== 'BUTTON') {
+        } else if (event.code === 'Space') {
           event.preventDefault(); void current.control({ action: 'pause', paused: !current.snapshot?.paused });
         } else if (event.key === 'f' && !event.ctrlKey && !event.altKey) {
           event.preventDefault(); void toggleFullscreen();
@@ -108,10 +108,10 @@ export function PlayerView({ player }: { player: PlaybackController }) {
       {!player.active && <span>{player.snapshot?.phase === 'failed' ? '无法播放' : '已停止'}</span>}
     </div>
     <footer className="player-footer video-footer" ref={footer} inert={!chrome.visible} data-expanded={episodesExpanded}>
-      {episodesExpanded && <div className="player-episodes-wrap">
-        <PlayerEpisodes items={episodes.items} currentIndex={episodes.currentIndex} loading={episodes.loading}
-          onSelect={playEpisode} onClose={closeEpisodes}/>
-      </div>}
+      <div className="player-episodes-wrap">
+        {episodesExpanded && <PlayerEpisodes items={episodes.items} currentIndex={episodes.currentIndex} loading={episodes.loading}
+          onSelect={playEpisode} onClose={closeEpisodes}/>}
+      </div>
       <div className="player-footer-inner">
         <PlaybackControls player={player} extended showTitle={false} fullscreen={fullscreen} onToggleFullscreen={() => void toggleFullscreen()} onMenu={() => surface.current?.focus()}
           navigation="episode" episodesOpen={episodesExpanded} onToggleEpisodes={canEpisodes ? () => setEpisodesOpen(value => !value) : undefined}

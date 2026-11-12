@@ -28,12 +28,18 @@ export function CollectionVideoChapters({ item, metadata, enabled, physical, has
     const episode = Number(number.replace(/\D+/g, ''));
     const binding = local.find(value => value.episode === episode);
     if (!binding || !episode) return undefined;
-    const playing = player.active && player.snapshot?.source.playlist === `local:${binding.path}`;
+    const current = player.active && player.snapshot?.source.playlist === `local:${binding.path}`;
+    const playing = current && player.open;
     return {
       playing,
       busy: player.busy,
       play: () => {
-        if (playing) void player.control({ action: 'pause', paused: !player.snapshot?.paused });
+        if (current && !player.open) {
+          // Returning from the player leaves the session alive but hidden.
+          // Re-open the UI and resume instead of only toggling the hidden pause state.
+          player.show();
+          if (player.snapshot?.paused) void player.control({ action: 'pause', paused: false });
+        } else if (playing) void player.control({ action: 'pause', paused: !player.snapshot?.paused });
         else void player.startLocal(item.id, binding.path);
       },
     };
