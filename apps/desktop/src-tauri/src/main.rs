@@ -10,6 +10,7 @@ mod credentials;
 mod data_location;
 mod desktop_shell;
 mod discogs;
+mod equalizer;
 mod exchange;
 mod integration_settings;
 mod local_files;
@@ -243,6 +244,8 @@ fn main() {
             optical::optical_presence,
             optical::playback_settings_get,
             optical::playback_settings_save,
+            equalizer::equalizer_get,
+            equalizer::equalizer_save,
             bluray::bluray_key_status,
             bluray::bluray_key_import,
             bluray::bluray_key_download,

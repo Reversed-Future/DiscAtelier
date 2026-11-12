@@ -112,8 +112,12 @@ pub async fn netease_play(
             stream.url,
             checkpoint,
         )?;
+        let session = PlaybackSession::Vlc(session);
         let snapshot = session.snapshot()?;
-        *current = Some(PlaybackSession::Vlc(session));
+        if let Ok(equalizer) = crate::equalizer::read(&directory) {
+            let _ = crate::equalizer::apply(&session, &snapshot, &equalizer);
+        }
+        *current = Some(session);
         Ok(snapshot)
     })
     .await

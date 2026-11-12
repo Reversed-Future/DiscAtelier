@@ -192,6 +192,9 @@ fn command(state: &mut PlaybackState, control: &PlaybackControl) -> Result<Value
         PlaybackControl::Menu { .. } => {
             Err(AppError::new("unsupported", "当前播放后端不支持原盘菜单。"))
         }
+        PlaybackControl::Equalizer { .. } => {
+            Err(AppError::new("unsupported", "当前播放后端不支持均衡器。"))
+        }
         PlaybackControl::Stop => unreachable!(),
     }
 }

@@ -119,6 +119,9 @@ pub async fn playback_start(
             )?)
         };
         let snapshot = crate::cd_metadata::decorate_snapshot(&cd_metadata, session.snapshot()?);
+        if let Ok(equalizer) = crate::equalizer::read(&directory) {
+            let _ = crate::equalizer::apply(&session, &snapshot, &equalizer);
+        }
         *current = Some(session);
         Ok(snapshot)
     })
@@ -181,8 +184,12 @@ pub async fn playback_start_local(
         source,
         checkpoint,
     )?;
+    let session = PlaybackSession::Vlc(session);
     let snapshot = session.snapshot()?;
-    *current = Some(PlaybackSession::Vlc(session));
+    if let Ok(equalizer) = crate::equalizer::read(&directory) {
+        let _ = crate::equalizer::apply(&session, &snapshot, &equalizer);
+    }
+    *current = Some(session);
     Ok(snapshot)
 }
 #[tauri::command]

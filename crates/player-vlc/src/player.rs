@@ -182,6 +182,38 @@ impl Player {
                         return Err(ffi::error("此音轨当前不可切换。"));
                     }
                 }
+                PlaybackControl::Equalizer { enabled, preamp, bands } => {
+                    if !preamp.is_finite() || !(-12.0..=12.0).contains(&preamp)
+                        || bands.len() != 10
+                        || bands.iter().any(|band| !band.is_finite() || !(-12.0..=12.0).contains(band))
+                    {
+                        return Err(ffi::error("均衡器参数无效。"));
+                    }
+                    let equalizer = if enabled {
+                        let equalizer = (self.api.libvlc_audio_equalizer_new)();
+                        if equalizer.is_null() {
+                            return Err(ffi::error("无法创建均衡器。"));
+                        }
+                        (self.api.libvlc_audio_equalizer_set_preamp)(equalizer, preamp as f32);
+                        for (index, gain) in bands.iter().enumerate() {
+                            (self.api.libvlc_audio_equalizer_set_amp_at_index)(
+                                equalizer,
+                                *gain as f32,
+                                index as u32,
+                            );
+                        }
+                        equalizer
+                    } else {
+                        ptr::null_mut()
+                    };
+                    let result = (self.api.libvlc_media_player_set_equalizer)(self.handle, equalizer);
+                    if !equalizer.is_null() {
+                        (self.api.libvlc_audio_equalizer_release)(equalizer);
+                    }
+                    if result != 0 {
+                        return Err(ffi::error("均衡器应用失败。"));
+                    }
+                }
                 PlaybackControl::Menu { direction } => {
                     if !matches!(
                         snapshot.source.playlist.as_str(),

@@ -100,6 +100,11 @@ api! {
     libvlc_audio_set_track: unsafe extern "C" fn(Handle, c_int) -> c_int,
     libvlc_audio_get_track_description: unsafe extern "C" fn(Handle) -> *mut Track,
     libvlc_track_description_list_release: unsafe extern "C" fn(*mut Track),
+    libvlc_audio_equalizer_new: unsafe extern "C" fn() -> Handle,
+    libvlc_audio_equalizer_release: unsafe extern "C" fn(Handle),
+    libvlc_audio_equalizer_set_preamp: unsafe extern "C" fn(Handle, c_float) -> c_int,
+    libvlc_audio_equalizer_set_amp_at_index: unsafe extern "C" fn(Handle, c_float, c_uint) -> c_int,
+    libvlc_media_player_set_equalizer: unsafe extern "C" fn(Handle, Handle) -> c_int,
 }
 pub fn error(message: impl Into<String>) -> AppError {
     AppError::new("dvd", message)
