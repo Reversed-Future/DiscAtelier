@@ -147,6 +147,6 @@ export function EqualizerSettings() {
     </div>
     {error && <p className="form-error" role="alert">{error}</p>}
     <p className="setting-hint">{profile.name} · 当前值 {draft.enabled ? '已启用' : '已关闭'}</p>
-    {toast && <div className="equalizer-toast" role="status">{toast}</div>}
+    {toast && <div className="toast visible" role="status">{toast}</div>}
   </section>;
 }

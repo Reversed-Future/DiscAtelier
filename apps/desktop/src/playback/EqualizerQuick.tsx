@@ -6,6 +6,7 @@ export function EqualizerQuick({ onEdit }: { onEdit(): void }) {
   const wrapper = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [open, setOpen] = useState(false);
   function close(focus = false) {
     list.current?.hidePopover();
@@ -13,7 +14,8 @@ export function EqualizerQuick({ onEdit }: { onEdit(): void }) {
     if (focus) trigger.current?.focus();
   }
   function show() {
-    if (!state || !list.current || !trigger.current) return;
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    if (open || !state || !list.current || !trigger.current) return;
     const rect = trigger.current.getBoundingClientRect();
     const width = Math.max(300, rect.width);
     list.current.style.width = `${width}px`;
@@ -33,11 +35,15 @@ export function EqualizerQuick({ onEdit }: { onEdit(): void }) {
     document.addEventListener('keydown', key, true);
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', key, true); };
   }, [open]);
+  function scheduleClose() {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => close(), 180);
+  }
   if (!state) return null;
   const active = state.enabled ? allProfiles(state).find(profile => profile.id === state.activeProfile) : null;
-  return <span className="equalizer-quick" ref={wrapper}>
+  return <span className="equalizer-quick" ref={wrapper} onMouseEnter={show} onMouseLeave={scheduleClose}>
     <button ref={trigger} type="button" className="player-icon-button equalizer-trigger" aria-label="均衡器" title="均衡器"
-      aria-expanded={open} onClick={() => open ? close(true) : show()}><span>EQ</span></button>
+      aria-expanded={open} onFocus={show} onClick={show}><span>EQ</span></button>
     <div ref={list} popover="manual" className="equalizer-quick-popover" role="dialog" aria-label="均衡器快速切换">
       <header><strong>均衡器</strong><button type="button" className="text-button" onClick={() => { close(); onEdit(); }}>进入编辑界面</button></header>
       <p className="setting-hint">{active ? `${active.name} · 已启用` : '当前已关闭'}</p>
