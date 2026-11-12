@@ -37,7 +37,10 @@ export function EqualizerQuick({ onEdit }: { onEdit(): void }) {
   }, [open]);
   function scheduleClose() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => close(), 180);
+    closeTimer.current = setTimeout(() => {
+      if (wrapper.current?.matches(':hover') || list.current?.matches(':hover')) return;
+      close();
+    }, 220);
   }
   if (!state) return null;
   const active = state.enabled ? allProfiles(state).find(profile => profile.id === state.activeProfile) : null;
