@@ -68,6 +68,7 @@ export interface TrackTitle {
   discNumber?: number | null;
   number?: number;
   order?: number;
+  medium?: 'audio' | 'video' | null;
 }
 
 export function positionNumber(position: string): number | null {

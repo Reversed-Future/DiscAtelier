@@ -46,7 +46,7 @@ function sortRows(values: Row[]) {
 
 function matchRow(item: LibraryCopy, file: ScannedFile, tracks: TrackTitle[]) {
   if (item.edition.categoryId === 'music' || isAudio(file)) {
-    const matched = matchAlbumTrack(`${file.relativePath} ${file.name}`, tracks);
+    const matched = matchAlbumTrack(`${file.relativePath} ${file.name}`, tracks, '', isAudio(file) ? 'audio' : 'video');
     if (matched) return { number: String(matched.number), title: matched.title, disc: matched.disc || null };
     // With album metadata, unmatched/ambiguous titles stay unassociated rather
     // than guessing a number that may belong to another disc.

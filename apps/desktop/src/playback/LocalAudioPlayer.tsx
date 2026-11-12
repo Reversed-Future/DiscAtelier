@@ -110,9 +110,11 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
     }
     const used = new Set<number>();
     const matched = new Map<number, LocalBinding>();
+    const audioTracks = albumTracks.filter(entry => entry.medium === 'audio');
+    const candidates = audioTracks.length ? audioTracks : albumTracks;
     for (const binding of sorted) {
       const label = normalized(binding.label || binding.path);
-      const pool = binding.disc ? albumTracks.filter(entry => entry.disc === binding.disc) : albumTracks;
+      const pool = binding.disc ? candidates.filter(entry => entry.disc === binding.disc) : candidates;
       const titled = pool.filter(entry => {
         const title = normalized(entry.title);
         return !used.has(entry.order) && title.length >= 2 && label.includes(title);
@@ -123,7 +125,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
         if (numbered.length === 1) album = numbered[0];
       }
       if (!album) {
-        const result = matchAlbumTrack(binding.label || binding.path, albumTracks);
+        const result = matchAlbumTrack(binding.label || binding.path, albumTracks, '', 'audio');
         if (result) {
           const candidates = albumTracks.filter(entry => !used.has(entry.order) && entry.disc === result.disc && entry.number === result.number);
           if (candidates.length === 1) album = candidates[0];

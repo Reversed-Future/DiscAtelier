@@ -4,7 +4,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { errorMessage, library } from '../library/gateway';
 import { netease } from '../integrations/gateway';
 import type { LibraryCopy } from '../library/types';
-import { chooseItem, matchTrack, parseEpisode, parseTrack, type TrackTitle } from './match';
+import { chooseItem, isAudio, matchTrack, parseEpisode, parseTrack, type TrackTitle } from './match';
 import { albumTrackRefs, matchAlbumTrack } from './albumTrackRefs';
 import { loadVideoChapters } from './videoChapters';
 import { FolderPicker } from './FolderPicker';
@@ -92,7 +92,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
 
   function trackFor(itemId: string, file: ScannedFile) {
     const refs = trackTitles.get(itemId) || [];
-    const matched = matchAlbumTrack(`${file.relativePath} ${file.name}`, refs);
+    const matched = matchAlbumTrack(`${file.relativePath} ${file.name}`, refs, '', isAudio(file) ? 'audio' : 'video');
     if (matched) return { number: matched.number, title: matched.title, disc: matched.disc || null };
     // When album metadata exists, an unmatched/ambiguous file must stay
     // unassociated instead of falling back to a cross-disc track number.

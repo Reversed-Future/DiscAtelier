@@ -4,12 +4,15 @@ import { discPages } from '../metadata/discTracks.ts';
 import { trackKey } from '../integrations/trackMatches.ts';
 import { normalized, parseTrack, positionNumber, trackNumberAt, type TrackTitle } from './match.ts';
 
+export type AlbumMedium = 'audio' | 'video';
+
 export interface AlbumTrackRef extends TrackTitle {
   disc: string;
   discName: string;
   discNumber: number | null;
   number: number;
   order: number;
+  medium: AlbumMedium | null;
 }
 
 export interface DiscHint {
@@ -53,12 +56,23 @@ function fileCandidates(name: string) {
   return [...candidates].filter(Boolean);
 }
 
+function pageMedium(key: string, name: string): AlbumMedium | null {
+  const pageKey = key.toUpperCase();
+  const pageName = name.toUpperCase();
+  const audio = /^(CD|SACD|HQCD|MQA)/.test(pageKey) || /\b(CD|SACD)\b|CD\d/.test(pageName);
+  const video = /^(BD|BR|DVD|UHD|BLU)/.test(pageKey) || /\b(BD|BR|DVD|UHD|BLU-?RAY)\b|BD\d|DVD\d/.test(pageName);
+  if (audio) return 'audio';
+  if (video) return 'video';
+  return null;
+}
+
 /** Build the real playable tracks in disc order, excluding headings/title entries. */
 export function albumTrackRefs(tracks: ReleaseTrack[], title: string, media: number | readonly MediumDraft[] = 0): AlbumTrackRef[] {
   let order = 0;
   const result: AlbumTrackRef[] = [];
   discPages(tracks, title, media).forEach((page, pageIndex) => {
     const rows = page.tracks.filter(track => track.type_ !== 'heading');
+    const medium = pageMedium(page.key, page.name || page.key);
     rows.forEach((track, index) => {
       result.push({
         title: track.title,
@@ -68,18 +82,23 @@ export function albumTrackRefs(tracks: ReleaseTrack[], title: string, media: num
         discNumber: page.number ?? pageIndex + 1,
         number: trackNumberAt(rows, index) ?? positionNumber(track.position) ?? index + 1,
         order: order++,
+        medium,
       });
     });
   });
   return result;
 }
 
-export function matchAlbumTrack(name: string, tracks: TrackTitle[], hintText = ''): AlbumTrackRef | null {
+export function matchAlbumTrack(name: string, tracks: TrackTitle[], hintText = '', medium?: AlbumMedium): AlbumTrackRef | null {
   if (!tracks.length) return null;
   const hint = parseDiscHint(hintText);
-  const pool = tracks.map((track, index) => ({
+  // Audio belongs to CD, video to BD/DVD. If the release has no matching
+  // carrier metadata, fall back to all tracks instead of losing the match.
+  const compatible = medium ? tracks.filter(track => track.medium === medium) : [];
+  const source = compatible.length ? compatible : tracks;
+  const pool = source.map((track, index) => ({
     track,
-    number: track.number ?? trackNumberAt(tracks, index) ?? index + 1,
+    number: track.number ?? trackNumberAt(source, index) ?? index + 1,
   })).filter(item => !hint || discMatches(item.track, hint));
   if (!pool.length) return null;
   const candidates = fileCandidates(name);
@@ -152,5 +171,6 @@ function albumRef(track: TrackTitle, number: number): AlbumTrackRef {
     discNumber: track.discNumber ?? null,
     number,
     order: track.order ?? 0,
+    medium: track.medium ?? null,
   };
 }

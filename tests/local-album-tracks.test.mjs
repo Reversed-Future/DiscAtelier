@@ -15,6 +15,8 @@ test('disc pages exclude disc headings and keep per-disc numbering', () => {
   assert.deepEqual(rows.filter(row => row.disc === 'CD').map(row => row.number), Array.from({ length: 13 }, (_, i) => i + 1));
   assert.deepEqual(rows.filter(row => row.disc === 'BD1').map(row => row.number), [1, 2]);
   assert.equal(rows.find(row => row.title === 'Ever Sky Blue').number, 13);
+  assert.equal(rows.find(row => row.disc === 'CD').medium, 'audio');
+  assert.equal(rows.find(row => row.disc === 'BD1').medium, 'video');
 });
 
 test('auto match finds the first CD song at track 1, not 2', () => {
@@ -30,6 +32,9 @@ test('duplicate CD/BD titles need a disc hint and never cross discs', () => {
   assert.equal(matchAlbumTrack('Grand Escape.flac', refs(), 'Disc 2')?.disc, 'BD1');
   assert.equal(matchAlbumTrack('Grand Escape.flac', refs(), 'CD1')?.disc, 'CD');
   assert.deepEqual(parseDiscHint('CD2'), { kind: 'CD', number: 2 });
+  assert.equal(matchAlbumTrack('Grand Escape.flac', refs(), '', 'audio')?.disc, 'CD');
+  assert.equal(matchAlbumTrack('Grand Escape.flac', refs(), '', 'video')?.disc, 'BD1');
+  assert.equal(matchAlbumTrack('Grand Escape.flac', refs(), '', 'audio')?.number, 4);
 });
 
 test('saved bindings with a duplicated title still map all three CD tracks', () => {
