@@ -14,14 +14,14 @@ use windows::{
             LibraryLoader::GetModuleHandleW,
         },
         UI::Shell::{
-            ITaskbarList3, THB_FLAGS, THB_ICON, THB_TOOLTIP, THBF_DISABLED, THBF_ENABLED, THBF_HIDDEN, THBN_CLICKED,
-            THUMBBUTTON,
+            ExtractIconW, ITaskbarList3, THB_FLAGS, THB_ICON, THB_TOOLTIP, THBF_DISABLED, THBF_ENABLED, THBF_HIDDEN,
+            THBN_CLICKED, THUMBBUTTON,
         },
         UI::WindowsAndMessaging::{
-            CreateWindowExW, DefWindowProcW, DestroyWindow, GetClassLongPtrW, HICON, ICON_BIG, ICON_SMALL,
-            RegisterClassW, SendMessageW, SetWindowTextW, ShowWindow, GCLP_HICON, SW_HIDE, WM_COMMAND,
-            WM_DWMSENDICONICLIVEPREVIEWBITMAP, WM_DWMSENDICONICTHUMBNAIL, WM_GETICON, WM_SETICON, WNDCLASSW,
-            WS_EX_TOOLWINDOW, WS_POPUP,
+            CreateWindowExW, DefWindowProcW, DestroyIcon, DestroyWindow, HICON, ICON_BIG, ICON_SMALL,
+            PostMessageW, RegisterClassW, SendMessageW, SetWindowTextW, ShowWindow, SC_CLOSE, SW_HIDE,
+            WM_CLOSE, WM_COMMAND, WM_DWMSENDICONICLIVEPREVIEWBITMAP, WM_DWMSENDICONICTHUMBNAIL,
+            WM_SETICON, WM_SYSCOMMAND, WNDCLASSW, WS_EX_TOOLWINDOW, WS_POPUP,
         },
     },
 };
@@ -50,6 +50,9 @@ struct Taskbar {
     cover_id: String,
     session_id: String,
     app: tauri::AppHandle,
+    app_icon: Option<HICON>,
+    registered: bool,
+    buttons_added: bool,
 }
 // The HWND and GDI handles are only touched on the Tauri main thread.
 struct SendTaskbar(Option<Taskbar>);
@@ -131,20 +134,19 @@ fn cover_bitmap(image: &image::RgbaImage, width: u32, height: u32) -> Option<HBI
     Some(bitmap)
 }
 
-fn set_icon(main: HWND, helper: HWND) {
-    let icon = unsafe {
-        let icon = SendMessageW(main, WM_GETICON, Some(WPARAM(ICON_BIG as usize)), Some(LPARAM(0))).0;
-        if icon != 0 {
-            icon
-        } else {
-            GetClassLongPtrW(main, GCLP_HICON) as isize
-        }
-    };
-    if icon != 0 {
-        unsafe {
-            let _ = SendMessageW(helper, WM_SETICON, Some(WPARAM(ICON_BIG as usize)), Some(LPARAM(icon)));
-            let _ = SendMessageW(helper, WM_SETICON, Some(WPARAM(ICON_SMALL as usize)), Some(LPARAM(icon)));
-        }
+fn load_app_icon() -> Option<HICON> {
+    let path = std::env::current_exe().ok()?;
+    let path = path.to_string_lossy().encode_utf16().chain(std::iter::once(0)).collect::<Vec<_>>();
+    let icon = unsafe { ExtractIconW(None, PCWSTR::from_raw(path.as_ptr()), 0) };
+    (!icon.0.is_null()).then_some(icon)
+}
+
+fn set_icon(main: HWND, helper: HWND, icon: HICON) {
+    unsafe {
+        let _ = SendMessageW(main, WM_SETICON, Some(WPARAM(ICON_BIG as usize)), Some(LPARAM(icon.0 as isize)));
+        let _ = SendMessageW(main, WM_SETICON, Some(WPARAM(ICON_SMALL as usize)), Some(LPARAM(icon.0 as isize)));
+        let _ = SendMessageW(helper, WM_SETICON, Some(WPARAM(ICON_BIG as usize)), Some(LPARAM(icon.0 as isize)));
+        let _ = SendMessageW(helper, WM_SETICON, Some(WPARAM(ICON_SMALL as usize)), Some(LPARAM(icon.0 as isize)));
     }
 }
 
@@ -157,17 +159,32 @@ impl Taskbar {
         self.session_id = if active { metadata.session_id.clone() } else { String::new() };
         let title = if active && !metadata.title.is_empty() { metadata.title.as_str() } else { "DiscAtelier" };
         let title = title.encode_utf16().chain(std::iter::once(0)).collect::<Vec<_>>();
+        if active && !self.registered {
+            if unsafe { self.list.RegisterTab(self.hwnd, self.main) }.is_ok() {
+                let _ = unsafe { self.list.SetTabOrder(self.hwnd, self.main) };
+                self.registered = true;
+                if !self.buttons_added {
+                    let _ = unsafe { self.list.ThumbBarAddButtons(self.hwnd, &self.buttons) };
+                    self.buttons_added = true;
+                }
+            }
+        } else if !active && self.registered {
+            let _ = unsafe { self.list.UnregisterTab(self.hwnd) };
+            self.registered = false;
+            self.buttons_added = false;
+        }
         unsafe {
             let _ = SetWindowTextW(self.hwnd, PCWSTR::from_raw(title.as_ptr()));
-            let _ = if active { self.list.SetTabOrder(self.hwnd, self.main) } else { self.list.SetTabOrder(self.main, self.hwnd) };
         }
         set_button(&mut self.buttons[0], self.icons.previous, previous, !active);
         set_button(&mut self.buttons[1], if paused { self.icons.play } else { self.icons.pause }, active, !active);
         set_button(&mut self.buttons[2], self.icons.next, next, !active);
         let tooltip = tip(if active { &metadata.title } else { "DiscAtelier" });
-        unsafe {
-            self.list.ThumbBarUpdateButtons(self.hwnd, &self.buttons)?;
-            self.list.SetThumbnailTooltip(self.hwnd, PCWSTR::from_raw(tooltip.as_ptr()))?;
+        if self.registered {
+            unsafe {
+                self.list.ThumbBarUpdateButtons(self.hwnd, &self.buttons)?;
+                self.list.SetThumbnailTooltip(self.hwnd, PCWSTR::from_raw(tooltip.as_ptr()))?;
+            }
         }
         if !active {
             self.cover = None;
@@ -216,14 +233,27 @@ impl Taskbar {
 impl Drop for Taskbar {
     fn drop(&mut self) {
         unsafe {
-            let _ = self.list.UnregisterTab(self.hwnd);
+            if self.registered {
+                let _ = self.list.UnregisterTab(self.hwnd);
+            }
             let _ = DestroyWindow(self.hwnd);
+            if let Some(icon) = self.app_icon.take() {
+                let _ = DestroyIcon(icon);
+            }
         }
         self.icons.destroy();
     }
 }
 
 unsafe extern "system" fn helper_proc(hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    if message == WM_CLOSE || (message == WM_SYSCOMMAND && (wparam.0 & 0xfff0) as u32 == SC_CLOSE) {
+        if let Ok(current) = taskbar().lock() {
+            if let Some(taskbar) = current.0.as_ref() {
+                let _ = PostMessageW(Some(taskbar.main), WM_CLOSE, WPARAM(0), LPARAM(0));
+                return LRESULT(0);
+            }
+        }
+    }
     if message == WM_COMMAND && ((wparam.0 >> 16) as u32) == THBN_CLICKED {
         let id = (wparam.0 & 0xffff) as u32;
         let (action, session) = match id {
@@ -270,6 +300,7 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
     };
     unsafe { list.HrInit().map_err(|error| error.to_string())? };
     let instance = unsafe { GetModuleHandleW(None).map_err(|error| error.to_string())? };
+    let app_icon = load_app_icon();
     let helper = unsafe {
         let class = WNDCLASSW {
             lpfnWndProc: Some(helper_proc),
@@ -295,22 +326,17 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
             return Err("无法创建任务栏辅助窗口。".into());
         }
         let _ = ShowWindow(helper, SW_HIDE);
-        set_icon(hwnd, helper);
+        if let Some(icon) = app_icon {
+            set_icon(hwnd, helper, icon);
+        }
         helper
     };
-    unsafe {
-        list.RegisterTab(helper, hwnd).map_err(|error| error.to_string())?;
-        list.SetTabOrder(helper, hwnd).map_err(|error| error.to_string())?;
-    }
     let icons = crate::taskbar_icons::Icons::create().map_err(|error| error.to_string())?;
     let buttons = [
         button(BUTTON_PREVIOUS, icons.previous, "上一首"),
         button(BUTTON_TOGGLE, icons.play, "播放"),
         button(BUTTON_NEXT, icons.next, "下一首"),
     ];
-    unsafe {
-        list.ThumbBarAddButtons(helper, &buttons).map_err(|error| error.to_string())?;
-    }
     *taskbar().lock().map_err(|_| "任务栏状态不可用。".to_string())? = SendTaskbar(Some(Taskbar {
         main: hwnd,
         hwnd: helper,
@@ -321,6 +347,9 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
         cover_id: String::new(),
         session_id: String::new(),
         app: app.clone(),
+        app_icon,
+        registered: false,
+        buttons_added: false,
     }));
     Ok(())
 }
