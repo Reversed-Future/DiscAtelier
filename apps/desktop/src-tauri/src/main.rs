@@ -40,7 +40,9 @@ mod playback_backend;
 mod playback_exit;
 #[cfg(feature = "performance-harness")]
 mod playback_fixture;
+mod playback_memory;
 mod playback_settings;
+mod spectrum;
 #[cfg(feature = "isolated-preview")]
 mod preview_config;
 mod purchase_recognition;
@@ -131,6 +133,7 @@ fn main() {
             app.manage(menu_surface::MenuSurface::create().map_err(|error| error.message)?);
             app.manage(playback_exit::PlaybackExit::default());
             app.manage(system_media::State::default());
+            app.manage(spectrum::State::default());
             if let Err(error) = taskbar::setup(app.handle()) {
                 let _ = crate::logging::write("warn", "taskbar", "任务栏控制初始化失败", Some(&error));
             }
@@ -246,6 +249,10 @@ fn main() {
             optical::playback_settings_save,
             equalizer::equalizer_get,
             equalizer::equalizer_save,
+            playback_memory::playback_volume_get,
+            playback_memory::playback_volume_save,
+            spectrum::spectrum_start,
+            spectrum::spectrum_stop,
             bluray::bluray_key_status,
             bluray::bluray_key_import,
             bluray::bluray_key_download,

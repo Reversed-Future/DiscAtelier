@@ -113,7 +113,8 @@ pub async fn netease_play(
             checkpoint,
         )?;
         let session = PlaybackSession::Vlc(session);
-        let snapshot = session.snapshot()?;
+        let mut snapshot = session.snapshot()?;
+        let _ = crate::playback_memory::apply(&session, &mut snapshot, &directory);
         if let Ok(equalizer) = crate::equalizer::read(&directory) {
             let _ = crate::equalizer::apply(&session, &snapshot, &equalizer);
         }

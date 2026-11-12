@@ -118,7 +118,8 @@ pub async fn playback_start(
                 checkpoint,
             )?)
         };
-        let snapshot = crate::cd_metadata::decorate_snapshot(&cd_metadata, session.snapshot()?);
+        let mut snapshot = crate::cd_metadata::decorate_snapshot(&cd_metadata, session.snapshot()?);
+        let _ = crate::playback_memory::apply(&session, &mut snapshot, &directory);
         if let Ok(equalizer) = crate::equalizer::read(&directory) {
             let _ = crate::equalizer::apply(&session, &snapshot, &equalizer);
         }
@@ -185,7 +186,8 @@ pub async fn playback_start_local(
         checkpoint,
     )?;
     let session = PlaybackSession::Vlc(session);
-    let snapshot = session.snapshot()?;
+    let mut snapshot = session.snapshot()?;
+    let _ = crate::playback_memory::apply(&session, &mut snapshot, &directory);
     if let Ok(equalizer) = crate::equalizer::read(&directory) {
         let _ = crate::equalizer::apply(&session, &snapshot, &equalizer);
     }

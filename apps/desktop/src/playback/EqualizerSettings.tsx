@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { errorMessage } from '../library/gateway';
 import { Select } from '../ui/Select';
 import SquishSwitch from '../ui/SquishSwitch';
@@ -15,9 +17,28 @@ export function EqualizerSettings() {
   const [draft, setDraft] = useState<EqualizerState>(() => state || defaultEqualizer());
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
+  const [levels, setLevels] = useState<number[]>(() => EQ_BANDS.map(() => 0));
+  const ready = useRef(false);
   useEffect(() => {
-    if (state) setDraft(state);
+    if (state) { setDraft(state); ready.current = true; }
   }, [state]);
+  useEffect(() => {
+    let live = true;
+    void invoke('spectrum_start').catch(() => {});
+    const subscription = listen<{ levels: number[] }>('equalizer-spectrum', event => {
+      if (live) setLevels(EQ_BANDS.map((_, index) => event.payload.levels[index] || 0));
+    }).catch(() => undefined);
+    return () => {
+      live = false;
+      void invoke('spectrum_stop').catch(() => {});
+      void subscription.then(stop => stop?.()).catch(() => {});
+    };
+  }, []);
+  useEffect(() => {
+    if (!ready.current || !state || JSON.stringify(draft) === JSON.stringify(state)) return;
+    const timer = setTimeout(() => { void save(draft).catch(() => {}); }, 180);
+    return () => clearTimeout(timer);
+  }, [draft, state, save]);
   const profile = useMemo(() => activeProfile(draft), [draft]);
   const custom = draft.profiles.find(value => value.id === draft.activeProfile);
   const update = (next: EqualizerState) => { setDraft(next); setMessage(''); };
@@ -64,6 +85,7 @@ export function EqualizerSettings() {
     <div className="equalizer-bands">
       {EQ_BANDS.map((frequency, index) => <label key={frequency}>
         <span>{label(frequency)}</span>
+        <span className="equalizer-meter" aria-hidden="true"><i style={{ height: `${Math.round((levels[index] ?? 0) * 100)}%` }}/></span>
         <input type="range" min={EQ_MIN} max={EQ_MAX} step={0.5} value={draft.bands[index] ?? 0} disabled={busy}
           aria-label={`${label(frequency)} Hz`}
           onChange={event => setBand(index, Number(event.target.value))}/>

@@ -25,6 +25,8 @@ export const playback = {
   pointer: () => invoke<[number, number] | null>('playback_pointer'),
   nativeKeys: () => invoke<string[]>('playback_native_keys'),
   snapshot: () => invoke<Snapshot | null>('playback_snapshot'),
+  volume: () => invoke<number>('playback_volume_get'),
+  rememberVolume: (volume: number) => invoke<number>('playback_volume_save', { volume }),
   start: (mountPoint: string, token: string, playlist: string, resumeSeconds = 0, resumeTitle: number | null = null) =>
     invoke<Snapshot>('playback_start', { mountPoint, token, playlist, resumeSeconds, resumeTitle }),
   startLocal: (copyId: string, path: string) => invoke<Snapshot>('playback_start_local', { copyId, path }),

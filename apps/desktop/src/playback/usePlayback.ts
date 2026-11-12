@@ -29,9 +29,27 @@ export function usePlayback() {
   const preferredVolume = useRef(rememberedVolume());
   const volumeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pendingVolume = useRef<{ sessionId: string; value: number } | null>(null);
+  const volumeSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const snapshotRef = useRef<Snapshot | null>(snapshot);
   snapshotRef.current = snapshot;
-  useEffect(() => () => { if (volumeTimer.current) clearTimeout(volumeTimer.current); }, []);
+  useEffect(() => () => {
+    if (volumeTimer.current) clearTimeout(volumeTimer.current);
+    if (volumeSaveTimer.current) clearTimeout(volumeSaveTimer.current);
+    void playback.rememberVolume(preferredVolume.current).catch(() => {});
+  }, []);
+  useEffect(() => {
+    void playback.volume().then(value => {
+      const next = clampVolume(value);
+      preferredVolume.current = next;
+      const current = snapshotRef.current;
+      if (current && current.volume !== next) {
+        void playback.control(current.sessionId, { action: 'volume', volume: next })
+          .then(() => playback.snapshot())
+          .then(updated => { if (alive.current && updated) setSnapshot(updated); })
+          .catch(() => {});
+      }
+    }).catch(() => {});
+  }, []);
   useEffect(() => {
     const current = snapshot;
     if (!current?.sessionId || current.volume === preferredVolume.current) return;
@@ -75,6 +93,13 @@ export function usePlayback() {
     void poll();
     return () => { stopped = true; alive.current = false; clearTimeout(timer); };
   }, []);
+  function scheduleVolumeSave(value: number) {
+    if (volumeSaveTimer.current) clearTimeout(volumeSaveTimer.current);
+    volumeSaveTimer.current = setTimeout(() => {
+      volumeSaveTimer.current = undefined;
+      void playback.rememberVolume(clampVolume(value)).catch(() => {});
+    }, 250);
+  }
   async function execute(action: () => Promise<void>) {
     if (pending.current) return false;
     pending.current = true; setBusy(true); setError('');
@@ -89,6 +114,7 @@ export function usePlayback() {
     if (command.action === 'volume') {
       preferredVolume.current = clampVolume(command.volume);
       rememberVolume(command.volume);
+      scheduleVolumeSave(command.volume);
     }
     const value = await playback.snapshot();
     if (alive.current) setSnapshot(value);
@@ -97,6 +123,7 @@ export function usePlayback() {
     const next = clampVolume(value);
     preferredVolume.current = next;
     rememberVolume(next);
+    scheduleVolumeSave(next);
     setSnapshot(current => current && current.volume !== next ? { ...current, volume: next } : current);
     const sessionId = snapshotRef.current?.sessionId;
     if (!sessionId) return;

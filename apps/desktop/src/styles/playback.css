@@ -26,7 +26,9 @@ input.playback-seek:focus, input.playback-seek:focus-visible { border: 0; outlin
 .equalizer-toolbar .select-control { min-width: 150px; }
 .equalizer-toolbar input[type="range"] { width: 150px; }
 .equalizer-bands { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; padding: 12px 10px 8px; border: 1px solid var(--line); background: #0d0d0d; }
-.equalizer-bands label { display: grid; grid-template-rows: 16px 116px 18px; justify-items: center; align-items: center; gap: 5px; min-width: 0; font-size: 10px; color: var(--muted); }
+.equalizer-bands label { display: grid; grid-template-rows: 16px 28px 116px 18px; justify-items: center; align-items: center; gap: 5px; min-width: 0; font-size: 10px; color: var(--muted); }
+.equalizer-meter { display: flex; align-items: flex-end; justify-content: center; width: 16px; height: 26px; border-bottom: 1px solid #ffffff20; }
+.equalizer-meter i { display: block; width: 10px; min-height: 1px; background: #d7d4c8; opacity: .8; transition: height 90ms linear; }
 .equalizer-bands input[type="range"] { writing-mode: vertical-lr; direction: rtl; width: 22px; height: 112px; margin: 0; accent-color: var(--ink); }
 .equalizer-bands output { font-variant-numeric: tabular-nums; color: var(--ink); }
 .equalizer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
