@@ -7,14 +7,20 @@ use tauri::{Emitter, Manager};
 use windows::{
     core::{GUID, PCWSTR},
     Win32::{
-        Foundation::{HWND, LPARAM, LRESULT, WPARAM},
+        Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM},
         Graphics::{Dwm::*, Gdi::*},
-        System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED},
-        UI::Shell::{
-            DefSubclassProc, RemoveWindowSubclass, SetWindowSubclass, ITaskbarList3, THB_FLAGS, THB_ICON, THB_TOOLTIP,
-            THBF_DISABLED, THBF_ENABLED, THBF_HIDDEN, THBN_CLICKED, THUMBBUTTON,
+        System::{
+            Com::{CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_APARTMENTTHREADED},
+            LibraryLoader::GetModuleHandleW,
         },
-        UI::WindowsAndMessaging::{HICON, WM_COMMAND, WM_DWMSENDICONICLIVEPREVIEWBITMAP, WM_DWMSENDICONICTHUMBNAIL},
+        UI::Shell::{
+            ITaskbarList3, THB_FLAGS, THB_ICON, THB_TOOLTIP, THBF_DISABLED, THBF_ENABLED, THBF_HIDDEN, THBN_CLICKED,
+            THUMBBUTTON,
+        },
+        UI::WindowsAndMessaging::{
+            CreateWindowExW, DefWindowProcW, DestroyWindow, HICON, RegisterClassW, ShowWindow, SW_HIDE, WM_COMMAND,
+            WM_DWMSENDICONICLIVEPREVIEWBITMAP, WM_DWMSENDICONICTHUMBNAIL, WNDCLASSW, WS_EX_TOOLWINDOW, WS_POPUP,
+        },
     },
 };
 
@@ -23,6 +29,7 @@ const BUTTON_TOGGLE: u32 = 2;
 const BUTTON_NEXT: u32 = 3;
 const TASKBAR_CLSID: GUID = GUID::from_u128(0x56FDF344_FD6D_11D0_958A_006097C9A090);
 const COVER_SIZE: u32 = 200;
+const HELPER_CLASS: windows::core::PCWSTR = windows::core::w!("DiscAtelierTaskbarThumb");
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -183,13 +190,14 @@ impl Taskbar {
 impl Drop for Taskbar {
     fn drop(&mut self) {
         unsafe {
-            let _ = RemoveWindowSubclass(self.hwnd, Some(subclass), 1);
+            let _ = self.list.UnregisterTab(self.hwnd);
+            let _ = DestroyWindow(self.hwnd);
         }
         self.icons.destroy();
     }
 }
 
-unsafe extern "system" fn subclass(hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM, _id: usize, _data: usize) -> LRESULT {
+unsafe extern "system" fn helper_proc(hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     if message == WM_COMMAND && ((wparam.0 >> 16) as u32) == THBN_CLICKED {
         let id = (wparam.0 & 0xffff) as u32;
         let (action, session) = match id {
@@ -224,7 +232,7 @@ unsafe extern "system" fn subclass(hwnd: HWND, message: u32, wparam: WPARAM, lpa
         }
         return LRESULT(0);
     }
-    unsafe { DefSubclassProc(hwnd, message, wparam, lparam) }
+    unsafe { DefWindowProcW(hwnd, message, wparam, lparam) }
 }
 
 pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
@@ -235,6 +243,38 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
         CoCreateInstance(&TASKBAR_CLSID, None, CLSCTX_INPROC_SERVER).map_err(|error| error.to_string())?
     };
     unsafe { list.HrInit().map_err(|error| error.to_string())? };
+    let instance = unsafe { GetModuleHandleW(None).map_err(|error| error.to_string())? };
+    let helper = unsafe {
+        let class = WNDCLASSW {
+            lpfnWndProc: Some(helper_proc),
+            hInstance: HINSTANCE(instance.0),
+            lpszClassName: HELPER_CLASS,
+            ..Default::default()
+        };
+        if RegisterClassW(&class) == 0 {
+            return Err("无法注册任务栏辅助窗口。".into());
+        }
+        let helper = CreateWindowExW(
+            WS_EX_TOOLWINDOW,
+            HELPER_CLASS,
+            windows::core::w!("DiscAtelier"),
+            WS_POPUP,
+            0, 0, 1, 1,
+            None,
+            None,
+            Some(HINSTANCE(instance.0)),
+            None,
+        ).map_err(|error| error.to_string())?;
+        if helper.0.is_null() {
+            return Err("无法创建任务栏辅助窗口。".into());
+        }
+        let _ = ShowWindow(helper, SW_HIDE);
+        helper
+    };
+    unsafe {
+        list.RegisterTab(helper, hwnd).map_err(|error| error.to_string())?;
+        list.SetTabOrder(helper, hwnd).map_err(|error| error.to_string())?;
+    }
     let icons = crate::taskbar_icons::Icons::create().map_err(|error| error.to_string())?;
     let buttons = [
         button(BUTTON_PREVIOUS, icons.previous, "上一首"),
@@ -242,13 +282,10 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
         button(BUTTON_NEXT, icons.next, "下一首"),
     ];
     unsafe {
-        list.ThumbBarAddButtons(hwnd, &buttons).map_err(|error| error.to_string())?;
-        if !SetWindowSubclass(hwnd, Some(subclass), 1, 0).as_bool() {
-            return Err("无法安装任务栏消息处理。".into());
-        }
+        list.ThumbBarAddButtons(helper, &buttons).map_err(|error| error.to_string())?;
     }
     *taskbar().lock().map_err(|_| "任务栏状态不可用。".to_string())? = SendTaskbar(Some(Taskbar {
-        hwnd,
+        hwnd: helper,
         list,
         icons,
         buttons,
