@@ -58,7 +58,7 @@ export function App() {
   const [opticalOpen, setOpticalOpen] = useState(false);
   const [opticalPrompt, setOpticalPrompt] = useState<OpticalPresence | null>(null);
   const knownOptical = useRef(new Set<string>());
-  const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | 'about' | null>(null);
+  const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | 'about' | 'audio' | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [videoDiscogs, setVideoDiscogs] = useState(false);
@@ -72,6 +72,15 @@ export function App() {
     clearTimeout(notifyTimer.current); setNotice(message);
     notifyTimer.current = setTimeout(() => setNotice(''), 3000);
   };
+  useEffect(() => {
+    const openAudio = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== 'audio') return;
+      player.hide();
+      setSettingsPage('audio');
+    };
+    window.addEventListener('discatelier:open-settings', openAudio);
+    return () => window.removeEventListener('discatelier:open-settings', openAudio);
+  }, [player]);
   useEffect(() => {
     if (!desktopAvailable()) return;
     let live = true;

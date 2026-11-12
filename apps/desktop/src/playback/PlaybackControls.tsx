@@ -3,7 +3,7 @@ import { Icon } from '../ui/Icon';
 import { Select } from '../ui/Select';
 import { optical, type DvdChapter } from '../optical/gateway';
 import { time } from './gateway';
-import { allProfiles, profileState, useEqualizer } from './equalizer';
+import { EqualizerQuick } from './EqualizerQuick';
 import type { PlaybackController } from './usePlayback';
 
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => ({ id: String(rate), label: `${rate}×` }));
@@ -59,7 +59,6 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
   volumeLayout?: 'horizontal' | 'vertical';
 }) {
   const s = player.snapshot;
-  const equalizer = useEqualizer();
   const equalizerAvailable = !!s && !s.source.playlist.startsWith('dvd-menu') && !s.source.playlist.startsWith('bd-menu');
   const previousLabel = navigation === 'episode' ? '上一集' : '上一首', nextLabel = navigation === 'episode' ? '下一集' : '下一首';
   const smoothPosition = useSmoothPosition(s, player.active);
@@ -233,12 +232,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
           aria-pressed={episodesOpen} disabled={stopping} onClick={onToggleEpisodes}><Icon name="list"/></button>}
         {onToggleFullscreen && <button type="button" className="player-icon-button" aria-label={fullscreen ? '退出全屏' : '全屏'} title={fullscreen ? '退出全屏' : '全屏'}
           disabled={stopping} onClick={onToggleFullscreen}><Icon name={fullscreen ? 'fullscreenExit' : 'fullscreen'}/></button>}
-        {equalizerAvailable && equalizer.state && <Select label="EQ" value={equalizer.state.enabled ? equalizer.state.activeProfile : 'off'}
-          options={[{ id: 'off', label: '关闭 EQ' }, ...allProfiles(equalizer.state).map(profile => ({ id: profile.id, label: profile.name }))]}
-          columns={1} maxHeight={popoverMax} placement="above" disabled={stopping || equalizer.busy}
-          onChange={id => void equalizer.save(id === 'off'
-            ? { ...equalizer.state!, enabled: false }
-            : profileState(equalizer.state!, id))}/>}
+        {equalizerAvailable && <EqualizerQuick onEdit={() => window.dispatchEvent(new CustomEvent('discatelier:open-settings', { detail: 'audio' }))}/>}
         {onRepeat && <button type="button" className="player-icon-button playback-repeat" aria-label={repeat === 'one' ? '单曲循环，切换为列表循环' : '列表循环，切换为单曲循环'}
           title={repeat === 'one' ? '单曲循环' : '列表循环'} disabled={stopping} onClick={onRepeat}><Icon name={repeat === 'one' ? 'repeatOne' : 'repeat'}/></button>}
       </div>

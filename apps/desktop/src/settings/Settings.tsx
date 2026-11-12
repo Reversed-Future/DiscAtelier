@@ -9,13 +9,14 @@ import { ExchangeSettings } from '../exchange/ExchangeSettings';
 import { DataSettings } from './DataSettings';
 import { MusicSettings } from './MusicSettings';
 import { AboutSettings } from './AboutSettings';
+import { EqualizerSettings } from '../playback/EqualizerSettings';
 
-const pages = [{ id: 'window', label: '窗口' }, { id: 'data', label: '数据' }, { id: 'exchange', label: '汇率' }, { id: 'video', label: '影像资料' }, { id: 'music', label: '音乐资料' }, { id: 'assistant', label: '助手' }, { id: 'playback', label: '播放' }, { id: 'about', label: '关于' }] as const;
+const pages = [{ id: 'window', label: '窗口' }, { id: 'data', label: '数据' }, { id: 'exchange', label: '汇率' }, { id: 'video', label: '影像资料' }, { id: 'music', label: '音乐资料' }, { id: 'assistant', label: '助手' }, { id: 'playback', label: '播放' }, { id: 'audio', label: '音效' }, { id: 'about', label: '关于' }] as const;
 type Page = typeof pages[number]['id'];
 export function Settings({ initialPage, libraryAvailable, onRestore, onClose }: {
-  initialPage: 'home' | 'discogs' | 'about'; libraryAvailable: boolean; onRestore(): void; onClose(): void;
+  initialPage: 'home' | 'discogs' | 'about' | 'audio'; libraryAvailable: boolean; onRestore(): void; onClose(): void;
 }) {
-  const [page, setPage] = useState<Page>(initialPage === 'home' ? 'data' : initialPage === 'about' ? 'about' : 'music');
+  const [page, setPage] = useState<Page>(initialPage === 'home' ? 'data' : initialPage === 'about' ? 'about' : initialPage === 'audio' ? 'audio' : 'music');
   const [busy, setBusy] = useState(false);
   const content = useRef<HTMLDivElement>(null);
   useEffect(() => { enter(content.current, 3); }, [page]);
@@ -35,6 +36,7 @@ export function Settings({ initialPage, libraryAvailable, onRestore, onClose }: 
         {page === 'video' && <VideoSettings onBusy={setBusy}/>}
         {page === 'exchange' && <ExchangeSettings onBusy={setBusy}/>}
         {page === 'playback' && <PlaybackSettings onBusy={setBusy}/>}
+        {page === 'audio' && <EqualizerSettings/>}
         {page === 'about' && <AboutSettings onBusy={setBusy}/>}
       </section>
     </div>
