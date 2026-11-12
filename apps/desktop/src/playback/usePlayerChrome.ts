@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { playback } from './gateway';
 
-export function usePlayerChrome(fullscreen: boolean) {
+export function usePlayerChrome(fullscreen: boolean, hold = false) {
   const [visible, setVisible] = useState(true);
+  const holdRef = useRef(hold);
+  holdRef.current = hold;
   const wake = useRef(() => setVisible(true));
+  useEffect(() => { if (hold) setVisible(true); }, [hold]);
   useEffect(() => {
     setVisible(true);
     if (!fullscreen) { wake.current = () => setVisible(true); return; }
@@ -12,7 +15,7 @@ export function usePlayerChrome(fullscreen: boolean) {
     const arm = () => {
       clearTimeout(hideTimer);
       hideTimer = setTimeout(() => {
-        if (overControls || document.querySelector('[popover]:popover-open, .playback-seek:active')) { arm(); return; }
+        if (holdRef.current || overControls || document.querySelector('[popover]:popover-open, .playback-seek:active')) { arm(); return; }
         const focus = document.activeElement as HTMLElement | null;
         if (focus?.closest('.player-header, .player-footer')) document.querySelector<HTMLElement>('.player-picture')?.focus();
         setVisible(false);

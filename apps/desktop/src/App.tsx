@@ -179,7 +179,7 @@ export function App() {
   }
   const artwork = useCollectionArtwork(current, modelActive, !!inspected, currentVideo.value, partId, instantFlip);
   return <div className="workspace" data-list={organize}>
-    <WindowChrome/>
+    <WindowChrome playerOpen={player.open}/>
     <DesktopShell player={player} onSettings={() => setSettingsPage('home')}/>
     <ContextMenu onError={notify} actions={target => {
       const id = target.closest<HTMLElement>('[data-collection-id]')?.dataset.collectionId;

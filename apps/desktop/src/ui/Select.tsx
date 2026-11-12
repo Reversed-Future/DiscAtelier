@@ -1,8 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Descriptor } from '../library/types';
 
-export function Select({ label, value, options, onChange, disabled = false }: {
+export function Select({ label, value, options, onChange, disabled = false, columns, maxHeight, placement = 'auto' }: {
   label: string; value: string; options: Descriptor[]; onChange(value: string): void; disabled?: boolean;
+  columns?: number; maxHeight?: number; placement?: 'auto' | 'above';
 }) {
   const id = useId();
   const wrapper = useRef<HTMLSpanElement>(null);
@@ -14,11 +15,16 @@ export function Select({ label, value, options, onChange, disabled = false }: {
   function show() {
     if (disabled || !list.current || !trigger.current) return;
     const rect = trigger.current.getBoundingClientRect();
-    list.current.style.width = `${Math.max(110, rect.width)}px`;
-    list.current.style.left = `${Math.min(rect.left, innerWidth - Math.max(110, rect.width) - 8)}px`;
+    const width = Math.max(columns ? 210 : 110, rect.width);
+    list.current.style.width = `${width}px`;
+    list.current.style.left = `${Math.min(rect.left, innerWidth - width - 8)}px`;
+    list.current.style.maxHeight = maxHeight ? `${maxHeight}px` : '';
+    list.current.style.gridTemplateColumns = columns ? `repeat(${columns}, minmax(0, 1fr))` : '';
+    list.current.classList.toggle('select-grid', !!columns);
     list.current.showPopover();
     const height = list.current.getBoundingClientRect().height;
-    list.current.style.top = `${Math.max(8, rect.bottom + height + 8 > innerHeight ? rect.top - height - 5 : rect.bottom + 5)}px`;
+    const above = placement === 'above' || rect.bottom + height + 8 > innerHeight;
+    list.current.style.top = `${Math.max(8, above ? rect.top - height - 5 : rect.bottom + 5)}px`;
     setOpen(true);
     list.current.querySelectorAll<HTMLButtonElement>('button')[Math.max(0, selected)]?.focus();
   }

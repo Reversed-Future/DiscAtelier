@@ -11,6 +11,17 @@ export function prefetchVideoMetadata(editionId: string, revision: number) {
   void video.metadata(editionId).then(value => cache.set(key, value)).catch(() => {});
 }
 
+/** Share the metadata cache with callers that are not React hooks. */
+export function fetchVideoMetadata(editionId: string, revision: number) {
+  const key = keyFor(editionId, revision);
+  const known = cache.get(key);
+  if (known !== undefined) return Promise.resolve(known);
+  return video.metadata(editionId).then(value => {
+    cache.set(key, value);
+    return value;
+  });
+}
+
 export function useVideoMetadata(editionId: string, revision: number, enabled: boolean) {
   const key = keyFor(editionId, revision);
   const cached = enabled ? cache.get(key) : undefined;

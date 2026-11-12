@@ -5,8 +5,11 @@ import { desktopAvailable, errorMessage } from '../library/gateway';
 import { useFloatingLayer } from './useFloatingLayer';
 
 /** One native window controller, moved into the active dialog's top layer. */
-export function WindowChrome() {
-  const host = useFloatingLayer();
+export function WindowChrome({ playerOpen = false }: { playerOpen?: boolean }) {
+  // The collection detail dialog stays open beneath the player. Prefer the
+  // player dialog explicitly; otherwise the controls portal into the covered
+  // detail layer and disappear during video playback.
+  const host = useFloatingLayer(playerOpen ? 'dialog.player-layer[open]' : undefined);
   const [maximized, setMaximized] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [error, setError] = useState('');

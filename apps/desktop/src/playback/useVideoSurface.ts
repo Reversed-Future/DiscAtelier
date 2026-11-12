@@ -3,14 +3,14 @@ import { playback } from './gateway';
 import { errorMessage } from '../library/gateway';
 
 // The video is native. Only its rectangle crosses IPC; no decoded pixels do.
-export function useVideoSurface(visible: boolean, fullscreen: boolean, chromeVisible: boolean, interactive = false) {
+export function useVideoSurface(visible: boolean, fullscreen: boolean, chromeVisible: boolean, interactive = false, footerExpanded = false) {
   const surface = useRef<HTMLDivElement>(null);
   const header = useRef<HTMLElement>(null), footer = useRef<HTMLElement>(null);
   const [error, setError] = useState('');
   const current = useRef({ visible, fullscreen, interactive });
   current.current = { visible, fullscreen, interactive };
   const refresh = useRef(() => {});
-  useLayoutEffect(() => { refresh.current(); }, [visible, fullscreen, chromeVisible, interactive]);
+  useLayoutEffect(() => { refresh.current(); }, [visible, fullscreen, chromeVisible, interactive, footerExpanded]);
   useEffect(() => {
     let disposed = false, running = false, dirty = false, frame = 0, until = 0, last = '';
     async function update() {
@@ -21,7 +21,8 @@ export function useVideoSurface(visible: boolean, fullscreen: boolean, chromeVis
       const viewport = { x: Math.round(rect.x * scale), y: Math.round(rect.y * scale),
         width: Math.round(rect.width * scale), height: Math.round(rect.height * scale), visible: current.current.visible, interactive: current.current.interactive,
         clipTop: current.current.fullscreen && top ? Math.max(0, Math.round((top.bottom-rect.top)*scale)) : 0,
-        clipBottom: current.current.fullscreen && bottom ? Math.max(0, Math.round((rect.bottom-bottom.top)*scale)) : 0 };
+        // The footer is a bottom overlay. Clip whatever it covers, including its expanded episode area.
+        clipBottom: bottom ? Math.max(0, Math.round((rect.bottom-bottom.top)*scale)) : 0 };
       const key = JSON.stringify(viewport);
       if (key === last) return;
       running = true;
