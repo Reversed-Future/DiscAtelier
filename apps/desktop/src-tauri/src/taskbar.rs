@@ -36,7 +36,7 @@ struct Taskbar {
     list: ITaskbarList3,
     icons: crate::taskbar_icons::Icons,
     buttons: [THUMBBUTTON; 3],
-    cover: Option<HBITMAP>,
+    cover: Option<image::RgbaImage>,
     cover_id: String,
     session_id: String,
     app: tauri::AppHandle,
@@ -86,14 +86,18 @@ fn set_button(button: &mut THUMBBUTTON, icon: HICON, enabled: bool, hidden: bool
     };
 }
 
-fn cover_bitmap(bytes: &[u8]) -> Option<HBITMAP> {
-    let image = image::load_from_memory(bytes).ok()?;
-    let image = image.resize_to_fill(COVER_SIZE, COVER_SIZE, image::imageops::FilterType::Lanczos3).to_rgba8();
+fn cover_image(bytes: &[u8]) -> Option<image::RgbaImage> {
+    Some(image::load_from_memory(bytes).ok()?.resize_to_fill(COVER_SIZE, COVER_SIZE, image::imageops::FilterType::Lanczos3).to_rgba8())
+}
+
+fn cover_bitmap(image: &image::RgbaImage, width: u32, height: u32) -> Option<HBITMAP> {
+    let side = width.min(height).clamp(32, 1024);
+    let image = image::imageops::resize(image, side, side, image::imageops::FilterType::Lanczos3);
     let mut info = BITMAPINFO::default();
     info.bmiHeader = BITMAPINFOHEADER {
         biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
-        biWidth: COVER_SIZE as i32,
-        biHeight: -(COVER_SIZE as i32),
+        biWidth: side as i32,
+        biHeight: -(side as i32),
         biPlanes: 1,
         biBitCount: 32,
         biCompression: BI_RGB.0,
@@ -105,7 +109,7 @@ fn cover_bitmap(bytes: &[u8]) -> Option<HBITMAP> {
         let _ = unsafe { DeleteObject(bitmap.into()) };
         return None;
     }
-    let target = unsafe { std::slice::from_raw_parts_mut(bits as *mut u8, (COVER_SIZE * COVER_SIZE * 4) as usize) };
+    let target = unsafe { std::slice::from_raw_parts_mut(bits as *mut u8, (side * side * 4) as usize) };
     for (source, target) in image.pixels().zip(target.chunks_exact_mut(4)) {
         let [r, g, b, a] = source.0;
         let alpha = a as u32;
@@ -132,62 +136,47 @@ impl Taskbar {
             self.list.ThumbBarUpdateButtons(self.hwnd, &self.buttons)?;
             self.list.SetThumbnailTooltip(self.hwnd, PCWSTR::from_raw(tooltip.as_ptr()))?;
         }
-        if !active && self.cover.is_some() {
-            if let Some(old) = self.cover.take() {
-                let _ = unsafe { DeleteObject(old.into()) };
-            }
+        if !active {
+            self.cover = None;
             self.cover_id.clear();
             if let Ok(mut current) = cover_id().lock() {
                 current.clear();
             }
-            unsafe { let _ = DwmInvalidateIconicBitmaps(self.hwnd); }
         }
         if let Some((id, bytes)) = cover {
-            if let Some(old) = self.cover.take() {
-                let _ = unsafe { DeleteObject(old.into()) };
-            }
-            self.cover = bytes.as_deref().and_then(cover_bitmap);
+            self.cover = bytes.as_deref().and_then(cover_image);
             self.cover_id = id;
             if let Ok(mut current) = cover_id().lock() {
                 *current = self.cover_id.clone();
             }
-            unsafe {
-                let _ = DwmInvalidateIconicBitmaps(self.hwnd);
-                if let Some(bitmap) = self.cover {
-                    let _ = DwmSetIconicThumbnail(self.hwnd, bitmap, 0);
-                }
-            }
         }
         unsafe {
-            let force = i32::from(self.cover.is_some());
-            let _ = DwmSetWindowAttribute(
-                self.hwnd,
-                DWMWA_FORCE_ICONIC_REPRESENTATION,
-                &force as *const _ as *const std::ffi::c_void,
-                std::mem::size_of::<i32>() as u32,
-            );
-            if self.cover.is_some() {
+            let has_cover = i32::from(self.cover.is_some());
+            for attribute in [DWMWA_FORCE_ICONIC_REPRESENTATION, DWMWA_HAS_ICONIC_BITMAP] {
                 let _ = DwmSetWindowAttribute(
                     self.hwnd,
-                    DWMWA_HAS_ICONIC_BITMAP,
-                    &1i32 as *const _ as *const std::ffi::c_void,
+                    attribute,
+                    &has_cover as *const _ as *const std::ffi::c_void,
                     std::mem::size_of::<i32>() as u32,
                 );
             }
+            let _ = DwmInvalidateIconicBitmaps(self.hwnd);
         }
         Ok(())
     }
 
-    fn draw_cover(&self) {
-        if let Some(bitmap) = self.cover {
-            let _ = unsafe { DwmSetIconicThumbnail(self.hwnd, bitmap, DWM_SIT_DISPLAYFRAME) };
-        }
+    fn draw_cover(&self, width: u32, height: u32) {
+        let Some(image) = self.cover.as_ref() else { return };
+        let Some(bitmap) = cover_bitmap(image, width, height) else { return };
+        let _ = unsafe { DwmSetIconicThumbnail(self.hwnd, bitmap, 0) };
+        let _ = unsafe { DeleteObject(bitmap.into()) };
     }
 
-    fn live_preview(&self) {
-        if let Some(bitmap) = self.cover {
-            let _ = unsafe { DwmSetIconicLivePreviewBitmap(self.hwnd, bitmap, None, 0) };
-        }
+    fn live_preview(&self, width: u32, height: u32) {
+        let Some(image) = self.cover.as_ref() else { return };
+        let Some(bitmap) = cover_bitmap(image, width.max(128), height.max(128)) else { return };
+        let _ = unsafe { DwmSetIconicLivePreviewBitmap(self.hwnd, bitmap, None, 0) };
+        let _ = unsafe { DeleteObject(bitmap.into()) };
     }
 }
 
@@ -195,9 +184,6 @@ impl Drop for Taskbar {
     fn drop(&mut self) {
         unsafe {
             let _ = RemoveWindowSubclass(self.hwnd, Some(subclass), 1);
-            if let Some(cover) = self.cover.take() {
-                let _ = DeleteObject(cover.into());
-            }
         }
         self.icons.destroy();
     }
@@ -224,18 +210,16 @@ unsafe extern "system" fn subclass(hwnd: HWND, message: u32, wparam: WPARAM, lpa
         }
         return LRESULT(0);
     }
-    if message == WM_DWMSENDICONICTHUMBNAIL {
+    if message == WM_DWMSENDICONICTHUMBNAIL || message == WM_DWMSENDICONICLIVEPREVIEWBITMAP {
+        let width = ((lparam.0 as usize >> 16) & 0xffff) as u32;
+        let height = ((lparam.0 as usize) & 0xffff) as u32;
         if let Ok(current) = taskbar().lock() {
             if let Some(taskbar) = current.0.as_ref() {
-                taskbar.draw_cover();
-            }
-        }
-        return LRESULT(0);
-    }
-    if message == WM_DWMSENDICONICLIVEPREVIEWBITMAP {
-        if let Ok(current) = taskbar().lock() {
-            if let Some(taskbar) = current.0.as_ref() {
-                taskbar.live_preview();
+                if message == WM_DWMSENDICONICTHUMBNAIL {
+                    taskbar.draw_cover(width, height);
+                } else {
+                    taskbar.live_preview(width, height);
+                }
             }
         }
         return LRESULT(0);
