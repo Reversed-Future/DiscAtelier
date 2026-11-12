@@ -9,6 +9,13 @@ pub struct Player {
     pub handle: Handle,
     instance: Handle,
 }
+
+/// VLC's equalizer applies EQZ_IN_FACTOR (0.25) before the band sum, so a
+/// flat curve needs about +12.04 dB just to reach unity gain.
+const VLC_EQUALIZER_HEADROOM_DB: f64 = 12.0412;
+pub(crate) fn compensated_preamp(preamp: f64) -> f32 {
+    (preamp + VLC_EQUALIZER_HEADROOM_DB).clamp(-20.0, 20.0) as f32
+}
 impl Player {
     pub fn open(
         path: &Path,
@@ -194,7 +201,10 @@ impl Player {
                         if equalizer.is_null() {
                             return Err(ffi::error("无法创建均衡器。"));
                         }
-                        (self.api.libvlc_audio_equalizer_set_preamp)(equalizer, preamp as f32);
+                        (self.api.libvlc_audio_equalizer_set_preamp)(
+                            equalizer,
+                            compensated_preamp(preamp),
+                        );
                         for (index, gain) in bands.iter().enumerate() {
                             (self.api.libvlc_audio_equalizer_set_amp_at_index)(
                                 equalizer,

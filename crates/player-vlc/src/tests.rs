@@ -10,6 +10,14 @@ pub(crate) fn snapshot() -> PlaybackSnapshot {
     })).unwrap()
 }
 #[test]
+fn flat_equalizer_compensates_vlc_internal_attenuation() {
+    let gain = 10f64.powf(player::compensated_preamp(0.0) as f64 / 20.0);
+    assert!((gain - 4.0).abs() < 0.001);
+    assert!((player::compensated_preamp(-12.0) - 0.0412).abs() < 0.0001);
+    assert_eq!(player::compensated_preamp(12.0), 20.0);
+}
+
+#[test]
 fn optical_route_rejects_files_networks_and_command_fragments() {
     let mut source = snapshot().source;
     assert_eq!(dvd_location(&source).unwrap(), "dvdnav:///F:/");
