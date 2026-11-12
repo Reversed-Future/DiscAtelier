@@ -18,8 +18,10 @@ use windows::{
             THUMBBUTTON,
         },
         UI::WindowsAndMessaging::{
-            CreateWindowExW, DefWindowProcW, DestroyWindow, HICON, RegisterClassW, ShowWindow, SW_HIDE, WM_COMMAND,
-            WM_DWMSENDICONICLIVEPREVIEWBITMAP, WM_DWMSENDICONICTHUMBNAIL, WNDCLASSW, WS_EX_TOOLWINDOW, WS_POPUP,
+            CreateWindowExW, DefWindowProcW, DestroyWindow, GetClassLongPtrW, HICON, ICON_BIG, ICON_SMALL,
+            RegisterClassW, SendMessageW, SetWindowTextW, ShowWindow, GCLP_HICON, SW_HIDE, WM_COMMAND,
+            WM_DWMSENDICONICLIVEPREVIEWBITMAP, WM_DWMSENDICONICTHUMBNAIL, WM_GETICON, WM_SETICON, WNDCLASSW,
+            WS_EX_TOOLWINDOW, WS_POPUP,
         },
     },
 };
@@ -39,6 +41,7 @@ pub struct TaskbarCommand {
 }
 
 struct Taskbar {
+    main: HWND,
     hwnd: HWND,
     list: ITaskbarList3,
     icons: crate::taskbar_icons::Icons,
@@ -128,6 +131,23 @@ fn cover_bitmap(image: &image::RgbaImage, width: u32, height: u32) -> Option<HBI
     Some(bitmap)
 }
 
+fn set_icon(main: HWND, helper: HWND) {
+    let icon = unsafe {
+        let icon = SendMessageW(main, WM_GETICON, Some(WPARAM(ICON_BIG as usize)), Some(LPARAM(0))).0;
+        if icon != 0 {
+            icon
+        } else {
+            GetClassLongPtrW(main, GCLP_HICON) as isize
+        }
+    };
+    if icon != 0 {
+        unsafe {
+            let _ = SendMessageW(helper, WM_SETICON, Some(WPARAM(ICON_BIG as usize)), Some(LPARAM(icon)));
+            let _ = SendMessageW(helper, WM_SETICON, Some(WPARAM(ICON_SMALL as usize)), Some(LPARAM(icon)));
+        }
+    }
+}
+
 impl Taskbar {
     fn update(&mut self, snapshot: Option<&PlaybackSnapshot>, metadata: &Metadata, cover: Option<(String, Option<Vec<u8>>)>) -> windows::core::Result<()> {
         let active = snapshot.is_some_and(|value| value.phase.active());
@@ -135,6 +155,12 @@ impl Taskbar {
         let previous = active && metadata.previous;
         let next = active && metadata.next;
         self.session_id = if active { metadata.session_id.clone() } else { String::new() };
+        let title = if active && !metadata.title.is_empty() { metadata.title.as_str() } else { "DiscAtelier" };
+        let title = title.encode_utf16().chain(std::iter::once(0)).collect::<Vec<_>>();
+        unsafe {
+            let _ = SetWindowTextW(self.hwnd, PCWSTR::from_raw(title.as_ptr()));
+            let _ = if active { self.list.SetTabOrder(self.hwnd, self.main) } else { self.list.SetTabOrder(self.main, self.hwnd) };
+        }
         set_button(&mut self.buttons[0], self.icons.previous, previous, !active);
         set_button(&mut self.buttons[1], if paused { self.icons.play } else { self.icons.pause }, active, !active);
         set_button(&mut self.buttons[2], self.icons.next, next, !active);
@@ -269,6 +295,7 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
             return Err("无法创建任务栏辅助窗口。".into());
         }
         let _ = ShowWindow(helper, SW_HIDE);
+        set_icon(hwnd, helper);
         helper
     };
     unsafe {
@@ -285,6 +312,7 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
         list.ThumbBarAddButtons(helper, &buttons).map_err(|error| error.to_string())?;
     }
     *taskbar().lock().map_err(|_| "任务栏状态不可用。".to_string())? = SendTaskbar(Some(Taskbar {
+        main: hwnd,
         hwnd: helper,
         list,
         icons,
