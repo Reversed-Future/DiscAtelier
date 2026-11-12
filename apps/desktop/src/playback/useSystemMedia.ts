@@ -7,7 +7,7 @@ import type { MusicQueueController } from './useMusicQueue';
 
 export interface SystemMediaSource { sessionId: string; title: string; artist: string; album: string; coverAssetId?: string; previous?: () => void; next?: () => void; repeat?: 'list' | 'one'; setRepeat?: (mode: 'list' | 'one') => void }
 interface MediaCommand { sessionId: string; action: 'play' | 'pause' | 'stop' | 'previous' | 'next' | 'seek'; seconds: number | null }
-interface TaskbarCommand { sessionId: string; action: 'toggle' | 'previous' | 'next' }
+interface TaskbarCommand { sessionId: string; action: 'toggle' | 'previous' | 'next' | 'repeat' }
 export function useSystemMedia(snapshot: Snapshot | null, busy: boolean, control: (value: Control) => Promise<boolean>, queue: MusicQueueController) {
   const source = useRef<SystemMediaSource | null>(null), pending = useRef(false), mounted = useRef(true);
   const [enabled, setEnabled] = useState(false), [error, setError] = useState('');
@@ -35,6 +35,10 @@ export function useSystemMedia(snapshot: Snapshot | null, busy: boolean, control
       const state = latest.current, s = state.snapshot, command = event.payload;
       if (!live || !s || state.busy || command.sessionId !== s.sessionId) return;
       if (command.action === 'toggle') void state.control({ action: 'pause', paused: !s.paused });
+      else if (command.action === 'repeat') {
+        if (s.source.playlist.startsWith('netease-song:')) state.queue.setMode(state.queue.mode === 'list' ? 'one' : 'list');
+        else if (source.current?.sessionId === s.sessionId) source.current.setRepeat?.(source.current.repeat === 'one' ? 'list' : 'one');
+      }
       else if (s.source.playlist.startsWith('netease-song:')) state.queue.step(command.action === 'previous' ? -1 : 1);
       else if (source.current?.sessionId === s.sessionId) source.current[command.action]?.();
     }).catch(failed);
@@ -46,7 +50,7 @@ export function useSystemMedia(snapshot: Snapshot | null, busy: boolean, control
     const details = !online && source.current?.sessionId === snapshot?.sessionId ? source.current : null;
     const song = queue.current?.tracks.find(track => track.id === queue.songId);
     pending.current = true;
-    void invoke('system_media_sync', { metadata: { sessionId: snapshot?.sessionId || '', title: details?.title || snapshot?.title || '', artist: details?.artist || (online ? song?.artists.join('，') || '' : ''), album: details?.album || (online ? queue.current?.title || '' : ''), previous: online ? !!queue.current : !!details?.previous, next: online ? !!queue.current : !!details?.next, coverAssetId: details?.coverAssetId || null } })
+    void invoke('system_media_sync', { metadata: { sessionId: snapshot?.sessionId || '', title: details?.title || snapshot?.title || '', artist: details?.artist || (online ? song?.artists.join('，') || '' : ''), album: details?.album || (online ? queue.current?.title || '' : ''), previous: online ? !!queue.current : !!details?.previous, next: online ? !!queue.current : !!details?.next, repeat: online ? queue.mode === 'one' : details?.repeat === 'one', coverAssetId: details?.coverAssetId || null } })
       .then(() => { if (mounted.current) setError(''); }).catch(cause => { if (mounted.current) setError(errorMessage(cause)); }).finally(() => { pending.current = false; });
   }, [snapshot, enabled, queue.current, syncVersion, source.current?.coverAssetId]);
   return { error, source, refresh: () => setSyncVersion(value => value + 1) };

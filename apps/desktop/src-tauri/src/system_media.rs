@@ -23,6 +23,8 @@ pub struct Metadata {
     pub previous: bool,
     pub next: bool,
     #[serde(default)]
+    pub repeat: bool,
+    #[serde(default)]
     pub cover_asset_id: Option<String>,
 }
 #[derive(Clone, Serialize)]

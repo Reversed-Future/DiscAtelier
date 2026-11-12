@@ -29,6 +29,7 @@ use windows::{
 const BUTTON_PREVIOUS: u32 = 1;
 const BUTTON_TOGGLE: u32 = 2;
 const BUTTON_NEXT: u32 = 3;
+const BUTTON_REPEAT: u32 = 4;
 const TASKBAR_CLSID: GUID = GUID::from_u128(0x56FDF344_FD6D_11D0_958A_006097C9A090);
 const COVER_SIZE: u32 = 200;
 const HELPER_CLASS: windows::core::PCWSTR = windows::core::w!("DiscAtelierTaskbarThumb");
@@ -45,7 +46,7 @@ struct Taskbar {
     hwnd: HWND,
     list: ITaskbarList3,
     icons: crate::taskbar_icons::Icons,
-    buttons: [THUMBBUTTON; 3],
+    buttons: [THUMBBUTTON; 4],
     cover: Option<image::RgbaImage>,
     cover_id: String,
     session_id: String,
@@ -89,7 +90,7 @@ fn button(id: u32, icon: HICON, label: &str) -> THUMBBUTTON {
 
 fn set_button(button: &mut THUMBBUTTON, icon: HICON, enabled: bool, hidden: bool) {
     button.hIcon = icon;
-    button.dwMask = THB_ICON | THB_FLAGS;
+    button.dwMask = THB_ICON | THB_FLAGS | THB_TOOLTIP;
     button.dwFlags = if hidden {
         THBF_HIDDEN
     } else if enabled {
@@ -179,6 +180,8 @@ impl Taskbar {
         set_button(&mut self.buttons[0], self.icons.previous, previous, !active);
         set_button(&mut self.buttons[1], if paused { self.icons.play } else { self.icons.pause }, active, !active);
         set_button(&mut self.buttons[2], self.icons.next, next, !active);
+        set_button(&mut self.buttons[3], if metadata.repeat { self.icons.repeat_one } else { self.icons.repeat }, active, !active);
+        self.buttons[3].szTip = tip(if metadata.repeat { "单曲循环" } else { "列表循环" });
         let tooltip = tip(if active { &metadata.title } else { "DiscAtelier" });
         if self.registered {
             unsafe {
@@ -260,6 +263,7 @@ unsafe extern "system" fn helper_proc(hwnd: HWND, message: u32, wparam: WPARAM, 
             BUTTON_PREVIOUS => ("previous", None),
             BUTTON_TOGGLE => ("toggle", None),
             BUTTON_NEXT => ("next", None),
+            BUTTON_REPEAT => ("repeat", None),
             _ => ("", None),
         };
         if !action.is_empty() {
@@ -316,7 +320,7 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
             HELPER_CLASS,
             windows::core::w!("DiscAtelier"),
             WS_POPUP,
-            0, 0, 1, 1,
+            0, 0, 320, 240,
             None,
             None,
             Some(HINSTANCE(instance.0)),
@@ -336,6 +340,7 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
         button(BUTTON_PREVIOUS, icons.previous, "上一首"),
         button(BUTTON_TOGGLE, icons.play, "播放"),
         button(BUTTON_NEXT, icons.next, "下一首"),
+        button(BUTTON_REPEAT, icons.repeat, "列表循环"),
     ];
     *taskbar().lock().map_err(|_| "任务栏状态不可用。".to_string())? = SendTaskbar(Some(Taskbar {
         main: hwnd,

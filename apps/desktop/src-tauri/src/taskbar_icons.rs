@@ -14,11 +14,13 @@ use windows::{
 };
 
 const SIZE: i32 = 32;
-const GLYPHS: [(char, &str); 4] = [
+const GLYPHS: [(char, &str); 6] = [
     ('\u{E892}', "上一首"),
     ('\u{E768}', "播放"),
     ('\u{E769}', "暂停"),
     ('\u{E893}', "下一首"),
+    ('\u{E8EE}', "列表循环"),
+    ('\u{E8ED}', "单曲循环"),
 ];
 
 unsafe fn icon(glyph: char) -> windows::core::Result<HICON> {
@@ -91,6 +93,8 @@ pub struct Icons {
     pub play: HICON,
     pub pause: HICON,
     pub next: HICON,
+    pub repeat: HICON,
+    pub repeat_one: HICON,
 }
 
 impl Icons {
@@ -100,10 +104,12 @@ impl Icons {
             play: unsafe { icon(GLYPHS[1].0)? },
             pause: unsafe { icon(GLYPHS[2].0)? },
             next: unsafe { icon(GLYPHS[3].0)? },
+            repeat: unsafe { icon(GLYPHS[4].0)? },
+            repeat_one: unsafe { icon(GLYPHS[5].0)? },
         })
     }
     pub fn destroy(&self) {
-        for icon in [self.previous, self.play, self.pause, self.next] {
+        for icon in [self.previous, self.play, self.pause, self.next, self.repeat, self.repeat_one] {
             let _ = unsafe { DestroyIcon(icon) };
         }
     }
