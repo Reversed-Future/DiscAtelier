@@ -108,7 +108,10 @@ VIAddVersionKey "ProductVersion" "${VERSION}"
 !endif
 
 !if "${INSTALLMODE}" == "currentUser"
-  RequestExecutionLevel user
+  ; Existing installations may live under Program Files (for example a
+  ; previous per-machine beta). A currentUser installer cannot overwrite or
+  ; remove those files without elevation.
+  RequestExecutionLevel admin
 !endif
 
 !if "${INSTALLMODE}" == "both"
@@ -240,10 +243,14 @@ Function PageReinstall
     StrCpy $R3 "$(uninstallApp)"
     !insertmacro MUI_HEADER_TEXT "$(alreadyInstalled)" "$(chooseMaintenanceOption)"
   ; Upgrading
+  ; Older installers can leave files scheduled for deletion on reboot even
+  ; after their uninstaller reports success. Overwrite in place instead of
+  ; running that uninstaller again; the new version's uninstaller will clean
+  ; up its own files later.
   ${ElseIf} $R0 = 1
     StrCpy $R1 "$(olderOrUnknownVersionInstalled)"
-    StrCpy $R2 "$(uninstallBeforeInstalling)"
-    StrCpy $R3 "$(dontUninstall)"
+    StrCpy $R2 "$(overwriteUpgrade)"
+    StrCpy $R3 "$(cancelInstall)"
     !insertmacro MUI_HEADER_TEXT "$(alreadyInstalled)" "$(choowHowToInstall)"
   ; Downgrading
   ${ElseIf} $R0 = -1
@@ -332,10 +339,10 @@ Function PageLeaveReinstall
       Goto reinst_uninstall
     ${EndIf}
   ${ElseIf} $R0 = 1 ; Upgrading
-    ${If} $R1 = 1              ; User chose to uninstall
-      Goto reinst_uninstall
+    ${If} $R1 = 1              ; Overwrite in place and keep data
+      Goto reinst_done
     ${Else}
-      Goto reinst_done         ; User chose NOT to uninstall
+      Abort                    ; User chose to cancel
     ${EndIf}
   ${ElseIf} $R0 = -1 ; Downgrading
     ${If} $R1 = 1              ; User chose to uninstall
@@ -506,10 +513,18 @@ FunctionEnd
   !include "{{this}}"
 {{/each}}
 
+; Upgrade page: avoid running an older, possibly broken uninstaller.
+LangString overwriteUpgrade ${LANG_SIMPCHINESE} "直接覆盖安装（保留数据）"
+LangString overwriteUpgrade ${LANG_TRADCHINESE} "直接覆寫安裝（保留資料）"
+LangString overwriteUpgrade ${LANG_ENGLISH} "Install over the existing version (keep data)"
+LangString cancelInstall ${LANG_SIMPCHINESE} "取消安装"
+LangString cancelInstall ${LANG_TRADCHINESE} "取消安裝"
+LangString cancelInstall ${LANG_ENGLISH} "Cancel installation"
+
 ; Extra guidance shown when the previous version cannot be uninstalled.
-LangString uninstallHint ${LANG_SIMPCHINESE} "旧版本没能卸载干净。请先退出任务栏托盘中的 DiscAtelier（或稍等几秒），再重试；也可以返回上一页选择“不卸载直接安装”。"
-LangString uninstallHint ${LANG_TRADCHINESE} "舊版本未能解除安裝乾淨。請先結束系統匣中的 DiscAtelier（或稍候數秒），再重試；也可以返回上一頁選擇「不解除安裝直接安裝」。"
-LangString uninstallHint ${LANG_ENGLISH} "The previous version could not be removed cleanly. Quit DiscAtelier from the notification area (tray), wait a few seconds and retry, or go back and choose 'Do not uninstall'."
+LangString uninstallHint ${LANG_SIMPCHINESE} "旧版本没能卸载干净。请先退出任务栏托盘中的 DiscAtelier（或稍等几秒），再重试；升级时也可以返回上一页选择“直接覆盖安装（保留数据）”。"
+LangString uninstallHint ${LANG_TRADCHINESE} "舊版本未能解除安裝乾淨。請先結束系統匣中的 DiscAtelier（或稍候數秒），再重試；升級時也可以返回上一頁選擇「直接覆寫安裝（保留資料）」。"
+LangString uninstallHint ${LANG_ENGLISH} "The previous version could not be removed cleanly. Quit DiscAtelier from the notification area (tray), wait a few seconds and retry, or go back and choose 'Install over the existing version (keep data)'."
 LangString stillRunningHint ${LANG_SIMPCHINESE} "DiscAtelier 仍在运行，安装程序无法自动结束它。请用任务管理器结束 discatelier-desktop.exe（以及它启动的 node.exe 等子进程），或从托盘退出 DiscAtelier，然后重新运行安装程序。"
 LangString stillRunningHint ${LANG_TRADCHINESE} "DiscAtelier 仍在執行，安裝程式無法自動結束它。請用工作管理員結束 discatelier-desktop.exe（以及它啟動的 node.exe 等子程序），或從系統匣結束 DiscAtelier，然後重新執行安裝程式。"
 LangString stillRunningHint ${LANG_ENGLISH} "DiscAtelier is still running and could not be stopped automatically. End discatelier-desktop.exe (and its node.exe child processes) in Task Manager, or quit DiscAtelier from the tray, then run the installer again."
