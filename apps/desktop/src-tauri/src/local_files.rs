@@ -23,6 +23,8 @@ pub struct Binding {
     pub episode: Option<i32>,
     #[serde(default)]
     pub track: Option<i32>,
+    #[serde(default)]
+    pub disc: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -68,6 +70,7 @@ fn validate_binding_shape(binding: &Binding) -> Result<(), AppError> {
         || binding.copy_id.len() > 100
         || binding.path.len() > 4096
         || binding.label.chars().count() > 500
+        || binding.disc.as_ref().is_some_and(|value| value.chars().count() > 100)
         || binding
             .episode
             .is_some_and(|value| !(1..=9999).contains(&value))

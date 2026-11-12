@@ -63,6 +63,11 @@ export interface TrackTitle {
   title: string;
   position: string;
   label?: string;
+  disc?: string;
+  discName?: string;
+  discNumber?: number | null;
+  number?: number;
+  order?: number;
 }
 
 export function positionNumber(position: string): number | null {

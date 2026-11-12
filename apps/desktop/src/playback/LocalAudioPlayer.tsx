@@ -2,11 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
 import type { LibraryCopy } from '../library/types';
-import type { EditionContent, ReleaseTrack } from '../metadata/gateway';
+import type { EditionContent } from '../metadata/gateway';
 import { errorMessage, library } from '../library/gateway';
 import { useStaticArtwork } from '../library/useStaticArtwork';
-import { discPages } from '../metadata/discTracks';
-import { matchTrack, normalized, positionNumber, trackNumberAt } from '../local/match';
+import { albumTrackRefs, matchAlbumTrack, type AlbumTrackRef } from '../local/albumTrackRefs';
+import { normalized } from '../local/match';
 import { Icon } from '../ui/Icon';
 import { PlaybackControls } from './PlaybackControls';
 import { usePlaybackLayer } from './usePlaybackLayer';
@@ -23,13 +23,13 @@ interface LocalBinding {
   label: string;
   episode?: number | null;
   track?: number | null;
+  disc?: string | null;
 }
 
 function trackTitle(binding: LocalBinding) {
   const parts = binding.label.split(' · ');
   return parts.length > 2 ? parts[parts.length - 1] : binding.path.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, '') || binding.label;
 }
-interface AlbumTrack { track: ReleaseTrack; number: number | null; order: number }
 interface QueueTrack { binding: LocalBinding | null; title: string; number: number | null; order: number }
 
 export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
@@ -94,17 +94,9 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
 
   // The album's own track list defines order. Folder track numbers only help
   // associate a file; they never reorder the queue or append a second album.
-  const albumTracks = useMemo<AlbumTrack[]>(() => {
+  const albumTracks = useMemo<AlbumTrackRef[]>(() => {
     if (!content?.tracks.length) return [];
-    let order = 0;
-    return discPages(content.tracks, copy?.edition.title || '', copy?.edition.media || []).flatMap(page => {
-      const rows = page.tracks.filter(track => track.type_ !== 'heading');
-      return rows.map((track, index) => ({
-        track,
-        number: trackNumberAt(rows, index) ?? positionNumber(track.position) ?? index + 1,
-        order: order++,
-      }));
-    });
+    return albumTrackRefs(content.tracks, copy?.edition.title || '', copy?.edition.media || 0);
   }, [content, copy?.edition.title, copy?.edition.media]);
 
   const tracks = useMemo<QueueTrack[]>(() => {
@@ -120,17 +112,22 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
     const matched = new Map<number, LocalBinding>();
     for (const binding of sorted) {
       const label = normalized(binding.label || binding.path);
-      let album = albumTracks.find(entry => {
-        const title = normalized(entry.track.title);
+      const pool = binding.disc ? albumTracks.filter(entry => entry.disc === binding.disc) : albumTracks;
+      const titled = pool.filter(entry => {
+        const title = normalized(entry.title);
         return !used.has(entry.order) && title.length >= 2 && label.includes(title);
       });
+      let album = titled.length === 1 ? titled[0] : undefined;
       if (!album && binding.track != null) {
-        album = albumTracks.find(entry => !used.has(entry.order) && entry.number === binding.track);
+        const numbered = pool.filter(entry => !used.has(entry.order) && entry.number === binding.track);
+        if (numbered.length === 1) album = numbered[0];
       }
       if (!album) {
-        const result = matchTrack(binding.label || binding.path, albumTracks.map(entry => entry.track));
-        if (result) album = albumTracks.find(entry => !used.has(entry.order)
-          && (entry.number === result.number || normalized(entry.track.title) === normalized(result.title)));
+        const result = matchAlbumTrack(binding.label || binding.path, albumTracks);
+        if (result) {
+          const candidates = albumTracks.filter(entry => !used.has(entry.order) && entry.disc === result.disc && entry.number === result.number);
+          if (candidates.length === 1) album = candidates[0];
+        }
       }
       if (!album) continue;
       used.add(album.order);
@@ -140,7 +137,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
     // visible as disabled placeholders instead of pulling in the whole folder.
     return albumTracks.map(entry => ({
       binding: matched.get(entry.order) || null,
-      title: entry.track.title || `曲目 ${entry.number ?? entry.order + 1}`,
+      title: entry.title || `曲目 ${entry.number ?? entry.order + 1}`,
       number: entry.number,
       order: entry.order,
     }));

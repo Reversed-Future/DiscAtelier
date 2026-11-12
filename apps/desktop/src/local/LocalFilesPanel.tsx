@@ -4,7 +4,8 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { errorMessage, library } from '../library/gateway';
 import { netease } from '../integrations/gateway';
 import type { LibraryCopy } from '../library/types';
-import { chooseItem, matchTrack, parseEpisode, parseTrack, trackNumberAt, type TrackTitle } from './match';
+import { chooseItem, matchTrack, parseEpisode, parseTrack, type TrackTitle } from './match';
+import { albumTrackRefs, matchAlbumTrack } from './albumTrackRefs';
 import { loadVideoChapters } from './videoChapters';
 import { FolderPicker } from './FolderPicker';
 import { Select } from '../ui/Select';
@@ -22,12 +23,14 @@ interface Binding {
   label: string;
   episode?: number | null;
   track?: number | null;
+  disc?: string | null;
 }
 interface Row {
   file: ScannedFile;
   copyId: string;
   episode: number | null;
   track: number | null;
+  disc: string | null;
   trackTitle: string;
   matched: boolean;
 }
@@ -72,11 +75,14 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         netease.albums(item.editionId).catch(() => []),
       ]);
       const tracks: TrackTitle[] = content?.tracks.length
-        ? content.tracks.map(track => ({ title: track.title, position: track.position }))
-        : albums.flatMap(entry => entry.album.tracks.map((song, index) => ({
+        ? albumTrackRefs(content.tracks, item.edition.title, item.edition.media)
+        : albumTrackRefs(albums.flatMap(entry => entry.album.tracks.map((song, index) => ({
           title: song.title,
-          position: String(index + 1),
-        })));
+          position: `${song.disc || 1}-${song.number || index + 1}`,
+          duration: '',
+          type_: 'track',
+          sub_tracks: [],
+        }))), item.edition.title, item.edition.media);
       return [item.id, tracks] as const;
     })).then(entries => {
       if (active) setTrackTitles(new Map(entries));
@@ -85,9 +91,12 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
   }, [items]);
 
   function trackFor(itemId: string, file: ScannedFile) {
-    const matched = matchTrack(file.name, trackTitles.get(itemId) || []);
-    if (matched) return { number: matched.number, title: matched.title };
-    return { number: parseTrack(file.name), title: '' };
+    const refs = trackTitles.get(itemId) || [];
+    const matched = matchAlbumTrack(`${file.relativePath} ${file.name}`, refs);
+    if (matched) return { number: matched.number, title: matched.title, disc: matched.disc || null };
+    // When album metadata exists, an unmatched/ambiguous file must stay
+    // unassociated instead of falling back to a cross-disc track number.
+    return { number: refs.length ? null : parseTrack(file.name), title: '', disc: null };
   }
 
   function chapterFor(itemId: string, file: ScannedFile) {
@@ -114,8 +123,8 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       const video = item?.edition.categoryId === 'video';
       const chapter = video ? chapterFor(item.id, file) : { number: null, title: '' };
       const episode = video ? parseEpisode(file.name) || chapter.number : null;
-      const track = item?.edition.categoryId === 'music' ? trackFor(item.id, file) : { number: null, title: '' };
-      return { file, copyId: item?.id || '', episode, track: track.number, trackTitle: video ? chapter.title : track.title, matched: !!item };
+      const track = item?.edition.categoryId === 'music' ? trackFor(item.id, file) : { number: null, title: '', disc: null };
+      return { file, copyId: item?.id || '', episode, track: track.number, disc: video ? null : track.disc, trackTitle: video ? chapter.title : track.title, matched: !!item };
     })));
   }
 
@@ -134,7 +143,12 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
   useEffect(() => {
     if (!trackTitles.size || !files.length) return;
     setRows(current => current.map(row => {
-      if (row.copyId) return row;
+      if (row.copyId) {
+        const existing = items.find(entry => entry.id === row.copyId);
+        if (!existing || existing.edition.categoryId !== 'music' || row.trackTitle) return row;
+        const track = trackFor(row.copyId, row.file);
+        return { ...row, track: track.number, disc: track.disc, trackTitle: track.title };
+      }
       const item = chooseItem(items, row.file, false, trackTitles);
       if (!item) return row;
       return {
@@ -143,6 +157,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         matched: true,
         episode: item.edition.categoryId === 'video' ? parseEpisode(row.file.name) : null,
         track: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).number : null,
+        disc: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).disc : null,
         trackTitle: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).title : '',
       };
     }).sort((left, right) => {
@@ -165,9 +180,10 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       return {
         copyId: row.copyId,
         path: row.file.path,
-        label: `${item?.edition.title || row.file.name}${row.episode ? ` · 第 ${row.episode} 章${row.trackTitle ? ` · ${row.trackTitle}` : ''}` : row.track ? ` · 第 ${row.track} 轨${row.trackTitle ? ` · ${row.trackTitle}` : ''}` : ''}`,
+        label: `${item?.edition.title || row.file.name}${row.disc ? ` · ${row.disc}` : ''}${row.episode ? ` · 第 ${row.episode} 章${row.trackTitle ? ` · ${row.trackTitle}` : ''}` : row.track ? ` · 第 ${row.track} 轨${row.trackTitle ? ` · ${row.trackTitle}` : ''}` : ''}`,
         episode: row.episode,
         track: row.track,
+        disc: row.disc,
       };
     })];
     await invoke('local_files_save', { bindings: next });
@@ -189,8 +205,10 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
   }
 
   function trackTitleValue(row: Row) {
-    const index = (trackTitles.get(row.copyId) || []).findIndex(track => track.title === row.trackTitle);
-    return index >= 0 ? String(index) : '';
+    const albumTracks = trackTitles.get(row.copyId) || [];
+    const index = albumTracks.findIndex(track => track.title === row.trackTitle && (!row.disc || track.disc === row.disc));
+    const fallback = albumTracks.findIndex(track => track.title === row.trackTitle);
+    return index >= 0 ? String(index) : fallback >= 0 ? String(fallback) : '';
   }
 
   function updateTrackTitle(index: number, value: string) {
@@ -203,8 +221,9 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
       return {
         ...row,
         trackTitle: albumTracks[track].title,
-        episode: video ? trackNumberAt(albumTracks, track) : row.episode,
-        track: video ? null : trackNumberAt(albumTracks, track),
+        disc: video ? null : albumTracks[track].disc || null,
+        episode: video ? albumTracks[track].number ?? null : row.episode,
+        track: video ? null : albumTracks[track].number ?? null,
       };
     })));
   }
@@ -221,6 +240,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         matched: !!copyId,
         episode: video ? parseEpisode(row.file.name) || chapter.number : null,
         track: category === 'music' ? trackFor(copyId, row.file).number : null,
+        disc: category === 'music' ? trackFor(copyId, row.file).disc : null,
         trackTitle: video ? chapter.title : category === 'music' ? trackFor(copyId, row.file).title : '',
       };
     })));
@@ -239,6 +259,7 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
         matched: true,
         episode: video ? parseEpisode(row.file.name) || chapter.number : null,
         track: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).number : null,
+        disc: item.edition.categoryId === 'music' ? trackFor(item.id, row.file).disc : null,
         trackTitle: video ? chapter.title : item.edition.categoryId === 'music' ? trackFor(item.id, row.file).title : '',
       };
     })));
@@ -293,10 +314,10 @@ export function LocalFilesPanel({ onClose }: { onClose(): void }) {
                 <td>{item && (trackTitles.get(row.copyId) || []).length
                   ? <Select label={`${row.file.name} 的关联内容`}
                     value={trackTitleValue(row)}
-                    options={[{ id: '', label: '不指定' }, ...(trackTitles.get(row.copyId) || []).map((track, trackIndex) => ({ id: String(trackIndex), label: track.label || track.title }))]}
+                    options={[{ id: '', label: '不指定' }, ...(trackTitles.get(row.copyId) || []).map((track, trackIndex) => ({ id: String(trackIndex), label: `${track.disc ? `${track.disc} · ` : ''}${track.label || track.title}` }))]}
                     onChange={value => updateTrackTitle(index, value)}/>
                   : <span className="local-track-title" title={row.trackTitle || undefined}>{row.trackTitle || (row.episode ? `第 ${row.episode} 章` : item?.edition.categoryId === 'video' ? '未匹配到章节' : '—')}</span>}</td>
-                <td>{row.episode ? `第 ${row.episode} 章` : row.track ? `第 ${row.track} 轨` : '—'}</td>
+                <td>{row.episode ? `第 ${row.episode} 章` : row.track ? `${row.disc ? `${row.disc} · ` : ''}第 ${row.track} 轨` : '—'}</td>
                 <td>{saved && associated ? <button type="button" className="text-button" disabled={busy} onClick={() => void saveAndPlay(row)}>播放</button> : item && associated ? <span className="local-files-ok">已识别</span> : <span className="local-files-miss">未关联</span>}</td>
               </tr>;
             })}

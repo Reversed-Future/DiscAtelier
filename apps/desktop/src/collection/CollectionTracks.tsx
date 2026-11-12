@@ -4,14 +4,14 @@ import { discPages } from '../metadata/discTracks';
 import { DiscTabs, DiscTrackPanel } from '../metadata/DiscTrackView';
 import type { ReleaseTrack } from '../metadata/gateway';
 import type { LinkedMusicAlbum, DiscAlbumLink, SongLink } from '../integrations/gateway';
-import { albumMatches, albumRows, albumRowLabel, collectionRows, trackLeaves } from '../integrations/albumTracks';
+import { albumMatches, albumRows, albumRowLabel, trackLeaves } from '../integrations/albumTracks';
 import { trackKey } from '../integrations/trackMatches';
 import type { PlaybackController } from '../playback/usePlayback';
 import type { LibraryCopy } from '../library/types';
 import type { TrackPlayback } from '../metadata/TrackRow';
-import { positionNumber } from '../local/match';
+import { positionNumber, trackNumberAt } from '../local/match';
 
-interface LocalBinding { copyId: string; path: string; label: string; episode?: number | null; track?: number | null }
+interface LocalBinding { copyId: string; path: string; label: string; episode?: number | null; track?: number | null; disc?: string | null }
 
 export function CollectionTracks({ rows, albums, links, bindings, item, player }: { rows: ReleaseTrack[]; albums: LinkedMusicAlbum[]; links: SongLink[]; bindings: DiscAlbumLink[]; item: LibraryCopy; player: PlaybackController }) {
   const [page, setPage] = useState(0);
@@ -27,19 +27,32 @@ export function CollectionTracks({ rows, albums, links, bindings, item, player }
     window.addEventListener('local-files-changed', load);
     return () => { active = false; window.removeEventListener('local-files-changed', load); };
   }, [item.id]);
+  const pages = useMemo(() => trackLeaves(rows).length ? discPages(rows, item.edition.title, item.edition.media) : albums.flatMap(entry => {
+    const discs = [...new Set(entry.album.tracks.map(t => t.disc))];
+    const all = albumRows(entry);
+    return discs.map(disc => ({ key: `${entry.album.albumId}:${disc}`, name: entry.album.title + (discs.length > 1 ? ` · Disc ${disc}` : ''), numbered: false, tracks: all.filter((_, i) => entry.album.tracks[i].disc === disc) }));
+  }), [rows, albums, item.edition.title, item.edition.media]);
   const localByTrack = useMemo(() => {
     const result = new Map<string, LocalBinding>();
-    const physical = trackLeaves(rows).length > 0;
-    const leaves = trackLeaves(collectionRows(rows, albums));
+    const entries = pages.flatMap(page => {
+      const tracks = page.tracks.filter(track => track.type_ !== 'heading');
+      return tracks.map((track, index) => ({
+        track,
+        page,
+        number: trackNumberAt(tracks, index) ?? positionNumber(track.position) ?? index + 1,
+      }));
+    });
     for (const binding of local) {
-      let index = -1;
-      if (binding.track) index = leaves.findIndex((row, position) =>
-        physical ? position + 1 === binding.track || positionNumber(row.position) === binding.track : position + 1 === binding.track);
-      if (index < 0 && binding.label) index = leaves.findIndex(row => binding.label.includes(` · ${row.title}`));
-      if (index >= 0) result.set(trackKey(leaves[index]), binding);
+      const titles = entries.filter(entry => !!binding.label && binding.label.includes(` · ${entry.track.title}`)
+        && (!binding.disc || entry.page.key === binding.disc));
+      if (titles.length === 1) { result.set(trackKey(titles[0].track), binding); continue; }
+      if (titles.length > 1) continue;
+      const pool = binding.disc ? entries.filter(entry => entry.page.key === binding.disc) : entries;
+      const numbers = binding.track != null ? pool.filter(entry => entry.number === binding.track) : [];
+      if (numbers.length === 1) result.set(trackKey(numbers[0].track), binding);
     }
     return result;
-  }, [local, rows, albums]);
+  }, [local, pages]);
   function localPlayback(track: ReleaseTrack): TrackPlayback | undefined {
     const binding = localByTrack.get(trackKey(track));
     if (!binding) return undefined;
@@ -53,11 +66,6 @@ export function CollectionTracks({ rows, albums, links, bindings, item, player }
       },
     };
   }
-  const pages = useMemo(() => trackLeaves(rows).length ? discPages(rows, item.edition.title, item.edition.media) : albums.flatMap(entry => {
-    const discs = [...new Set(entry.album.tracks.map(t => t.disc))];
-    const all = albumRows(entry);
-    return discs.map(disc => ({ key: `${entry.album.albumId}:${disc}`, name: entry.album.title + (discs.length > 1 ? ` · Disc ${disc}` : ''), numbered: false, tracks: all.filter((_, i) => entry.album.tracks[i].disc === disc) }));
-  }), [rows, albums, item.edition.title, item.edition.media]);
   const matches = useMemo(() => albumMatches(rows, albums, links, bindings, item.edition.media), [rows, albums, links, bindings, item.edition.media]);
   const index = Math.min(page, Math.max(0, pages.length - 1));
   function playback(track: ReleaseTrack) {

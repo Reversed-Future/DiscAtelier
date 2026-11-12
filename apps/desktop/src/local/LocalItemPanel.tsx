@@ -4,7 +4,8 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { errorMessage, library } from '../library/gateway';
 import { netease } from '../integrations/gateway';
 import type { LibraryCopy } from '../library/types';
-import { isAudio, matchTrack, parseEpisode, parseTrack, trackIndexForNumber, trackNumberAt, type TrackTitle } from './match';
+import { isAudio, matchTrack, parseEpisode, parseTrack, type TrackTitle } from './match';
+import { albumTrackRefs, matchAlbumTrack } from './albumTrackRefs';
 import { loadVideoChapters } from './videoChapters';
 import { FolderPicker } from './FolderPicker';
 import { Select } from '../ui/Select';
@@ -22,11 +23,13 @@ interface Binding {
   label: string;
   episode?: number | null;
   track?: number | null;
+  disc?: string | null;
 }
 interface Row {
   file: ScannedFile;
   number: string;
   title: string;
+  disc: string | null;
 }
 
 function savedTitle(binding: Binding) {
@@ -43,18 +46,22 @@ function sortRows(values: Row[]) {
 
 function matchRow(item: LibraryCopy, file: ScannedFile, tracks: TrackTitle[]) {
   if (item.edition.categoryId === 'music' || isAudio(file)) {
-    const matched = matchTrack(file.name, tracks);
-    if (matched) return { number: String(matched.number), title: matched.title };
-    // An artist - title filename must not be mistaken for a trailing track number.
-    if (/^\s*\d{1,3}(?:\s|[-–—])/.test(file.name)) {
-      const value = parseTrack(file.name);
-      if (value) return { number: String(value), title: '' };
+    const matched = matchAlbumTrack(`${file.relativePath} ${file.name}`, tracks);
+    if (matched) return { number: String(matched.number), title: matched.title, disc: matched.disc || null };
+    // With album metadata, unmatched/ambiguous titles stay unassociated rather
+    // than guessing a number that may belong to another disc.
+    if (!tracks.length) {
+      // An artist - title filename must not be mistaken for a trailing track number.
+      if (/^\s*\d{1,3}(?:\s|[-–—])/.test(file.name)) {
+        const value = parseTrack(file.name);
+        if (value) return { number: String(value), title: '', disc: null };
+      }
     }
-    return { number: '', title: '' };
+    return { number: '', title: '', disc: null };
   }
   const matched = matchTrack(file.name, tracks);
   const value = parseEpisode(file.name) || (matched ? matched.number : null);
-  return { number: value ? String(value) : '', title: matched?.title || '' };
+  return { number: value ? String(value) : '', title: matched?.title || '', disc: null };
 }
 
 export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose(): void }) {
@@ -90,13 +97,15 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     ]).then(([content, albums]) => {
       if (!active) return;
       if (content?.tracks.length) {
-        setTracks(content.tracks.map(track => ({ title: track.title, position: track.position })));
+        setTracks(albumTrackRefs(content.tracks, item.edition.title, item.edition.media));
       } else {
-        const fallback = albums.flatMap(entry => entry.album.tracks.map((song, index) => ({
+        setTracks(albumTrackRefs(albums.flatMap(entry => entry.album.tracks.map((song, index) => ({
           title: song.title,
-          position: String(index + 1),
-        })));
-        setTracks(fallback);
+          position: `${song.disc || 1}-${song.number || index + 1}`,
+          duration: '',
+          type_: 'track',
+          sub_tracks: [],
+        }))), item.edition.title, item.edition.media));
       }
     }).catch(() => {});
     return () => { active = false; };
@@ -105,12 +114,19 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     if (!tracks.length) return;
     setRows(current => sortRows(current.map(row => {
       const matched = matchRow(item, row.file, tracks);
-      return { ...row, number: row.number || matched.number, title: row.title || matched.title };
+      const useMatch = !row.title && !!matched.title;
+      return {
+        ...row,
+        number: useMatch ? matched.number : row.number || matched.number,
+        title: row.title || matched.title,
+        disc: row.disc || matched.disc,
+      };
     })));
   }, [tracks, item]);
 
   const own = all.filter(binding => binding.copyId === item.id)
-    .sort((left, right) => (left.track || Number.MAX_SAFE_INTEGER) - (right.track || Number.MAX_SAFE_INTEGER));
+    .sort((left, right) => (left.disc || '').localeCompare(right.disc || '')
+      || (left.track || Number.MAX_SAFE_INTEGER) - (right.track || Number.MAX_SAFE_INTEGER));
 
   async function scan(path: string) {
     if (!path.trim()) return;
@@ -139,9 +155,10 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
       return {
         copyId: item.id,
         path: row.file.path,
-        label: `${item.edition.title}${episode ? ` · 第 ${episode} 章${row.title ? ` · ${row.title}` : ''}` : track ? ` · 第 ${track} 轨${row.title ? ` · ${row.title}` : ''}` : ''}`,
+        label: `${item.edition.title}${row.disc ? ` · ${row.disc}` : ''}${episode ? ` · 第 ${episode} 章${row.title ? ` · ${row.title}` : ''}` : track ? ` · 第 ${track} 轨${row.title ? ` · ${row.title}` : ''}` : ''}`,
         episode,
         track,
+        disc: category === 'music' ? row.disc : null,
       };
     });
   }
@@ -167,14 +184,17 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     setRows(current => current.map((row, position) => {
       if (position !== index) return row;
       const number = Number(value);
-      const track = Number.isInteger(number) && number > 0 ? trackIndexForNumber(tracks, number) : -1;
-      return { ...row, number: value, title: track >= 0 ? tracks[track].title : '' };
+      const candidates = Number.isInteger(number) && number > 0
+        ? tracks.filter(track => track.number === number && (!row.disc || track.disc === row.disc)) : [];
+      const album = candidates.length === 1 ? candidates[0] : null;
+      return { ...row, number: value, title: album?.title || '', disc: album?.disc || row.disc };
     }));
   }
 
   function trackValue(row: Row) {
-    const index = tracks.findIndex(track => track.title === row.title);
-    return index >= 0 ? String(index) : '';
+    const index = tracks.findIndex(track => track.title === row.title && (!row.disc || track.disc === row.disc));
+    const fallback = tracks.findIndex(track => track.title === row.title);
+    return index >= 0 ? String(index) : fallback >= 0 ? String(fallback) : '';
   }
 
   function updateTitle(index: number, value: string) {
@@ -183,10 +203,11 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
       setRows(current => current.map((row, position) => position === index ? { ...row, title: '' } : row));
       return;
     }
-    const number = trackNumberAt(tracks, track) || track + 1;
+    const number = tracks[track].number || track + 1;
     setRows(current => current.map((row, position) => position === index ? {
       ...row,
       title: tracks[track].title,
+      disc: tracks[track].disc || null,
       number: String(number),
     } : row));
   }
@@ -218,7 +239,7 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
             ? binding.episode != null || !!savedTitle(binding)
             : binding.track != null || !!savedTitle(binding);
           return <tr key={binding.path}><td title={binding.path}><span>{binding.path.split(/[\\/]/).pop()}</span></td>
-          <td>{binding.episode ? `第 ${binding.episode} 章` : binding.track ? `第 ${binding.track} 轨` : '—'}</td>
+          <td>{binding.episode ? `第 ${binding.episode} 章` : binding.track ? `${binding.disc ? `${binding.disc} · ` : ''}第 ${binding.track} 轨` : '—'}</td>
           <td><span className="local-track-title">{item.edition.categoryId === 'video' ? (savedTitle(binding) || (binding.episode ? `第 ${binding.episode} 章` : '—')) : savedTitle(binding) || '—'}</span></td>
           <td>{associated ? <button type="button" className="text-button" disabled={busy} onClick={() => void play(binding.path)}>播放</button> : <span className="local-files-miss">未关联</span>}</td></tr>;
         })}
@@ -229,11 +250,11 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
       <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>{item.edition.categoryId === 'video' ? '章节' : '轨号'}</th><th>{item.edition.categoryId === 'video' ? '关联章节' : '关联歌曲'}</th><th>操作</th></tr></thead><tbody>
         {rows.map((row, index) => <tr key={row.file.path}>
           <td title={row.file.relativePath}><span>{row.file.relativePath}</span></td>
-          <td><input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '章节' : '轨号'}`} value={row.number}
-            onChange={event => updateNumber(index, event.target.value)}/></td>
+          <td><div className="local-track-cell"><input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '章节' : '轨号'}`} value={row.number}
+            onChange={event => updateNumber(index, event.target.value)}/>{row.disc && <span className="local-track-manual">{row.disc}</span>}</div></td>
           <td>{tracks.length
             ? <Select label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '关联章节' : '关联歌曲'}`} value={trackValue(row)}
-              options={[{ id: '', label: '不指定' }, ...tracks.map((track, trackIndex) => ({ id: String(trackIndex), label: track.label || track.title }))]}
+              options={[{ id: '', label: '不指定' }, ...tracks.map((track, trackIndex) => ({ id: String(trackIndex), label: `${track.disc ? `${track.disc} · ` : ''}${track.label || track.title}` }))]}
               onChange={value => updateTitle(index, value)}/>
             : <span className={row.number ? 'local-track-manual' : 'local-files-miss'}>{item.edition.categoryId === 'video' ? (row.number ? `第 ${row.number} 章` : '未匹配到章节') : (row.number ? '手动填写' : '未匹配到曲目')}</span>}</td>
           <td><button type="button" className="text-button" disabled={busy} onClick={() => setRows(current => current.filter((_, position) => position !== index))}>移除</button></td>
