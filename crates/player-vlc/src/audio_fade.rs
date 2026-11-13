@@ -1,7 +1,7 @@
 //! Short audio-only transitions. Gain never changes the user's volume setting.
 use discatelier_contracts::{AppError, PlaybackControl, PlaybackSource};
-pub const STEP_MS: u64 = 20;
-const STEPS: u16 = 12;
+pub const STEP_MS: u64 = 8;
+const STEPS: u16 = 32;
 pub fn music(source: &PlaybackSource) -> bool {
     source.media_token == "local-audio"
         || source.playlist.starts_with("netease-song:")
@@ -40,9 +40,15 @@ pub fn pause(
             .and_then(|_| send(PlaybackControl::Pause { paused: false }))
             .and_then(|_| ramp(0, volume, &mut send, &mut wait))
     };
-    // Restore even after a failed transition; otherwise the next play can remain silent.
-    let restored = send(PlaybackControl::Volume { volume });
-    result.and(restored)
+    if !paused || result.is_err() {
+        // On resume, and after an interrupted pause, make sure the user volume
+        // is restored. On a successful pause, leave it at zero: VLC may still
+        // be draining the last audio buffer, and restoring the volume
+        // immediately produces an audible pop.
+        let restored = send(PlaybackControl::Volume { volume });
+        return result.and(restored);
+    }
+    result
 }
 
 #[cfg(test)]
@@ -76,10 +82,17 @@ mod tests {
                 operations[index - 1],
                 PlaybackControl::Volume { volume: 0 }
             ));
-            assert!(matches!(
-                operations.last(),
-                Some(PlaybackControl::Volume { volume: 37 })
-            ));
+            if paused {
+                assert!(matches!(
+                    operations.last(),
+                    Some(PlaybackControl::Pause { paused: true })
+                ));
+            } else {
+                assert!(matches!(
+                    operations.last(),
+                    Some(PlaybackControl::Volume { volume: 37 })
+                ));
+            }
             let levels: Vec<_> = operations[..operations.len() - 1]
                 .iter()
                 .filter_map(|op| {
@@ -90,6 +103,11 @@ mod tests {
                     }
                 })
                 .collect();
+            if paused {
+                assert_eq!(levels.last(), Some(&0));
+            } else {
+                assert_eq!(levels.last(), Some(&37));
+            }
             assert!(levels
                 .windows(2)
                 .all(|w| if paused { w[0] >= w[1] } else { w[0] <= w[1] }));
