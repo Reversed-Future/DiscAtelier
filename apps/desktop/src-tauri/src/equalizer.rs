@@ -1,7 +1,7 @@
 //! Equalizer profiles and the VLC-only application path.
 use crate::playback::PlaybackState;
 use crate::playback_backend::PlaybackSession;
-use discatelier_contracts::{AppError, PlaybackControl, PlaybackSnapshot};
+use discatelier_contracts::{AppError, PlaybackControl, PlaybackSnapshot, PlaybackSource};
 use serde::{Deserialize, Serialize};
 use std::{
     io::Read,
@@ -115,12 +115,18 @@ pub fn save(directory: &Path, state: &EqualizerState) -> Result<(), AppError> {
         .map_err(|_| AppError::new("equalizer", "无法替换均衡器设置。"))
 }
 
+fn applies_to(source: &PlaybackSource) -> bool {
+    source.media_token == "local-audio"
+        || source.playlist.starts_with("netease-song:")
+        || source.playlist.starts_with("cd-track:")
+}
+
 pub fn apply(
     session: &PlaybackSession,
     snapshot: &PlaybackSnapshot,
     state: &EqualizerState,
 ) -> Result<(), AppError> {
-    if !matches!(session, PlaybackSession::Vlc(_)) {
+    if !matches!(session, PlaybackSession::Vlc(_)) || !applies_to(&snapshot.source) {
         return Ok(());
     }
     session.control(
@@ -148,6 +154,22 @@ pub fn apply_current(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn equalizer_only_follows_audio_sources() {
+        let source = |media_token: &str, playlist: &str| PlaybackSource {
+            mount_point: "fixture".into(),
+            media_token: media_token.into(),
+            playlist: playlist.into(),
+            label: "test".into(),
+        };
+        assert!(applies_to(&source("local-audio", "local:track.flac")));
+        assert!(applies_to(&source("netease", "netease-song:1")));
+        assert!(applies_to(&source("optical", "cd-track:1")));
+        assert!(!applies_to(&source("local-video", "local:movie.mkv")));
+        assert!(!applies_to(&source("optical", "dvd-menu")));
+        assert!(!applies_to(&source("optical", "bd-menu")));
+    }
 
     #[test]
     fn round_trips_custom_profiles_and_clamps_are_rejected() {
