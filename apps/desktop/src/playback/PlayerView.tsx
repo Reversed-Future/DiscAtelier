@@ -32,6 +32,11 @@ export function PlayerView({ player }: { player: PlaybackController }) {
     setEpisodesOpen(false);
     requestAnimationFrame(() => document.querySelector<HTMLElement>('.playback-episodes-toggle')?.focus());
   }
+  function goBack() {
+    if (live.current.episodesOpen) { closeEpisodes(); return; }
+    if (live.current.fullscreen) { void toggleFullscreen(); return; }
+    void close();
+  }
   function playEpisode(index: number) {
     const item = episodes.items[index];
     if (!item || index === episodes.currentIndex) return;
@@ -48,8 +53,7 @@ export function PlayerView({ player }: { player: PlaybackController }) {
   useNativeVideoKeys(menu && player.active && !closing, key => {
     chrome.wake();
     if (key === 'Escape') {
-      if (live.current.episodesOpen) closeEpisodes();
-      else if (live.current.fullscreen) void toggleFullscreen(); else void close();
+      goBack();
     } else if (key === 'f') void toggleFullscreen();
     else if (key === ' ') void live.current.player.control({ action: 'pause', paused: !live.current.player.snapshot?.paused });
     else navigate(key);
@@ -79,12 +83,11 @@ export function PlayerView({ player }: { player: PlaybackController }) {
     if (menu) surface.current?.focus(); else back.current?.focus();
     const keyboard = (event: KeyboardEvent) => {
       if (event.defaultPrevented || document.querySelector('[popover]:popover-open')) return;
-      const { player: current, fullscreen: full } = live.current;
+      const { player: current } = live.current;
       const target = event.target as HTMLElement;
       if (event.key === 'Escape') {
         event.preventDefault();
-        if (live.current.episodesOpen) closeEpisodes();
-        else if (full) void toggleFullscreen(); else void close();
+        goBack();
       } else if (!['INPUT', 'TEXTAREA'].includes(target.tagName)) {
         if (target.closest('.player-picture') && navigate(event.key)) {
           event.preventDefault();
@@ -100,7 +103,7 @@ export function PlayerView({ player }: { player: PlaybackController }) {
   }, []);
   return <section className="player-view" aria-label="内置播放器" aria-busy={closing} data-closing={closing} data-fullscreen={fullscreen} data-controls={chrome.visible}>
     <header className="player-header" ref={header} inert={!chrome.visible}>
-      <button className="text-button" ref={back} onClick={() => void close()} disabled={closing || player.busy}><Icon name="back"/>返回</button>
+      <button className="text-button" ref={back} onClick={goBack} disabled={closing || player.busy}><Icon name="back"/>返回</button>
       <strong className="player-heading">{player.snapshot?.title || '内置播放器'}</strong>
       {player.snapshot?.playbackMode === 'makeMkvFallback' && <span className="playback-mode" title="本地解密不足，已切换到 MakeMKV 兼容 DLL">正在使用兼容模式</span>}
     </header>

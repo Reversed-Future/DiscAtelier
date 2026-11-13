@@ -92,7 +92,7 @@ export function AudioPlayer({ player }: { player: PlaybackController }) {
       </div>
     </div>
     <footer className="player-footer">
-      <PlaybackControls player={player} title={currentMetadata?.title} showVolume volumeLayout="vertical"
+      <PlaybackControls player={player} title={currentMetadata?.title} showVolume showEqualizer volumeLayout="vertical"
         onPrevious={() => play(current - 1)} onNext={() => play(current + 1)}
         canPrevious={current > 0} canNext={current >= 0 && current < tracks.length - 1}/>
       {(error || player.error) && <p className="form-error" role="alert">{error || player.error}</p>}

@@ -37,6 +37,6 @@ export function NeteaseAudioPlayer({ player }: { player: PlaybackController }) {
         </AudioContentTabs>
       </div>
     </div>
-    <footer className="player-footer"><PlaybackControls player={player} showVolume volumeLayout="vertical" onPrevious={() => queue.step(-1)} onNext={() => queue.step(1)} canPrevious={!!album} canNext={!!album} repeat={queue.mode} onRepeat={() => queue.setMode(queue.mode === 'list' ? 'one' : 'list')}/>{player.error && <p className="form-error" role="alert">{player.error}</p>}</footer>
+    <footer className="player-footer"><PlaybackControls player={player} showVolume showEqualizer volumeLayout="vertical" onPrevious={() => queue.step(-1)} onNext={() => queue.step(1)} canPrevious={!!album} canNext={!!album} repeat={queue.mode} onRepeat={() => queue.setMode(queue.mode === 'list' ? 'one' : 'list')}/>{player.error && <p className="form-error" role="alert">{player.error}</p>}</footer>
   </section>;
 }

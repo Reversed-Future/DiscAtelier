@@ -44,7 +44,7 @@ export function MusicDock({ player }: { player: PlaybackController }) {
         {!album && <p className="setting-hint">{queue.busy ? '读取中' : '暂无曲目'}</p>}
       </div>
       <footer className="music-dock-footer">
-        {online && <PlaybackControls player={player} showVolume volumeLayout="vertical" onPrevious={() => queue.step(-1)} onNext={() => queue.step(1)}
+        {online && <PlaybackControls player={player} showVolume showEqualizer volumeLayout="vertical" onPrevious={() => queue.step(-1)} onNext={() => queue.step(1)}
           canPrevious={!!queue.current} canNext={!!queue.current} repeat={queue.mode}
           onRepeat={() => queue.setMode(queue.mode === 'list' ? 'one' : 'list')}/>}
         {player.error && <p className="form-error" role="alert">{player.error}</p>}

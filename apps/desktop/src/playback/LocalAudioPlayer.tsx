@@ -199,7 +199,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
         {!tracks.length && <p className="setting-hint">{contentReady ? '这个收藏还没有本地曲目' : '正在读取专辑曲目…'}</p>}
       </div>
       <footer className="music-dock-footer">
-        <PlaybackControls player={player} showTitle={false} showVolume volumeLayout="vertical"
+        <PlaybackControls player={player} showTitle={false} showVolume showEqualizer volumeLayout="vertical"
           onPrevious={() => step(-1, true)} onNext={() => step(1, true)}
           canPrevious={canPrevious} canNext={canNext}
           repeat={repeat} onRepeat={() => setRepeat(value => value === 'list' ? 'one' : 'list')}/>
@@ -235,7 +235,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
       </div>
     </div>
     <footer className="player-footer">
-      <PlaybackControls player={player} title={currentTitle} showVolume volumeLayout="vertical"
+      <PlaybackControls player={player} title={currentTitle} showVolume showEqualizer volumeLayout="vertical"
         onPrevious={() => step(-1)} onNext={() => step(1)}
         canPrevious={canPrevious} canNext={canNext}
         repeat={repeat} onRepeat={() => setRepeat(value => value === 'list' ? 'one' : 'list')}/>

@@ -2,10 +2,14 @@ use super::DiscogsProvider;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use discatelier_contracts::{AppError, ReleaseImage};
 use image::{ImageFormat, ImageReader, Limits};
-use reqwest::Url;
+use reqwest::{
+    header::{ACCEPT, COOKIE, REFERER, USER_AGENT},
+    Url,
+};
 use std::io::{Cursor, Read};
 
 const MAX_BYTES: u64 = 8 * 1024 * 1024;
+const BROWSER_USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
 
 fn cover_url(images: &[ReleaseImage]) -> Result<Option<Url>, AppError> {
     let available = |image: &&ReleaseImage| !image.uri.is_empty() || !image.uri150.is_empty();
@@ -40,6 +44,17 @@ fn failure(message: &str) -> AppError {
 
 impl DiscogsProvider {
     pub fn cover(&self, images: &[ReleaseImage]) -> Result<Option<String>, AppError> {
+        self.cover_with_cookies(images, None)
+    }
+
+    /// Reuse the webview's Discogs session for the image CDN. The CDN rejects
+    /// anonymous non-browser requests even though the same image is visible in
+    /// the webview. Cookies are used only for this request and are never logged.
+    pub fn cover_with_cookies(
+        &self,
+        images: &[ReleaseImage],
+        session_cookies: Option<&str>,
+    ) -> Result<Option<String>, AppError> {
         let Some(url) = cover_url(images)? else {
             return Ok(None);
         };
@@ -52,9 +67,19 @@ impl DiscogsProvider {
             url
         };
         // No API credentials are attached to artwork requests. Redirects remain disabled.
-        let response = self
+        let mut request = self
             .client
             .get(url)
+            .header(USER_AGENT, BROWSER_USER_AGENT)
+            .header(REFERER, "https://www.discogs.com/")
+            .header(
+                ACCEPT,
+                "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            );
+        if let Some(cookies) = session_cookies.filter(|value| !value.is_empty()) {
+            request = request.header(COOKIE, cookies);
+        }
+        let response = request
             .send()
             .map_err(|_| failure("封面下载失败"))?;
         if response.status() != reqwest::StatusCode::OK {

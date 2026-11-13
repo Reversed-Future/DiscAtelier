@@ -11,7 +11,10 @@ export function EpisodeList({groups, localPlayback}: {groups: MergedEpisodeGroup
     <ol className="video-chapter-list">{group.rows.map(row => {
       const action = localPlayback?.(row.number);
       return <li key={row.key}>
-      <span>{row.number}</span><div className="video-episode-copy"><strong>{row.originalTitle || row.title || `第 ${row.number} 集`}</strong>
+      <span>{row.number}</span><div className="video-episode-copy">
+        <div className="video-episode-title"><strong>{row.originalTitle || row.title || `第 ${row.number} 集`}</strong>
+          {action && <button type="button" className="video-chapter-play" disabled={action.busy} aria-label={`播放本地文件 第 ${row.number} 集`} title="播放本地文件" aria-current={action.playing ? 'true' : undefined} onClick={action.play}><Icon name="play"/></button>}
+        </div>
         {row.title && row.title !== row.originalTitle && <small>{row.title}</small>}
         <small>{[row.airDate, row.duration, row.sources.join(' · ')].filter(Boolean).join(' · ')}</small>
         {(row.summary || row.imageUrl) && <div className="video-episode-details">
@@ -19,7 +22,6 @@ export function EpisodeList({groups, localPlayback}: {groups: MergedEpisodeGroup
           {row.summary && <p>{row.summary}</p>}
         </div>}
       </div>
-      {action && <button type="button" className="video-chapter-play" disabled={action.busy} aria-label={`播放本地文件 第 ${row.number} 集`} title="播放本地文件" aria-current={action.playing ? 'true' : undefined} onClick={action.play}><Icon name="play"/></button>}
     </li>; })}</ol>
   </section>)}</div>{picture && <VideoPictureViewer {...picture} onClose={() => setPicture(null)}/>}</>;
 }

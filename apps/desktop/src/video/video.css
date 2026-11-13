@@ -92,12 +92,14 @@
 .video-chapter-list { list-style: none; padding: 0; margin: 8px 0 0; }
 /* The last group keeps no trailing divider; the footer action border is the only closing line. */
 .video-chapter-scroll > section:not(:last-child) .video-chapter-list { border-bottom: 1px solid var(--line); }
-.video-chapter-list li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 16px; padding: 14px 0; font-size: 12px; }
+.video-chapter-list li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 16px; padding: 14px 0; font-size: 12px; }
 .video-chapter-list li:not(:last-child) { border-bottom: 1px solid var(--line); }
-.video-chapter-list strong { font-weight: 500; }
+.video-chapter-list strong { min-width: 0; font-weight: 500; }
+.video-episode-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.video-episode-title strong { flex: 1; min-width: 0; }
 .video-chapter-list small { display: block; margin-top: 5px; font-size: 11px; line-height: 1.7; color: var(--muted); }
 .video-chapter-list li > span { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; }
-.video-chapter-play { display: grid; place-items: center; align-self: start; width: 28px; height: 28px; margin-top: -3px; padding: 0; border-radius: 3px; color: var(--muted); }
+.video-chapter-play { display: grid; place-items: center; flex: none; width: 28px; height: 28px; margin-top: -3px; padding: 0; border-radius: 3px; color: var(--muted); }
 .video-chapter-play:hover { color: var(--ink); background: #ffffff0f; }
 .video-chapter-play[aria-current="true"] { color: var(--ink); }
 .video-chapter-play .icon { width: 13px; height: 13px; }

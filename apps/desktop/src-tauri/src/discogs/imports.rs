@@ -2,6 +2,17 @@ use super::*;
 use crate::commands::{self, LibraryState};
 use discatelier_provider_discogs::import_draft;
 
+fn session_cover_cookies(window: &tauri::WebviewWindow) -> Option<String> {
+    let url = reqwest::Url::parse("https://i.discogs.com/").ok()?;
+    let cookies = window.cookies_for_url(url).ok()?;
+    let value = cookies
+        .into_iter()
+        .map(|cookie| format!("{}={}", cookie.name(), cookie.value()))
+        .collect::<Vec<_>>()
+        .join("; ");
+    (!value.is_empty()).then_some(value)
+}
+
 #[tauri::command]
 pub async fn discogs_complete_content(
     state: tauri::State<'_, DiscogsState>,
@@ -39,6 +50,7 @@ pub async fn discogs_complete_content(
 
 #[tauri::command]
 pub async fn discogs_prepare_import(
+    window: tauri::WebviewWindow,
     state: tauri::State<'_, DiscogsState>,
     library: tauri::State<'_, LibraryState>,
     id: u64,
@@ -94,8 +106,9 @@ pub async fn discogs_prepare_import(
     // even though the preview <img> in the webview displays the same URL.
     // A cover is optional, so never block the release import on it.
     let (cover, cover_error) = if existing.is_none() || refresh_cover.unwrap_or(false) {
+        let session = session_cover_cookies(&window);
         match run(state.inner().clone(), move |service| {
-            service.provider.cover(&images)
+            service.provider.cover_with_cookies(&images, session.as_deref())
         })
         .await
         {
@@ -117,6 +130,7 @@ pub async fn discogs_prepare_import(
 
 #[tauri::command]
 pub async fn discogs_retry_cover(
+    window: tauri::WebviewWindow,
     state: tauri::State<'_, DiscogsState>,
     id: u64,
 ) -> Result<Option<String>, AppError> {
@@ -130,7 +144,8 @@ pub async fn discogs_retry_cover(
             .filter(|snapshot| snapshot.release.id == id && snapshot.received.elapsed() < MAX_AGE)
             .map(|snapshot| snapshot.release.images.clone())
             .ok_or_else(|| AppError::new("expired", "资料已过期，请重新查询这个发行。"))?;
-        service.provider.cover(&images)
+        let session = session_cover_cookies(&window);
+        service.provider.cover_with_cookies(&images, session.as_deref())
     })
     .await
 }

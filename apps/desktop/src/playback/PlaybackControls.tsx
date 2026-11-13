@@ -52,17 +52,18 @@ function useSmoothPosition(s: PlaybackController['snapshot'], active: boolean) {
   return position;
 }
 
-export function PlaybackControls({ player, onMenu, title, extended = false, showVolume = false, showTitle = true, fullscreen = false, onToggleFullscreen, onPrevious, onNext, canPrevious = true, canNext = true, repeat, onRepeat, navigation = 'track', onToggleEpisodes, episodesOpen = false, volumeLayout = 'horizontal' }: {
-  player: PlaybackController; onMenu?(): void; title?: string | null; extended?: boolean; showVolume?: boolean; showTitle?: boolean; fullscreen?: boolean; onToggleFullscreen?(): void;
+export function PlaybackControls({ player, onMenu, title, extended = false, showVolume = false, showTitle = true, showEqualizer = false, fullscreen = false, onToggleFullscreen, onPrevious, onNext, canPrevious = true, canNext = true, repeat, onRepeat, navigation = 'track', onToggleEpisodes, episodesOpen = false, volumeLayout = 'horizontal' }: {
+  player: PlaybackController; onMenu?(): void; title?: string | null; extended?: boolean; showVolume?: boolean; showTitle?: boolean; showEqualizer?: boolean; fullscreen?: boolean; onToggleFullscreen?(): void;
   onPrevious?(): void; onNext?(): void; canPrevious?: boolean; canNext?: boolean; repeat?: 'list' | 'one'; onRepeat?(): void;
   navigation?: 'track' | 'episode'; onToggleEpisodes?(): void; episodesOpen?: boolean;
   volumeLayout?: 'horizontal' | 'vertical';
 }) {
   const s = player.snapshot;
-  const equalizerAvailable = !!s && !s.source.playlist.startsWith('dvd-menu') && !s.source.playlist.startsWith('bd-menu');
+  const equalizerAvailable = showEqualizer && !!s;
   const previousLabel = navigation === 'episode' ? '上一集' : '上一首', nextLabel = navigation === 'episode' ? '下一集' : '下一首';
   const smoothPosition = useSmoothPosition(s, player.active);
   const [draft, setDraft] = useState<number | null>(null);
+  const [pendingSeek, setPendingSeek] = useState<number | null>(null);
   const [volume, setVolume] = useState<number | null>(null);
   const [rate, setRate] = useState<number | null>(null);
   const [chapters, setChapters] = useState<DvdChapter[]>([]);
@@ -84,8 +85,23 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
       .catch(() => { /* 非标准 IFO 或光驱已变化时退回普通进度条。 */ });
     return () => { live = false; };
   }, [s?.sessionId, s?.source.playlist, s?.source.mountPoint, s?.source.mediaToken, s?.dvdTitle, s?.dvdMenu]);
-  useEffect(() => { setDraft(null); latest.current = null; setRate(null); latestVolume.current = null; setHoveredChapter(-1); seekStart.current = null; seekMoved.current = false; }, [s?.sessionId, s?.dvdTitle, s?.dvdMenu]);
+  useEffect(() => { setDraft(null); setPendingSeek(null); latest.current = null; setRate(null); latestVolume.current = null; setHoveredChapter(-1); seekStart.current = null; seekMoved.current = false; }, [s?.sessionId, s?.dvdTitle, s?.dvdMenu]);
   useEffect(() => { if (s?.volume && s.volume > 0) lastVolume.current = s.volume; }, [s?.volume]);
+  useEffect(() => {
+    if (pendingSeek === null) return;
+    const actual = s?.positionSeconds;
+    // Keep the slider at the clicked target until the backend has actually
+    // seeked. Polling can still report the old position for a few hundred ms.
+    if (actual !== undefined && Math.abs(actual - pendingSeek) < 0.75) {
+      setPendingSeek(null);
+      setDraft(null);
+    }
+  }, [s?.positionSeconds, pendingSeek]);
+  useEffect(() => {
+    if (pendingSeek === null) return;
+    const timer = setTimeout(() => { setPendingSeek(null); setDraft(null); }, 2500);
+    return () => clearTimeout(timer);
+  }, [pendingSeek]);
   useLayoutEffect(() => {
     const measure = () => {
       const action = actions.current, track = seek.current;
@@ -118,8 +134,12 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
   async function commit() {
     const value = latest.current;
     latest.current = null;
-    if (value !== null) await player.control({ action: 'seek', seconds: value });
-    setDraft(null);
+    if (value === null) { setDraft(null); return; }
+    setPendingSeek(value);
+    if (!await player.control({ action: 'seek', seconds: value })) {
+      setPendingSeek(null);
+      setDraft(null);
+    }
   }
   async function commitVolume() {
     const value = latestVolume.current;
@@ -152,8 +172,8 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
         value={Math.min(position, duration)} disabled={!player.active || !s.seekable || !duration}
         aria-valuetext={`${time(position)} / ${time(duration)}`}
         style={{ '--progress': `${duration ? Math.min(100, position / duration * 100) : 0}%` } as CSSProperties}
-        onChange={event => { const value = Number(event.target.value); latest.current = value; setDraft(value); }}
-        onPointerDown={event => { seekStart.current = event.clientX; seekMoved.current = false; }}
+        onChange={event => { const value = Number(event.target.value); latest.current = value; setPendingSeek(null); setDraft(value); }}
+        onPointerDown={event => { setPendingSeek(null); seekStart.current = event.clientX; seekMoved.current = false; }}
         onPointerMove={event => {
           if (seekStart.current !== null && Math.abs(event.clientX - seekStart.current) > 3) seekMoved.current = true;
           if (!chaptered || !duration) return;
@@ -177,7 +197,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
           void commit();
         }}
         onKeyUp={event => { if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) void commit(); }}
-        onPointerCancel={() => { seekStart.current = null; latest.current = null; setDraft(null); setHoveredChapter(-1); }} onBlur={() => { if (latest.current !== null) void commit(); }}/>
+        onPointerCancel={() => { seekStart.current = null; latest.current = null; setPendingSeek(null); setDraft(null); setHoveredChapter(-1); }} onBlur={() => { if (latest.current !== null) void commit(); }}/>
     </div>
     <div className="playback-times"><span>{time(position)}</span>{chaptered && <span>第 {currentChapter + 1} / {chapters.length} 章</span>}<span>{time(s.durationSeconds)}</span></div>
     {player.active && <div className="playback-actions" ref={actions}>
