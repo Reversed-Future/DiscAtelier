@@ -69,7 +69,7 @@ impl DiscogsProvider {
         // No API credentials are attached to artwork requests. Redirects remain disabled.
         let mut request = self
             .client
-            .get(url)
+            .get(url.clone())
             .header(USER_AGENT, BROWSER_USER_AGENT)
             .header(REFERER, "https://www.discogs.com/")
             .header(
@@ -79,9 +79,24 @@ impl DiscogsProvider {
         if let Some(cookies) = session_cookies.filter(|value| !value.is_empty()) {
             request = request.header(COOKIE, cookies);
         }
-        let response = request
+        let mut response = request
             .send()
             .map_err(|_| failure("封面下载失败"))?;
+        if response.status() != reqwest::StatusCode::OK && url.host_str() == Some("i.discogs.com") {
+            // Cloudflare may reject a non-browser TLS client even with the
+            // webview session. Keep the direct path first; only use the
+            // public image proxy as a fallback for the already-validated CDN
+            // URL. No Discogs credentials or cookies are sent to the proxy.
+            let mut proxy = Url::parse("https://wsrv.nl/")
+                .map_err(|_| failure("封面代理地址无效"))?;
+            proxy.query_pairs_mut().append_pair("url", url.as_str());
+            response = self
+                .client
+                .get(proxy)
+                .header(USER_AGENT, BROWSER_USER_AGENT)
+                .send()
+                .map_err(|_| failure("封面下载失败"))?;
+        }
         if response.status() != reqwest::StatusCode::OK {
             return Err(failure("封面暂时无法下载"));
         }
