@@ -151,8 +151,8 @@ export function usePlayback() {
   const systemMedia = useSystemMedia(snapshot, busy || musicQueue.busy, control, musicQueue);
   return {
     snapshot, busy: busy || musicQueue.busy, error: musicQueue.error || error || systemMedia.error, open, systemMedia,
-    show: () => { musicQueue.setOpen(false); setOpen(true); },
-    hide: () => setOpen(false), active: isActive(snapshot?.phase), musicQueue,
+    show: () => { musicQueue.setOpen(false); setOpen(true); systemMedia.refresh(); },
+    hide: () => { setOpen(false); systemMedia.refresh(); }, active: isActive(snapshot?.phase), musicQueue,
     startNetease: musicQueue.start,
     start: (mount: string, token: string, playlist: string, resumeSeconds = 0, resumeTitle: number | null = null, open = true) => execute(async () => {
       revision.current++;

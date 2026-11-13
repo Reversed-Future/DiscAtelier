@@ -48,7 +48,9 @@ function useSmoothPosition(s: PlaybackController['snapshot'], active: boolean) {
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [s, active]);
+  // Volume changes replace the snapshot object but do not change playback
+  // position. Do not restart the smooth clock for those updates.
+  }, [s?.sessionId, s?.positionSeconds, s?.paused, s?.phase, active]);
   return position;
 }
 

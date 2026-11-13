@@ -47,7 +47,10 @@ export function useSystemMedia(snapshot: Snapshot | null, busy: boolean, control
   useEffect(() => {
     if (pending.current) return;
     const online = snapshot?.source.playlist.startsWith('netease-song:');
-    const details = !online && source.current?.sessionId === snapshot?.sessionId ? source.current : null;
+    // NeteaseAudioPlayer also registers a SystemMediaSource (including the
+    // saved album cover), so use it for online songs too. Excluding it made
+    // the taskbar thumbnail fall back to the main window for NetEase playback.
+    const details = source.current?.sessionId === snapshot?.sessionId ? source.current : null;
     const song = queue.current?.tracks.find(track => track.id === queue.songId);
     pending.current = true;
     void invoke('system_media_sync', { metadata: { sessionId: snapshot?.sessionId || '', title: details?.title || snapshot?.title || '', artist: details?.artist || (online ? song?.artists.join('，') || '' : ''), album: details?.album || (online ? queue.current?.title || '' : ''), previous: online ? !!queue.current : !!details?.previous, next: online ? !!queue.current : !!details?.next, repeat: online ? queue.mode === 'one' : details?.repeat === 'one', coverAssetId: details?.coverAssetId || null } })

@@ -19,9 +19,9 @@ use windows::{
         },
         UI::WindowsAndMessaging::{
             CreateWindowExW, DefWindowProcW, DestroyIcon, DestroyWindow, HICON, ICON_BIG, ICON_SMALL,
-            PostMessageW, RegisterClassW, SendMessageW, SetWindowTextW, ShowWindow, SC_CLOSE, SW_HIDE,
-            WM_CLOSE, WM_COMMAND, WM_DWMSENDICONICLIVEPREVIEWBITMAP, WM_DWMSENDICONICTHUMBNAIL,
-            WM_SETICON, WM_SYSCOMMAND, WNDCLASSW, WS_EX_TOOLWINDOW, WS_POPUP,
+            PostMessageW, RegisterClassW, SendMessageW, SetForegroundWindow, SetWindowTextW, ShowWindow, SC_CLOSE,
+            SW_HIDE, SW_RESTORE, WM_ACTIVATE, WM_CLOSE, WM_COMMAND, WM_DWMSENDICONICLIVEPREVIEWBITMAP,
+            WM_DWMSENDICONICTHUMBNAIL, WM_SETICON, WM_SYSCOMMAND, WNDCLASSW, WS_EX_TOOLWINDOW, WS_POPUP,
         },
     },
 };
@@ -192,13 +192,29 @@ impl Taskbar {
                 *current = self.cover_id.clone();
             }
         }
-        let use_helper = active && self.cover.is_some();
-        if use_helper && !self.registered {
-            if unsafe { self.list.RegisterTab(self.hwnd, self.main) }.is_ok() {
-                let _ = unsafe { self.list.SetTabOrder(self.hwnd, self.main) };
-                self.registered = true;
+        let mut use_helper = active && self.cover.is_some();
+        if use_helper {
+            if !self.registered {
+                if unsafe { self.list.RegisterTab(self.hwnd, self.main) }.is_ok() {
+                    let _ = unsafe { self.list.SetTabOrder(self.hwnd, self.main) };
+                    self.registered = true;
+                }
             }
-        } else if !use_helper && self.registered {
+            if self.registered && !self.helper_buttons_added {
+                if unsafe { self.list.ThumbBarAddButtons(self.hwnd, &self.buttons) }.is_ok() {
+                    self.helper_buttons_added = true;
+                }
+            }
+            // Never leave a cover tab without its controls: if the helper
+            // could not be prepared, fall back to the real main window.
+            if !self.registered || !self.helper_buttons_added {
+                if self.registered {
+                    let _ = unsafe { self.list.UnregisterTab(self.hwnd) };
+                    self.registered = false;
+                }
+                use_helper = false;
+            }
+        } else if self.registered {
             let _ = unsafe { self.list.UnregisterTab(self.hwnd) };
             self.registered = false;
         }
@@ -216,11 +232,6 @@ impl Taskbar {
             if !self.main_buttons_added {
                 if unsafe { self.list.ThumbBarAddButtons(self.main, &self.buttons) }.is_ok() {
                     self.main_buttons_added = true;
-                }
-            }
-            if use_helper && !self.helper_buttons_added {
-                if unsafe { self.list.ThumbBarAddButtons(self.hwnd, &self.buttons) }.is_ok() {
-                    self.helper_buttons_added = true;
                 }
             }
             if use_helper && self.registered && self.helper_buttons_added {
@@ -290,6 +301,15 @@ impl Drop for Taskbar {
 }
 
 unsafe extern "system" fn helper_proc(hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
+    if message == WM_ACTIVATE && (wparam.0 & 0xffff) != 0 {
+        if let Ok(current) = taskbar().lock() {
+            if let Some(taskbar) = current.0.as_ref() {
+                let _ = ShowWindow(taskbar.main, SW_RESTORE);
+                let _ = SetForegroundWindow(taskbar.main);
+                return LRESULT(0);
+            }
+        }
+    }
     if message == WM_CLOSE || (message == WM_SYSCOMMAND && (wparam.0 & 0xfff0) as u32 == SC_CLOSE) {
         if let Ok(current) = taskbar().lock() {
             if let Some(taskbar) = current.0.as_ref() {
