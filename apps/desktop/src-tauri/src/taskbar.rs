@@ -53,7 +53,8 @@ struct Taskbar {
     app: tauri::AppHandle,
     app_icon: Option<HICON>,
     registered: bool,
-    buttons_added: bool,
+    main_buttons_added: bool,
+    helper_buttons_added: bool,
 }
 // The HWND and GDI handles are only touched on the Tauri main thread.
 struct SendTaskbar(Option<Taskbar>);
@@ -152,6 +153,18 @@ fn set_icon(main: HWND, helper: HWND, icon: HICON) {
 }
 
 impl Taskbar {
+    fn hide_buttons_on(&self, host: HWND, added: bool) {
+        if !added {
+            return;
+        }
+        let mut hidden = self.buttons.clone();
+        for button in &mut hidden {
+            button.dwMask = THB_FLAGS;
+            button.dwFlags = THBF_HIDDEN;
+        }
+        let _ = unsafe { self.list.ThumbBarUpdateButtons(host, &hidden) };
+    }
+
     fn update(&mut self, snapshot: Option<&PlaybackSnapshot>, metadata: &Metadata, cover: Option<(String, Option<Vec<u8>>)>) -> windows::core::Result<()> {
         let active = snapshot.is_some_and(|value| value.phase.active());
         let paused = snapshot.is_some_and(|value| value.paused);
@@ -160,35 +173,11 @@ impl Taskbar {
         self.session_id = if active { metadata.session_id.clone() } else { String::new() };
         let title = if active && !metadata.title.is_empty() { metadata.title.as_str() } else { "DiscAtelier" };
         let title = title.encode_utf16().chain(std::iter::once(0)).collect::<Vec<_>>();
-        if active && !self.registered {
-            if unsafe { self.list.RegisterTab(self.hwnd, self.main) }.is_ok() {
-                let _ = unsafe { self.list.SetTabOrder(self.hwnd, self.main) };
-                self.registered = true;
-                if !self.buttons_added {
-                    let _ = unsafe { self.list.ThumbBarAddButtons(self.hwnd, &self.buttons) };
-                    self.buttons_added = true;
-                }
-            }
-        } else if !active && self.registered {
-            let _ = unsafe { self.list.UnregisterTab(self.hwnd) };
-            self.registered = false;
-            self.buttons_added = false;
-        }
-        unsafe {
-            let _ = SetWindowTextW(self.hwnd, PCWSTR::from_raw(title.as_ptr()));
-        }
-        set_button(&mut self.buttons[0], self.icons.previous, previous, !active);
-        set_button(&mut self.buttons[1], if paused { self.icons.play } else { self.icons.pause }, active, !active);
-        set_button(&mut self.buttons[2], self.icons.next, next, !active);
-        set_button(&mut self.buttons[3], if metadata.repeat { self.icons.repeat_one } else { self.icons.repeat }, active, !active);
-        self.buttons[3].szTip = tip(if metadata.repeat { "单曲循环" } else { "列表循环" });
-        let tooltip = tip(if active { &metadata.title } else { "DiscAtelier" });
-        if self.registered {
-            unsafe {
-                self.list.ThumbBarUpdateButtons(self.hwnd, &self.buttons)?;
-                self.list.SetThumbnailTooltip(self.hwnd, PCWSTR::from_raw(tooltip.as_ptr()))?;
-            }
-        }
+
+        // Decide the button host from the cover before registering the hidden
+        // tab. A session without artwork must stay on the real main-window
+        // thumbnail; registering an empty helper tab makes the taskbar preview
+        // blank.
         if !active {
             self.cover = None;
             self.cover_id.clear();
@@ -201,6 +190,58 @@ impl Taskbar {
             self.cover_id = id;
             if let Ok(mut current) = cover_id().lock() {
                 *current = self.cover_id.clone();
+            }
+        }
+        let use_helper = active && self.cover.is_some();
+        if use_helper && !self.registered {
+            if unsafe { self.list.RegisterTab(self.hwnd, self.main) }.is_ok() {
+                let _ = unsafe { self.list.SetTabOrder(self.hwnd, self.main) };
+                self.registered = true;
+            }
+        } else if !use_helper && self.registered {
+            let _ = unsafe { self.list.UnregisterTab(self.hwnd) };
+            self.registered = false;
+        }
+        unsafe {
+            let _ = SetWindowTextW(self.hwnd, PCWSTR::from_raw(title.as_ptr()));
+        }
+        set_button(&mut self.buttons[0], self.icons.previous, previous, !active);
+        set_button(&mut self.buttons[1], if paused { self.icons.play } else { self.icons.pause }, active, !active);
+        set_button(&mut self.buttons[2], self.icons.next, next, !active);
+        set_button(&mut self.buttons[3], if metadata.repeat { self.icons.repeat_one } else { self.icons.repeat }, active, !active);
+        self.buttons[3].szTip = tip(if metadata.repeat { "单曲循环" } else { "列表循环" });
+        let tooltip = tip(if active { &metadata.title } else { "DiscAtelier" });
+
+        if active {
+            if !self.main_buttons_added {
+                if unsafe { self.list.ThumbBarAddButtons(self.main, &self.buttons) }.is_ok() {
+                    self.main_buttons_added = true;
+                }
+            }
+            if use_helper && !self.helper_buttons_added {
+                if unsafe { self.list.ThumbBarAddButtons(self.hwnd, &self.buttons) }.is_ok() {
+                    self.helper_buttons_added = true;
+                }
+            }
+            if use_helper && self.registered && self.helper_buttons_added {
+                self.hide_buttons_on(self.main, self.main_buttons_added);
+                unsafe {
+                    self.list.ThumbBarUpdateButtons(self.hwnd, &self.buttons)?;
+                    self.list.SetThumbnailTooltip(self.hwnd, PCWSTR::from_raw(tooltip.as_ptr()))?;
+                }
+            } else if self.main_buttons_added {
+                self.hide_buttons_on(self.hwnd, self.helper_buttons_added);
+                unsafe {
+                    self.list.ThumbBarUpdateButtons(self.main, &self.buttons)?;
+                    self.list.SetThumbnailTooltip(self.main, PCWSTR::from_raw(tooltip.as_ptr()))?;
+                }
+            }
+        } else {
+            self.hide_buttons_on(self.main, self.main_buttons_added);
+            self.hide_buttons_on(self.hwnd, self.helper_buttons_added);
+            if self.registered {
+                let _ = unsafe { self.list.UnregisterTab(self.hwnd) };
+                self.registered = false;
             }
         }
         unsafe {
@@ -354,7 +395,8 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
         app: app.clone(),
         app_icon,
         registered: false,
-        buttons_added: false,
+        main_buttons_added: false,
+        helper_buttons_added: false,
     }));
     Ok(())
 }
