@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { Icon } from '../ui/Icon';
 import { Select } from '../ui/Select';
 import { optical, type DvdChapter } from '../optical/gateway';
@@ -134,12 +134,17 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
   async function commit() {
     const value = latest.current;
     latest.current = null;
-    if (value === null) { setDraft(null); return; }
+    if (value === null) return;
+    setDraft(value);
     setPendingSeek(value);
     if (!await player.control({ action: 'seek', seconds: value })) {
       setPendingSeek(null);
       setDraft(null);
     }
+  }
+  function seekSecondsAt(event: ReactPointerEvent<HTMLInputElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return Math.max(0, Math.min(duration, (event.clientX - rect.left) / rect.width * duration));
   }
   async function commitVolume() {
     const value = latestVolume.current;
@@ -186,13 +191,22 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
           const clicked = seekStart.current !== null && !seekMoved.current;
           seekStart.current = null;
           if (clicked && chaptered && duration) {
-            const rect = event.currentTarget.getBoundingClientRect();
-            const index = chapterAt(Math.max(0, Math.min(duration, (event.clientX - rect.left) / rect.width * duration)));
+            const index = chapterAt(seekSecondsAt(event));
             if (index >= 0) {
-              latest.current = null; setDraft(null);
+              latest.current = null;
+              setDraft(chapters[index].startSeconds);
+              setPendingSeek(chapters[index].startSeconds);
               void player.control({ action: 'chapter', index: chapters[index].index });
               return;
             }
+          }
+          // Some WebView2 range implementations emit change after pointerup.
+          // Derive the target from the pointer so commit never clears the
+          // optimistic position before that change arrives.
+          if (clicked) {
+            const value = seekSecondsAt(event);
+            latest.current = value;
+            setDraft(value);
           }
           void commit();
         }}
