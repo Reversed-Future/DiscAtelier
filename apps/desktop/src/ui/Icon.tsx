@@ -6,6 +6,8 @@ const paths = {
   search: <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></>,
   plus: <path d="M12 4v16M4 12h16"/>,
   pin: <><path d="M9 3h6v6l3 3v2H6v-2l3-3V3Z"/><path d="M12 14v7"/></>,
+  window: <><rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9h18"/></>,
+  edit: <><path d="m4 20 4-1 11-11-3-3L5 16l-1 4Z"/><path d="m14 6 3 3"/></>,
   close: <path d="m6 6 12 12M18 6 6 18"/>,
   back: <path d="m10 5-7 7 7 7M3 12h18"/>,
   more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
