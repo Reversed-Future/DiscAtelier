@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { allProfiles, profileState, useEqualizer } from './equalizer';
 
 export function EqualizerQuick({ onEdit }: { onEdit(): void }) {
@@ -48,7 +49,10 @@ export function EqualizerQuick({ onEdit }: { onEdit(): void }) {
     <button ref={trigger} type="button" className="player-icon-button equalizer-trigger" aria-label="均衡器" title="均衡器"
       aria-expanded={open} onFocus={show} onClick={show}><span>EQ</span></button>
     <div ref={list} popover="manual" className="equalizer-quick-popover" role="dialog" aria-label="均衡器快速切换">
-      <header><strong>均衡器</strong><button type="button" className="text-button" onClick={() => { close(); onEdit(); }}>进入编辑界面</button></header>
+      <header><strong>均衡器</strong><span className="equalizer-quick-actions">
+        <button type="button" className="text-button" onClick={() => { close(); void invoke('equalizer_window_open').catch(() => {}); }}>独立窗口</button>
+        <button type="button" className="text-button" onClick={() => { close(); onEdit(); }}>编辑界面</button>
+      </span></header>
       <p className="setting-hint">{active ? `${active.name} · 已启用` : '当前已关闭'}</p>
       <div className="equalizer-quick-grid">
         <button type="button" className="equalizer-quick-option" aria-pressed={!state.enabled}

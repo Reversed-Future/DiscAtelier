@@ -3,7 +3,9 @@
 /* Native resize notifications can precede the fullscreen state update. The
    player's confirmed state must also hide controls, including dialog portals. */
 body:has(.player-view[data-fullscreen="true"]) .window-chrome { display: none; }
-.window-drag-region { flex: 1; min-width: 0; }
+.window-drag-region { flex: 1; min-width: 0; display: flex; align-items: center; }
+.window-title { padding: 0 14px; overflow: hidden; color: var(--ink); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.window-chrome button.window-pin[aria-pressed="true"] { color: var(--ink); background: #ffffff10; }
 .window-chrome button { flex: 0 0 44px; display: grid; place-items: center; padding: 0; border-radius: 0; cursor: default; transition: color 120ms ease, background-color 120ms ease; }
 .window-chrome button svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1; pointer-events: none; }
 .window-chrome button:hover { color: var(--ink); background: #ffffff0e; }

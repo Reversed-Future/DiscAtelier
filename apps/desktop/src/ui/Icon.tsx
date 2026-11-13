@@ -5,6 +5,7 @@ const paths = {
   settings: <><path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 3v6M16 9v6M10 15v6"/></>,
   search: <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></>,
   plus: <path d="M12 4v16M4 12h16"/>,
+  pin: <><path d="M9 3h6v6l3 3v2H6v-2l3-3V3Z"/><path d="M12 14v7"/></>,
   close: <path d="m6 6 12 12M18 6 6 18"/>,
   back: <path d="m10 5-7 7 7 7M3 12h18"/>,
   more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,

@@ -11,6 +11,7 @@ mod data_location;
 mod desktop_shell;
 mod discogs;
 mod equalizer;
+mod equalizer_window;
 mod exchange;
 mod integration_settings;
 mod local_files;
@@ -137,6 +138,7 @@ fn main() {
             if let Err(error) = taskbar::setup(app.handle()) {
                 let _ = crate::logging::write("warn", "taskbar", "任务栏控制初始化失败", Some(&error));
             }
+            equalizer_window::setup(app.handle())?;
             desktop_shell::setup(app.handle())?;
             Ok(())
         })
@@ -249,6 +251,7 @@ fn main() {
             optical::playback_settings_save,
             equalizer::equalizer_get,
             equalizer::equalizer_save,
+            equalizer_window::equalizer_window_open,
             playback_memory::playback_volume_get,
             playback_memory::playback_volume_save,
             spectrum::spectrum_start,

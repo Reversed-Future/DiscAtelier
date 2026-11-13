@@ -34,7 +34,12 @@ struct Spectrum {
 }
 
 #[derive(Default)]
-pub struct State(Mutex<Option<Capture>>);
+pub struct State(Mutex<SpectrumState>);
+#[derive(Default)]
+struct SpectrumState {
+    clients: usize,
+    capture: Option<Capture>,
+}
 struct Capture {
     stop: Arc<AtomicBool>,
     worker: thread::JoinHandle<()>,
@@ -153,7 +158,7 @@ fn capture(app: tauri::AppHandle, stop: Arc<AtomicBool>) {
                 for (value, incoming) in smoothed.iter_mut().zip(next) {
                     *value = (*value * 0.68 + incoming * 0.32).clamp(0.0, 1.0);
                 }
-                let _ = app.emit_to("main", "equalizer-spectrum", Spectrum { levels: smoothed.clone() });
+                let _ = app.emit("equalizer-spectrum", Spectrum { levels: smoothed.clone() });
             }
             thread::sleep(Duration::from_millis(10));
         }
@@ -161,7 +166,7 @@ fn capture(app: tauri::AppHandle, stop: Arc<AtomicBool>) {
         Ok(())
     })();
     if result.is_err() {
-        let _ = app.emit_to("main", "equalizer-spectrum", Spectrum { levels: vec![0.0; BANDS.len()] });
+        let _ = app.emit("equalizer-spectrum", Spectrum { levels: vec![0.0; BANDS.len()] });
     }
     unsafe { CoUninitialize(); }
 }
@@ -169,21 +174,26 @@ fn capture(app: tauri::AppHandle, stop: Arc<AtomicBool>) {
 #[tauri::command]
 pub fn spectrum_start(app: tauri::AppHandle, state: tauri::State<'_, State>) -> Result<(), String> {
     let mut current = state.0.lock().map_err(|_| "频谱状态不可用。".to_string())?;
-    if current.is_some() {
+    current.clients = current.clients.saturating_add(1);
+    if current.capture.is_some() {
         return Ok(());
     }
     let stop = Arc::new(AtomicBool::new(false));
     let flag = stop.clone();
     let worker = thread::spawn(move || capture(app, flag));
-    *current = Some(Capture { stop, worker });
+    current.capture = Some(Capture { stop, worker });
     Ok(())
 }
 
 #[tauri::command]
 pub fn spectrum_stop(state: tauri::State<'_, State>) -> Result<(), String> {
-    if let Some(capture) = state.0.lock().map_err(|_| "频谱状态不可用。".to_string())?.take() {
-        capture.stop.store(true, Ordering::Release);
-        let _ = capture.worker.join();
+    let mut current = state.0.lock().map_err(|_| "频谱状态不可用。".to_string())?;
+    current.clients = current.clients.saturating_sub(1);
+    if current.clients == 0 {
+        if let Some(capture) = current.capture.take() {
+            capture.stop.store(true, Ordering::Release);
+            let _ = capture.worker.join();
+        }
     }
     Ok(())
 }
@@ -191,7 +201,8 @@ pub fn spectrum_stop(state: tauri::State<'_, State>) -> Result<(), String> {
 pub fn shutdown(app: &tauri::AppHandle) {
     if let Some(state) = app.try_state::<State>() {
         if let Ok(mut current) = state.0.lock() {
-            if let Some(capture) = current.take() {
+            current.clients = 0;
+            if let Some(capture) = current.capture.take() {
                 capture.stop.store(true, Ordering::Release);
                 let _ = capture.worker.join();
             }

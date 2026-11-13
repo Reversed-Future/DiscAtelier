@@ -1,6 +1,8 @@
 import { TrayPanel } from './shell/TrayPanel';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { EqualizerWindow } from './playback/EqualizerWindow';
 import { ExchangeProvider } from './exchange/ExchangeContext';
 import { logError, logEvent } from './logging';
 import './styles/exchange.css';
@@ -28,4 +30,11 @@ window.addEventListener('error', event => {
 window.addEventListener('unhandledrejection', event => logError('unhandled-rejection', event.reason));
 logEvent('info', 'app', 'frontend started');
 
-createRoot(document.getElementById('root')!).render(location.hash === '#tray' ? <TrayPanel/> : <ExchangeProvider><App/></ExchangeProvider>);
+const windowLabel = (() => {
+  try { return getCurrentWindow().label; } catch { return ''; }
+})();
+createRoot(document.getElementById('root')!).render(
+  windowLabel === 'equalizer'
+    ? <EqualizerWindow/>
+    : location.hash === '#tray' ? <TrayPanel/> : <ExchangeProvider><App/></ExchangeProvider>,
+);

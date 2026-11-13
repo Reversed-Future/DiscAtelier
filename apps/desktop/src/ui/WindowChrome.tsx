@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { desktopAvailable, errorMessage } from '../library/gateway';
 import { useFloatingLayer } from './useFloatingLayer';
 
 /** One native window controller, moved into the active dialog's top layer. */
-export function WindowChrome({ playerOpen = false }: { playerOpen?: boolean }) {
+export function WindowChrome({ playerOpen = false, title, extra, className }: {
+  playerOpen?: boolean; title?: string; extra?: ReactNode; className?: string;
+}) {
   // The collection detail dialog stays open beneath the player. Prefer the
   // player dialog explicitly; otherwise the controls portal into the covered
   // detail layer and disappear during video playback.
@@ -52,17 +54,19 @@ export function WindowChrome({ playerOpen = false }: { playerOpen?: boolean }) {
     } catch (cause) { setError(errorMessage(cause)); }
   }
   if (!desktopAvailable() || fullscreen) return null;
-  return createPortal(<div className="window-chrome" aria-label="窗口控制">
+  return createPortal(<div className={`window-chrome${className ? ` ${className}` : ''}`} aria-label="窗口控制">
     <div className="window-drag-region" data-window-drag="true">
+      {title && <span className="window-title">{title}</span>}
       {error && <span className="window-error" role="alert">{error}</span>}
     </div>
+    {extra}
     <button type="button" title="最小化" aria-label="最小化窗口" onClick={() => void operate('minimize')}>
       <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 6.5h10"/></svg>
     </button>
     <button type="button" title={maximized ? '还原' : '最大化'} aria-label={maximized ? '还原窗口' : '最大化窗口'} onClick={() => void operate('maximize')}>
       <svg viewBox="0 0 12 12" aria-hidden="true">{maximized ? <path d="M3.5 3.5v-2h7v7h-2 M1.5 3.5h7v7h-7z"/> : <path d="M1.5 1.5h9v9h-9z"/>}</svg>
     </button>
-    <button type="button" className="window-close" title="关闭 DiscAtelier" aria-label="关闭 DiscAtelier" onClick={() => void operate('close')}>
+    <button type="button" className="window-close" title={`关闭${title || 'DiscAtelier'}`} aria-label={`关闭${title || 'DiscAtelier'}`} onClick={() => void operate('close')}>
       <svg viewBox="0 0 12 12" aria-hidden="true"><path d="m1.5 1.5 9 9m0-9-9 9"/></svg>
     </button>
   </div>, host);

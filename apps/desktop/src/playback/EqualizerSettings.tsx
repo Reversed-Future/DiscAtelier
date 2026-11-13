@@ -16,7 +16,7 @@ const clone = (state: EqualizerState): EqualizerState => ({
   ...state, bands: [...state.bands], profiles: state.profiles.map(profile => ({ ...profile, bands: [...profile.bands] })),
 });
 
-export function EqualizerSettings() {
+export function EqualizerSettings({ standalone = false }: { standalone?: boolean }) {
   const { state, busy, error, save } = useEqualizer();
   const [draft, setDraft] = useState<EqualizerState>(() => state || defaultEqualizer());
   const [name, setName] = useState('');
@@ -101,6 +101,7 @@ export function EqualizerSettings() {
   return <section className="equalizer-settings">
     <div className="video-section-heading"><h3>均衡器 · VLC</h3></div>
     <p className="setting-hint">作用于本地音乐、CD、网易云和本地视频。光盘播放使用 MPV，暂不应用 EQ。</p>
+    {!standalone && <div className="equalizer-window-link"><button type="button" className="text-button" onClick={() => void invoke('equalizer_window_open').catch(() => {})}>在独立窗口调节</button></div>}
     <div className="setting-row"><span>启用均衡器</span>
       <SquishSwitch checked={draft.enabled} disabled={!state} onChange={enabled => update({ ...draft, enabled })}
         ariaLabel="启用均衡器" width={36} height={20} radius={0} trackColor="#27272a" trackOnColor="#f5f5f5" colorDuration={220}/>

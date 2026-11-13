@@ -21,6 +21,15 @@ input.playback-seek:focus, input.playback-seek:focus-visible { border: 0; outlin
 .player-icon-button:hover, .player-icon-button:focus-visible { color: var(--ink); background: #ffffff0f; outline: none; }
 .player-icon-button[aria-pressed="true"] { color: var(--ink); background: #ffffff14; }
 .equalizer-quick { position: relative; }
+.equalizer-quick-actions { display: flex; align-items: center; gap: 8px; }
+.equalizer-window-link { margin: -8px 0 12px; }
+body[data-window="equalizer"] { min-width: 0; overflow: auto; background: #0d0d0d; color: var(--ink); }
+.equalizer-window { width: min(100%, 820px); margin: 0 auto; padding: 46px 26px 24px; }
+body[data-window="equalizer"] .equalizer-bands { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+body[data-window="equalizer"] .equalizer-settings > .video-section-heading { display: none; }
+.equalizer-window-heading { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.equalizer-window-heading strong { font-size: 14px; font-weight: 500; }
+.equalizer-window-heading span { color: var(--muted); font-size: 11px; }
 .equalizer-trigger span { font-size: 8px; font-weight: 500; letter-spacing: 0; }
 .equalizer-quick-popover { position: fixed; margin: 0; width: 300px; max-height: min(70vh, 520px); overflow: auto; padding: 14px; border: 1px solid var(--line); border-radius: 5px; background: #1b1b1b; color: var(--ink); font-size: 12px; box-shadow: 0 14px 44px #0008; }
 .equalizer-quick-popover header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
