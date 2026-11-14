@@ -75,7 +75,7 @@ pub fn run(
         start.track,
         start.bluray_menu,
         start.silent,
-        crate::audio_fade::music(&snapshot.source) && !start.silent,
+        false,
     )
     .and_then(|player| {
         let result = playing(
@@ -124,7 +124,6 @@ fn playing(
     let mut loaded = false;
     let mut cd_resume = !start.dvd && start.seconds > 0.0;
     let music = crate::audio_fade::music(&snapshot.source) && !start.silent;
-    let mut fade_in = music;
     loop {
         if cancelled.load(Ordering::Acquire) {
             return Ok(());
@@ -144,15 +143,6 @@ fn playing(
             return Ok(());
         }
         loaded |= state == 3 || state == 4;
-        if fade_in && state == 3 {
-            crate::audio_fade::ramp(
-                0,
-                snapshot.volume,
-                &mut |control| player.control(control, snapshot),
-                &mut || fade_wait(cancelled),
-            )?;
-            fade_in = false;
-        }
         if !loaded && started.elapsed() > Duration::from_secs(60) {
             return Err(ffi::error("媒体读取超时。"));
         }
@@ -280,12 +270,10 @@ fn playing(
                     Err(ffi::error("正在恢复 DVD 标题。"))
                 } else {
                     match request.control {
-                        PlaybackControl::Volume { .. } if fade_in => Ok(()),
                         PlaybackControl::Pause { paused } if music && loaded => {
                             crate::audio_fade::pause(
                                 paused,
                                 snapshot.paused,
-                                snapshot.volume,
                                 |control| player.control(control, snapshot),
                                 || fade_wait(cancelled),
                             )

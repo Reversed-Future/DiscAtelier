@@ -32,6 +32,7 @@ import { AssistantDock } from './assistant/AssistantDock';
 import { AudioPlayer } from './playback/AudioPlayer';
 import { LocalAudioPlayer } from './playback/LocalAudioPlayer';
 import { NeteaseAudioPlayer } from './playback/NeteaseAudioPlayer';
+import { NeteaseMediaSource } from './playback/NeteaseMediaSource';
 import { PlayerLayer } from './playback/PlayerLayer';
 import { PlayerView } from './playback/PlayerView';
 import { MusicDock } from './playback/MusicDock';
@@ -271,6 +272,7 @@ export function App() {
     <OpticalJumpPrompt value={opticalPrompt} onDismiss={() => setOpticalPrompt(null)} onConfirm={value => void jumpToOptical(value)}/>
     <div className={`toast${notice ? ' visible' : ''}`} role="status">{notice}</div>
     <MusicDock player={player}/>
+    {player.snapshot?.source.playlist.startsWith('netease-song:') && <NeteaseMediaSource player={player}/>}
     <AssistantDock open={assistantOpen} hidden={player.open} onOpen={value => { if (value) player.musicQueue.setOpen(false); setAssistantOpen(value); }} onChanged={() => void refresh(query)}/>
   </div>;
 }

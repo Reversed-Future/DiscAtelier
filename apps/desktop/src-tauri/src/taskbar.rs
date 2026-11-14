@@ -14,14 +14,15 @@ use windows::{
             LibraryLoader::GetModuleHandleW,
         },
         UI::Shell::{
-            ExtractIconW, ITaskbarList3, THB_FLAGS, THB_ICON, THB_TOOLTIP, THBF_DISABLED, THBF_ENABLED, THBF_HIDDEN,
-            THBN_CLICKED, THUMBBUTTON,
+            DefSubclassProc, ExtractIconW, ITaskbarList3, SetWindowSubclass, THB_FLAGS, THB_ICON, THB_TOOLTIP,
+            THBF_DISABLED, THBF_ENABLED, THBF_HIDDEN, THBN_CLICKED, THUMBBUTTON,
         },
         UI::WindowsAndMessaging::{
             CreateWindowExW, DefWindowProcW, DestroyIcon, DestroyWindow, HICON, ICON_BIG, ICON_SMALL,
             PostMessageW, RegisterClassW, SendMessageW, SetForegroundWindow, SetWindowTextW, ShowWindow, SC_CLOSE,
-            SW_HIDE, SW_RESTORE, WM_ACTIVATE, WM_CLOSE, WM_COMMAND, WM_DWMSENDICONICLIVEPREVIEWBITMAP,
-            WM_DWMSENDICONICTHUMBNAIL, WM_SETICON, WM_SYSCOMMAND, WNDCLASSW, WS_EX_TOOLWINDOW, WS_POPUP,
+            SW_HIDE, SW_RESTORE, WM_ACTIVATE, WM_CLOSE, WM_COMMAND,
+            WM_DWMSENDICONICLIVEPREVIEWBITMAP, WM_DWMSENDICONICTHUMBNAIL, WM_SETICON, WM_SYSCOMMAND, WNDCLASSW,
+            WS_EX_TOOLWINDOW, WS_POPUP,
         },
     },
 };
@@ -300,6 +301,49 @@ impl Drop for Taskbar {
     }
 }
 
+fn emit_taskbar_command(wparam: WPARAM) -> bool {
+    let id = (wparam.0 & 0xffff) as u32;
+    let action = match id {
+        BUTTON_PREVIOUS => "previous",
+        BUTTON_TOGGLE => "toggle",
+        BUTTON_NEXT => "next",
+        BUTTON_REPEAT => "repeat",
+        _ => return false,
+    };
+    if let Ok(current) = taskbar().lock() {
+        if let Some(taskbar) = current.0.as_ref() {
+            if !taskbar.session_id.is_empty() {
+                let _ = taskbar.app.emit_to(
+                    "main",
+                    "taskbar-command",
+                    TaskbarCommand {
+                        session_id: taskbar.session_id.clone(),
+                        action,
+                    },
+                );
+            }
+        }
+    }
+    true
+}
+
+unsafe extern "system" fn main_proc(
+    hwnd: HWND,
+    message: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+    _id: usize,
+    _data: usize,
+) -> LRESULT {
+    if message == WM_COMMAND
+        && ((wparam.0 >> 16) as u32) == THBN_CLICKED
+        && emit_taskbar_command(wparam)
+    {
+        return LRESULT(0);
+    }
+    DefSubclassProc(hwnd, message, wparam, lparam)
+}
+
 unsafe extern "system" fn helper_proc(hwnd: HWND, message: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
     if message == WM_ACTIVATE && (wparam.0 & 0xffff) != 0 {
         if let Ok(current) = taskbar().lock() {
@@ -319,24 +363,7 @@ unsafe extern "system" fn helper_proc(hwnd: HWND, message: u32, wparam: WPARAM, 
         }
     }
     if message == WM_COMMAND && ((wparam.0 >> 16) as u32) == THBN_CLICKED {
-        let id = (wparam.0 & 0xffff) as u32;
-        let (action, session) = match id {
-            BUTTON_PREVIOUS => ("previous", None),
-            BUTTON_TOGGLE => ("toggle", None),
-            BUTTON_NEXT => ("next", None),
-            BUTTON_REPEAT => ("repeat", None),
-            _ => ("", None),
-        };
-        if !action.is_empty() {
-            if let Ok(current) = taskbar().lock() {
-                if let Some(taskbar) = current.0.as_ref() {
-                    if !taskbar.session_id.is_empty() {
-                        let session = session.unwrap_or_else(|| taskbar.session_id.clone());
-                        let _ = taskbar.app.emit_to("main", "taskbar-command", TaskbarCommand { session_id: session, action });
-                    }
-                }
-            }
-        }
+        emit_taskbar_command(wparam);
         return LRESULT(0);
     }
     if message == WM_DWMSENDICONICTHUMBNAIL || message == WM_DWMSENDICONICLIVEPREVIEWBITMAP {
@@ -418,6 +445,9 @@ pub fn setup(app: &tauri::AppHandle) -> Result<(), String> {
         main_buttons_added: false,
         helper_buttons_added: false,
     }));
+    if !unsafe { SetWindowSubclass(hwnd, Some(main_proc), 1, 0) }.as_bool() {
+        return Err("无法挂接主窗口任务栏按钮。".into());
+    }
     Ok(())
 }
 

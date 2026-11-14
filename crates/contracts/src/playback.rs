@@ -115,6 +115,9 @@ pub enum PlaybackControl {
     Pause { paused: bool },
     Seek { seconds: f64 },
     Volume { volume: u16 },
+    /// Software gain applied by an audio filter; does not touch the Windows
+    /// per-application volume.
+    Gain { db: f32 },
     Rate { rate: f64 },
     Audio { id: i64 },
     Chapter { index: u32 },

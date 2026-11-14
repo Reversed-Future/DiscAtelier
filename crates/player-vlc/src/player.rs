@@ -2,12 +2,25 @@ use crate::ffi::{self, Api, Handle};
 use discatelier_contracts::{
     AppError, AudioTrack, MenuDirection, PlaybackControl, PlaybackSnapshot,
 };
-use std::{ffi::CString, path::Path, ptr};
+use std::{
+    ffi::CString,
+    path::Path,
+    ptr,
+    sync::Mutex,
+};
 
 pub struct Player {
     pub api: Api,
     pub handle: Handle,
     instance: Handle,
+    equalizer: Mutex<Option<StoredEqualizer>>,
+}
+
+#[derive(Clone)]
+struct StoredEqualizer {
+    enabled: bool,
+    preamp: f64,
+    bands: Vec<f64>,
 }
 
 /// VLC's equalizer applies EQZ_IN_FACTOR (0.25) before the band sum, so a
@@ -32,6 +45,9 @@ impl Player {
         let mut options = vec![
             CString::new("--ignore-config").unwrap(),
             CString::new("--no-media-library").unwrap(),
+            // Keep playback volume inside VLC's software mixer instead of
+            // sharing the Windows WASAPI application session.
+            CString::new("--aout=directsound").unwrap(),
         ];
         if silent {
             options.push(CString::new("--no-audio").unwrap());
@@ -67,6 +83,7 @@ impl Player {
                 api,
                 instance,
                 handle,
+                equalizer: Mutex::new(None),
             };
             (player.api.libvlc_media_player_set_hwnd)(handle, window as Handle);
             (player.api.libvlc_video_set_mouse_input)(handle, 1);
@@ -142,6 +159,48 @@ impl Player {
             (tracks, (selected >= 0).then_some(selected as i64))
         }
     }
+    fn apply_equalizer(&self, state: &StoredEqualizer, gain_db: f32) -> Result<(), AppError> {
+        unsafe {
+            if !state.enabled && gain_db >= 0.0 {
+                return if (self.api.libvlc_media_player_set_equalizer)(self.handle, ptr::null_mut())
+                    == 0
+                {
+                    Ok(())
+                } else {
+                    Err(ffi::error("均衡器应用失败。"))
+                };
+            }
+            let equalizer = (self.api.libvlc_audio_equalizer_new)();
+            if equalizer.is_null() {
+                return Err(ffi::error("无法创建均衡器。"));
+            }
+            let flat = [0.0; 10];
+            let (preamp, bands) = if state.enabled {
+                (state.preamp, state.bands.as_slice())
+            } else {
+                (0.0, flat.as_slice())
+            };
+            (self.api.libvlc_audio_equalizer_set_preamp)(
+                equalizer,
+                (compensated_preamp(preamp) + gain_db).clamp(-20.0, 20.0),
+            );
+            for (index, gain) in bands.iter().enumerate().take(10) {
+                (self.api.libvlc_audio_equalizer_set_amp_at_index)(
+                    equalizer,
+                    *gain as f32,
+                    index as u32,
+                );
+            }
+            let result = (self.api.libvlc_media_player_set_equalizer)(self.handle, equalizer);
+            (self.api.libvlc_audio_equalizer_release)(equalizer);
+            if result == 0 {
+                Ok(())
+            } else {
+                Err(ffi::error("均衡器应用失败。"))
+            }
+        }
+    }
+
     pub fn control(
         &self,
         command: PlaybackControl,
@@ -196,33 +255,28 @@ impl Player {
                     {
                         return Err(ffi::error("均衡器参数无效。"));
                     }
-                    let equalizer = if enabled {
-                        let equalizer = (self.api.libvlc_audio_equalizer_new)();
-                        if equalizer.is_null() {
-                            return Err(ffi::error("无法创建均衡器。"));
-                        }
-                        (self.api.libvlc_audio_equalizer_set_preamp)(
-                            equalizer,
-                            compensated_preamp(preamp),
-                        );
-                        for (index, gain) in bands.iter().enumerate() {
-                            (self.api.libvlc_audio_equalizer_set_amp_at_index)(
-                                equalizer,
-                                *gain as f32,
-                                index as u32,
-                            );
-                        }
-                        equalizer
-                    } else {
-                        ptr::null_mut()
-                    };
-                    let result = (self.api.libvlc_media_player_set_equalizer)(self.handle, equalizer);
-                    if !equalizer.is_null() {
-                        (self.api.libvlc_audio_equalizer_release)(equalizer);
+                    let state = StoredEqualizer { enabled, preamp, bands };
+                    *self
+                        .equalizer
+                        .lock()
+                        .map_err(|_| ffi::error("均衡器状态不可用。"))? = Some(state.clone());
+                    self.apply_equalizer(&state, 0.0)?;
+                }
+                PlaybackControl::Gain { db } => {
+                    if !db.is_finite() || !(-20.0..=0.0).contains(&db) {
+                        return Err(ffi::error("增益参数无效。"));
                     }
-                    if result != 0 {
-                        return Err(ffi::error("均衡器应用失败。"));
-                    }
+                    let state = self
+                        .equalizer
+                        .lock()
+                        .map_err(|_| ffi::error("均衡器状态不可用。"))?
+                        .clone()
+                        .unwrap_or_else(|| StoredEqualizer {
+                            enabled: false,
+                            preamp: 0.0,
+                            bands: vec![0.0; 10],
+                        });
+                    self.apply_equalizer(&state, db)?;
                 }
                 PlaybackControl::Menu { direction } => {
                     if !matches!(

@@ -168,6 +168,10 @@ fn command(state: &mut PlaybackState, control: &PlaybackControl) -> Result<Value
             state.snapshot.volume = *volume;
             Ok(json!(["set_property", "volume", volume]))
         }
+        PlaybackControl::Gain { .. } => Err(AppError::new(
+            "unsupported",
+            "当前播放后端不支持音频增益滤镜。",
+        )),
         PlaybackControl::Rate { rate } => {
             if !rate.is_finite() || !(0.25..=4.0).contains(rate) {
                 return Err(AppError::new(
