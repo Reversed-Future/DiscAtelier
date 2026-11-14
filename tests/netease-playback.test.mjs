@@ -28,7 +28,7 @@ function harness({ fail = false, cache = '{}' } = {}) {
     throw new Error(`Unexpected dependency: ${name}`);
   } });
   const api = { song_url_v1: async args => {
-    events.push('request'); assert.equal(JSON.parse(state.cache).publicKey, 'test-key');
+    events.push('request'); if (!state.writeFailure) assert.equal(JSON.parse(state.cache).publicKey, 'test-key');
     assert.deepEqual(JSON.parse(JSON.stringify(args)), { id: 42, level: 'standard', unblock: 'false', ...(state.cookie ? {cookie:state.cookie} : {}) });
     return { body: { code: 200, data: [{id:42,url:null}] } };
   } };
@@ -59,7 +59,7 @@ test('failed initialization never requests audio, hides private diagnostics, and
   assert.deepEqual(h.events, ['initialize', 'initialize', 'write', 'request']);
 });
 
-test('public key response and cache failures receive explicit safe reasons', async () => {
+test('public key response failures receive explicit safe reasons; cache writes are best effort', async () => {
   for (const [message, reason] of [
     ['xeapi public key request failed', 'key_response'],
     ['xeapi public key response signature mismatch', 'key_signature'],
@@ -69,8 +69,8 @@ test('public key response and cache failures receive explicit safe reasons', asy
     await assert.rejects(harness({ fail: new Error(message) }).play(), e => e.reason === reason);
   }
   const h = harness(); h.state.writeFailure = true;
-  await assert.rejects(h.play(), e => e.reason === 'cache_write' && !e.message.includes('private'));
-  assert.deepEqual(h.events, ['initialize', 'write']);
+  assert.equal((await h.play()).body.code, 200);
+  assert.deepEqual(h.events, ['initialize', 'write', 'request']);
 });
 
 test('installed upstream playback reproduces the missing public key failure offline', () => {
