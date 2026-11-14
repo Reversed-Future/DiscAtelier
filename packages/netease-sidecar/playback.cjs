@@ -15,6 +15,10 @@ module.exports = async function songUrl(api, id, cookie) {
     try {
       const keyPath = path.join(os.tmpdir(), 'xeapi_public_key');
       const key = await require('./public-key.cjs')(global.deviceId);
+      // The upstream request layer reads this key from TEMP. Keep the verified
+      // key in memory as well so an unwritable isolated cache cannot make the
+      // subsequent song request fail with "xeapi public key is missing".
+      global.__discatelierXeapiPublicKey = key;
       phase = 'cache';
       // The key cache only avoids a second key request; playback uses the
       // in-memory key. A read-only/isolated TEMP must not block playback.
