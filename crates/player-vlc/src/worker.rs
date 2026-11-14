@@ -274,6 +274,7 @@ fn playing(
                             crate::audio_fade::pause(
                                 paused,
                                 snapshot.paused,
+                                snapshot.volume,
                                 |control| player.control(control, snapshot),
                                 || fade_wait(cancelled),
                             )
