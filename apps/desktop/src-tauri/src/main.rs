@@ -138,8 +138,8 @@ fn main() {
             if let Err(error) = taskbar::setup(app.handle()) {
                 let _ = crate::logging::write("warn", "taskbar", "任务栏控制初始化失败", Some(&error));
             }
-            equalizer_window::setup(app.handle())?;
             desktop_shell::setup(app.handle())?;
+            equalizer_window::setup(app.handle())?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
