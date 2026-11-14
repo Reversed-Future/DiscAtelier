@@ -16,7 +16,13 @@ module.exports = async function songUrl(api, id, cookie) {
       const keyPath = path.join(os.tmpdir(), 'xeapi_public_key');
       const key = await require('./public-key.cjs')(global.deviceId);
       phase = 'cache';
-      fs.writeFileSync(keyPath, JSON.stringify(key), 'utf8');
+      // The key cache only avoids a second key request; playback uses the
+      // in-memory key. A read-only/isolated TEMP must not block playback.
+      try {
+        fs.writeFileSync(keyPath, JSON.stringify(key), 'utf8');
+      } catch {
+        // Best effort: continue with the verified key in memory.
+      }
       ready = true;
     } catch (error) {
       // Exact messages from the pinned upstream module; raw text is never sent.

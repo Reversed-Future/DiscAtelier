@@ -161,15 +161,6 @@ impl Player {
     }
     fn apply_equalizer(&self, state: &StoredEqualizer, gain_db: f32) -> Result<(), AppError> {
         unsafe {
-            if !state.enabled && gain_db >= 0.0 {
-                return if (self.api.libvlc_media_player_set_equalizer)(self.handle, ptr::null_mut())
-                    == 0
-                {
-                    Ok(())
-                } else {
-                    Err(ffi::error("均衡器应用失败。"))
-                };
-            }
             let equalizer = (self.api.libvlc_audio_equalizer_new)();
             if equalizer.is_null() {
                 return Err(ffi::error("无法创建均衡器。"));
