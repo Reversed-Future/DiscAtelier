@@ -22,6 +22,7 @@ mod model_picker;
 mod model_stream;
 mod models;
 mod musicbrainz;
+mod single_instance;
 mod netease;
 mod netease_albums;
 mod netease_artwork;
@@ -63,6 +64,10 @@ use std::sync::{Arc, Mutex};
 use tauri::Manager;
 
 fn main() {
+    #[cfg(target_os = "windows")]
+    if !single_instance::claim() {
+        return;
+    }
     let context = tauri::generate_context!();
     #[cfg(feature = "isolated-preview")]
     let context = {
