@@ -170,7 +170,7 @@ HDMV Titles: 14, BD-J Titles: 0, Other: 0
 - `00002.mpls` 的 STN 实测解析出 4 条主音轨：PID 4352/4353/4354/4355，全部 `jpn`、`DTS-HD Master`；其中 4352/4354 是 6 声道（5.1），4353/4355 是 2 声道（2.0）；
 - 请求 `00002.mpls` 会改走 `bd-menu`，不再出现 MPV 异常退出；
 - 主界面光驱按钮经 WebView2 CDP 验证存在，`right=146px`，播放列表 `right=86px`；光驱页长提示已移除；
-- 预览 `target/release/DiscAtelier-auto-recognize-preview.exe`，86,561,280 bytes，SHA-256 `A0D80139A2EF438C13429416B044E61C9633542DBF32555DD9B25656FB029494`，Medium 完整性；
+- 0.5.0 安装包 `DiscAtelier_0.5.0_x64-setup.exe`，168,335,387 bytes，SHA-256 `7286AEFDD48D7933C200295770C723CA42DADABC142923E5D3B20E32B7B50D8B`；GitHub Release：<https://github.com/Reversed-Future/DiscAtelier/releases/tag/v0.5.0>；
 - 正式安装程序 SHA-256 `A2852A42F59CFAE161C426F346C7A38128DAA23BF3237B3A4E21973BD4F482DD` 未变。证据见 `artifacts/bluray-segments-verification.json`。
 
 尚未自动验证“从菜单点正片后，完整 1:46:35 正片的画面、进度和片段边界”。方向键路径已加入焦点命令和放宽后的采样条件，但自动化测试时另一个前台窗口阻止了 `SetForegroundWindow`，没有完成真实按键采样；需要用户实机按方向键确认。不能据菜单背景播放成功宣称正片或键盘操作已完全通过。
