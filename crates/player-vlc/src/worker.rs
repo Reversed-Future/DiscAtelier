@@ -19,6 +19,7 @@ pub struct Start {
     pub track: Option<u8>,
     pub dvd: bool,
     pub bluray_menu: bool,
+    pub bluray_direct: bool,
     pub silent: bool,
 }
 struct Publication {
@@ -74,6 +75,7 @@ pub fn run(
         start.window,
         start.track,
         start.bluray_menu,
+        start.bluray_direct,
         start.silent,
         false,
     )
@@ -98,12 +100,50 @@ pub fn run(
         snapshot.phase = PlaybackPhase::Stopped;
     } else if let Err(error) = result {
         snapshot.phase = PlaybackPhase::Failed;
-        snapshot.error = Some(error.message);
+        snapshot.error = Some(if start.bluray_menu {
+            format!(
+                "{} VLC 日志：{}",
+                error.message,
+                crate::menu_log_path().display()
+            )
+        } else {
+            error.message
+        });
     } else if snapshot.phase.active() {
         snapshot.phase = PlaybackPhase::Stopped;
     }
     publication.publish(&mut snapshot, true);
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum MenuExit {
+    /// The restarted input is still settling; do not count it as another exit.
+    Starting,
+    /// Early menu exit: reopen the disc menu.
+    Reopen,
+    /// The bounded retries are exhausted.
+    Fail,
+    /// A title or a long-running menu ended normally; never loop a movie.
+    Normal,
+}
+
+fn menu_exit_action(
+    menu_wanted: bool,
+    menu_session: bool,
+    retryable: bool,
+    starting: bool,
+    reopens: u32,
+) -> MenuExit {
+    if menu_wanted && starting {
+        MenuExit::Starting
+    } else if menu_wanted && retryable && reopens < 3 {
+        MenuExit::Reopen
+    } else if menu_wanted && menu_session && retryable {
+        MenuExit::Fail
+    } else {
+        MenuExit::Normal
+    }
+}
+
 fn playing(
     player: &Player,
     start: &Start,
@@ -124,6 +164,13 @@ fn playing(
     let mut loaded = false;
     let mut cd_resume = !start.dvd && start.seconds > 0.0;
     let music = crate::audio_fade::music(&snapshot.source) && !start.silent;
+    let menu_session = start.bluray_menu || start.dvd;
+    let mut menu_reopens = 0u32;
+    let mut menu_started_at: Option<Instant> = None;
+    // Only an early menu exit is treated as a failed launch. A movie that
+    // finishes later is allowed to end normally instead of looping back.
+    let mut menu_epoch = Instant::now();
+    const MENU_RETRY_WINDOW: Duration = Duration::from_secs(90);
     loop {
         if cancelled.load(Ordering::Acquire) {
             return Ok(());
@@ -134,15 +181,56 @@ fn playing(
         if state == 7 {
             return Err(ffi::error("媒体读取或解码失败，请检查来源与 VLC 安装。"));
         }
-        if state == 6 {
-            snapshot.completed = !start.dvd && progress.completed(snapshot.duration_seconds, true);
-            snapshot.phase = PlaybackPhase::Ended;
-            return Ok(());
-        }
-        if state == 5 && loaded {
-            return Ok(());
+        // BD-J/HDMV menus can close their background input when Java or the
+        // menu's loop ends. A one-shot "stop" is not a usable menu player, so
+        // reopen the menu a bounded number of times before reporting a real
+        // error instead of showing a silent "已停止".
+        if state == 6 || (state == 5 && (loaded || menu_session)) {
+            let menu_wanted = start.bluray_menu || (start.dvd && snapshot.dvd_menu);
+            let retryable = menu_epoch.elapsed() < MENU_RETRY_WINDOW;
+            let starting = menu_started_at.is_some_and(|at| at.elapsed() < Duration::from_secs(2));
+            match menu_exit_action(menu_wanted, menu_session, retryable, starting, menu_reopens) {
+                MenuExit::Starting => snapshot.phase = PlaybackPhase::Loading,
+                MenuExit::Reopen => {
+                    menu_reopens += 1;
+                    loaded = false;
+                    snapshot.phase = PlaybackPhase::Loading;
+                    snapshot.error = None;
+                    snapshot.completed = false;
+                    progress.reset_sample();
+                    publication.publish(snapshot, false);
+                    // Released/ended input cannot always be replayed in place.
+                    unsafe { (api.libvlc_media_player_stop)(handle) };
+                    std::thread::sleep(Duration::from_millis(250));
+                    if unsafe { (api.libvlc_media_player_play)(handle) } != 0 {
+                        return Err(ffi::error("光盘菜单无法重新开始播放，请改用直接播放。"));
+                    }
+                    menu_started_at = Some(Instant::now());
+                    menu_epoch = Instant::now();
+                    continue;
+                }
+                MenuExit::Fail => {
+                    return Err(ffi::error(
+                        "光盘菜单反复结束，请改用直接播放，或检查 VLC 与 Java 运行时。",
+                    ));
+                }
+                MenuExit::Normal => {
+                    if state == 6 {
+                        snapshot.completed =
+                            !start.dvd && progress.completed(snapshot.duration_seconds, true);
+                        snapshot.phase = PlaybackPhase::Ended;
+                        return Ok(());
+                    }
+                    if state == 5 && loaded {
+                        return Ok(());
+                    }
+                }
+            }
         }
         loaded |= state == 3 || state == 4;
+        if state == 3 || state == 4 {
+            menu_started_at = None;
+        }
         if !loaded && started.elapsed() > Duration::from_secs(60) {
             return Err(ffi::error("媒体读取超时。"));
         }
@@ -262,6 +350,7 @@ fn playing(
                     request.control,
                     PlaybackControl::Seek { .. }
                         | PlaybackControl::Chapter { .. }
+                        | PlaybackControl::Title { .. }
                         | PlaybackControl::Rate { .. }
                         | PlaybackControl::Menu { .. }
                         | PlaybackControl::Pause { .. }
@@ -323,6 +412,29 @@ fn fade_wait(cancelled: &AtomicBool) -> Result<(), AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn menu_retry_is_bounded_and_never_loops_a_finished_movie() {
+        assert_eq!(
+            menu_exit_action(false, true, true, false, 0),
+            MenuExit::Normal
+        );
+        assert_eq!(
+            menu_exit_action(true, true, true, true, 3),
+            MenuExit::Starting
+        );
+        assert_eq!(
+            menu_exit_action(true, true, true, false, 0),
+            MenuExit::Reopen
+        );
+        assert_eq!(menu_exit_action(true, true, true, false, 3), MenuExit::Fail);
+        // A menu that has been running beyond the retry window, such as a
+        // feature that reached its end, is allowed to stop normally.
+        assert_eq!(
+            menu_exit_action(true, true, false, false, 0),
+            MenuExit::Normal
+        );
+    }
+
     #[test]
     fn returning_to_menu_preserves_title_position_but_updates_final_phase() {
         let records = Arc::new(Mutex::new(Vec::<PlaybackRecord>::new()));

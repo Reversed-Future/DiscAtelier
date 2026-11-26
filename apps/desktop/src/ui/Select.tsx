@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Descriptor } from '../library/types';
 
-export function Select({ label, value, options, onChange, disabled = false, columns, maxHeight, placement = 'auto' }: {
+export function Select({ label, value, options, onChange, disabled = false, columns, maxHeight, placement = 'auto', menuWidth, className }: {
   label: string; value: string; options: Descriptor[]; onChange(value: string): void; disabled?: boolean;
-  columns?: number; maxHeight?: number; placement?: 'auto' | 'above';
+  columns?: number; maxHeight?: number; placement?: 'auto' | 'above'; menuWidth?: number; className?: string;
 }) {
   const id = useId();
   const wrapper = useRef<HTMLSpanElement>(null);
@@ -15,7 +15,7 @@ export function Select({ label, value, options, onChange, disabled = false, colu
   function show() {
     if (disabled || !list.current || !trigger.current) return;
     const rect = trigger.current.getBoundingClientRect();
-    const width = Math.max(columns ? 210 : 110, rect.width);
+    const width = Math.max(menuWidth ?? (columns ? 210 : 110), rect.width);
     list.current.style.width = `${width}px`;
     list.current.style.left = `${Math.min(rect.left, innerWidth - width - 8)}px`;
     list.current.style.maxHeight = maxHeight ? `${maxHeight}px` : '';
@@ -38,7 +38,7 @@ export function Select({ label, value, options, onChange, disabled = false, colu
     window.addEventListener('resize', resize);
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape, true); window.removeEventListener('resize', resize); };
   }, [open]);
-  return <span className="select-control" ref={wrapper}>
+  return <span className={`select-control${className ? ` ${className}` : ''}`} ref={wrapper}>
     <button type="button" ref={trigger} className="select-trigger" role="combobox" aria-label={label} aria-expanded={open} aria-haspopup="listbox" aria-controls={id} disabled={disabled}
       onClick={() => open ? close(true) : show()} onKeyDown={event => { if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) { event.preventDefault(); show(); } }}>
       <span>{options[selected]?.label || ''}</span>

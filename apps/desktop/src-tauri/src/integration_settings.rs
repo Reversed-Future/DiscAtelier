@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{io::Read, path::Path};
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Settings {
     #[serde(default)]
@@ -15,6 +15,26 @@ pub struct Settings {
     /// MusicBrainz web service root; empty means the public endpoint.
     #[serde(default)]
     pub musicbrainz_base_url: String,
+    /// Opt-in switch for automatic optical-menu recognition. Enabled by
+    /// default to preserve the previous behavior; the settings UI warns that
+    /// the capture phase occupies the drive.
+    #[serde(default = "default_auto_recognize")]
+    pub auto_recognize_menu: bool,
+}
+fn default_auto_recognize() -> bool {
+    true
+}
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            netease_mode: NeteaseMode::Builtin,
+            netease_base_url: String::new(),
+            ai_base_url: String::new(),
+            ai_model: String::new(),
+            musicbrainz_base_url: String::new(),
+            auto_recognize_menu: true,
+        }
+    }
 }
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

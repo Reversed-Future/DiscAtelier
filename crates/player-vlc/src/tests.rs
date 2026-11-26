@@ -45,8 +45,8 @@ fn bluray_menu_route_uses_vlc_bluray_access_only() {
     source.playlist = BD_MENU.into();
     assert_eq!(bluray_location(&source).unwrap(), "bluray:///F:/");
     source.playlist = "00000.mpls".into();
-    assert!(bluray_location(&source).is_err());
-    assert!(disc_location(&source).is_err());
+    assert_eq!(bluray_location(&source).unwrap(), "bluray:///F:/");
+    assert_eq!(disc_location(&source).unwrap(), "bluray:///F:/");
     source.playlist = BD_MENU.into();
     for invalid in ["F:/", "f:", "F:\\movie", "\\\\server\\disc", ""] {
         source.mount_point = invalid.into();

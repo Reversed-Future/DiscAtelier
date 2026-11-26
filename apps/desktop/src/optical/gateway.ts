@@ -32,6 +32,18 @@ export interface OpticalPresence {
   discKey: string | null; discLabel: string | null;
 }
 export interface DvdChapter { index: number; startSeconds: number; durationSeconds: number }
+export interface BluraySegment {
+  index: number; clipId: string; startSeconds: number; durationSeconds: number;
+  seamless: boolean; angleCount: number;
+}
+export interface BlurayChapter { index: number; startSeconds: number; durationSeconds: number }
+export interface BlurayAudioStream {
+  pid: number; language: string; codec: string; channels: number | null; format: number;
+}
+export interface BlurayPlaylist {
+  playlist: string; durationSeconds: number; segments: BluraySegment[]; chapters: BlurayChapter[];
+  audioStreams: BlurayAudioStream[];
+}
 export interface OpticalCandidate {
   copyId: string; editionId: string; title: string; creator: string;
   editionLabel: string; categoryId: string; score: number; matchKind: 'title' | 'edition' | 'catalog' | 'barcode' | 'creator' | 'none';
@@ -60,6 +72,8 @@ export const optical = {
   discs: (editionId: string) => invoke<OpticalDisc[]>('optical_discs', { editionId }),
   associate: (mediaToken: string, copyId: string, label: string, discKey: string | null = null) => invoke<OpticalBinding>('optical_associate', { mediaToken, copyId, label, discKey }),
   unbind: (mediaToken: string) => invoke<void>('optical_unbind', { mediaToken }),
+  blurayPlaylists: (mountPoint: string, token: string) =>
+    invoke<BlurayPlaylist[]>('optical_bluray_playlists', { mountPoint, token }),
   dvdChapters: (mountPoint: string, token: string, title: number) =>
     invoke<DvdChapter[]>('optical_dvd_chapters', { mountPoint, token, title }),
 };

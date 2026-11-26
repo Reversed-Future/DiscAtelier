@@ -20,6 +20,26 @@ pub struct Title {
     pub name: *mut c_char,
     pub flags: c_uint,
 }
+#[repr(C)]
+pub struct MediaAudioTrack {
+    pub channels: c_uint,
+    pub rate: c_uint,
+}
+/// libVLC 3 `libvlc_media_track_t`. The union is a pointer to the type-specific
+/// struct; only the audio arm is read after checking `track_type == 0`.
+#[repr(C)]
+pub struct MediaTrack {
+    pub codec: u32,
+    pub original_fourcc: u32,
+    pub id: c_int,
+    pub track_type: c_int,
+    pub profile: c_int,
+    pub level: c_int,
+    pub audio: *mut MediaAudioTrack,
+    pub bitrate: c_uint,
+    pub language: *mut c_char,
+    pub description: *mut c_char,
+}
 macro_rules! api {
     ($($name:ident: $signature:ty),+ $(,)?) => {
         pub struct Api {
@@ -64,6 +84,10 @@ api! {
     libvlc_media_new_location: unsafe extern "C" fn(Handle, *const c_char) -> Handle,
     libvlc_media_add_option: unsafe extern "C" fn(Handle, *const c_char),
     libvlc_media_release: unsafe extern "C" fn(Handle),
+    libvlc_media_player_get_media: unsafe extern "C" fn(Handle) -> Handle,
+    libvlc_media_tracks_get: unsafe extern "C" fn(Handle, *mut *mut *mut MediaTrack) -> c_uint,
+    libvlc_media_tracks_release: unsafe extern "C" fn(*mut *mut MediaTrack, c_uint),
+    libvlc_media_get_codec_description: unsafe extern "C" fn(c_int, u32) -> *const c_char,
     libvlc_free: unsafe extern "C" fn(Handle),
     libvlc_media_get_meta: unsafe extern "C" fn(Handle, c_int) -> *mut c_char,
     libvlc_media_subitems: unsafe extern "C" fn(Handle) -> Handle,

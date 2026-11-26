@@ -65,6 +65,54 @@ pub struct DvdChapter {
     pub start_seconds: f64,
     pub duration_seconds: f64,
 }
+/// One seamless-branching play item in a Blu-ray playlist. Segment times are
+/// relative to the playlist start and are derived from the read-only MPLS
+/// metadata; they never authorize writing to or modifying the disc.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BluraySegment {
+    pub index: u32,
+    pub clip_id: String,
+    pub start_seconds: f64,
+    pub duration_seconds: f64,
+    /// True for playlist connection conditions 5/6, where the player may read
+    /// ahead into the next clip without a visible break.
+    pub seamless: bool,
+    pub angle_count: u8,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BlurayChapter {
+    pub index: u32,
+    pub start_seconds: f64,
+    pub duration_seconds: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BlurayAudioStream {
+    /// MPEG-TS PID; VLC also exposes this as the audio track id.
+    pub pid: u16,
+    pub language: String,
+    pub codec: String,
+    /// Exact for mono/stereo; MPLS "multi channel" is exposed as 6 because the
+    /// playlist does not distinguish 5.1 from 7.1.
+    pub channels: Option<u8>,
+    pub format: u8,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BlurayPlaylist {
+    pub playlist: String,
+    pub duration_seconds: f64,
+    pub segments: Vec<BluraySegment>,
+    pub chapters: Vec<BlurayChapter>,
+    #[serde(default)]
+    pub audio_streams: Vec<BlurayAudioStream>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OpticalBinding {

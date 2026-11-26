@@ -110,19 +110,26 @@ impl MpvProbe {
         self.libbdplus = Some(libbdplus);
         Ok(self)
     }
+    fn plain_path(path: &PathBuf) -> PathBuf {
+        let text = path.to_string_lossy();
+        match text.strip_prefix(r"\\?\") {
+            Some(rest) => PathBuf::from(rest),
+            None => path.clone(),
+        }
+    }
     pub(crate) fn decryptor_env(&self, process: &mut Command, decryptor: Decryptor) {
         match decryptor {
             Decryptor::LocalAacs => {
                 if let Some(path) = &self.libaacs {
-                    process.env("LIBAACS_PATH", path.with_extension(""));
+                    process.env("LIBAACS_PATH", Self::plain_path(path).with_extension(""));
                 }
                 if let Some(path) = &self.libbdplus {
-                    process.env("LIBBDPLUS_PATH", path.with_extension(""));
+                    process.env("LIBBDPLUS_PATH", Self::plain_path(path).with_extension(""));
                 }
             }
             Decryptor::MakeMkv => {
                 if let Some(path) = &self.make_mkv_library {
-                    let stem = path.with_extension("");
+                    let stem = Self::plain_path(path).with_extension("");
                     process.env("LIBAACS_PATH", stem.clone());
                     process.env("LIBBDPLUS_PATH", stem);
                 }

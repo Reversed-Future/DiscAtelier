@@ -52,6 +52,7 @@ impl VlcSession {
                 track: None,
                 dvd: false,
                 bluray_menu: false,
+                bluray_direct: false,
                 silent: false,
             },
             source,
@@ -86,6 +87,7 @@ impl VlcSession {
                 track: None,
                 dvd: false,
                 bluray_menu: false,
+                bluray_direct: false,
                 silent: false,
             },
             source,
@@ -110,3 +112,4 @@ mod tests {
         }
     }
 }
+

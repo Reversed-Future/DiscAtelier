@@ -1,56 +1,67 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { Icon } from '../ui/Icon';
 import { Select } from '../ui/Select';
-import { optical, type DvdChapter } from '../optical/gateway';
+import { optical, type BlurayPlaylist, type DvdChapter } from '../optical/gateway';
+import { loadBlurayPlaylists, longestPlaylist } from '../optical/blurayPlaylists';
+import { markIndexAt, segmentMarks } from '../optical/bluraySegments';
 import { time } from './gateway';
+import { audioTrackLabel } from './audioTrackLabel';
 import { EqualizerQuick } from './EqualizerQuick';
 import type { PlaybackController } from './usePlayback';
 
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => ({ id: String(rate), label: `${rate}×` }));
 const chapterCache = new Map<string, DvdChapter[]>();
+const blurayCache = new Map<string, BlurayPlaylist | null>();
 
 function useSmoothPosition(s: PlaybackController['snapshot'], active: boolean) {
   const [position, setPosition] = useState(0);
-  const clock = useRef({ display: 0, last: 0, rate: 0, targetRate: 0, base: 0, baseAt: 0, playing: false, session: '' });
+  const clock = useRef({ display: 0, base: 0, baseAt: 0, playing: false, session: '' });
+  // A single animation clock survives snapshot updates. Restarting the clock
+  // on every 100ms position sample made the bar speed up and slow down.
   useEffect(() => {
-    if (!s) { setPosition(0); return; }
-    const now = performance.now();
+    if (!s) {
+      clock.current = { display: 0, base: 0, baseAt: 0, playing: false, session: '' };
+      setPosition(0);
+      return;
+    }
     const c = clock.current;
-    const playing = active && !s.paused && (s.phase === 'playing' || s.phase === 'buffering');
-    if (!c.last || c.session !== s.sessionId) {
-      c.display = s.positionSeconds;
-      c.rate = playing ? 1 : 0;
+    const now = performance.now();
+    if (c.session !== s.sessionId) {
       c.session = s.sessionId;
-    } else if (Math.abs(c.display - s.positionSeconds) > 1.8) {
+      c.display = s.positionSeconds;
+    } else if (Math.abs(c.display - s.positionSeconds) > 2.5) {
+      // A seek is the only case that may move the displayed time backwards.
       c.display = s.positionSeconds;
     }
-    c.base = s.positionSeconds;
+    c.playing = active && !s.paused && (s.phase === 'playing' || s.phase === 'buffering');
+    // Never anchor behind the already displayed position; that produced a
+    // visible stall followed by a catch-up jump.
+    c.base = c.playing ? Math.max(c.display, s.positionSeconds) : s.positionSeconds;
     c.baseAt = now;
-    c.playing = playing;
-    c.targetRate = playing ? 1 : 0;
-    c.last = now;
+    setPosition(c.display);
+  }, [s?.sessionId, s?.positionSeconds, s?.paused, s?.phase, active]);
+  useEffect(() => {
     let frame = 0;
     const tick = () => {
-      const at = performance.now();
-      const dt = Math.min(0.05, Math.max(0, (at - c.last) / 1000));
-      c.last = at;
-      // Ease the clock rate in/out over 180ms on play/pause.
-      const step = dt / 0.18;
-      const difference = c.targetRate - c.rate;
-      c.rate += Math.sign(difference) * Math.min(Math.abs(difference), step);
-      c.display += dt * c.rate;
-      const expected = c.base + (c.playing ? (at - c.baseAt) / 1000 : 0);
-      const error = expected - c.display;
-      if (Math.abs(error) > 1.5) c.display = expected;
-      else c.display += error * Math.min(1, dt * 2.5);
-      setPosition(c.display);
+      const c = clock.current;
+      if (c.session) {
+        if (!c.playing) {
+          if (c.display !== c.base) {
+            c.display = c.base;
+            setPosition(c.display);
+          }
+        } else {
+          const target = c.base + (performance.now() - c.baseAt) / 1000;
+          if (target > c.display) c.display = target;
+          else if (c.display - target > 2.5) c.display = target;
+          setPosition(c.display);
+        }
+      }
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  // Volume changes replace the snapshot object but do not change playback
-  // position. Do not restart the smooth clock for those updates.
-  }, [s?.sessionId, s?.positionSeconds, s?.paused, s?.phase, active]);
+  }, []);
   return position;
 }
 
@@ -69,6 +80,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
   const [volume, setVolume] = useState<number | null>(null);
   const [rate, setRate] = useState<number | null>(null);
   const [chapters, setChapters] = useState<DvdChapter[]>([]);
+  const [bluray, setBluray] = useState<BlurayPlaylist | null>(null);
   const [hoveredChapter, setHoveredChapter] = useState(-1);
   const latest = useRef<number | null>(null), latestVolume = useRef<number | null>(null);
   const lastVolume = useRef(100);
@@ -87,6 +99,28 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
       .catch(() => { /* 非标准 IFO 或光驱已变化时退回普通进度条。 */ });
     return () => { live = false; };
   }, [s?.sessionId, s?.source.playlist, s?.source.mountPoint, s?.source.mediaToken, s?.dvdTitle, s?.dvdMenu]);
+  useEffect(() => {
+    let live = true;
+    setBluray(null);
+    const direct = !!s?.source.playlist.endsWith('.mpls');
+    // A Blu-ray menu session only becomes the movie after the user starts it
+    // from the disc menu. Once the title is long enough, use the main
+    // playlist's segment metadata for the full progress bar.
+    const menuMovie = s?.source.playlist === 'bd-menu'
+      && ((s.durationSeconds || 0) > 300 || s.audioTracks.length > 1);
+    if (!s || (!direct && !menuMovie)) return;
+    const key = `${s.source.mediaToken}:${direct ? s.source.playlist : 'menu-main'}`;
+    const cached = blurayCache.get(key);
+    if (cached !== undefined) { setBluray(cached); return; }
+    void loadBlurayPlaylists(s.source.mountPoint, s.source.mediaToken).then(rows => {
+      const info = direct
+        ? rows.find(row => row.playlist === s.source.playlist) || null
+        : longestPlaylist(rows);
+      blurayCache.set(key, info);
+      if (live) setBluray(info);
+    }).catch(() => { /* 元数据不可用时退回普通进度条。 */ });
+    return () => { live = false; };
+  }, [s?.sessionId, s?.source.playlist, s?.source.mountPoint, s?.source.mediaToken, s?.durationSeconds, s?.audioTracks.length]);
   useEffect(() => { setDraft(null); setPendingSeek(null); latest.current = null; setRate(null); latestVolume.current = null; setHoveredChapter(-1); seekStart.current = null; seekMoved.current = false; }, [s?.sessionId, s?.dvdTitle, s?.dvdMenu]);
   useEffect(() => { if (s?.volume && s.volume > 0) lastVolume.current = s.volume; }, [s?.volume]);
   useEffect(() => {
@@ -130,9 +164,56 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
   }
   const currentChapter = chapterAt(position);
   const chaptered = chapters.length > 1 && duration > 0;
+  // Blu-ray movies are split into play items. Show those item boundaries on
+  // the same full-length bar instead of treating a segment as the whole movie.
+  const rawMarks = chaptered
+    ? chapters.map((chapter, index) => ({
+        startSeconds: chapter.startSeconds,
+        endSeconds: index + 1 < chapters.length ? chapters[index + 1].startSeconds : duration,
+        label: `第 ${index + 1} 章`,
+      }))
+    : segmentMarks(bluray);
+  // libbluray and the MPLS sum should agree; scale slightly if a disc reports a
+  // different overall duration so the last segment still reaches the end.
+  const playlistTotal = !chaptered && bluray && bluray.durationSeconds > 0 ? bluray.durationSeconds : 0;
+  const scale = playlistTotal > 0 && duration > 0 ? duration / playlistTotal : 1;
+  const marks = scale === 1 ? rawMarks : rawMarks.map(mark => ({
+    ...mark, startSeconds: mark.startSeconds * scale, endSeconds: mark.endSeconds * scale,
+  }));
+  const segmented = marks.length > 1 && duration > 0;
+  const currentMark = Math.max(0, markIndexAt(marks, position));
   const shownVolume = volume ?? s.volume ?? 100;
   const shownRate = rate ?? s.rate ?? 1;
   const loading = s.phase === 'loading', stopping = s.phase === 'stopping';
+  const audioOptions = s.audioTracks.map((track, index) => {
+    // VLC only knows the layout/codec of the active Blu-ray track until it is
+    // opened. The playlist STN table describes every primary audio stream;
+    // libVLC sometimes renumbers the movie tracks, so fall back to disc order.
+    const numbered = Number(track.title.match(/轨道\s*(\d+)/)?.[1]);
+    const stream = bluray?.audioStreams.find(item => item.pid === track.id)
+      || (Number.isInteger(numbered) && numbered > 0 ? bluray?.audioStreams[numbered - 1] : undefined)
+      || bluray?.audioStreams[index];
+    if (!stream) return { id: String(track.id), label: audioTrackLabel(track) };
+    return {
+      id: String(track.id),
+      label: audioTrackLabel({
+        ...track,
+        language: stream.language || track.language,
+        codec: stream.codec || track.codec,
+        // MPLS format is the source layout. VLC may report the decoded/output
+        // stereo layout for every Blu-ray track, which made all labels 2.0.
+        channels: stream.channels ?? track.channels,
+      }),
+    };
+  });
+  // Two 5.1 and two 2.0 streams can have the same standard label; keep the
+  // disc order visible without inventing authored names.
+  const audioColumns = s.audioTracks.length > 1 ? 2 : undefined;
+  const labelCounts = new Map<string, number>();
+  for (const option of audioOptions) labelCounts.set(option.label, (labelCounts.get(option.label) || 0) + 1);
+  for (const [index, option] of audioOptions.entries()) {
+    if ((labelCounts.get(option.label) || 0) > 1) option.label = `${option.label} · 音轨 ${index + 1}`;
+  }
   async function commit() {
     const value = latest.current;
     latest.current = null;
@@ -166,13 +247,13 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
   }
   return <section className="playback-controls" aria-label="播放控制"
     style={{ '--playback-popover-max': `${popoverMax}px` } as CSSProperties}>
-    {showTitle && <div className="playback-title"><strong>{title || s.title}</strong><span>{s.source.playlist === 'bd-menu' ? s.dvdMenu ? 'BD 菜单' : 'BD' : s.source.playlist === 'dvd-menu' ? s.dvdMenu ? 'DVD 菜单' : `DVD · ${s.dvdTitle}` : s.source.playlist.startsWith('cd-track:') ? 'CD' : s.source.playlist.startsWith('netease-song:') ? '网易云' : s.source.playlist}</span></div>}
+    {showTitle && <div className="playback-title"><strong>{title || s.title}</strong><span>{s.source.playlist === 'bd-menu' ? s.dvdMenu ? 'BD 菜单' : 'BD' : s.source.playlist === 'dvd-menu' ? s.dvdMenu ? 'DVD 菜单' : `DVD · ${s.dvdTitle}` : s.source.playlist.endsWith('.mpls') ? bluray && bluray.segments.length > 1 ? `BD · ${bluray.segments.length} 段` : 'BD' : s.source.playlist.startsWith('cd-track:') ? 'CD' : s.source.playlist.startsWith('netease-song:') ? '网易云' : s.source.playlist}</span></div>}
     <div className="playback-seek-wrap" ref={seek}>
-      {chaptered && <div className="playback-segments" aria-hidden="true">
-        {chapters.map((chapter, index) => {
-          const start = Math.max(0, Math.min(100, chapter.startSeconds / duration * 100));
-          const end = index + 1 < chapters.length ? Math.max(start, Math.min(100, chapters[index + 1].startSeconds / duration * 100)) : 100;
-          return <span key={chapter.index} className={index === hoveredChapter ? 'active' : undefined} style={{ left: `${start}%`, width: `${end - start}%` }}/>;
+      {segmented && <div className="playback-segments" aria-hidden="true">
+        {marks.map((mark, index) => {
+          const start = Math.max(0, Math.min(100, mark.startSeconds / duration * 100));
+          const end = Math.max(start, Math.min(100, mark.endSeconds / duration * 100));
+          return <span key={index} className={index === hoveredChapter ? 'active' : undefined} style={{ left: `${start}%`, width: `${end - start}%` }}/>;
         })}
       </div>}
       <input className="playback-seek" type="range" aria-label="播放进度" min="0" max={duration || 1} step="any"
@@ -183,9 +264,9 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
         onPointerDown={event => { setPendingSeek(null); seekStart.current = event.clientX; seekMoved.current = false; }}
         onPointerMove={event => {
           if (seekStart.current !== null && Math.abs(event.clientX - seekStart.current) > 3) seekMoved.current = true;
-          if (!chaptered || !duration) return;
+          if (!segmented || !duration) return;
           const rect = event.currentTarget.getBoundingClientRect();
-          const index = chapterAt(Math.max(0, Math.min(duration, (event.clientX - rect.left) / rect.width * duration)));
+          const index = markIndexAt(marks, Math.max(0, Math.min(duration, (event.clientX - rect.left) / rect.width * duration)));
           setHoveredChapter(current => current === index ? current : index);
         }}
         onPointerLeave={() => setHoveredChapter(-1)}
@@ -215,7 +296,7 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
         onKeyUp={event => { if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) void commit(); }}
         onPointerCancel={() => { seekStart.current = null; latest.current = null; setPendingSeek(null); setDraft(null); setHoveredChapter(-1); }} onBlur={() => { if (latest.current !== null) void commit(); }}/>
     </div>
-    <div className="playback-times"><span>{time(position)}</span>{chaptered && <span>第 {currentChapter + 1} / {chapters.length} 章</span>}<span>{time(s.durationSeconds)}</span></div>
+    <div className="playback-times"><span>{time(position)}</span>{chaptered ? <span>第 {currentChapter + 1} / {chapters.length} 章</span> : segmented ? <span>第 {currentMark + 1} / {marks.length} 段</span> : null}<span>{time(s.durationSeconds)}</span></div>
     {player.active && <div className="playback-actions" ref={actions}>
       <div className="playback-transport">
         <button type="button" className="player-icon-button" aria-label="停止" title="停止" disabled={stopping}
@@ -260,8 +341,8 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
           maxHeight={Math.max(popoverMax, 82)} disabled={stopping}
           onChange={id => void changeRate(Number(id))}/>}
         {extended && <Select label="音轨" value={s.selectedAudio === null ? '' : String(s.selectedAudio)}
-          options={s.audioTracks.map(track => ({ id: String(track.id), label: `${track.id} · ${track.title || track.language || track.codec || '音轨'}` }))}
-          columns={2} maxHeight={popoverMax} placement="above"
+          options={audioOptions} columns={audioColumns} menuWidth={audioColumns ? 600 : undefined}
+          maxHeight={Math.min(Math.max(popoverMax, 120), 180)} placement="above" className="audio-track-select"
           disabled={stopping || !s.audioTracks.length}
           onChange={id => void player.control({ action: 'audio', id: Number(id) })}/>}
         {onToggleEpisodes && <button type="button" className="player-icon-button playback-episodes-toggle" aria-label="选集" title="选集"

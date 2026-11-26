@@ -23,7 +23,7 @@ export function PlayerView({ player }: { player: PlaybackController }) {
   const back = useRef<HTMLButtonElement>(null);
   const live = useRef({ player, fullscreen, closing, episodesOpen: episodesExpanded });
   live.current = { player, fullscreen, closing, episodesOpen: episodesExpanded };
-  const chrome = usePlayerChrome(fullscreen, episodesExpanded);
+  const chrome = usePlayerChrome(fullscreen, episodesExpanded, !!player.snapshot?.paused);
   const menu = player.snapshot?.source.playlist === 'dvd-menu' || player.snapshot?.source.playlist === 'bd-menu';
   const { surface, header, footer, error: surfaceError } = useVideoSurface(player.active && !closing, fullscreen, chrome.visible, menu, episodesExpanded);
   useEffect(() => { if (!canEpisodes) setEpisodesOpen(false); }, [canEpisodes]);
@@ -51,11 +51,17 @@ export function PlayerView({ player }: { player: PlaybackController }) {
     return true;
   }
   useNativeVideoKeys(menu && player.active && !closing, key => {
+    if (key === ' ') {
+      const paused = !!live.current.player.snapshot?.paused;
+      // Resuming from a hidden paused state should not pop the controls open.
+      if (!paused) chrome.wake();
+      void live.current.player.control({ action: 'pause', paused: !paused });
+      return;
+    }
     chrome.wake();
     if (key === 'Escape') {
       goBack();
     } else if (key === 'f') void toggleFullscreen();
-    else if (key === ' ') void live.current.player.control({ action: 'pause', paused: !live.current.player.snapshot?.paused });
     else navigate(key);
   });
   async function toggleFullscreen() {
@@ -79,6 +85,13 @@ export function PlayerView({ player }: { player: PlaybackController }) {
       current.player.hide();
     } catch (cause) { setError(errorMessage(cause)); setClosing(false); }
   }
+  useEffect(() => {
+    if (!menu || !player.active) return;
+    // The native VLC surface sits above the DOM; give it keyboard focus so the
+    // menu key sampler can receive arrows/Enter without an extra click.
+    const timer = window.setTimeout(() => { void playback.focusVideo().catch(() => {}); }, 150);
+    return () => window.clearTimeout(timer);
+  }, [menu, player.active]);
   useEffect(() => {
     if (menu) surface.current?.focus(); else back.current?.focus();
     const keyboard = (event: KeyboardEvent) => {

@@ -1,7 +1,8 @@
 use discatelier_application::{OpticalDeviceProvider, OpticalPlaybackProbe};
 use discatelier_contracts::{
-    AppError, DvdChapter, LibraryQuery, OpticalBinding, OpticalCandidate, OpticalDrive,
-    OpticalKind, OpticalPresence, PlaybackDiagnostic, PlaybackSettings, PlaybackSource,
+    AppError, BlurayPlaylist, DvdChapter, LibraryQuery, OpticalBinding, OpticalCandidate,
+    OpticalDrive, OpticalKind, OpticalPresence, PlaybackDiagnostic, PlaybackSettings,
+    PlaybackSource,
 };
 use std::{
     path::{Path, PathBuf},
@@ -228,6 +229,35 @@ pub async fn optical_discs(
 ) -> Result<Vec<discatelier_contracts::OpticalDisc>, AppError> {
     crate::commands::run(library.inner().clone(), move |service| {
         service.edition_discs(&edition_id)
+    })
+    .await
+}
+
+/// Read-only segment/chapter metadata for every Blu-ray playlist on a verified
+/// medium. Used to rank the main feature and render one full progress bar.
+#[tauri::command]
+pub async fn optical_bluray_playlists(
+    state: tauri::State<'_, OpticalState>,
+    mount_point: String,
+    token: String,
+) -> Result<Vec<BlurayPlaylist>, AppError> {
+    run(state.inner().clone(), move |_| {
+        let drives = discatelier_optical_windows::WindowsOptical.enumerate()?;
+        let drive = drives
+            .into_iter()
+            .find(|drive| drive.mount_point == mount_point)
+            .ok_or_else(|| AppError::new("mediaChanged", "光驱不存在，请刷新后重试。"))?;
+        let root = PathBuf::from(format!("{}\\", drive.mount_point));
+        let medium = drive
+            .medium
+            .ok_or_else(|| AppError::new("mediaChanged", "光盘已取出或不可读取，请刷新后重试。"))?;
+        if !matches!(medium.kind, OpticalKind::Bluray) || medium.token != token {
+            return Err(AppError::new("mediaChanged", "光盘已变化，请刷新后重试。"));
+        }
+        Ok(discatelier_optical_windows::bluray::playlists(
+            &root,
+            &medium.playlists,
+        ))
     })
     .await
 }

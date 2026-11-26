@@ -1,5 +1,7 @@
-//! Input bridge for the native DVD child. This does not synthesize input.
-//! Only eight playback keys are sampled while this app's visible video has focus.
+//! Input bridge for the native disc-menu surface. This does not synthesize input.
+//! Eight playback keys are sampled while this app is foreground and the menu
+//! surface is visible and enabled. Focus can legitimately sit on the webview
+//! controls or VLC's video child, so it is not part of the gate.
 use std::sync::Mutex;
 use tauri::Manager;
 use windows_sys::Win32::UI::{
@@ -7,9 +9,7 @@ use windows_sys::Win32::UI::{
         GetAsyncKeyState, IsWindowEnabled, VK_CONTROL, VK_DOWN, VK_ESCAPE, VK_F, VK_LEFT, VK_MENU,
         VK_RETURN, VK_RIGHT, VK_SHIFT, VK_SPACE, VK_UP,
     },
-    WindowsAndMessaging::{
-        GetForegroundWindow, GetGUIThreadInfo, IsChild, IsWindowVisible, GUITHREADINFO,
-    },
+    WindowsAndMessaging::{GetForegroundWindow, IsWindowVisible},
 };
 
 #[derive(Default)]
@@ -24,14 +24,9 @@ pub fn playback_native_keys(window: tauri::WebviewWindow) -> Vec<String> {
     };
     let mut keys = Vec::new();
     unsafe {
-        let mut info: GUITHREADINFO = std::mem::zeroed();
-        info.cbSize = std::mem::size_of::<GUITHREADINFO>() as u32;
         if GetForegroundWindow() != surface.owner as _
             || IsWindowVisible(surface.host as _) == 0
             || IsWindowEnabled(surface.host as _) == 0
-            || GetGUIThreadInfo(0, &mut info) == 0
-            || (info.hwndFocus != surface.host as _
-                && IsChild(surface.host as _, info.hwndFocus) == 0)
         {
             *previous = 0;
             return keys;

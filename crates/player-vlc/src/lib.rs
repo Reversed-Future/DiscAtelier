@@ -34,6 +34,12 @@ pub struct VlcSession {
 pub const DVD_MENU: &str = "dvd-menu";
 pub const BD_MENU: &str = "bd-menu";
 
+/// VLC's own file log for the most recent Blu-ray menu attempt. It contains
+/// libbluray/BD-J/JVM diagnostics that are not available from the libVLC API.
+pub fn menu_log_path() -> PathBuf {
+    std::env::temp_dir().join("discatelier-vlc-menu.log")
+}
+
 pub fn configured(settings: &PlaybackSettings) -> Result<PathBuf, AppError> {
     let path = PathBuf::from(&settings.vlc_library);
     if !path.is_absolute()
@@ -68,11 +74,20 @@ pub fn dvd_location(source: &PlaybackSource) -> Result<String, AppError> {
     Ok(format!("dvdnav:///{}/", source.mount_point))
 }
 
+/// A concrete `.mpls` is a direct Blu-ray title; the menu route is `BD_MENU`.
+pub fn is_bluray_playlist(playlist: &str) -> bool {
+    playlist.len() == 10
+        && playlist.ends_with(".mpls")
+        && playlist.as_bytes()[..5].iter().all(u8::is_ascii_digit)
+}
+
 /// VLC's libbluray access path. Menu support is requested through the
 /// `bluray-menu` media option; BD-J additionally needs a usable JVM.
+/// Without that option VLC opens the disc's main title, which is the same
+/// title libbluray selects for the longest playlist on most movie discs.
 pub fn bluray_location(source: &PlaybackSource) -> Result<String, AppError> {
     let mount = source.mount_point.as_bytes();
-    if source.playlist != BD_MENU
+    if (source.playlist != BD_MENU && !is_bluray_playlist(&source.playlist))
         || mount.len() != 2
         || !mount[0].is_ascii_uppercase()
         || mount[1] != b':'
@@ -86,6 +101,7 @@ fn disc_location(source: &PlaybackSource) -> Result<String, AppError> {
     match source.playlist.as_str() {
         DVD_MENU => dvd_location(source),
         BD_MENU => bluray_location(source),
+        playlist if is_bluray_playlist(playlist) => bluray_location(source),
         _ => Err(ffi::error("该光盘不接受菜单播放。")),
     }
 }
@@ -110,6 +126,7 @@ pub fn capture_menu(
         window,
         None,
         source.playlist == BD_MENU,
+        false,
         true,
         false,
     )?;
@@ -140,11 +157,19 @@ impl VlcSession {
             return Err(ffi::error("内置播放区域尚未创建。"));
         }
         let track = cd_track(&source.playlist);
+        let bluray_direct = is_bluray_playlist(&source.playlist);
+        // A concrete playlist has no DVD title number; ignore any stale one.
+        let title = if bluray_direct { None } else { title };
         let location = if track.is_some() {
             if title.is_some() || !seconds.is_finite() || !(0.0..=604800.0).contains(&seconds) {
                 return Err(ffi::error("CD 续播位置无效。"));
             }
             audio_cd::location(&source)?.0
+        } else if bluray_direct {
+            if !seconds.is_finite() || !(0.0..=604800.0).contains(&seconds) {
+                return Err(ffi::error("蓝光续播位置无效。"));
+            }
+            bluray_location(&source)?
         } else {
             validate_resume(seconds, title)?;
             disc_location(&source)?
@@ -157,8 +182,9 @@ impl VlcSession {
                 seconds,
                 title,
                 track,
-                dvd: track.is_none(),
+                dvd: track.is_none() && !bluray_direct,
                 bluray_menu: source.playlist == BD_MENU,
+                bluray_direct,
                 silent: false,
             },
             source,

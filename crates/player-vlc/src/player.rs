@@ -4,7 +4,7 @@ use discatelier_contracts::{
 };
 use std::{
     ffi::CString,
-    path::Path,
+    path::{Path, PathBuf},
     ptr,
     sync::Mutex,
 };
@@ -29,6 +29,57 @@ const VLC_EQUALIZER_HEADROOM_DB: f64 = 12.0412;
 pub(crate) fn compensated_preamp(preamp: f64) -> f32 {
     (preamp + VLC_EQUALIZER_HEADROOM_DB).clamp(-20.0, 20.0) as f32
 }
+
+/// VLC statically links libbluray into `plugins/access`, which can make the
+/// jar lookup resolve to the application directory. Point libbluray at the
+/// VLC runtime's own JAR directory before libVLC is initialized.
+fn plain_path(path: PathBuf) -> PathBuf {
+    let text = path.to_string_lossy();
+    match text.strip_prefix(r"\\?\") {
+        Some(rest) => PathBuf::from(rest),
+        None => path,
+    }
+}
+
+fn configure_bluray_classpath(libvlc: &Path) {
+    let Some(root) = libvlc.parent() else {
+        return;
+    };
+    let root = plain_path(root.to_path_buf());
+    let access = root.join("plugins").join("access");
+    let mut found = false;
+    if let Ok(entries) = std::fs::read_dir(&access) {
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            if name.starts_with("libbluray-j2se-") && name.ends_with(".jar") && entry.path().is_file()
+            {
+                found = true;
+                break;
+            }
+        }
+    }
+    if found {
+        let mut classpath = access.to_string_lossy().into_owned();
+        if !classpath.ends_with('\\') && !classpath.ends_with('/') {
+            classpath.push('\\');
+        }
+        std::env::set_var("LIBBLURAY_CP", classpath);
+    } else {
+        // Let libbluray use its normal adjacent/search paths.
+        std::env::remove_var("LIBBLURAY_CP");
+    }
+    for (file, variable) in [
+        ("libaacs.dll", "LIBAACS_PATH"),
+        ("libbdplus.dll", "LIBBDPLUS_PATH"),
+    ] {
+        let candidate = root.join(file);
+        if candidate.is_file() {
+            std::env::set_var(variable, candidate.with_extension(""));
+        }
+    }
+}
+
 impl Player {
     pub fn open(
         path: &Path,
@@ -36,9 +87,13 @@ impl Player {
         window: usize,
         track: Option<u8>,
         bluray_menu: bool,
+        bluray_direct: bool,
         silent: bool,
         fade_in: bool,
     ) -> Result<Self, AppError> {
+        if bluray_menu {
+            configure_bluray_classpath(path);
+        }
         let api = Api::load(path)?;
         let location = CString::new(location).map_err(|_| ffi::error("光盘路径无效。"))?;
         // These flags are defined by VLC 3's src/libvlc-module.c.
@@ -51,6 +106,13 @@ impl Player {
         ];
         if silent {
             options.push(CString::new("--no-audio").unwrap());
+        }
+        if bluray_menu {
+            let log = crate::menu_log_path();
+            let _ = std::fs::remove_file(&log);
+            options.push(CString::new("--file-logging").unwrap());
+            options.push(CString::new(format!("--logfile={}", log.display())).unwrap());
+            options.push(CString::new("--verbose=2").unwrap());
         }
         let args: Vec<_> = options.iter().map(|s| s.as_ptr()).collect();
         unsafe {
@@ -71,6 +133,11 @@ impl Player {
             }
             if bluray_menu {
                 let option = CString::new(":bluray-menu=1").unwrap();
+                (api.libvlc_media_add_option)(media, option.as_ptr());
+            } else if bluray_direct {
+                // Explicitly disable the top-menu path; otherwise VLC can
+                // start at First Play (a short logo) for a concrete playlist.
+                let option = CString::new(":bluray-menu=0").unwrap();
                 (api.libvlc_media_add_option)(media, option.as_ptr());
             }
             let handle = (api.libvlc_media_player_new_from_media)(media);
@@ -110,7 +177,7 @@ impl Player {
         Ok(())
     }
 
-    pub fn titles(&self) -> Vec<(i32, bool)> {
+    pub fn titles_with_names(&self) -> Vec<(i32, bool, String)> {
         unsafe {
             let mut titles = ptr::null_mut();
             let count = (self.api.libvlc_media_player_get_full_title_descriptions)(
@@ -122,7 +189,7 @@ impl Player {
                 for i in 0..count.min(10000) {
                     let title = *titles.add(i as usize);
                     if !title.is_null() {
-                        result.push((i, (*title).flags & 1 != 0));
+                        result.push((i, (*title).flags & 1 != 0, ffi::text((*title).name)));
                     }
                 }
                 (self.api.libvlc_title_descriptions_release)(titles, count as u32);
@@ -130,32 +197,104 @@ impl Player {
             result
         }
     }
+    pub fn titles(&self) -> Vec<(i32, bool)> {
+        self.titles_with_names()
+            .into_iter()
+            .map(|(index, menu, _)| (index, menu))
+            .collect()
+    }
+    fn media_audio_metadata(&self) -> Vec<(i32, String, String, String, Option<u64>)> {
+        unsafe {
+            let media = (self.api.libvlc_media_player_get_media)(self.handle);
+            if media.is_null() {
+                return Vec::new();
+            }
+            let mut list: *mut *mut ffi::MediaTrack = ptr::null_mut();
+            let count = (self.api.libvlc_media_tracks_get)(media, &mut list);
+            let mut result = Vec::new();
+            if count > 0 && !list.is_null() {
+                for index in 0..count {
+                    let track = *list.add(index as usize);
+                    if track.is_null() || (*track).track_type != 0 {
+                        continue;
+                    }
+                    let audio = (*track).audio;
+                    let channels = if audio.is_null() {
+                        None
+                    } else {
+                        Some((*audio).channels as u64)
+                    };
+                    let codec = ffi::text((self.api.libvlc_media_get_codec_description)(
+                        0,
+                        (*track).codec,
+                    ));
+                    result.push((
+                        (*track).id,
+                        ffi::text((*track).language),
+                        ffi::text((*track).description),
+                        codec,
+                        channels,
+                    ));
+                }
+                (self.api.libvlc_media_tracks_release)(list, count);
+            }
+            (self.api.libvlc_media_release)(media);
+            result
+        }
+    }
     pub fn tracks(&self) -> (Vec<AudioTrack>, Option<i64>) {
         unsafe {
             let selected = (self.api.libvlc_audio_get_track)(self.handle);
             let first = (self.api.libvlc_audio_get_track_description)(self.handle);
+            let metadata = self.media_audio_metadata();
+            let _ = std::fs::write(
+                std::env::temp_dir().join("discatelier-vlc-audio-meta.log"),
+                format!("{metadata:?}"),
+            );
+            let mut descriptions = Vec::new();
             let mut entry = first;
-            let mut tracks = Vec::new();
             for _ in 0..1024 {
                 if entry.is_null() {
                     break;
                 }
                 let track = &*entry;
                 if track.id >= 0 {
-                    tracks.push(AudioTrack {
-                        id: track.id as i64,
-                        title: ffi::text(track.name),
-                        language: String::new(),
-                        codec: String::new(),
-                        channels: None,
-                        selected: selected == track.id,
-                    });
+                    descriptions.push((track.id, ffi::text(track.name)));
                 }
                 entry = track.next;
             }
             if !first.is_null() {
                 (self.api.libvlc_track_description_list_release)(first);
             }
+            // libVLC's audio description uses the Blu-ray PID (4352...), while
+            // the media track list uses its own 1-based id. Match by id when
+            // possible, otherwise by the stable audio order.
+            let by_index = metadata.len() == descriptions.len();
+            let tracks = descriptions
+                .into_iter()
+                .enumerate()
+                .map(|(index, (id, name))| {
+                    let extra = metadata
+                        .iter()
+                        .find(|(media_id, ..)| *media_id == id)
+                        .or_else(|| by_index.then(|| &metadata[index]));
+                    let description = extra
+                        .map(|(_, _, description, ..)| description.clone())
+                        .unwrap_or_default();
+                    AudioTrack {
+                        id: id as i64,
+                        title: if description.is_empty() { name } else { description },
+                        language: extra
+                            .map(|(_, language, ..)| language.clone())
+                            .unwrap_or_default(),
+                        codec: extra
+                            .map(|(_, _, _, codec, _)| codec.clone())
+                            .unwrap_or_default(),
+                        channels: extra.and_then(|(_, _, _, _, channels)| *channels),
+                        selected: selected == id,
+                    }
+                })
+                .collect();
             (tracks, (selected >= 0).then_some(selected as i64))
         }
     }
@@ -240,6 +379,16 @@ impl Player {
                         return Err(ffi::error("DVD 章节不存在。"));
                     }
                     (self.api.libvlc_media_player_set_chapter)(self.handle, index as i32 - 1);
+                }
+                PlaybackControl::Title { index } => {
+                    if !self
+                        .titles()
+                        .iter()
+                        .any(|(id, _)| *id == index as i32)
+                    {
+                        return Err(ffi::error("蓝光标题不存在。"));
+                    }
+                    (self.api.libvlc_media_player_set_title)(self.handle, index as i32);
                 }
                 PlaybackControl::Audio { id } => {
                     if !snapshot.audio_tracks.iter().any(|track| track.id == id)

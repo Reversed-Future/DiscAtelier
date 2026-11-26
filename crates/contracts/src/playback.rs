@@ -121,6 +121,8 @@ pub enum PlaybackControl {
     Rate { rate: f64 },
     Audio { id: i64 },
     Chapter { index: u32 },
+    /// Blu-ray title index as exposed by libVLC (0 = top menu).
+    Title { index: u32 },
     Menu { direction: MenuDirection },
     Equalizer { enabled: bool, preamp: f64, bands: Vec<f64> },
     Stop,

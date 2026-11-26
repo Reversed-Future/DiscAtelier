@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { playback } from './gateway';
 
-export function usePlayerChrome(fullscreen: boolean, hold = false) {
+export function usePlayerChrome(fullscreen: boolean, hold = false, paused = false) {
   const [visible, setVisible] = useState(true);
   const holdRef = useRef(hold);
   holdRef.current = hold;
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
   const wake = useRef(() => setVisible(true));
   useEffect(() => { if (hold) setVisible(true); }, [hold]);
   useEffect(() => {
@@ -27,7 +29,11 @@ export function usePlayerChrome(fullscreen: boolean, hold = false) {
       overControls = !!(event.target as HTMLElement).closest('.player-header, .player-footer');
       show();
     };
-    const keyboard = () => show();
+    const keyboard = (event: KeyboardEvent) => {
+      // Space while paused starts playback; it must not reveal the controls.
+      if (event.code === 'Space' && pausedRef.current) return;
+      show();
+    };
     async function readPointer() {
       try {
         const point = await playback.pointer();

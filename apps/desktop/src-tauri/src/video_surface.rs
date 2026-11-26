@@ -58,6 +58,54 @@ impl VideoSurface {
     pub fn handle(&self) -> usize {
         self.host
     }
+    /// Make the native surface visible before VLC creates its video output.
+    /// BD-J menus can end their input if the initial output is a hidden 1x1
+    /// child window; recognition already uses a visible 1280x720 surface.
+    pub fn prepare(&self) -> Result<(), AppError> {
+        unsafe {
+            let mut client: RECT = std::mem::zeroed();
+            if GetClientRect(self.owner as _, &mut client) == 0 {
+                return Err(error());
+            }
+            let width = (client.right * 3 / 5).max(2).min(client.right.max(2));
+            let height = (client.bottom * 3 / 5).max(2).min(client.bottom.max(2));
+            let x = (client.right - width).max(0) / 2;
+            let y = (client.bottom - height).max(0) / 2;
+            // VLC only embeds into the supplied HWND when it is enabled; a
+            // disabled surface makes it create a separate top-level window.
+            windows_sys::Win32::UI::Input::KeyboardAndMouse::EnableWindow(self.host as _, 1);
+            // A previous clip region would otherwise survive the first frame.
+            SetWindowRgn(self.host as _, std::ptr::null_mut(), 0);
+            if SetWindowPos(
+                self.host as _,
+                HWND_TOP,
+                x,
+                y,
+                width,
+                height,
+                SWP_NOACTIVATE | SWP_SHOWWINDOW,
+            ) == 0
+            {
+                return Err(error());
+            }
+        }
+        Ok(())
+    }
+    pub fn hide(&self) {
+        unsafe {
+            ShowWindow(self.host as _, SW_HIDE);
+        }
+    }
+
+    /// Put keyboard focus on the native menu surface. VLC's video child may
+    /// not take focus on its own, and the key sampler needs the app foreground
+    /// with this surface enabled.
+    pub fn focus(&self) {
+        unsafe {
+            SetForegroundWindow(self.owner as _);
+            windows_sys::Win32::UI::Input::KeyboardAndMouse::SetFocus(self.host as _);
+        }
+    }
     fn place(&self, viewport: VideoViewport) -> Result<(), AppError> {
         unsafe {
             windows_sys::Win32::UI::Input::KeyboardAndMouse::EnableWindow(
@@ -108,8 +156,50 @@ impl VideoSurface {
         Ok(())
     }
 }
+pub fn hide(window: &tauri::WebviewWindow) -> Result<(), AppError> {
+    let surface = *window.state::<VideoSurface>();
+    let (send, receive) = std::sync::mpsc::channel();
+    window
+        .run_on_main_thread(move || {
+            surface.hide();
+            let _ = send.send(());
+        })
+        .map_err(|_| error())?;
+    receive
+        .recv_timeout(std::time::Duration::from_secs(2))
+        .map_err(|_| error())
+}
+
+pub fn prepare(window: &tauri::WebviewWindow) -> Result<(), AppError> {
+    let surface = *window.state::<VideoSurface>();
+    let (send, receive) = std::sync::mpsc::channel();
+    window
+        .run_on_main_thread(move || {
+            let _ = send.send(surface.prepare());
+        })
+        .map_err(|_| error())?;
+    receive
+        .recv_timeout(std::time::Duration::from_secs(2))
+        .map_err(|_| error())?
+}
+
 fn error() -> AppError {
     AppError::new("player", "无法更新内置播放区域。")
+}
+
+#[tauri::command]
+pub fn playback_focus_video(window: tauri::WebviewWindow) -> Result<(), AppError> {
+    let surface = *window.state::<VideoSurface>();
+    let (send, receive) = std::sync::mpsc::channel();
+    window
+        .run_on_main_thread(move || {
+            surface.focus();
+            let _ = send.send(());
+        })
+        .map_err(|_| error())?;
+    receive
+        .recv_timeout(std::time::Duration::from_secs(1))
+        .map_err(|_| error())
 }
 
 #[tauri::command]

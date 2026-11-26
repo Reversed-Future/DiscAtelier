@@ -187,6 +187,10 @@ fn command(state: &mut PlaybackState, control: &PlaybackControl) -> Result<Value
             "unsupported",
             "当前播放后端不支持 DVD 章节。",
         )),
+        PlaybackControl::Title { .. } => Err(AppError::new(
+            "unsupported",
+            "当前播放后端不支持蓝光标题切换。",
+        )),
         PlaybackControl::Audio { id } => {
             if !state.snapshot.audio_tracks.iter().any(|t| t.id == *id) {
                 return Err(AppError::new("validation", "音轨不存在。"));
@@ -202,18 +206,70 @@ fn command(state: &mut PlaybackState, control: &PlaybackControl) -> Result<Value
         PlaybackControl::Stop => unreachable!(),
     }
 }
+fn plain_path(path: &Path) -> PathBuf {
+    let text = path.to_string_lossy();
+    match text.strip_prefix(r"\\?\") {
+        Some(rest) => PathBuf::from(rest),
+        None => path.to_path_buf(),
+    }
+}
+
 fn log_path(directory: &Path, session_id: &str, decryptor: Decryptor) -> PathBuf {
     let suffix = match decryptor {
         Decryptor::LocalAacs => "aacs",
         Decryptor::MakeMkv => "compat",
     };
-    directory.join(format!("mpv-{session_id}-{suffix}.log"))
+    plain_path(directory).join(format!("mpv-{session_id}-{suffix}.log"))
 }
 fn read_log(directory: &Path, session_id: &str, decryptor: Decryptor) -> String {
     let path = log_path(directory, session_id, decryptor);
     let bytes = std::fs::read(path).unwrap_or_default();
     let start = bytes.len().saturating_sub(64 * 1024);
     String::from_utf8_lossy(&bytes[start..]).into_owned()
+}
+
+/// Keep the last failed MPV log next to the playback history so a generic
+/// process-exit message can still be diagnosed after the session log is gone.
+fn preserve_failure_log(directory: &Path, session_id: &str, decryptor: Decryptor) -> Option<PathBuf> {
+    let source = log_path(directory, session_id, decryptor);
+    let bytes = std::fs::read(&source).ok()?;
+    if bytes.is_empty() {
+        return None;
+    }
+    let target = plain_path(directory).join("mpv-last-failure.log");
+    std::fs::write(&target, bytes).ok()?;
+    Some(target)
+}
+
+fn summarize_log(log: &str) -> String {
+    let mut lines = Vec::new();
+    for line in log.lines().rev() {
+        let lower = line.to_ascii_lowercase();
+        if !(lower.contains("error")
+            || lower.contains("failed")
+            || lower.contains("cannot")
+            || lower.contains("couldn't")
+            || lower.contains("aacs")
+            || lower.contains("bd+")
+            || lower.contains("region")
+            || lower.contains("no usable"))
+        {
+            continue;
+        }
+        let text = line
+            .rsplit_once("] ")
+            .map(|(_, rest)| rest)
+            .unwrap_or(line)
+            .trim();
+        if !text.is_empty() && !lines.iter().any(|value: &String| value == text) {
+            lines.push(text.chars().take(220).collect());
+            if lines.len() == 2 {
+                break;
+            }
+        }
+    }
+    lines.reverse();
+    lines.join(" | ")
 }
 struct PlayContext<'a> {
     directory: &'a Path,
@@ -236,7 +292,7 @@ async fn play(
         cancelled,
     } = context;
     let pipe = format!(r"\\.\pipe\discatelier-{}", state.snapshot.session_id);
-    let bindings = directory.join("player-bindings.conf");
+    let bindings = plain_path(directory).join("player-bindings.conf");
     let log = log_path(directory, &state.snapshot.session_id, decryptor);
     let _ = std::fs::remove_file(&log);
     std::fs::write(&bindings,"SPACE cycle pause\nLEFT seek -5 relative\nRIGHT seek 5 relative\nf cycle fullscreen\nESC quit\nq quit\n")
@@ -280,6 +336,16 @@ async fn play(
     if !state.snapshot.source.playlist.starts_with("local:")
         && !state.snapshot.source.mount_point.is_empty()
     {
+        // Blu-ray playlists are normally split into many clips. Keep the
+        // demuxer readahead deep enough to read the next play item while the
+        // current one is still playing. Do not force `--cache=yes`: on some
+        // protected discs the forced cache path makes MPV exit instead of
+        // letting libbluray drive the read order.
+        process.args([
+            "--demuxer-readahead-secs=30",
+            "--demuxer-max-bytes=128MiB",
+            "--demuxer-max-back-bytes=32MiB",
+        ]);
         process.arg(format!(
             "--bluray-device={}",
             state.snapshot.source.mount_point
@@ -468,9 +534,26 @@ async fn play(
             .map_err(|_| AppError::new("player", "播放器进程不可读取。"))?
         {
             if !status.success() && closing.is_none() && state.snapshot.phase.active() {
+                let log = read_log(
+                    directory,
+                    &state.snapshot.session_id,
+                    decryptor,
+                );
+                let summary = summarize_log(&log);
+                let location = preserve_failure_log(
+                    directory,
+                    &state.snapshot.session_id,
+                    decryptor,
+                )
+                .map(|path| path.display().to_string())
+                .unwrap_or_else(|| "（未生成日志）".to_string());
                 return Err(AppError::new(
                     "player",
-                    "播放器异常退出，已保存最后播放位置。",
+                    if summary.is_empty() {
+                        format!("播放器异常退出，已保存最后播放位置。MPV 日志：{location}")
+                    } else {
+                        format!("播放器异常退出：{summary}。MPV 日志：{location}")
+                    },
                 ));
             }
             break;

@@ -58,12 +58,19 @@ pub async fn playback_start(
         #[cfg(feature = "performance-harness")]
         let fixture = crate::playback_fixture::resolve(directory, &mount_point, &token, &playlist)?;
         #[cfg(feature = "performance-harness")]
-        let source = match &fixture {
+        let mut source = match &fixture {
             Some((source, _)) => source.clone(),
             None => verify_disc(&mount_point, &token, &playlist)?,
         };
         #[cfg(not(feature = "performance-harness"))]
-        let source = verify_disc(&mount_point, &token, &playlist)?;
+        let mut source = verify_disc(&mount_point, &token, &playlist)?;
+        // MPV cannot create its embedded video window on this Windows build,
+        // and VLC cannot select an arbitrary Blu-ray playlist after opening.
+        // A concrete playlist therefore enters through the disc menu, where
+        // the user can start the same title without an abnormal MPV exit.
+        if discatelier_player_vlc::is_bluray_playlist(&source.playlist) {
+            source.playlist = discatelier_player_vlc::BD_MENU.into();
+        }
         let cd_history = cd_metadata.clone();
         let checkpoint: Checkpoint = Arc::new(move |snapshot| {
             let record = PlaybackRecord::from(&crate::cd_metadata::decorate_snapshot(
@@ -78,53 +85,74 @@ pub async fn playback_start(
                 .map_err(|e| e.clone())?
                 .save_playback(&record)
         });
-        let vlc = source.playlist == discatelier_player_vlc::DVD_MENU
-            || source.playlist == discatelier_player_vlc::BD_MENU
-            || discatelier_player_vlc::cd_track(&source.playlist).is_some();
+        let disc_menu = source.playlist == discatelier_player_vlc::DVD_MENU
+            || source.playlist == discatelier_player_vlc::BD_MENU;
+        let vlc = disc_menu || discatelier_player_vlc::cd_track(&source.playlist).is_some();
+        let vlc_video = disc_menu;
         let vlc_path = if vlc {
             Some(discatelier_player_vlc::configured(&settings)?)
         } else {
             None
         };
+        // VLC's video inputs need a visible native surface before the input
+        // starts; the normal player viewport follows right after.
+        if vlc_video {
+            crate::video_surface::prepare(&resources)?;
+        }
         // Verification completes before the current playback is replaced.
         drop(current.take());
-        let session = if let Some(path) = vlc_path {
-            PlaybackSession::Vlc(discatelier_player_vlc::VlcSession::start(
-                path,
-                video_window,
-                source,
-                resume_seconds,
-                resume_title,
-                checkpoint,
-            )?)
-        } else {
-            if resume_title.is_some() {
-                return Err(AppError::new("validation", "BD 不使用 DVD 标题编号。"));
-            }
-            let (libaacs, libbdplus) = crate::optical::bluray_libraries(&resources)?;
-            let config = MpvProbe::configured(&settings)?
-                .with_bluray_libraries(libaacs, libbdplus)?
-                .embedded(video_window)?;
-            #[cfg(feature = "performance-harness")]
-            let config = match fixture {
-                Some((_, file)) => config.with_fixture(file)?,
-                None => config,
+        let started = (|| -> Result<(PlaybackSession, PlaybackSnapshot), AppError> {
+            let session = if let Some(path) = vlc_path {
+                PlaybackSession::Vlc(discatelier_player_vlc::VlcSession::start(
+                    path,
+                    video_window,
+                    source,
+                    resume_seconds,
+                    resume_title,
+                    checkpoint,
+                )?)
+            } else {
+                if resume_title.is_some() {
+                    return Err(AppError::new("validation", "BD 不使用 DVD 标题编号。"));
+                }
+                let (libaacs, libbdplus) = crate::optical::bluray_libraries(&resources)?;
+                let config = MpvProbe::configured(&settings)?
+                    .with_bluray_libraries(libaacs, libbdplus)?
+                    .embedded(video_window)?;
+                #[cfg(feature = "performance-harness")]
+                let config = match fixture {
+                    Some((_, file)) => config.with_fixture(file)?,
+                    None => config,
+                };
+                PlaybackSession::Mpv(MpvSession::start(
+                    config,
+                    source,
+                    resume_seconds,
+                    directory.to_owned(),
+                    checkpoint,
+                )?)
             };
-            PlaybackSession::Mpv(MpvSession::start(
-                config,
-                source,
-                resume_seconds,
-                directory.to_owned(),
-                checkpoint,
-            )?)
-        };
-        let mut snapshot = crate::cd_metadata::decorate_snapshot(&cd_metadata, session.snapshot()?);
-        let _ = crate::playback_memory::apply(&session, &mut snapshot, &directory);
-        if let Ok(equalizer) = crate::equalizer::read(&directory) {
-            let _ = crate::equalizer::apply(&session, &snapshot, &equalizer);
+            let mut snapshot =
+                crate::cd_metadata::decorate_snapshot(&cd_metadata, session.snapshot()?);
+            let _ = crate::playback_memory::apply(&session, &mut snapshot, &directory);
+            if let Ok(equalizer) = crate::equalizer::read(&directory) {
+                let _ = crate::equalizer::apply(&session, &snapshot, &equalizer);
+            }
+            Ok((session, snapshot))
+        })();
+        match started {
+            Ok((session, snapshot)) => {
+                *current = Some(session);
+                Ok(snapshot)
+            }
+            Err(error) => {
+                // Do not leave the pre-showed video surface covering the panel.
+                if vlc_video {
+                    let _ = crate::video_surface::hide(&resources);
+                }
+                Err(error)
+            }
         }
-        *current = Some(session);
-        Ok(snapshot)
     })
     .await
 }

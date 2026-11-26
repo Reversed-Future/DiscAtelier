@@ -25,7 +25,7 @@ import { useCollectionArtwork } from './collection/useCollectionArtwork';
 import { prefetchVideoMetadata } from './video/useVideoMetadata';
 import { OpticalPanel } from './optical/OpticalPanel';
 import { CdTrackSearch } from './optical/CdTrackSearch';
-import { useOpticalPresence } from './optical/useOpticalPresence';
+import { useOpticalInserted, useOpticalPresence } from './optical/useOpticalPresence';
 import type { OpticalPresence } from './optical/gateway';
 import { usePlayback } from './playback/usePlayback';
 import { AssistantDock } from './assistant/AssistantDock';
@@ -40,6 +40,7 @@ import { MusicDock } from './playback/MusicDock';
 export function App() {
   const player = usePlayback();
   const opticalPresence = useOpticalPresence(true, 3000);
+  const opticalInserted = useOpticalInserted(true, 3000);
   useZoom();
   useScrollbars();
   const snapshots = useRef(new Map<string, LibrarySnapshot>());
@@ -188,6 +189,9 @@ export function App() {
     setQuery(next);
   }
   const artwork = useCollectionArtwork(current, modelActive, !!inspected, currentVideo.value, partId, instantFlip);
+  const activePlaylist = player.snapshot?.source.playlist || '';
+  const opticalVideoActive = activePlaylist === 'bd-menu' || activePlaylist === 'dvd-menu' || activePlaylist.endsWith('.mpls');
+  const opticalPresent = opticalInserted || opticalPresence.length > 0;
   return <div className="workspace" data-list={organize}>
     <WindowChrome playerOpen={player.open}/>
     <DesktopShell player={player} onSettings={() => setSettingsPage('home')}/>
@@ -246,8 +250,15 @@ export function App() {
     </PlayerLayer>}
     {!player.open && player.snapshot?.source.mediaToken === 'local-audio' && <LocalAudioPlayer player={player}/>}
     {!player.open && player.snapshot?.source.playlist.startsWith('cd-track:') && <AudioPlayer player={player}/>}
-    {player.active && !player.snapshot?.source.playlist.startsWith('netease-song:') && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
+    {player.active && !opticalVideoActive && !activePlaylist.startsWith('netease-song:') && !opticalOpen && !player.open && <button className="playback-return" onClick={player.show} aria-label="打开播放器">
       {player.snapshot?.paused ? '已暂停' : player.snapshot?.phase === 'loading' ? '读取中' : '播放中'} · {player.snapshot?.title}
+    </button>}
+    {opticalPresent && !opticalOpen && !player.open && <button className="video-disc-return"
+      onClick={() => { if (player.active && opticalVideoActive) player.show(); else setOpticalOpen(true); }}
+      aria-label={player.active && opticalVideoActive ? '返回播放界面' : '打开光驱'}
+      title={player.active && opticalVideoActive ? `返回播放 · ${player.snapshot?.title || '视频光盘'}` : '光驱'}>
+      <Icon name={player.snapshot?.paused && opticalVideoActive ? 'play' : 'disc'}/>
+      <span className="video-disc-return-dot" data-playing={player.active && opticalVideoActive && !player.snapshot?.paused}/>
     </button>}
     {inspected && <Inspection metadata={currentVideo.value} metadataError={currentVideo.error} partId={partId} onPart={(id,instant) => {setPartId(id);setInstantFlip(instant);}} onOptical={() => setOpticalOpen(true)} key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
       onDeleted={async () => { setInspected(null); setSelectedId(''); const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已删除'); }}

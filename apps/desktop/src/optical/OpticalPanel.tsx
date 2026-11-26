@@ -10,6 +10,8 @@ import { CdDriveControls } from './CdDriveControls';
 import { MenuRecognitionStatus } from './MenuRecognitionStatus';
 import { MenuRecognitionResult } from './MenuRecognitionResult';
 import { OpticalAssociationEditor } from './OpticalAssociationEditor';
+import { integrations } from '../integrations/gateway';
+import { formatDuration, loadBlurayPlaylists, longestPlaylist, playlistOptionLabel, type BlurayPlaylist } from './blurayPlaylists';
 
 type DiscLookup = 'loading' | 'ready' | 'error';
 let cachedDrives: OpticalDrive[] | null = null;
@@ -18,6 +20,9 @@ let cachedSuggestions: Record<string, OpticalCandidate[]> = {};
 let cachedDiscReleases: Record<string, MusicBrainzRelease[]> = {};
 let cachedDiscLookup: Record<string, DiscLookup> = {};
 let cachedLoaded = false;
+// Survives closing and reopening the panel, so one inserted disc is not sent
+// to the AI repeatedly.
+const autoRecognized = new Set<string>();
 const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
 
 export function OpticalPanel({ onClose, player }: { onClose(): void; player: PlaybackController }) {
@@ -29,6 +34,7 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
   const [recognized, setRecognized] = useState<MenuRecognition | null>(null);
   const [recognitionTarget, setRecognitionTarget] = useState('');
   const [recognizing, setRecognizing] = useState(false);
+  const [capturing, setCapturing] = useState(false);
   const [recognitionProgress, setRecognitionProgress] = useState('');
   const [recognitionError, setRecognitionError] = useState('');
   const [discReleases, setDiscReleases] = useState<Record<string, MusicBrainzRelease[]>>(() => cachedDiscReleases);
@@ -41,7 +47,62 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
   const [selected, setSelected] = useState<Record<string, string>>({});
   const [details, setDetails] = useState(false);
   const [history, setHistory] = useState(false);
+  const [playlistRows, setPlaylistRows] = useState<Record<string, BlurayPlaylist[]>>({});
+  const [aiReady, setAiReady] = useState(false);
+  const [autoRecognize, setAutoRecognize] = useState(true);
   const mounted = useRef(false), running = useRef(false);
+  const playlistQueried = useRef(new Set<string>());
+  useEffect(() => {
+    let live = true;
+    void integrations.settings().then(status => {
+      if (!live) return;
+      setAiReady(!!status.settings.aiBaseUrl.trim() && !!status.settings.aiModel.trim());
+      setAutoRecognize(status.settings.autoRecognizeMenu ?? true);
+    }).catch(() => { /* 未配置 AI 时只提供手动识别。 */ });
+    return () => { live = false; };
+  }, []);
+  useEffect(() => {
+    for (const drive of drives) {
+      const medium = drive.medium;
+      if (!medium || medium.kind !== 'bluray') continue;
+      const key = `${drive.mountPoint}:${medium.token}`;
+      if (playlistQueried.current.has(key)) continue;
+      playlistQueried.current.add(key);
+      void loadBlurayPlaylists(drive.mountPoint, medium.token).then(rows => {
+        if (!mounted.current) return;
+        setPlaylistRows(current => ({ ...current, [medium.token]: rows }));
+      }).catch(() => {
+        if (!mounted.current) return;
+        setPlaylistRows(current => ({ ...current, [medium.token]: [] }));
+      });
+    }
+  }, [drives]);
+  useEffect(() => {
+    // The first file on a disc is often a logo or a short segment. Start on the
+    // longest playlist unless the user already made an explicit choice.
+    for (const drive of drives) {
+      const medium = drive.medium;
+      if (!medium || medium.kind !== 'bluray') continue;
+      const main = longestPlaylist(playlistRows[medium.token] || []);
+      if (!main) continue;
+      const key = `${drive.mountPoint}:${medium.token}`;
+      setSelected(current => current[key] && medium.playlists.includes(current[key])
+        ? current
+        : current[key] === main.playlist ? current : { ...current, [key]: main.playlist });
+    }
+  }, [drives, playlistRows]);
+  useEffect(() => {
+    if (running.current || !loaded || history || !aiReady || !autoRecognize || recognizing || busy || player.active || player.busy) return;
+    for (const drive of drives) {
+      const medium = drive.medium;
+      if (!medium || (medium.kind !== 'dvdVideo' && medium.kind !== 'bluray')) continue;
+      if (presence.some(value => value.mediaToken === medium.token)) continue;
+      if (autoRecognized.has(medium.token)) continue;
+      autoRecognized.add(medium.token);
+      void recognizeMenu(drive, medium, true);
+      break;
+    }
+  }, [drives, presence, loaded, history, aiReady, autoRecognize, recognizing, busy, player.active, player.busy]);
   const refresh = useCallback(async () => {
     if (running.current) return;
     running.current = true;
@@ -114,21 +175,25 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
   function openAssociate(drive: OpticalDrive, medium: OpticalMedium, label = medium.label) {
     setAssociate({ drive, medium, label });
   }
-  async function recognizeMenu(drive: OpticalDrive, medium: OpticalMedium) {
+  async function recognizeMenu(drive: OpticalDrive, medium: OpticalMedium, automatic = false) {
     if (running.current || recognizing || busy || !medium || player.active || player.busy) return;
     running.current = true;
     setRecognitionTarget(`${drive.mountPoint}:${medium.token}`); setRecognized(null);
-    setRecognizing(true); setRecognitionError(''); setRecognitionProgress('正在准备菜单识别…');
+    setRecognizing(true); setCapturing(true); setRecognitionError('');
+    setRecognitionProgress(automatic ? '已检测到视频光盘，正在自动识别菜单…' : '正在准备菜单识别…');
     try {
       const result = await optical.menuRecognize(drive.mountPoint, medium.token, medium.label, medium.kind === 'dvdVideo' ? 'dvd' : 'bluray', message => {
-        if (mounted.current) setRecognitionProgress(message);
+        if (!mounted.current) return;
+        // The capture session releases the drive before the AI request starts.
+        if (message.startsWith('截图已完成')) setCapturing(false);
+        setRecognitionProgress(message);
       });
       if (mounted.current) setRecognized(result);
     } catch (cause) {
       if (mounted.current) setRecognitionError(errorMessage(cause));
     } finally {
       running.current = false;
-      if (mounted.current) { setRecognizing(false); await refresh(); }
+      if (mounted.current) { setRecognizing(false); setCapturing(false); await refresh(); }
     }
   }
   async function unbind(medium: OpticalMedium) {
@@ -174,13 +239,25 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
     {drives.map(drive => {
       const medium = drive.medium;
       const selectionKey = `${drive.mountPoint}:${medium?.token || ''}`;
-      const playlist = medium?.playlists.includes(selected[selectionKey]) ? selected[selectionKey] : medium?.playlists[0] || '';
+      const blurayRows = medium?.kind === 'bluray' ? playlistRows[medium.token] : undefined;
+      const mainPlaylist = blurayRows ? longestPlaylist(blurayRows) : null;
+      const fallbackPlaylist = mainPlaylist?.playlist || medium?.playlists[0] || '';
+      const playlist = medium?.playlists.includes(selected[selectionKey]) ? selected[selectionKey] : fallbackPlaylist;
+      const playlistInfo = blurayRows?.find(row => row.playlist === playlist) ?? mainPlaylist;
+      const playlistOptions = medium?.kind === 'bluray'
+        ? medium.playlists.map(name => {
+            const row = blurayRows?.find(value => value.playlist === name);
+            return { id: name, label: row ? playlistOptionLabel(row) : name };
+          })
+        : [];
       const diagnostic = report?.mount === drive.mountPoint && report.token === medium?.token && report.playlist === playlist ? report.value : null;
       const linked = medium ? presence.find(value => value.mediaToken === medium.token) : undefined;
       const suggested = medium ? suggestions[medium.token]?.[0] : undefined;
       const discId = medium?.kind === 'audioCd' ? medium.discId : null;
       const release = discId ? discReleases[discId]?.[0] : undefined;
       const lookup = discId ? discLookup[discId] : undefined;
+      const targeted = recognitionTarget === selectionKey;
+      const recognizeLabel = recognizing && targeted ? '识别中…' : targeted && (recognized || recognitionError) ? '重新识别' : '识别菜单';
       return <section className="optical-drive" key={drive.mountPoint}>
         <div className="optical-heading">
           <strong>{drive.name}</strong>
@@ -192,7 +269,7 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
             </button>
           </div>
         </div>
-        <p>{drive.status === 'empty' ? '未放入光盘' : !medium ? '暂不可读取' : medium.kind === 'audioCd'
+        <p className="optical-medium">{drive.status === 'empty' ? '未放入光盘' : !medium ? '暂不可读取' : medium.kind === 'audioCd'
           ? <>CD · {release ? <><strong>{release.title}</strong>{release.artist ? ` · ${release.artist}` : ''}</> : `${medium.tracks.length} 首`}</>
           : medium.kind === 'bluray' ? `BD · ${medium.label}` : medium.kind === 'dvdVideo' ? `DVD · ${medium.label}` : medium.label || '光盘'}</p>
         {medium && <div className="optical-link">
@@ -213,25 +290,25 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
           busy={busy} player={player} onSelect={value => setSelected(current => ({ ...current, [selectionKey]: value }))}/>}
         {medium?.kind === 'dvdVideo' && <div className="optical-actions">
           <button className="solid-button" disabled={recognizing || busy || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, 'dvd-menu')}>播放</button>
-          <button className="text-button" disabled={busy || recognizing || player.active || player.busy} onClick={() => void recognizeMenu(drive, medium)}>{recognizing ? '识别中…' : '识别菜单'}</button>
+          <button className="text-button" disabled={busy || recognizing || player.active || player.busy} onClick={() => void recognizeMenu(drive, medium)}>{recognizeLabel}</button>
         </div>}
         {medium?.kind === 'bluray' && <>
           <dl className="optical-facts">
             <div><dt>播放列表</dt><dd>{medium.playlists.length}</dd></div>
-            <div><dt>区域</dt><dd>未确认（不修改光驱区域）</dd></div>
+            <div><dt>分段</dt><dd>{playlistInfo ? playlistInfo.segments.length : blurayRows ? '—' : '读取中'}</dd></div>
+            <div><dt>时长</dt><dd>{playlistInfo ? formatDuration(playlistInfo.durationSeconds) : '—'}</dd></div>
+            <div><dt>区域</dt><dd title="只读检测，不修改光驱区域">未确认</dd></div>
             <div><dt>AACS</dt><dd>{medium.aacsDirectory ? '检测到' : '未检测到'}</dd></div>
             <div><dt>BD+</dt><dd>{medium.bdplusDirectory ? '检测到' : '未检测到'}</dd></div>
-            <div><dt>BD-J</dt><dd>{medium.javaDirectory ? '检测到，菜单播放需系统 Java' : '未检测到'}</dd></div>
+            <div><dt>BD-J</dt><dd title="BD-J 菜单需要可用的 Java 运行时">{medium.javaDirectory ? '检测到' : '未检测到'}</dd></div>
           </dl>
           <div className="optical-actions">
-            <button className="solid-button" disabled={recognizing || busy || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, 'bd-menu')}>菜单播放</button>
-            <Select label="播放列表" value={playlist} options={medium.playlists.map(name => ({ id: name, label: name }))} disabled={busy || player.active || player.busy}
+            <button className="solid-button" disabled={capturing || busy || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, 'bd-menu')}>菜单播放</button>
+            <Select label="播放列表" value={playlist} options={playlistOptions} disabled={busy || player.active || player.busy}
               onChange={value => { setSelected(current => ({ ...current, [selectionKey]: value })); setDetails(false); }}/>
-            <button className="text-button" disabled={recognizing || busy || !playlist || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, playlist)}>直接播放</button>
-            <button className="text-button" disabled={busy || recognizing || player.active || player.busy} onClick={() => void recognizeMenu(drive, medium)}>{recognizing ? '识别中…' : '识别菜单'}</button>
+            <button className="text-button" disabled={busy || recognizing || player.active || player.busy} onClick={() => void recognizeMenu(drive, medium)}>{recognizeLabel}</button>
             <button className="text-button" disabled={recognizing || busy || !playlist || player.active || player.busy} onClick={() => void probe(drive, playlist)}>检查播放</button>
           </div>
-          <p className="setting-hint">菜单播放使用 VLC；BD-J 菜单需要可用的 Java 运行时。识别菜单会静默启动菜单并仅在点击后把截图发送到设置中的 AI 接口。</p>
         </>}
         {recognitionTarget === selectionKey && <>
           <MenuRecognitionStatus active={recognizing} message={recognitionProgress} error={recognitionError}/>
