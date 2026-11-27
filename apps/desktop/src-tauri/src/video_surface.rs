@@ -92,6 +92,7 @@ impl VideoSurface {
         Ok(())
     }
     pub fn hide(&self) {
+        crate::subtitles::overlay::clear();
         unsafe {
             ShowWindow(self.host as _, SW_HIDE);
         }
@@ -113,6 +114,7 @@ impl VideoSurface {
                 viewport.interactive.into(),
             );
             if !viewport.visible {
+                crate::subtitles::overlay::clear();
                 ShowWindow(self.host as _, SW_HIDE);
                 return Ok(());
             }
@@ -151,6 +153,7 @@ impl VideoSurface {
                     DeleteObject(region);
                     return Err(error());
                 }
+                crate::subtitles::overlay::layout(self.host, width, top, height - bottom);
             }
         }
         Ok(())

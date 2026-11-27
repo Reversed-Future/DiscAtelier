@@ -191,6 +191,10 @@ fn command(state: &mut PlaybackState, control: &PlaybackControl) -> Result<Value
             "unsupported",
             "当前播放后端不支持蓝光标题切换。",
         )),
+        PlaybackControl::Subtitle { id } if *id == -1 => Ok(json!(["set_property", "sid", "no"])),
+        PlaybackControl::Subtitle { id } if state.snapshot.subtitle_tracks.iter().any(|t| t.id == *id) =>
+            Ok(json!(["set_property", "sid", id])),
+        PlaybackControl::Subtitle { .. } => Err(AppError::new("validation", "字幕轨不存在。")),
         PlaybackControl::Audio { id } => {
             if !state.snapshot.audio_tracks.iter().any(|t| t.id == *id) {
                 return Err(AppError::new("validation", "音轨不存在。"));

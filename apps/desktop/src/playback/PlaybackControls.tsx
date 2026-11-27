@@ -10,6 +10,7 @@ import { EqualizerQuick } from './EqualizerQuick';
 import type { PlaybackController } from './usePlayback';
 
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2].map(rate => ({ id: String(rate), label: `${rate}×` }));
+const seekKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
 const chapterCache = new Map<string, DvdChapter[]>();
 const blurayCache = new Map<string, BlurayPlaylist | null>();
 
@@ -85,6 +86,21 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
   const latest = useRef<number | null>(null), latestVolume = useRef<number | null>(null);
   const lastVolume = useRef(100);
   const seekStart = useRef<number | null>(null), seekMoved = useRef(false);
+  const seekKey = useRef<string | null>(null);
+  function cancelSeekGesture() {
+    seekStart.current = null;
+    seekMoved.current = false;
+    seekKey.current = null;
+    if (latest.current !== null) {
+      latest.current = null;
+      setDraft(null);
+    }
+    setHoveredChapter(-1);
+  }
+  useEffect(() => {
+    window.addEventListener('blur', cancelSeekGesture);
+    return () => window.removeEventListener('blur', cancelSeekGesture);
+  }, []);
   const actions = useRef<HTMLDivElement>(null), seek = useRef<HTMLDivElement>(null);
   const [popoverMax, setPopoverMax] = useState(60);
   useEffect(() => {
@@ -260,8 +276,18 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
         value={Math.min(position, duration)} disabled={!player.active || !s.seekable || !duration}
         aria-valuetext={`${time(position)} / ${time(duration)}`}
         style={{ '--progress': `${duration ? Math.min(100, position / duration * 100) : 0}%` } as CSSProperties}
-        onChange={event => { const value = Number(event.target.value); latest.current = value; setPendingSeek(null); setDraft(value); }}
-        onPointerDown={event => { setPendingSeek(null); seekStart.current = event.clientX; seekMoved.current = false; }}
+        onChange={event => {
+          // WebView can deliver a final input after pointerup. That gesture has already committed.
+          if (seekStart.current === null && seekKey.current === null) return;
+          latest.current = Number(event.target.value);
+          setPendingSeek(null);
+          setDraft(latest.current);
+        }}
+        onPointerDown={event => {
+          if (event.button !== 0 || !event.isPrimary) return;
+          seekKey.current = null;
+          setPendingSeek(null); seekStart.current = event.clientX; seekMoved.current = false;
+        }}
         onPointerMove={event => {
           if (seekStart.current !== null && Math.abs(event.clientX - seekStart.current) > 3) seekMoved.current = true;
           if (!segmented || !duration) return;
@@ -271,7 +297,8 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
         }}
         onPointerLeave={() => setHoveredChapter(-1)}
         onPointerUp={event => {
-          const clicked = seekStart.current !== null && !seekMoved.current;
+          if (!event.isPrimary || event.button !== 0 || seekStart.current === null) return;
+          const clicked = !seekMoved.current;
           seekStart.current = null;
           if (clicked && chaptered && duration) {
             const index = chapterAt(seekSecondsAt(event));
@@ -286,15 +313,18 @@ export function PlaybackControls({ player, onMenu, title, extended = false, show
           // Some WebView2 range implementations emit change after pointerup.
           // Derive the target from the pointer so commit never clears the
           // optimistic position before that change arrives.
-          if (clicked) {
-            const value = seekSecondsAt(event);
-            latest.current = value;
-            setDraft(value);
-          }
+          latest.current = seekSecondsAt(event);
           void commit();
         }}
-        onKeyUp={event => { if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) void commit(); }}
-        onPointerCancel={() => { seekStart.current = null; latest.current = null; setPendingSeek(null); setDraft(null); setHoveredChapter(-1); }} onBlur={() => { if (latest.current !== null) void commit(); }}/>
+        onKeyDown={event => {
+          if (!event.altKey && !event.ctrlKey && !event.metaKey && seekKeys.has(event.key)) seekKey.current = event.key;
+        }}
+        onKeyUp={event => {
+          if (seekKey.current !== event.key) return;
+          seekKey.current = null;
+          void commit();
+        }}
+        onPointerCancel={cancelSeekGesture} onBlur={cancelSeekGesture}/>
     </div>
     <div className="playback-times"><span>{time(position)}</span>{chaptered ? <span>第 {currentChapter + 1} / {chapters.length} 章</span> : segmented ? <span>第 {currentMark + 1} / {marks.length} 段</span> : null}<span>{time(s.durationSeconds)}</span></div>
     {player.active && <div className="playback-actions" ref={actions}>

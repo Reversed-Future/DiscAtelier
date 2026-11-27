@@ -39,5 +39,6 @@ if (!(Test-Path -LiteralPath $vlcLibrary)) { throw "Missing $vlcLibrary" }
 if (!(Test-Path -LiteralPath $vlcLicense)) { throw "Missing $vlcLicense" }
 if (!(Test-Path -LiteralPath $javaExecutable)) { throw "Missing $javaExecutable" }
 if (!(Test-Path -LiteralPath $javaLicense)) { throw "Missing $javaLicense" }
+& (Join-Path $PSScriptRoot 'prepare-vlc-captions.ps1') -Runtime (Split-Path $vlcLibrary)
 Write-Host "VLC runtime: $vlcRoot"
 Write-Host "Java runtime: $javaRoot"

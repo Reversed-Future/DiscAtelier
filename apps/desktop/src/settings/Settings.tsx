@@ -10,8 +10,9 @@ import { DataSettings } from './DataSettings';
 import { MusicSettings } from './MusicSettings';
 import { AboutSettings } from './AboutSettings';
 import { EqualizerSettings } from '../playback/EqualizerSettings';
+import { SubtitleSettings } from './SubtitleSettings';
 
-const pages = [{ id: 'window', label: '窗口' }, { id: 'data', label: '数据' }, { id: 'exchange', label: '汇率' }, { id: 'video', label: '影像资料' }, { id: 'music', label: '音乐资料' }, { id: 'assistant', label: '助手' }, { id: 'playback', label: '播放' }, { id: 'audio', label: '音效' }, { id: 'about', label: '关于' }] as const;
+const pages = [{ id: 'window', label: '窗口' }, { id: 'data', label: '数据' }, { id: 'exchange', label: '汇率' }, { id: 'video', label: '影像资料' }, { id: 'music', label: '音乐资料' }, { id: 'assistant', label: '助手' }, { id: 'playback', label: '播放' }, { id: 'subtitles', label: 'AI 字幕' }, { id: 'audio', label: '音效' }, { id: 'about', label: '关于' }] as const;
 type Page = typeof pages[number]['id'];
 export function Settings({ initialPage, libraryAvailable, onRestore, onClose }: {
   initialPage: 'home' | 'discogs' | 'about' | 'audio'; libraryAvailable: boolean; onRestore(): void; onClose(): void;
@@ -37,6 +38,7 @@ export function Settings({ initialPage, libraryAvailable, onRestore, onClose }: 
         {page === 'exchange' && <ExchangeSettings onBusy={setBusy}/>}
         {page === 'playback' && <PlaybackSettings onBusy={setBusy}/>}
         {page === 'audio' && <EqualizerSettings/>}
+        {page === 'subtitles' && <SubtitleSettings/>}
         {page === 'about' && <AboutSettings onBusy={setBusy}/>}
       </section>
     </div>

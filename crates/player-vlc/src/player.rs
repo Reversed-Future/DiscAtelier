@@ -13,6 +13,7 @@ pub struct Player {
     pub api: Api,
     pub handle: Handle,
     instance: Handle,
+    pub(crate) captions: Option<std::sync::Arc<crate::captions::Capture>>,
     equalizer: Mutex<Option<StoredEqualizer>>,
 }
 
@@ -90,6 +91,7 @@ impl Player {
         bluray_direct: bool,
         silent: bool,
         fade_in: bool,
+        caption_session: Option<&str>,
     ) -> Result<Self, AppError> {
         if bluray_menu {
             configure_bluray_classpath(path);
@@ -104,6 +106,13 @@ impl Player {
             // sharing the Windows WASAPI application session.
             CString::new("--aout=directsound").unwrap(),
         ];
+        let captions = caption_session.and_then(|s| crate::captions::Capture::open(path,s));
+        if let Some(capture) = &captions {
+            // libVLC owns audio-filter for equalization. Its independent visualization
+            // filter chain also receives decoded PCM and survives equalizer changes.
+            options.extend(["--sub-filter=atelier_captions".into(),"--audio-visual=atelier_dialogue".into(),
+                format!("--atelier-session={}",capture.number)].into_iter().map(|o|CString::new(o).unwrap()));
+        }
         if silent {
             options.push(CString::new("--no-audio").unwrap());
         }
@@ -149,6 +158,7 @@ impl Player {
             let player = Self {
                 api,
                 instance,
+                captions,
                 handle,
                 equalizer: Mutex::new(None),
             };
@@ -203,7 +213,7 @@ impl Player {
             .map(|(index, menu, _)| (index, menu))
             .collect()
     }
-    fn media_audio_metadata(&self) -> Vec<(i32, String, String, String, Option<u64>)> {
+    fn media_metadata(&self, kind: i32) -> Vec<(i32, String, String, String, Option<u64>)> {
         unsafe {
             let media = (self.api.libvlc_media_player_get_media)(self.handle);
             if media.is_null() {
@@ -215,17 +225,17 @@ impl Player {
             if count > 0 && !list.is_null() {
                 for index in 0..count {
                     let track = *list.add(index as usize);
-                    if track.is_null() || (*track).track_type != 0 {
+                    if track.is_null() || (*track).track_type != kind {
                         continue;
                     }
                     let audio = (*track).audio;
-                    let channels = if audio.is_null() {
+                    let channels = if kind != 0 || audio.is_null() {
                         None
                     } else {
                         Some((*audio).channels as u64)
                     };
                     let codec = ffi::text((self.api.libvlc_media_get_codec_description)(
-                        0,
+                        kind,
                         (*track).codec,
                     ));
                     result.push((
@@ -242,11 +252,32 @@ impl Player {
             result
         }
     }
+    pub fn subtitles(&self) -> (Vec<discatelier_contracts::SubtitleTrack>, Option<i64>) {
+        unsafe {
+            let selected = (self.api.libvlc_video_get_spu)(self.handle);
+            let first = (self.api.libvlc_video_get_spu_description)(self.handle);
+            let metadata = self.media_metadata(2);
+            let mut list = Vec::new();
+            let mut entry = first;
+            while !entry.is_null() {
+                let t = &*entry;
+                if t.id >= 0 {
+                    list.push(discatelier_contracts::SubtitleTrack {
+                        id: t.id.into(), title: ffi::text(t.name),
+                        language: metadata.iter().find(|m| m.0 == t.id).map(|m| m.1.clone()).unwrap_or_default(),
+                    });
+                }
+                entry = t.next;
+            }
+            if !first.is_null() { (self.api.libvlc_track_description_list_release)(first); }
+            (list, (selected >= 0).then_some(selected.into()))
+        }
+    }
     pub fn tracks(&self) -> (Vec<AudioTrack>, Option<i64>) {
         unsafe {
             let selected = (self.api.libvlc_audio_get_track)(self.handle);
             let first = (self.api.libvlc_audio_get_track_description)(self.handle);
-            let metadata = self.media_audio_metadata();
+            let metadata = self.media_metadata(0);
             let _ = std::fs::write(
                 std::env::temp_dir().join("discatelier-vlc-audio-meta.log"),
                 format!("{metadata:?}"),
@@ -389,6 +420,12 @@ impl Player {
                         return Err(ffi::error("蓝光标题不存在。"));
                     }
                     (self.api.libvlc_media_player_set_title)(self.handle, index as i32);
+                }
+                PlaybackControl::Subtitle { id } => {
+                    if (id != -1 && !snapshot.subtitle_tracks.iter().any(|t| t.id == id))
+                        || (self.api.libvlc_video_set_spu)(self.handle, id as i32) != 0 {
+                        return Err(ffi::error("当前字幕轨不可用。"));
+                    }
                 }
                 PlaybackControl::Audio { id } => {
                     if !snapshot.audio_tracks.iter().any(|track| track.id == id)

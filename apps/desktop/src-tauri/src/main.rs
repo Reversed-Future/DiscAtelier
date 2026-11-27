@@ -45,6 +45,7 @@ mod playback_fixture;
 mod playback_memory;
 mod playback_settings;
 mod spectrum;
+mod subtitles;
 #[cfg(feature = "isolated-preview")]
 mod preview_config;
 mod purchase_recognition;
@@ -140,6 +141,8 @@ fn main() {
             app.manage(playback_exit::PlaybackExit::default());
             app.manage(system_media::State::default());
             app.manage(spectrum::State::default());
+            app.manage(subtitles::Jobs::default());
+            app.manage(subtitles::download::Download::default());
             if let Err(error) = taskbar::setup(app.handle()) {
                 let _ = crate::logging::write("warn", "taskbar", "任务栏控制初始化失败", Some(&error));
             }
@@ -239,6 +242,22 @@ fn main() {
             playback::playback_start,
             playback::playback_start_local,
             playback::playback_snapshot,
+            subtitles::overlay::subtitle_overlay,
+            subtitles::disc::subtitle_capture_mode,
+            subtitles::disc::subtitle_ocr_languages,
+            subtitles::disc::subtitle_disc_frame,
+            subtitles::disc::subtitle_live_dialogue,
+            subtitles::disc::subtitle_text_translation,
+            subtitles::models::subtitle_settings,
+            subtitles::models::subtitle_settings_save,
+            subtitles::download::subtitle_download,
+            subtitles::models::subtitle_uninstall,
+            subtitles::models::subtitle_import,
+            subtitles::download::subtitle_download_cancel,
+            subtitles::subtitle_start,
+            subtitles::subtitle_stop,
+            subtitles::subtitle_recognize,
+            subtitles::subtitle_translate,
             playback::playback_control,
             playback::playback_history,
             optical::optical_list,

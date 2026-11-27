@@ -1,5 +1,6 @@
 /* Window controls share the navigation's surface, without a second wordmark. */
-.window-chrome { position: fixed; inset: 0 0 auto; z-index: 200; height: 30px; display: flex; color: var(--muted); background: var(--surface); user-select: none; pointer-events: auto; }
+:root { --window-chrome-height: 30px; }
+.window-chrome { position: fixed; inset: 0 0 auto; z-index: 200; height: var(--window-chrome-height); display: flex; color: var(--muted); background: var(--surface); user-select: none; pointer-events: auto; }
 /* Native resize notifications can precede the fullscreen state update. The
    player's confirmed state must also hide controls, including dialog portals. */
 body:has(.player-view[data-fullscreen="true"]) .window-chrome { display: none; }
@@ -23,4 +24,4 @@ body:has(.player-view[data-fullscreen="true"]) .window-chrome { display: none; }
 .window-modal[open] { display: grid; place-items: center; }
 .window-modal::backdrop { background: #00000070; }
 .window-modal > .panel-dialog { margin: 0; display: flex; flex-direction: column; height: min(720px, calc(100svh - 66px)); max-height: calc(100svh - 66px); }
-.player-view:not([data-fullscreen="true"]) { padding-top: 30px; }
+.player-view:not([data-fullscreen="true"]) { padding-top: var(--window-chrome-height); }

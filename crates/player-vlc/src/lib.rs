@@ -1,3 +1,4 @@
+pub mod captions;
 mod audio_cd;
 mod audio_fade;
 mod cd_metadata;
@@ -129,6 +130,7 @@ pub fn capture_menu(
         false,
         true,
         false,
+        None,
     )?;
     std::thread::sleep(wait);
     player.snapshot(output)
@@ -214,6 +216,8 @@ impl VlcSession {
             paused: false,
             seeking: false,
             seekable: false,
+            subtitle_tracks: Vec::new(),
+            selected_subtitle: None,
             audio_tracks: Vec::new(),
             selected_audio: None,
             volume: 100,

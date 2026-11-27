@@ -47,6 +47,7 @@ pub fn event(app: &tauri::AppHandle, event: &tauri::RunEvent) {
         return;
     }
     crate::system_media::shutdown(app);
+    app.state::<crate::subtitles::Jobs>().stop(None);
     crate::spectrum::shutdown(app);
     crate::taskbar::shutdown();
     let player = app

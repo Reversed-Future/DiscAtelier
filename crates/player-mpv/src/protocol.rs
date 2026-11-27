@@ -76,6 +76,12 @@ impl PlaybackState {
                     Some("track-list") => {
                         // MPV clears its track list on unload; retain the final selection for history.
                         if let Some(tracks) = data.as_array().filter(|tracks| !tracks.is_empty()) {
+                            self.snapshot.subtitle_tracks = tracks.iter().filter(|t| t["type"] == "sub")
+                                .filter_map(|t| Some(discatelier_contracts::SubtitleTrack {
+                                    id: t["id"].as_i64()?, title: t["title"].as_str().unwrap_or("").into(),
+                                    language: t["lang"].as_str().unwrap_or("").into(),
+                                })).collect();
+                            self.snapshot.selected_subtitle = tracks.iter().find(|t| t["type"] == "sub" && t["selected"] == true).and_then(|t| t["id"].as_i64());
                             self.snapshot.audio_tracks = tracks
                                 .iter()
                                 .filter(|t| t["type"] == "audio")

@@ -11,25 +11,35 @@ import type { MenuDirection } from './gateway';
 import { errorMessage } from '../library/gateway';
 import { Icon } from '../ui/Icon';
 import { playerExitDuration } from './usePlayerClose';
+import { DiscSubtitlePanel } from './DiscSubtitlePanel';
+import { VideoCaptionOverlay } from './VideoCaptionOverlay';
+import { useVideoSubtitles } from './useVideoSubtitles';
 
 export function PlayerView({ player }: { player: PlaybackController }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [error, setError] = useState('');
   const [episodesOpen, setEpisodesOpen] = useState(false);
+  const [subtitlePanel,setSubtitlePanel]=useState(false);
+  const [subtitleSession, setSubtitleSession] = useState('');
+  const localVideo = player.snapshot?.source.mediaToken === 'local-video';
+  const captionsOn = localVideo && player.active && !closing && subtitleSession === player.snapshot?.sessionId;
+  const subtitles = useVideoSubtitles(player.snapshot, captionsOn);
   const episodes = usePlayerEpisodes(player.snapshot?.source);
   const canEpisodes = episodes.items.length > 1;
   const episodesExpanded = episodesOpen && canEpisodes;
+  const expanded = episodesExpanded || subtitlePanel;
   const back = useRef<HTMLButtonElement>(null);
-  const live = useRef({ player, fullscreen, closing, episodesOpen: episodesExpanded });
-  live.current = { player, fullscreen, closing, episodesOpen: episodesExpanded };
-  const chrome = usePlayerChrome(fullscreen, episodesExpanded, !!player.snapshot?.paused);
+  const live = useRef({ player, fullscreen, closing, episodesOpen: expanded });
+  live.current = { player, fullscreen, closing, episodesOpen: expanded };
+  const chrome = usePlayerChrome(fullscreen, expanded, !!player.snapshot?.paused);
   const menu = player.snapshot?.source.playlist === 'dvd-menu' || player.snapshot?.source.playlist === 'bd-menu';
-  const { surface, header, footer, error: surfaceError } = useVideoSurface(player.active && !closing, fullscreen, chrome.visible, menu, episodesExpanded);
+  const { surface, header, footer, error: surfaceError } = useVideoSurface(player.active && !closing, fullscreen, chrome.visible, menu, expanded);
   useEffect(() => { if (!canEpisodes) setEpisodesOpen(false); }, [canEpisodes]);
   useEffect(() => { if (!player.active) setEpisodesOpen(false); }, [player.active]);
   function closeEpisodes() {
     setEpisodesOpen(false);
+    setSubtitlePanel(false);
     requestAnimationFrame(() => document.querySelector<HTMLElement>('.playback-episodes-toggle')?.focus());
   }
   function goBack() {
@@ -114,23 +124,31 @@ export function PlayerView({ player }: { player: PlaybackController }) {
     document.addEventListener('keydown', keyboard);
     return () => document.removeEventListener('keydown', keyboard);
   }, []);
-  return <section className="player-view" aria-label="内置播放器" aria-busy={closing} data-closing={closing} data-fullscreen={fullscreen} data-controls={chrome.visible}>
+  return <section className="player-view" aria-label="内置播放器" aria-busy={closing} data-closing={closing} data-fullscreen={fullscreen} data-controls={chrome.visible} data-captions={captionsOn} data-episodes={episodesExpanded}>
     <header className="player-header" ref={header} inert={!chrome.visible}>
       <button className="text-button" ref={back} onClick={goBack} disabled={closing || player.busy}><Icon name="back"/>返回</button>
       <strong className="player-heading">{player.snapshot?.title || '内置播放器'}</strong>
+      <button className="text-button caption-toggle" aria-expanded={subtitlePanel} disabled={!player.active || closing}
+        onClick={() => {setEpisodesOpen(false);setSubtitlePanel(v=>!v)}}>字幕</button>
       {player.snapshot?.playbackMode === 'makeMkvFallback' && <span className="playback-mode" title="本地解密不足，已切换到 MakeMKV 兼容 DLL">正在使用兼容模式</span>}
     </header>
     <div className="player-picture" ref={surface} tabIndex={0} aria-label="视频画面">
       {!player.active && <span>{player.snapshot?.phase === 'failed' ? '无法播放' : '已停止'}</span>}
     </div>
-    <footer className="player-footer video-footer" ref={footer} inert={!chrome.visible} data-expanded={episodesExpanded}>
+    {captionsOn && player.snapshot && <VideoCaptionOverlay key={player.snapshot.sessionId} snapshot={player.snapshot}
+      cue={subtitles.cue} appearance={subtitles.appearance} onError={setError}
+      status={subtitles.error || (subtitles.loading ? '正在识别对白…' : '')} notice={subtitles.cue ? '' : subtitles.notice}/>}
+    <footer className="player-footer video-footer" ref={footer} inert={!chrome.visible} data-expanded={expanded}>
       <div className="player-episodes-wrap">
+        {player.active && !closing && player.snapshot && <DiscSubtitlePanel key={player.snapshot.sessionId}
+          s={player.snapshot} open={subtitlePanel} localAI={captionsOn} setLocalAI={on=>setSubtitleSession(on ? player.snapshot!.sessionId : '')} onError={setError}/>}
+
         {episodesExpanded && <PlayerEpisodes items={episodes.items} currentIndex={episodes.currentIndex} loading={episodes.loading}
           onSelect={playEpisode} onClose={closeEpisodes}/>}
       </div>
       <div className="player-footer-inner">
         <PlaybackControls player={player} extended showTitle={false} fullscreen={fullscreen} onToggleFullscreen={() => void toggleFullscreen()} onMenu={() => surface.current?.focus()}
-          navigation="episode" episodesOpen={episodesExpanded} onToggleEpisodes={canEpisodes ? () => setEpisodesOpen(value => !value) : undefined}
+          navigation="episode" episodesOpen={episodesExpanded} onToggleEpisodes={canEpisodes ? () => {setSubtitlePanel(false);setEpisodesOpen(value => !value)} : undefined}
           onPrevious={canEpisodes ? () => playEpisode(episodes.currentIndex - 1) : undefined}
           onNext={canEpisodes ? () => playEpisode(episodes.currentIndex + 1) : undefined}
           canPrevious={episodes.currentIndex > 0} canNext={episodes.currentIndex >= 0 && episodes.currentIndex < episodes.items.length - 1}/>

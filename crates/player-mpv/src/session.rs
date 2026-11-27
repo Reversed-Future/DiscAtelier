@@ -65,6 +65,8 @@ impl MpvSession {
             paused: false,
             seeking: false,
             seekable: false,
+            subtitle_tracks: Vec::new(),
+            selected_subtitle: None,
             audio_tracks: Vec::new(),
             selected_audio: None,
             volume: 100,

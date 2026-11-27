@@ -65,6 +65,13 @@ pub enum PlaybackMode {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SubtitleTrack {
+    pub id: i64,
+    pub title: String,
+    pub language: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PlaybackSnapshot {
     pub session_id: String,
     pub source: PlaybackSource,
@@ -79,6 +86,10 @@ pub struct PlaybackSnapshot {
     pub paused: bool,
     pub seeking: bool,
     pub seekable: bool,
+    #[serde(default)]
+    pub subtitle_tracks: Vec<SubtitleTrack>,
+    #[serde(default)]
+    pub selected_subtitle: Option<i64>,
     pub audio_tracks: Vec<AudioTrack>,
     pub selected_audio: Option<i64>,
     #[serde(default = "default_volume")]
@@ -120,6 +131,7 @@ pub enum PlaybackControl {
     Gain { db: f32 },
     Rate { rate: f64 },
     Audio { id: i64 },
+    Subtitle { id: i64 },
     Chapter { index: u32 },
     /// Blu-ray title index as exposed by libVLC (0 = top menu).
     Title { index: u32 },

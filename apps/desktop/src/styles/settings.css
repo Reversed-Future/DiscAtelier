@@ -1,3 +1,20 @@
+.model-download-progress { margin-top: 12px; font-variant-numeric: tabular-nums; }
+.model-download-progress progress { display: block; width: 100%; height: 4px; appearance: none; border: 0; }
+.model-download-progress progress::-webkit-progress-bar { background: var(--line); }
+.model-download-progress progress::-webkit-progress-value { background: var(--ink); }
+.model-download-progress > div { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 7px; font-size: 11px; color: var(--muted); }
+.caption-preview { position: relative; margin: 12px 0; overflow: hidden; }
+.caption-preview-picture {
+  position: absolute; top: 0; left: 50%; transform-origin: top center; overflow: hidden;
+  width: max(1px, calc(100vw - 2 * var(--player-gutter)));
+  height: max(1px, calc(100vh - var(--window-chrome-height) - var(--player-header-height) - var(--player-footer-height)));
+  background: linear-gradient(115deg,#444,#949494 50%,#444);
+}
+.caption-preview-safe-area { position: absolute; inset: calc(100% / 30) 0; }
+.caption-preview-text { position: absolute; left: 50%; width: max-content; max-width: 90%; padding: .3333em; text-align: center; font: 400 1em/normal "Microsoft YaHei UI", sans-serif; color: white; text-shadow: 1px 1px #000; }
+.caption-preview span { display: block; }
+.caption-slider input[type="range"] { width: min(48%,240px); margin-left: auto; padding: 0; appearance: auto; accent-color: var(--ink); }
+.caption-slider output { width: 5ch; text-align: right; font-variant-numeric: tabular-nums; }
 .settings-panel { width: 1000px; padding: 0; }
 .settings-panel > .panel-heading { height: 84px; margin: 0; padding: 22px 28px; border-bottom: 1px solid var(--line); }
 .settings-panel > .panel-body { display: flex; overflow: hidden; }

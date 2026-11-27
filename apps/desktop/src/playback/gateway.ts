@@ -7,11 +7,13 @@ export interface PlaybackRecord {
   positionSeconds: number; durationSeconds: number | null; watchedSeconds: number; completed: boolean; selectedAudio: number | null;
   dvdTitle: number | null; playbackMode: 'localAacs' | 'makeMkvFallback';
 }
+export interface SubtitleTrack { id: number; title: string; language: string }
 export interface Snapshot extends PlaybackRecord {
+  subtitleTracks?: SubtitleTrack[]; selectedSubtitle?: number | null;
   paused: boolean; seeking: boolean; seekable: boolean; audioTracks: AudioTrack[]; volume: number; rate: number; error: string | null; dvdMenu: boolean;
 }
 export type MenuDirection = 'activate' | 'up' | 'down' | 'left' | 'right' | 'root';
-export type Control = { action: 'pause'; paused: boolean } | { action: 'seek'; seconds: number } | { action: 'volume'; volume: number } | { action: 'gain'; db: number } | { action: 'rate'; rate: number } | { action: 'audio'; id: number } | { action: 'chapter'; index: number } | { action: 'title'; index: number } | { action: 'stop' } | { action: 'menu'; direction: MenuDirection };
+export type Control = { action: 'subtitle'; id: number } | { action: 'pause'; paused: boolean } | { action: 'seek'; seconds: number } | { action: 'volume'; volume: number } | { action: 'gain'; db: number } | { action: 'rate'; rate: number } | { action: 'audio'; id: number } | { action: 'chapter'; index: number } | { action: 'title'; index: number } | { action: 'stop' } | { action: 'menu'; direction: MenuDirection };
 export const isActive = (phase?: Phase) => !!phase && ['loading', 'playing', 'paused', 'buffering', 'stopping'].includes(phase);
 let viewportQueue: Promise<void> = Promise.resolve();
 export const playback = {

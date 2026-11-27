@@ -78,6 +78,8 @@ pub fn run(
         start.bluray_direct,
         start.silent,
         false,
+        (start.dvd || start.bluray_direct || snapshot.source.media_token == "local-video")
+            .then_some(snapshot.session_id.as_str()),
     )
     .and_then(|player| {
         let result = playing(
@@ -238,6 +240,7 @@ fn playing(
         if metadata.elapsed() >= Duration::from_secs(1) || metadata_title != Some(current_title) {
             titles = player.titles();
             let (tracks, selected) = player.tracks();
+            (snapshot.subtitle_tracks, snapshot.selected_subtitle) = player.subtitles();
             snapshot.audio_tracks = tracks;
             snapshot.selected_audio = selected;
             metadata = Instant::now();
@@ -355,6 +358,8 @@ fn playing(
                         | PlaybackControl::Menu { .. }
                         | PlaybackControl::Pause { .. }
                 );
+                let subtitle_selection = matches!(request.control, PlaybackControl::Subtitle { .. });
+                let flush_captions = matches!(request.control, PlaybackControl::Seek {..} | PlaybackControl::Title {..} | PlaybackControl::Chapter {..} | PlaybackControl::Audio {..} | PlaybackControl::Subtitle {..} | PlaybackControl::Menu {..});
                 let result = if resume.is_some() {
                     Err(ffi::error("正在恢复 DVD 标题。"))
                 } else {
@@ -372,6 +377,10 @@ fn playing(
                     }
                 };
                 if result.is_ok() {
+                    if subtitle_selection {
+                        (snapshot.subtitle_tracks, snapshot.selected_subtitle) = player.subtitles();
+                    }
+                    if flush_captions { if let Some(c) = &player.captions { c.flush(); } }
                     if let Some(volume) = volume {
                         snapshot.volume = volume;
                     }
