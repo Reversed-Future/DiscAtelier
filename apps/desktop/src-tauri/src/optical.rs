@@ -30,13 +30,14 @@ pub type OpticalState = Arc<OpticalService>;
 pub(crate) fn bluray_libraries(
     window: &tauri::WebviewWindow,
 ) -> Result<(PathBuf, PathBuf), AppError> {
-    let packaged = window
+    let directory = window
         .path()
         .resource_dir()
         .map_err(|_| AppError::new("player", "无法定位应用资源目录。"))?
         .join("aacs");
-    let directory = if packaged.join("libaacs.dll").is_file() {
-        packaged
+    #[cfg(debug_assertions)]
+    let directory = if directory.join("libaacs.dll").is_file() {
+        directory
     } else {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("resources")
