@@ -12,6 +12,7 @@ export type MarkdownInline =
   | { type: 'strong'; children: MarkdownInline[] }
   | { type: 'em'; children: MarkdownInline[] }
   | { type: 'strike'; children: MarkdownInline[] }
+  | { type: 'image'; href: string; alt: string }
   | { type: 'link'; href: string; children: MarkdownInline[] };
 
 const FENCE = /^\s*```(.*)$/;
@@ -85,7 +86,7 @@ export function parseMarkdown(source: string): MarkdownBlock[] {
   return blocks;
 }
 
-const INLINE = /(`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|\*[^*\n]+\*|_[^_\n]+_|\[[^\]\n]+\]\([^)\s]+\))/g;
+const INLINE = /(`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|~~[^~\n]+~~|\*[^*\n]+\*|_[^_\n]+_|!\[[^\]\n]*\]\([^)\s]+\)|\[[^\]\n]+\]\([^)\s]+\))/g;
 
 export function parseInline(source: string): MarkdownInline[] {
   const nodes: MarkdownInline[] = [];
@@ -102,6 +103,20 @@ export function parseInline(source: string): MarkdownInline[] {
       nodes.push({ type: 'strike', children: parseInline(token.slice(2, -2)) });
     } else if (token.startsWith('*') || token.startsWith('_')) {
       nodes.push({ type: 'em', children: parseInline(token.slice(1, -1)) });
+    } else if (token.startsWith('![')) {
+      const end = token.indexOf('](');
+      const href = token.slice(end + 2, -1), alt = token.slice(2, end);
+      let url: URL | undefined;
+      try { url = new URL(href); } catch { /* Incomplete or relative image URL. */ }
+      if (url && ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password) {
+        const inlineImage = url.protocol === 'https:' && !url.port && (
+          ['i.discogs.com', 'image.tmdb.org', 'lain.bgm.tv'].includes(url.hostname) || url.hostname.endsWith('.music.126.net')
+        );
+        nodes.push(inlineImage ? { type: 'image', href: url.href, alt }
+          : { type: 'link', href: url.href, children: [{ type: 'text', text: alt || '查看图片' }] });
+      } else {
+        nodes.push({ type: 'text', text: alt || token });
+      }
     } else {
       const link = token.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/);
       if (link && /^https?:\/\//i.test(link[2])) {

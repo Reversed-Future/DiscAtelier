@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseInline, parseMarkdown } from '../apps/desktop/src/assistant/markdown.ts';
 
+test('renders artwork from supported sources and keeps other web images as links', () => {
+  for (const host of ['i.discogs.com', 'p1.music.126.net', 'image.tmdb.org', 'lain.bgm.tv']) {
+    const href = 'https://' + host + '/cover.jpg';
+    assert.deepEqual(parseInline('![封面](' + href + ')'), [{ type: 'image', href, alt: '封面' }]);
+  }
+  for (const href of ['https://example.com/cover.jpg','http://image.tmdb.org/a','https://image.tmdb.org.example.com/a']) {
+    assert.equal(parseInline('![](' + href + ')')[0].type, 'link');
+  }
+  for (const href of ['file:///private','javascript:x','https://user:pass@image.tmdb.org/a']) {
+    assert.equal(parseInline('![封面](' + href + ')')[0].type, 'text');
+  }
+});
+
 test('parses headings, lists, quotes and fenced code without HTML injection', () => {
   const blocks = parseMarkdown('## 标题\n\n- 一\n- 二\n\n> 引用\n\n```ts\nconst x = 1;\n```\n\n<script>alert(1)</script>');
   assert.deepEqual(blocks[0], { type: 'heading', level: 2, text: '标题' });

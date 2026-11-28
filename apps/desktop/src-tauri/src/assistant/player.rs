@@ -1,6 +1,6 @@
 use super::host::{find, with_library, ToolHost};
 use discatelier_agent_harness::tools::{parse, PlayMusic, PlayerControl};
-use discatelier_contracts::{AppError, PlaybackControl, PlaybackSnapshot};
+use discatelier_contracts::{AppError, PlaybackControl, PlaybackSnapshot, PlaybackSource};
 use discatelier_integration_http::error;
 use serde_json::{json, Value};
 use tauri::Manager;
@@ -10,8 +10,19 @@ fn snapshot(host: &ToolHost) -> Result<Option<PlaybackSnapshot>, AppError> {
     let current = state.lock().map_err(|_| error("播放服务不可用。"))?;
     current.as_ref().map(|p| p.snapshot()).transpose()
 }
+fn source_info(source: &PlaybackSource) -> Value {
+    if let Some(id) = source.playlist.strip_prefix("netease-song:") {
+        return json!({"kind":"netease","songId":id.parse::<u64>().ok(),"label":source.label});
+    }
+    let kind = match source.media_token.as_str() {
+        "local-audio" => "localAudio",
+        "local-video" => "localVideo",
+        _ => "optical",
+    };
+    json!({"kind":kind,"label":source.label})
+}
 fn public(snapshot: Option<PlaybackSnapshot>) -> Value {
-    snapshot.map(|s| json!({"sessionId":s.session_id,"title":s.title,"phase":s.phase,"paused":s.paused,"positionSeconds":s.position_seconds,"durationSeconds":s.duration_seconds,"seekable":s.seekable,"source":s.source})).unwrap_or(json!({"phase":"idle"}))
+    snapshot.map(|s| json!({"sessionId":s.session_id,"title":s.title,"phase":s.phase,"paused":s.paused,"positionSeconds":s.position_seconds,"durationSeconds":s.duration_seconds,"seekable":s.seekable,"source":source_info(&s.source)})).unwrap_or(json!({"phase":"idle"}))
 }
 pub fn execute(host: &ToolHost, name: &str, arguments: &str) -> Result<Value, AppError> {
     match name {

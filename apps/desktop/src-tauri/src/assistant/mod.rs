@@ -1,7 +1,9 @@
 #[cfg(test)]
 mod action_tests;
 mod actions;
+mod catalog;
 mod decisions;
+pub mod history;
 mod host;
 mod player;
 mod prepare;
@@ -70,6 +72,7 @@ async fn execute(
     window: tauri::WebviewWindow,
     on_event: tauri::ipc::Channel<Session>,
     text: Option<String>,
+    copy_id: Option<String>,
 ) -> Result<Session, AppError> {
     let state = window.state::<Arc<AgentState>>();
     let lease = acquire(state.inner())?;
@@ -87,7 +90,14 @@ async fn execute(
     let key = integration_settings::key(&settings.ai_base_url)?;
     tauri::async_runtime::spawn_blocking(move || {
         let mut session = load(&library)?;
+        if text.is_some() {
+            session.turn_copy_id = copy_id;
+        } else if session.phase == "running" {
+            // The exclusive lease guarantees that this checkpoint belongs to an interrupted turn.
+            session.phase = "interrupted".into();
+        }
         let mut host = host::ToolHost {
+            current_copy: session.turn_copy_id.clone(),
             window,
             agent: lease.0.clone(),
             updates: on_event,
@@ -126,15 +136,16 @@ pub async fn assistant_send(
     window: tauri::WebviewWindow,
     on_event: tauri::ipc::Channel<Session>,
     text: String,
+    copy_id: Option<String>,
 ) -> Result<Session, AppError> {
-    execute(window, on_event, Some(text)).await
+    execute(window, on_event, Some(text), copy_id).await
 }
 #[tauri::command]
 pub async fn assistant_retry(
     window: tauri::WebviewWindow,
     on_event: tauri::ipc::Channel<Session>,
 ) -> Result<Session, AppError> {
-    execute(window, on_event, None).await
+    execute(window, on_event, None, None).await
 }
 #[tauri::command]
 pub fn assistant_cancel(state: tauri::State<'_, Arc<AgentState>>) {
@@ -149,6 +160,7 @@ pub async fn assistant_new(
     let library = library.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         let _lease = lease;
+        history::allow_switch(&load(&library)?)?;
         *_lease
             .0
             .prepared

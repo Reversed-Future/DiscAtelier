@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { errorMessage } from '../library/gateway';
 import { assistant, type AgentSession } from './gateway';
 
-export function useAssistant(open: boolean, onChanged: () => void) {
+export function useAssistant(open: boolean, onChanged: () => void, copyId: string | null) {
   const [session, setSession] = useState<AgentSession | null>(null);
   const [text, setText] = useState('');
   const [sending, setSending] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [logs, setLogs] = useState(false);
+  const [view, setView] = useState<'chat' | 'logs' | 'history'>('chat');
   const [cancelling, setCancelling] = useState(false);
   const live = useRef(true), pending = useRef(false), revision = useRef(0);
   const onChangedRef = useRef(onChanged); onChangedRef.current = onChanged;
@@ -50,10 +50,11 @@ export function useAssistant(open: boolean, onChanged: () => void) {
     setText('');
     setSending(value);
     try {
-      await run(() => {
+      const accepted = await run(() => {
         const version = revision.current;
-        return assistant.send(value, listener(version));
+        return assistant.send(value, copyId, listener(version));
       });
+      if (!accepted && live.current) setText(draft => draft || value);
     } finally { if (live.current) setSending(''); }
   }
   async function retry() {
@@ -67,6 +68,6 @@ export function useAssistant(open: boolean, onChanged: () => void) {
     setCancelling(true);
     void assistant.cancel().catch(cause => { if (live.current) { setError(errorMessage(cause)); setCancelling(false); } });
   }
-  return { session, text, setText, sending, running, error, logs, setLogs, cancelling, run, send, retry, cancel };
+  return { session, text, setText, sending, running, error, view, setView, cancelling, run, send, retry, cancel };
 }
 export type AssistantController = ReturnType<typeof useAssistant>;

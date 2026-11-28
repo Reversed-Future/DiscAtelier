@@ -11,6 +11,48 @@ fn directory() -> std::path::PathBuf {
         .unwrap()
         .keep()
 }
+
+#[test]
+fn assistant_history_reopens_older_conversations_and_skips_empty_sessions() {
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let mut ids = Vec::new();
+    let title = "碟".repeat(90);
+    for _ in 0..34 {
+        let id = uuid::Uuid::new_v4().to_string();
+        let value = serde_json::json!({"id":id,"messages":[{"role":"user","content":title}]});
+        service.assistant_save(&id, &value.to_string()).unwrap();
+        ids.push(id);
+    }
+    let blank = uuid::Uuid::new_v4().to_string();
+    service
+        .assistant_save(
+            &blank,
+            &serde_json::json!({"id":blank,"messages":[]}).to_string(),
+        )
+        .unwrap();
+    drop(service);
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let page = service.assistant_history(0).unwrap();
+    assert_eq!(page.len(), 31);
+    assert_eq!(page[0].id, ids[33]);
+    assert_eq!(page[0].title, "碟".repeat(80));
+    let rest = service.assistant_history(30).unwrap();
+    assert_eq!(rest.len(), 4);
+    assert_eq!(rest[0].id, page[30].id);
+    assert_eq!(rest.last().unwrap().id, ids[0]);
+    assert!(service
+        .assistant_load_id(&uuid::Uuid::new_v4().to_string())
+        .unwrap()
+        .is_none());
+    let older = service.assistant_load_id(&ids[0]).unwrap().unwrap();
+    service.assistant_save(&ids[0], &older).unwrap();
+    assert_eq!(
+        service.assistant_load().unwrap().as_deref(),
+        Some(older.as_str())
+    );
+    assert_eq!(service.assistant_history(0).unwrap()[0].id, ids[0]);
+}
 fn query() -> LibraryQuery {
     LibraryQuery {
         category_id: "music".into(),
@@ -94,32 +136,13 @@ fn supplements_preserve_editions_reject_conflicts_and_survive_restore() {
 }
 #[test]
 fn schema_seven_gets_a_backup_before_expanded_json_contracts() {
-    let dir = directory();
-    drop(SqliteLibrary::open(&dir).unwrap());
-    let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
-    conn.execute_batch("DROP TABLE video_edition_chapter_links; DROP TABLE optical_bindings; DROP TABLE collection_order; DROP TABLE video_edition_parts; DROP TABLE video_edition_details; DROP TABLE video_work_metadata; DROP TRIGGER music_album_import_insert; DROP TRIGGER music_album_import_update; DROP TABLE edition_disc_albums; DROP TABLE edition_music_albums; DROP TABLE edition_song_links;").unwrap();
-    conn.execute("DELETE FROM schema_migrations WHERE version>=8", [])
-        .unwrap();
-    conn.pragma_update(None, "user_version", 7).unwrap();
-    drop(conn);
-    let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
-    let backups = service.backups().unwrap();
-    assert_eq!(backups.len(), 1);
-    let old = Connection::open(&backups[0].path).unwrap();
-    assert_eq!(
-        old.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
-            .unwrap(),
-        7
-    );
-    let new = Connection::open(dir.join("library.sqlite3")).unwrap();
-    assert_eq!(
-        new.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
-            .unwrap(),
-        17
-    );
+    verify_migration_backup(7);
 }
 #[test]
 fn schema_six_is_backed_up_before_extensions_are_added() {
+    verify_migration_backup(6);
+}
+fn verify_migration_backup(version: usize) {
     let dir = directory();
     let conn = Connection::open(dir.join("library.sqlite3")).unwrap();
     conn.execute_batch(
@@ -133,8 +156,9 @@ fn schema_six_is_backed_up_before_extensions_are_added() {
         include_str!("../migrations/004_models.sql"),
         include_str!("../migrations/005_playback.sql"),
         include_str!("../migrations/006_edition_content.sql"),
+        include_str!("../migrations/007_supplements_assistant.sql"),
     ];
-    for (i, sql) in migrations.iter().enumerate() {
+    for (i, sql) in migrations[..version].iter().enumerate() {
         conn.execute_batch(sql).unwrap();
         conn.execute(
             "INSERT INTO schema_migrations VALUES(?1,?2)",
@@ -145,7 +169,8 @@ fn schema_six_is_backed_up_before_extensions_are_added() {
         )
         .unwrap();
     }
-    conn.pragma_update(None, "user_version", 6).unwrap();
+    conn.pragma_update(None, "user_version", version as i64)
+        .unwrap();
     drop(conn);
     let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
     let backups = service.backups().unwrap();
@@ -154,12 +179,12 @@ fn schema_six_is_backed_up_before_extensions_are_added() {
     assert_eq!(
         old.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
             .unwrap(),
-        6
+        version as i64
     );
     let new = Connection::open(dir.join("library.sqlite3")).unwrap();
     assert_eq!(
         new.pragma_query_value::<i64, _>(None, "user_version", |r| r.get(0))
             .unwrap(),
-        17
+        18
     );
 }

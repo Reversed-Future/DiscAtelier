@@ -10,6 +10,7 @@ const paths = {
   edit: <><path d="m4 20 4-1 11-11-3-3L5 16l-1 4Z"/><path d="m14 6 3 3"/></>,
   close: <path d="m6 6 12 12M18 6 6 18"/>,
   back: <path d="m10 5-7 7 7 7M3 12h18"/>,
+  history: <><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></>,
   more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
   list: <path d="M8 6h12M8 12h12M8 18h12M3 6h.1M3 12h.1M3 18h.1"/>,
   folder: <><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M3 10h18"/></>,

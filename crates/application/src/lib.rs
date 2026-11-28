@@ -9,6 +9,7 @@ pub use song_links::SongLinkRepository;
 mod disc_albums;
 pub mod disc_links;
 mod disc_structure;
+pub use disc_structure::rows as physical_track_rows;
 mod extensions;
 mod music_albums;
 pub mod optical_discs;

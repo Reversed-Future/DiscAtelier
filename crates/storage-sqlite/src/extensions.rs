@@ -89,7 +89,7 @@ impl ExtensionRepository for SqliteLibrary {
     fn assistant_load(&self) -> Result<Option<String>, AppError> {
         self.connection
             .query_row(
-                "SELECT payload FROM assistant_sessions ORDER BY updated_at DESC LIMIT 1",
+                "SELECT payload FROM assistant_sessions ORDER BY updated_at DESC, rowid DESC LIMIT 1",
                 [],
                 |r| r.get(0),
             )
@@ -99,6 +99,39 @@ impl ExtensionRepository for SqliteLibrary {
     fn assistant_save(&mut self, id: &str, payload: &str) -> Result<(), AppError> {
         self.connection.execute("INSERT INTO assistant_sessions(id,updated_at,payload) VALUES(?1,?2,?3) ON CONFLICT(id) DO UPDATE SET updated_at=excluded.updated_at,payload=excluded.payload", params![id,chrono::Utc::now().to_rfc3339(),payload]).map_err(db_error)?;
         Ok(())
+    }
+    fn assistant_load_id(&self, id: &str) -> Result<Option<String>, AppError> {
+        self.connection
+            .query_row(
+                "SELECT payload FROM assistant_sessions WHERE id=?1",
+                [id],
+                |row| row.get(0),
+            )
+            .optional()
+            .map_err(db_error)
+    }
+    fn assistant_history(
+        &self,
+        offset: u32,
+    ) -> Result<Vec<discatelier_contracts::AssistantHistoryEntry>, AppError> {
+        let mut query = self
+            .connection
+            .prepare(
+                "SELECT id, substr(json_extract(payload,'$.messages[0].content'),1,80), updated_at
+             FROM assistant_sessions WHERE json_extract(payload,'$.messages[0].role')='user'
+             ORDER BY updated_at DESC, rowid DESC LIMIT 31 OFFSET ?1",
+            )
+            .map_err(db_error)?;
+        let rows = query
+            .query_map([offset], |row| {
+                Ok(discatelier_contracts::AssistantHistoryEntry {
+                    id: row.get(0)?,
+                    title: row.get(1)?,
+                    updated_at: row.get(2)?,
+                })
+            })
+            .map_err(db_error)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(db_error)
     }
 }
 pub fn validate(connection: &rusqlite::Connection) -> Result<(), AppError> {

@@ -75,6 +75,8 @@ impl Proposal {
 #[serde(rename_all = "camelCase")]
 pub struct Session {
     pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub turn_copy_id: Option<String>,
     pub phase: String,
     pub messages: Vec<Message>,
     pub events: Vec<String>,
@@ -88,6 +90,7 @@ impl Default for Session {
     fn default() -> Self {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
+            turn_copy_id: None,
             phase: "idle".into(),
             messages: vec![],
             events: vec![],

@@ -37,6 +37,11 @@ pub trait ExtensionRepository {
         value: &MusicSupplement,
     ) -> Result<(), AppError>;
     fn assistant_load(&self) -> Result<Option<String>, AppError>;
+    fn assistant_load_id(&self, id: &str) -> Result<Option<String>, AppError>;
+    fn assistant_history(
+        &self,
+        offset: u32,
+    ) -> Result<Vec<discatelier_contracts::AssistantHistoryEntry>, AppError>;
     fn assistant_save(&mut self, id: &str, payload: &str) -> Result<(), AppError>;
 }
 impl<R: LibraryRepository + ExtensionRepository> LibraryService<R> {
@@ -90,6 +95,16 @@ impl<R: LibraryRepository + ExtensionRepository> LibraryService<R> {
     }
     pub fn assistant_load(&self) -> Result<Option<String>, AppError> {
         self.repository.assistant_load()
+    }
+    pub fn assistant_load_id(&self, id: &str) -> Result<Option<String>, AppError> {
+        crate::request_id(id)?;
+        self.repository.assistant_load_id(id)
+    }
+    pub fn assistant_history(
+        &self,
+        offset: u32,
+    ) -> Result<Vec<discatelier_contracts::AssistantHistoryEntry>, AppError> {
+        self.repository.assistant_history(offset)
     }
     pub fn assistant_save(&mut self, id: &str, payload: &str) -> Result<(), AppError> {
         crate::request_id(id)?;

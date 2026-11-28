@@ -28,6 +28,14 @@ pub use cd_metadata::*;
 mod playback;
 pub use playback::*;
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssistantHistoryEntry {
+    pub id: String,
+    pub title: String,
+    pub updated_at: String,
+}
+
 /// Largest cover image, in bytes, accepted for an asset, shared by providers and storage.
 ///
 /// NetEase artwork may use the full limit; the manual picker and other providers

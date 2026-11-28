@@ -7,6 +7,7 @@ use discatelier_storage::SqliteLibrary;
 use serde_json::{json, Value};
 
 pub struct ToolHost {
+    pub current_copy: Option<String>,
     pub window: tauri::WebviewWindow,
     pub agent: std::sync::Arc<super::AgentState>,
     pub updates: tauri::ipc::Channel<Session>,
@@ -39,8 +40,8 @@ pub(super) fn find(s: &LibraryService<SqliteLibrary>, id: &str) -> Result<Librar
     }
     Err(error("未找到这个副本 ID。"))
 }
-fn public_item(item: &LibraryCopy) -> Value {
-    json!({"id":item.id,"editionId":item.edition_id,"title":item.edition.title,"creator":item.edition.creator,"status":item.copy.status,"edition":item.edition,"revision":item.revision})
+pub(super) fn public_item(item: &LibraryCopy) -> Value {
+    json!({"id":item.id,"editionId":item.edition_id,"title":item.edition.title,"creator":item.edition.creator,"status":item.copy.status,"edition":item.edition,"revision":item.revision,"coverAssetId":item.cover_asset_id})
 }
 impl Host for ToolHost {
     fn progress(&mut self, session: &Session) {
@@ -77,18 +78,59 @@ impl Host for ToolHost {
                         query: args.query,
                         status: args.status,
                     })?;
-                    Ok(
-                        json!({"count":result.copies.len(),"ownedCount":result.owned_count,"amountsMinor":result.amounts,"unpricedCount":result.unpriced_count,"items":result.copies.iter().take(30).map(public_item).collect::<Vec<_>>(),"truncated":result.copies.len()>30}),
-                    )
+                    let mut page = super::catalog::page(
+                        &result.copies,
+                        args.offset,
+                        super::catalog::edition_listing,
+                    );
+                    page["ownedCount"] = json!(result.owned_count);
+                    page["amountsMinor"] = json!(result.amounts);
+                    page["unpricedCount"] = json!(result.unpriced_count);
+                    Ok(page)
                 })?
             }
             "get_copy" => {
                 let args: CopyId = parse(arguments)?;
                 with_library(&self.library, |s| {
                     let item = find(s, &args.id)?;
-                    Ok(
-                        json!({"copy":public_item(&item),"content":s.edition_content(&item.edition_id)?,"netease":s.supplement(&item.edition_id)?,"neteaseAlbums":s.music_albums(&item.edition_id)?,"discAlbumLinks":s.disc_albums(&item.edition_id)?}),
-                    )
+                    super::catalog::details(s, &item)
+                })?
+            }
+            "get_current_copy" => {
+                if parse::<Value>(arguments)? != json!({}) {
+                    return Err(error("当前收藏查询不接受参数。"));
+                }
+                let copy = self
+                    .current_copy
+                    .as_deref()
+                    .map(|id| with_library(&self.library, |s| find(s, id)))
+                    .transpose()?;
+                json!({"copy":copy.as_ref().map(super::catalog::listing)})
+            }
+            "show_collection_cards" => {
+                let args: CardIds = parse(arguments)?;
+                if !(1..=4).contains(&args.ids.len())
+                    || args
+                        .ids
+                        .iter()
+                        .collect::<std::collections::HashSet<_>>()
+                        .len()
+                        != args.ids.len()
+                {
+                    return Err(error("请选择 1 至 4 份不同的收藏。"));
+                }
+                let cards = with_library(&self.library, |s| {
+                    args.ids
+                        .iter()
+                        .map(|id| find(s, id).map(|item| super::catalog::listing(&item)))
+                        .collect::<Result<Vec<_>, _>>()
+                })?;
+                json!({"cards":cards})
+            }
+            "get_copy_entries" => {
+                let args: CopyEntries = parse(arguments)?;
+                with_library(&self.library, |s| {
+                    super::catalog::entries(s, &find(s, &args.id)?, &args)
                 })?
             }
             "search_netease" => {

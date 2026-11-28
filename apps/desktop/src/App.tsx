@@ -159,6 +159,8 @@ export function App() {
   const items = snapshot?.copies || [];
   const modelActive = !assistantOpen && !add && !restoring && !settingsPage && !opticalOpen && !player.open;
   const current = inspected || items.find(item => item.id === selectedId) || items[0];
+  const assistantCopyId = settingsPage || restoring || opticalOpen || add ? null
+    : editing?.id ?? inspected?.id ?? null;
   const currentVideo = useVideoMetadata(current?.editionId || '',current?.editionRevision || 0,current?.edition.categoryId === 'video');
   const [partId,setPartId] = useState(''), [instantFlip,setInstantFlip] = useState(false);
   useEffect(() => {setPartId('');},[inspected?.id]);
@@ -290,6 +292,9 @@ export function App() {
     <div className={`toast${notice ? ' visible' : ''}`} role="status">{notice}</div>
     <MusicDock player={player}/>
     {player.snapshot?.source.playlist.startsWith('netease-song:') && <NeteaseMediaSource player={player}/>}
-    <AssistantDock open={assistantOpen} hidden={player.open} onOpen={value => { if (value) player.musicQueue.setOpen(false); setAssistantOpen(value); }} onChanged={() => void refresh(query)}/>
+    <AssistantDock open={assistantOpen} hidden={player.open}
+      copyId={assistantCopyId}
+      onOpen={value => { if (value) player.musicQueue.setOpen(false); setAssistantOpen(value); }}
+      onChanged={() => { snapshots.current.clear(); void refresh(latestQuery.current); }}/>
   </div>;
 }

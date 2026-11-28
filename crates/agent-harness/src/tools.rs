@@ -8,11 +8,40 @@ pub struct SearchLibrary {
     pub category: String,
     pub query: String,
     pub status: Option<String>,
+    #[serde(default)]
+    pub offset: usize,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum EntrySection {
+    Media,
+    PhysicalTracks,
+    Credits,
+    Chapters,
+    Characters,
+    People,
+    SongLinks,
+    AlbumTracks,
+}
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CopyEntries {
+    pub id: String,
+    pub section: EntrySection,
+    #[serde(default)]
+    pub offset: usize,
+    pub work_index: Option<usize>,
+    pub album_id: Option<u64>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CopyId {
     pub id: String,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CardIds {
+    pub ids: Vec<String>,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -80,16 +109,20 @@ pub fn definitions() -> Value {
         tool("control_playback", "仅按用户明确指令暂停、继续、停止、跳转秒数或上下曲。next/previous 使用应用现有的有效网易云播放列表，沿用实体顺序、Disc 绑定及独立单曲关联，不自行重建。列表未就绪按错误提示处理。seek 须 seconds，其余 seconds=null。", json!({"action":{"type":"string","enum":["pause","resume","stop","seek","next","previous"]},"seconds":{"type":["number","null"]}}), json!(["action","seconds"])),
         tool(
             "search_library",
-            "搜索本地收藏并返回精确数量、分币种总价。最多展示 30 条。",
-            json!({"category":{"type":"string","enum":["music","video"]},"query":{"type":"string"},"status":{"type":["string","null"],"enum":["owned","wanted","transit",null]}}),
+            "搜索本地收藏并返回统计与一页结果。从 offset=0 开始，沿用原查询和 nextOffset 翻页。",
+            json!({"category":{"type":"string","enum":["music","video"]},"query":{"type":"string"},"status":{"type":["string","null"],"enum":["owned","wanted","transit",null]},"offset":{"type":"integer","minimum":0}}),
             json!(["category", "query", "status"])
         ),
         tool(
             "get_copy",
-            "按真实副本 ID 读取版本和实体曲目 content、全部关联数字专辑 neteaseAlbums、现有分盘绑定 discAlbumLinks；netease 仅为兼容单专辑信息。未提供编辑绑定或独立单曲关联明细的能力，不读取私人备注或购买链接。",
+            "读取收藏的实体版本、音乐与单曲关联，或影片的已存作品来源、分编、实体发行及章节和角色数量。大型收藏返回摘要，继续用 get_copy_entries 读取明细。",
             json!({"id":{"type":"string"}}),
             json!(["id"])
         ),
+        tool("get_current_copy","用户说「这张」「这部」时，获取发送该消息时界面指向的已存收藏；无当前收藏会返回 null。",json!({}),json!([])),
+        tool("show_collection_cards","在回复下展示指定收藏的封面、名称和版本。比较或推荐本地收藏时，从已核实的查询结果选择 1 至 4 个副本 ID。单独读取 get_copy 已自动附卡。",json!({"ids":{"type":"array","items":{"type":"string"},"minItems":1,"maxItems":4,"uniqueItems":true}}),json!(["ids"])),
+        tool("get_copy_entries","分页读取收藏明细。media 列出实体碟片，physicalTracks 包含盘内章节、曲目和小标题，credits 列出整张发行及各曲目的署名。chapters、characters、people 使用 get_copy 返回的 workIndex；albumTracks 使用其 albumId；songLinks 是独立单曲关联。offset 从 0 开始，之后用 nextOffset。",
+            json!({"id":{"type":"string"},"section":{"type":"string","enum":["media","physicalTracks","credits","chapters","characters","people","songLinks","albumTracks"]},"offset":{"type":"integer","minimum":0},"workIndex":{"type":["integer","null"],"minimum":0},"albumId":{"type":["integer","null"],"minimum":1}}),json!(["id","section"])),
         tool(
             "search_discogs",
             "搜索 Discogs 发行。",

@@ -217,6 +217,8 @@ fn main() {
             netease_links::netease_track_links,
             netease_links::netease_song_detail,
             assistant::assistant_snapshot,
+            assistant::history::assistant_history,
+            assistant::history::assistant_resume,
             assistant::assistant_send,
             assistant::assistant_retry,
             assistant::assistant_cancel,

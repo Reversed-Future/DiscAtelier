@@ -1,8 +1,14 @@
-import { createElement, Fragment, useMemo, type ReactNode } from 'react';
+import { createElement, Fragment, useMemo, useState, type ReactNode } from 'react';
 import { parseInline, parseMarkdown, type MarkdownInline } from './markdown';
 
 function text(value: string): ReactNode {
   return value.split('\n').map((line, index) => <Fragment key={index}>{index > 0 && <br/>}{line}</Fragment>);
+}
+
+function InlineImage({ href, alt }: { href: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  return <a href={href} target="_blank" rel="noreferrer">{failed ? alt || '查看图片' :
+    <img className="assistant-inline-image" src={href} alt={alt || '资料图片'} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)}/>}</a>;
 }
 
 function inline(nodes: MarkdownInline[]): ReactNode {
@@ -13,6 +19,7 @@ function inline(nodes: MarkdownInline[]): ReactNode {
       case 'strong': return <strong key={index}>{inline(node.children)}</strong>;
       case 'em': return <em key={index}>{inline(node.children)}</em>;
       case 'strike': return <del key={index}>{inline(node.children)}</del>;
+      case 'image': return <InlineImage key={index + node.href} href={node.href} alt={node.alt}/>;
       case 'link': return <a key={index} href={node.href} target="_blank" rel="noreferrer">{inline(node.children)}</a>;
     }
   });

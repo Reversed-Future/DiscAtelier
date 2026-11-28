@@ -31,6 +31,33 @@ fn query() -> LibraryQuery {
         ..Default::default()
     }
 }
+
+#[test]
+fn music_queries_distinguish_an_independent_song_from_its_linked_album() {
+    use discatelier_agent_harness::tools::{CopyEntries, EntrySection};
+    let library = library();
+    host::with_library(&library, |s| {
+        let content = serde_json::from_value(json!({"genres":[],"styles":[],
+            "tracks":[{"type_":"track","position":"1","title":"实体曲"}]})).unwrap();
+        let album = serde_json::from_value(json!({"albumId":42,"title":"数码专辑",
+            "artists":[],"description":"","company":"","publishedAt":1,"links":[],
+            "tracks":[{"id":81,"title":"专辑录音","artists":[],"disc":"1","number":1,"durationMs":90000}]})).unwrap();
+        s.create_music_with_content(request(), Some(album), Some(content))?;
+        let item = s.list(query())?.copies.remove(0);
+        let link = serde_json::from_value(json!({"position":"1","title":"实体曲",
+            "song":{"id":92,"title":"独立音源","artists":[],"disc":"1","number":1,"durationMs":95000}})).unwrap();
+        s.save_song_link(&item.edition_id, item.edition_revision, "1", "实体曲", Some(&link))?;
+        assert_eq!(catalog::details(s, &item)?["songLinks"][0]["song"]["id"], 92);
+        let mut args = CopyEntries { id:item.id.clone(), section:EntrySection::SongLinks, offset:0, work_index:None, album_id:None };
+        assert_eq!(catalog::entries(s, &item, &args)?["items"][0]["song"]["id"], 92);
+        args.section = EntrySection::AlbumTracks;
+        args.album_id = Some(42);
+        assert_eq!(catalog::entries(s, &item, &args)?["items"][0]["id"], 81);
+        args.album_id = Some(43);
+        assert!(catalog::entries(s, &item, &args).is_err());
+        Ok(())
+    }).unwrap();
+}
 fn arm(library: &LibraryState, state: &AgentState, action: Action) -> Session {
     let preview = ActionPreview {
         id: uuid::Uuid::new_v4().to_string(),
