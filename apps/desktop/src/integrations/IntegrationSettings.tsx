@@ -63,15 +63,16 @@ export function IntegrationSettings({ kind, onBusy }: { kind: 'netease' | 'assis
           : <p className="setting-hint">随应用静默启动，退出时关闭。</p>}
       </div>
     </> : <>
-      <label>Base URL<input value={status?.settings.aiBaseUrl || ''} disabled={!status || busy} spellCheck={false} placeholder="https://服务地址/v1" onChange={e => change('aiBaseUrl', e.target.value)}/></label>
-      <label>模型<input value={status?.settings.aiModel || ''} disabled={!status || busy} spellCheck={false} onChange={e => change('aiModel', e.target.value)}/></label>
+      <p className="setting-intro">收藏助手、字幕翻译和光盘菜单识别共用这个 AI 服务。填写兼容 Chat Completions 的接口地址和模型名称。</p>
+      <label>服务地址（Base URL）<input value={status?.settings.aiBaseUrl || ''} disabled={!status || busy} spellCheck={false} placeholder="https://服务地址/v1" onChange={e => change('aiBaseUrl', e.target.value)}/></label>
+      <label>模型名称<input value={status?.settings.aiModel || ''} disabled={!status || busy} spellCheck={false} onChange={e => change('aiModel', e.target.value)}/></label>
       <label>API Key<input type="password" value={key} autoComplete="off" disabled={!status || busy} placeholder={status?.hasKey ? '已保存；留空保留' : '本地免密接口可留空'} onChange={e => setKey(e.target.value)}/></label>
       <label className="bluray-fallback">
         <input type="checkbox" checked={status?.settings.autoRecognizeMenu ?? true} disabled={!status || busy} onChange={e => changeAutoRecognize(e.target.checked)}/>
         <span>自动识别光盘菜单</span>
       </label>
       <p className="setting-hint">开启后打开光驱页会自动截取菜单并识别；截图期间约 12 秒占用光驱（静音、不可见，不会占用播放界面），截图完成后 AI 在后台继续，可立即开始播放。播放中不会自动识别。</p>
-      <p className="setting-hint">兼容 Chat Completions 与工具调用。提问及查询所需资料发送至此服务，密钥保存在 Windows 凭据管理器。</p>
+      <p className="setting-hint">助手需要模型支持工具调用。字幕翻译发送字幕文字，菜单识别发送截图。密钥保存在 Windows 凭据管理器。</p>
     </>}
     {error && <p className="form-error" role="alert">{error}</p>}
     <footer className="settings-actions">

@@ -71,6 +71,7 @@ pub fn decode(bytes: &[u8]) -> Option<OpticalMedium> {
     // non-1-based TOCs require explicit sector boundaries before playback is safe.
     let playable = first == 1 && tracks.len() == count;
     Some(OpticalMedium {
+        disc_title: None,
         label: "音频 CD".into(),
         file_system: "CD-DA".into(),
         token: format!("{:x}", Sha256::digest(&bytes[..4 + (count + 1) * 8])),

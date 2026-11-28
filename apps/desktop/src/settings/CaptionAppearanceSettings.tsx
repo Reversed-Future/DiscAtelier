@@ -15,7 +15,6 @@ export function CaptionAppearanceSettings({ value, bilingual, disabled, onChange
     { key: 'verticalPosition', label: '垂直位置', min: 0, max: 100, unit: '%' },
   ] as const;
   return <section>
-    <h4 className="settings-subheading">字幕外观</h4>
     <CaptionPreview value={value} bilingual={bilingual}/>
     {sliders.map(({ key, label, min, max, unit }) => <label className="setting-row caption-slider" key={key}>
       <span>{label}</span><input type="range" aria-label={label} min={min} max={max} step={1}

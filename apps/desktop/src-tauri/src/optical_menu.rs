@@ -113,12 +113,12 @@ pub async fn optical_menu_recognize(
         .clone();
     let settings = integration_settings::read(&directory)?;
     if settings.ai_base_url.is_empty() || settings.ai_model.is_empty() {
-        return Err(error("请先在设置 → 助手中配置支持图片输入 AI 模型。"));
+        return Err(error("请先在设置 → AI 助手与翻译中配置支持图片输入 AI 模型。"));
     }
     let vlc = match crate::playback_settings::read(&directory)?.vlc_library {
         path if !path.trim().is_empty() => std::path::PathBuf::from(path),
         _ => bundled_runtime::vlc_library(window.app_handle())
-            .ok_or_else(|| error("未找到 VLC。请在设置 → 播放中配置 libvlc.dll。"))?,
+            .ok_or_else(|| error("未找到 VLC。请在设置 → 播放器与光驱 → 播放器路径中配置 libvlc.dll。"))?,
     };
     let playlist = if request.kind == "dvd" {
         DVD_MENU

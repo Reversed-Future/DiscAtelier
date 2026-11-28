@@ -3,6 +3,8 @@ mod video;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 pub use video::*;
+mod purchase_rate;
+pub use purchase_rate::YenPurchaseRate;
 mod backup_management;
 pub use backup_management::*;
 mod song_links;

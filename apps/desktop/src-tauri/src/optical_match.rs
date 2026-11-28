@@ -53,25 +53,24 @@ fn score(label: &str, copy: &LibraryCopy) -> (u32, &'static str) {
 }
 
 pub fn candidates(copies: Vec<LibraryCopy>, label: &str) -> Vec<OpticalCandidate> {
-    let mut values = copies
-        .into_iter()
-        .map(|copy| {
-            let (score, match_kind) = score(label, &copy);
-            OpticalCandidate {
-                copy_id: copy.id,
-                edition_id: copy.edition_id,
-                title: copy.edition.title,
-                creator: copy.edition.creator,
-                edition_label: copy.edition.edition_label,
-                category_id: copy.edition.category_id,
-                score,
-                match_kind: match_kind.into(),
-            }
-        })
-        .collect::<Vec<_>>();
+    let mut values = copies.into_iter().map(|copy| scored(copy, label)).collect::<Vec<_>>();
     values.sort_by_key(|candidate| std::cmp::Reverse(candidate.score));
     values.truncate(8);
     values
+}
+
+pub fn scored(copy: LibraryCopy, label: &str) -> OpticalCandidate {
+    let (score, match_kind) = score(label, &copy);
+    OpticalCandidate {
+        copy_id: copy.id,
+        edition_id: copy.edition_id,
+        title: copy.edition.title,
+        creator: copy.edition.creator,
+        edition_label: copy.edition.edition_label,
+        category_id: copy.edition.category_id,
+        score,
+        match_kind: match_kind.into(),
+    }
 }
 
 #[cfg(test)]

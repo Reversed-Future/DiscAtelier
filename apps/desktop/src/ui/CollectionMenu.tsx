@@ -23,7 +23,7 @@ export function CollectionMenu({ status, snapshot, organize, onStatus, onOrganiz
     <div className="menu-summary" aria-label="收藏统计">
       <div><span>{snapshot?.copies.length || 0} 套</span><span>{snapshot?.mediumCount || 0} 张</span></div>
       <div>{Object.entries(snapshot?.amounts || {}).map(([currency, amount]) => <span key={currency}>{formatPrice(amount, currency)}</span>)}</div>
-      <ConvertedTotal amounts={snapshot?.amounts || {}}/>
+      <ConvertedTotal snapshot={snapshot}/>
       {!!snapshot?.unpricedCount && <small>{snapshot.unpricedCount} 套未填价格</small>}
     </div>
   </div>;

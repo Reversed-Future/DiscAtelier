@@ -22,7 +22,7 @@ export function OpticalAssociationEditor({ medium, label, recognition, onClose, 
   }, []);
   async function search(text: string) {
     setBusy(true); setError(''); setEntry(null);
-    try { const found = await optical.candidates(label, text); if (alive.current) setRows(found); }
+    try { const found = await optical.candidates(label, text, text ? undefined : medium.discTitle); if (alive.current) setRows(found); }
     catch (cause) { if (alive.current) setError(errorMessage(cause)); }
     finally { if (alive.current) setBusy(false); }
   }
@@ -37,7 +37,7 @@ export function OpticalAssociationEditor({ medium, label, recognition, onClose, 
   async function save(copyId: string, discKey: string | null) {
     setBusy(true); setError('');
     try {
-      await optical.associate(medium.token, copyId, medium.label, discKey);
+      await optical.associate(medium.token, copyId, medium.discTitle || medium.label, discKey);
       if (alive.current) await onSaved();
     } catch (cause) { if (alive.current) setError(errorMessage(cause)); }
     finally { if (alive.current) setBusy(false); }

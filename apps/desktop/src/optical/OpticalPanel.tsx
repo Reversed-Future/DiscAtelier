@@ -14,6 +14,7 @@ import { integrations } from '../integrations/gateway';
 import { formatDuration, loadBlurayPlaylists, longestPlaylist, playlistOptionLabel, type BlurayPlaylist } from './blurayPlaylists';
 
 type DiscLookup = 'loading' | 'ready' | 'error';
+const excludedTitleMatches = new Set<string>();
 let cachedDrives: OpticalDrive[] | null = null;
 let cachedPresence: OpticalPresence[] | null = null;
 let cachedSuggestions: Record<string, OpticalCandidate[]> = {};
@@ -51,6 +52,7 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
   const [aiReady, setAiReady] = useState(false);
   const [autoRecognize, setAutoRecognize] = useState(true);
   const mounted = useRef(false), running = useRef(false);
+  const titlesChecked = useRef(new Set<string>());
   const playlistQueried = useRef(new Set<string>());
   useEffect(() => {
     let live = true;
@@ -110,11 +112,16 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
     try {
       const value = await optical.list();
       let links: OpticalPresence[] = [];
-      try { links = await optical.presence(); } catch { /* 收藏库不可用时仍显示光驱。 */ }
+      const tokens = value.flatMap(({ medium }) => medium?.discTitle && !titlesChecked.current.has(medium.token)
+        && !excludedTitleMatches.has(medium.token) ? [medium.token] : []);
+      try {
+        links = await optical.presence(tokens);
+        tokens.forEach(token => titlesChecked.current.add(token));
+      } catch { /* 收藏库不可用时仍显示光驱。 */ }
       const suggested = { ...suggestionsRef.current };
       for (const drive of value) {
         if (!drive.medium || suggested[drive.medium.token]) continue;
-        try { suggested[drive.medium.token] = await optical.candidates(drive.medium.label, ''); }
+        try { suggested[drive.medium.token] = await optical.candidates(drive.medium.label, '', drive.medium.discTitle); }
         catch { /* 单个光驱识别失败不影响其他光驱。 */ }
       }
       suggestionsRef.current = suggested;
@@ -172,7 +179,7 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
       });
     }
   }, [drives]);
-  function openAssociate(drive: OpticalDrive, medium: OpticalMedium, label = medium.label) {
+  function openAssociate(drive: OpticalDrive, medium: OpticalMedium, label = medium.discTitle || medium.label) {
     setAssociate({ drive, medium, label });
   }
   async function recognizeMenu(drive: OpticalDrive, medium: OpticalMedium, automatic = false) {
@@ -198,7 +205,7 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
   }
   async function unbind(medium: OpticalMedium) {
     setBusy(true); setError('');
-    try { await optical.unbind(medium.token); setRecognized(value => value ? { ...value, associationMessage: '已取消关联，可重新选择收藏及 Disc。' } : value); await refresh(); }
+    try { await optical.unbind(medium.token); excludedTitleMatches.add(medium.token); autoRecognized.add(medium.token); setRecognized(value => value ? { ...value, associationMessage: '已取消关联，可重新选择收藏及 Disc。' } : value); await refresh(); }
     catch (cause) { if (mounted.current) setError(errorMessage(cause)); }
     finally { if (mounted.current) setBusy(false); }
   }
@@ -271,7 +278,7 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
         </div>
         <p className="optical-medium">{drive.status === 'empty' ? '未放入光盘' : !medium ? '暂不可读取' : medium.kind === 'audioCd'
           ? <>CD · {release ? <><strong>{release.title}</strong>{release.artist ? ` · ${release.artist}` : ''}</> : `${medium.tracks.length} 首`}</>
-          : medium.kind === 'bluray' ? `BD · ${medium.label}` : medium.kind === 'dvdVideo' ? `DVD · ${medium.label}` : medium.label || '光盘'}</p>
+          : medium.kind === 'bluray' ? `BD · ${medium.discTitle && medium.discTitle !== medium.label ? `${medium.discTitle}${medium.label ? ` [${medium.label}]` : ''}` : medium.label}` : medium.kind === 'dvdVideo' ? `DVD · ${medium.label}` : medium.label || '光盘'}</p>
         {medium && <div className="optical-link">
           <span title={discId ? `MusicBrainz CD ID ${discId}` : undefined}>{linked
             ? <>已关联：<strong>{linked.title}{linked.discLabel ? ` · ${linked.discLabel}` : ''}</strong>{linked.playing ? ' · 正在播放' : ''}</>
@@ -306,6 +313,8 @@ export function OpticalPanel({ onClose, player }: { onClose(): void; player: Pla
             <button className="solid-button" disabled={capturing || busy || player.active || player.busy} onClick={() => void player.start(drive.mountPoint, medium.token, 'bd-menu')}>菜单播放</button>
             <Select label="播放列表" value={playlist} options={playlistOptions} disabled={busy || player.active || player.busy}
               onChange={value => { setSelected(current => ({ ...current, [selectionKey]: value })); setDetails(false); }}/>
+            <button type="button" className="text-button" disabled={!playlist || capturing || busy || player.active || player.busy}
+              onClick={() => void player.start(drive.mountPoint, medium.token, playlist)}>直接播放</button>
             <button className="text-button" disabled={busy || recognizing || player.active || player.busy} onClick={() => void recognizeMenu(drive, medium)}>{recognizeLabel}</button>
             <button className="text-button" disabled={recognizing || busy || !playlist || player.active || player.busy} onClick={() => void probe(drive, playlist)}>检查播放</button>
           </div>

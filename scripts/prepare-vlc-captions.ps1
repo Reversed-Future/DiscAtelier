@@ -14,3 +14,7 @@ $source = Join-Path $root 'crates/player-vlc/native/atelier_captions.c'
 $plugin = Join-Path $Runtime 'plugins/spu/libatelier_captions_plugin.dll'
 & gcc -std=gnu11 -O2 -shared -DHAVE_SSIZE_T "-I$sdk/vlc-3.0.22/include" $source (Join-Path $Runtime 'libvlccore.dll') -o $plugin
 if ($LASTEXITCODE) { throw 'Cannot compile VLC caption filters with MinGW-w64' }
+$source = Join-Path $root 'crates/player-vlc/native/atelier_playlist_seek.c'
+$plugin = Join-Path $Runtime 'plugins/stream_filter/libatelier_playlist_seek_plugin.dll'
+& gcc -std=gnu11 -O2 -shared -DHAVE_SSIZE_T "-I$sdk/vlc-3.0.22/include" $source (Join-Path $Runtime 'libvlccore.dll') -o $plugin
+if ($LASTEXITCODE) { throw 'Cannot compile VLC Blu-ray seek filter with MinGW-w64' }

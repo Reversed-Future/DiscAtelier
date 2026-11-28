@@ -60,10 +60,9 @@ impl<R: LibraryRepository + ExtensionRepository> LibraryService<R> {
             .repository
             .edition_content(edition)?
             .unwrap_or_default();
-        Ok(crate::optical_discs::for_media(
+        Ok(crate::optical_discs::for_edition(
             &content.tracks,
-            &copy.edition.title,
-            &copy.edition.media,
+            &copy.edition,
         ))
     }
     pub fn disc_albums(&self, edition: &str) -> Result<Vec<DiscAlbumLink>, AppError> {

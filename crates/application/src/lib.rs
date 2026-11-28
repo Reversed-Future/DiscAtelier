@@ -1,5 +1,6 @@
 use discatelier_contracts::*;
 pub mod ordering;
+pub mod purchase_rates;
 pub mod video;
 use discatelier_domain::{carriers, categories, validate_copy, validate_edition};
 use std::collections::BTreeMap;
@@ -11,7 +12,7 @@ mod disc_structure;
 mod extensions;
 mod music_albums;
 pub mod optical_discs;
-mod physical_discs;
+pub mod physical_discs;
 pub use extensions::ExtensionRepository;
 mod metadata;
 mod source_replacement;

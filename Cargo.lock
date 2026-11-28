@@ -1042,6 +1042,7 @@ dependencies = [
  "base64 0.22.1",
  "discatelier-application",
  "discatelier-contracts",
+ "quick-xml",
  "serde_json",
  "sha1",
  "sha2",

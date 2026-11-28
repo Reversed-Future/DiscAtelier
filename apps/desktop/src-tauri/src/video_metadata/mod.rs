@@ -71,9 +71,10 @@ pub async fn video_create(
     state: tauri::State<'_, LibraryState>,
     request: CreateCopy,
     metadata: VideoMetadata,
+    content: Option<EditionContent>,
 ) -> Result<String, AppError> {
     commands::run(state.inner().clone(), move |s| {
-        s.create_video(request, metadata)
+        s.create_video_with_content(request, metadata, content)
     })
     .await
 }
@@ -82,9 +83,10 @@ pub async fn video_update(
     state: tauri::State<'_, LibraryState>,
     request: UpdateEdition,
     metadata: VideoMetadata,
+    content: Option<EditionContent>,
 ) -> Result<String, AppError> {
     commands::run(state.inner().clone(), move |s| {
-        s.update_video(request, metadata)
+        s.update_video_with_content(request, metadata, content)
     })
     .await
 }

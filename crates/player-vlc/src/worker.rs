@@ -20,6 +20,7 @@ pub struct Start {
     pub dvd: bool,
     pub bluray_menu: bool,
     pub bluray_direct: bool,
+    pub playlist_duration: Option<f64>,
     pub silent: bool,
 }
 struct Publication {
@@ -75,7 +76,7 @@ pub fn run(
         start.window,
         start.track,
         start.bluray_menu,
-        start.bluray_direct,
+        start.bluray_direct.then_some(&snapshot.source),
         start.silent,
         false,
         (start.dvd || start.bluray_direct || snapshot.source.media_token == "local-video")
@@ -256,7 +257,7 @@ fn playing(
         }
         let duration = unsafe { (api.libvlc_media_player_get_length)(handle) };
         snapshot.duration_seconds =
-            (!snapshot.dvd_menu && duration > 0).then_some(duration as f64 / 1000.0);
+            start.playlist_duration.or_else(|| (!snapshot.dvd_menu && duration > 0).then_some(duration as f64 / 1000.0));
         snapshot.position_seconds = if snapshot.dvd_menu {
             0.0
         } else {

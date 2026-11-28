@@ -58,6 +58,33 @@ fn database() -> std::path::PathBuf {
 }
 
 #[test]
+fn yen_rates_survive_restart_and_backup_and_the_first_quote_wins() {
+    use discatelier_contracts::YenPurchaseRate;
+    let dir = database();
+    let original = YenPurchaseRate {
+        purchase_date: "2024-05-18".into(),
+        quote_date: "2024-05-17".into(),
+        cny_per_jpy: "0.046384".into(),
+        hkd_per_jpy: "0.050071".into(),
+    };
+    let backup = {
+        let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+        assert_eq!(service.freeze_yen_rate(&original).unwrap(), original);
+        service.backup().unwrap()
+    };
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let changed = YenPurchaseRate {
+        cny_per_jpy: "0.123".into(),
+        ..original.clone()
+    };
+    assert_eq!(service.freeze_yen_rate(&changed).unwrap(), original);
+    let prepared = service.prepare_restore(backup).unwrap();
+    service.restore(prepared.token).unwrap();
+    assert_eq!(service.yen_rate("2024-05-18").unwrap(), Some(original));
+    assert!(service.yen_rate("2024-05-19").unwrap().is_none());
+}
+
+#[test]
 fn restart_preserves_version_media_identifiers_and_purchase() {
     let directory = database();
     let id;

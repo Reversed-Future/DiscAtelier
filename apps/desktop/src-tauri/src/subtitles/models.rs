@@ -108,7 +108,7 @@ pub(super) fn installed(root: &Path, m: &Model) -> bool {
 pub fn selected(root: &Path, p: &Preferences) -> Result<PathBuf, AppError> {
     let m = model(&p.model)?;
     if !installed(root, m) {
-        return Err(error("请在设置 → AI 字幕中下载选定的 Whisper 模型。"));
+        return Err(error("请在设置 → 视频字幕 → Whisper 模型中下载选定的 Whisper 模型。"));
     }
     Ok(path(root, m))
 }

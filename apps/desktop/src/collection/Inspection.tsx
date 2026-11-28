@@ -30,9 +30,10 @@ import { OpticalTitleBadge } from '../optical/OpticalTitleBadge';
 import { useCoverTilt } from './useCoverTilt';
 import { LocalItemPanel } from '../local/LocalItemPanel';
 
-export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, artworkSlot, prepareClose, modelBusy, player, metadata, metadataError, partId, onPart, onOptical, hidden = false }: {
+export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, artworkSlot, prepareClose, modelBusy, markOwned, markingOwned, player, metadata, metadataError, partId, onPart, onOptical, hidden = false }: {
   item: LibraryCopy; carriers: Descriptor[]; onClose(): void; onSaved(): Promise<void>; onDeleted(): Promise<void>; edit(): void;
   artworkSlot(node: HTMLDivElement | null): void; prepareClose(): Promise<void>; modelBusy: boolean;
+  markOwned(): void; markingOwned: boolean;
   player: PlaybackController; metadata:VideoMetadata|null; metadataError:string; partId:string; onPart(id:string,instant:boolean):void; onOptical(): void; hidden?: boolean;
 }) {
   const [neteaseOpen, setNeteaseOpen] = useState(false);
@@ -91,14 +92,15 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
         </nav>
         <div ref={content} className="inspection-tab-content" data-tab={tab}>
           <div hidden={tab !== 'metadata'}>{isVideo && <VideoIntroduction key={part?.id || 'merged'} works={works}/>}<dl className="metadata">{fields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>{item.edition.categoryId === 'video' && <VideoDetails value={view}/>}<EditionContents section="metadata" state={editionContent} albums={supplement.value} links={supplement.links} bindings={supplement.bindings} item={item} player={player}/></div>
-          <div className="inspection-tracks-page" hidden={tab !== 'tracks'}>{isVideo ? <CollectionVideoChapters key={`${item.editionId}:${item.editionRevision}:${works.length}:${part?.id || 'merged'}`} item={item} metadata={metadata} sourceKeys={part?.sourceKeys} enabled={tab === 'tracks'} physical={trackContent} hasPhysical={!!editionContent.content?.tracks.length} onSaved={onSaved} onBusy={setChapterBusy} player={player}/> : trackContent}</div>
+          <div className="inspection-tracks-page" hidden={tab !== 'tracks'}>{isVideo ? <CollectionVideoChapters key={`${item.editionId}:${item.editionRevision}:${works.length}:${part?.id || 'merged'}`} item={item} metadata={metadata} sourceKeys={part?.sourceKeys} enabled={tab === 'tracks'} physical={trackContent} hasPhysical={item.edition.media.length > 1 || !!editionContent.content?.tracks.length} onSaved={onSaved} onBusy={setChapterBusy} player={player}/> : trackContent}</div>
           {isVideo && <div hidden={tab !== 'characters'}><CollectionVideoCharacters key={`${item.editionId}:${item.editionRevision}:${works.length}:${part?.id || 'merged'}`} item={item} metadata={metadata} sourceKeys={part?.sourceKeys} onSaved={onSaved} onBusy={setChapterBusy}/></div>}
           {isVideo && <div hidden={tab !== 'gallery'}><CollectionVideoGallery key={`${item.editionId}:${item.editionRevision}:${works.length}:${part?.id || 'merged'}`} item={item} metadata={metadata} sourceKeys={part?.sourceKeys} enabled={tab === 'gallery'} onSaved={onSaved} onBusy={setChapterBusy}/></div>}
-          <div hidden={tab !== 'purchase'}><dl className="metadata">{purchaseFields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}{key === '购入价格' && <ConvertedPrice amount={item.copy.amountMinor} currency={item.copy.currency}/>}</dd></div>)}</dl></div>
+          <div hidden={tab !== 'purchase'}><dl className="metadata">{purchaseFields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}{key === '购入价格' && <ConvertedPrice amount={item.copy.amountMinor} currency={item.copy.currency} acquiredAt={item.copy.acquiredAt}/>}</dd></div>)}</dl></div>
         </div>
         {metadataError && <p className="form-error" role="alert">{metadataError}</p>}
         {supplement.error && <p className="form-error" role="alert">{supplement.error}</p>}
         <div className="object-actions">
+          {item.copy.status === 'transit' && <button type="button" className="text-button" disabled={modelBusy || chapterBusy || markingOwned} onClick={markOwned}>标记为已购入</button>}
           <button type="button" className="text-button delete-collection" onClick={() => setConfirmDelete(true)} disabled={modelBusy || chapterBusy}>删除收藏</button>
           <button type="button" onClick={tab === 'purchase' ? () => setEditingPurchase(true) : edit} disabled={modelBusy || chapterBusy}>{tab === 'purchase' ? '编辑购入' : '编辑版本'}</button>
         </div>

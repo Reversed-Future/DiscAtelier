@@ -15,7 +15,7 @@ export function PurchaseFields({ value, amount, setAmount, onChange, title, crea
     <PurchaseScreenshots title={title} creator={creator} value={value} amount={amount} setAmount={setAmount} onChange={onChange} onBusy={onBusy}/>
     <div className="form-row"><label>价格<input aria-label="价格" inputMode="decimal" value={amount} placeholder="未填写" onChange={event => setAmount(event.target.value)}/></label>
       <label>币种<Select label="币种" value={value.currency} options={currencies} onChange={text => update('currency', text)}/></label></div>
-    <ConvertedInput amount={amount} currency={value.currency}/>
+    <ConvertedInput amount={amount} currency={value.currency} acquiredAt={value.acquiredAt}/>
     <div className="form-row"><label>状态<Select label="状态" value={value.status} options={statuses} onChange={text => update('status', text)}/></label>
       <div className="date-field"><span>购入日期</span><DatePicker label="购入日期" value={value.acquiredAt} onChange={text => update('acquiredAt', text)}/></div></div>
     {afterDate}

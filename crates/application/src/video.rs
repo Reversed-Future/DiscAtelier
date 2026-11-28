@@ -7,11 +7,13 @@ pub trait VideoRepository {
         &mut self,
         request: &CreateCopy,
         metadata: &VideoMetadata,
+        content: Option<&EditionContent>,
     ) -> Result<String, AppError>;
     fn update_video(
         &mut self,
         request: &UpdateEdition,
         metadata: &VideoMetadata,
+        content: Option<&EditionContent>,
     ) -> Result<String, AppError>;
 }
 impl<R: LibraryRepository + VideoRepository> LibraryService<R> {
@@ -23,6 +25,14 @@ impl<R: LibraryRepository + VideoRepository> LibraryService<R> {
         &mut self,
         request: CreateCopy,
         metadata: VideoMetadata,
+    ) -> Result<String, AppError> {
+        self.create_video_with_content(request, metadata, None)
+    }
+    pub fn create_video_with_content(
+        &mut self,
+        request: CreateCopy,
+        metadata: VideoMetadata,
+        content: Option<EditionContent>,
     ) -> Result<String, AppError> {
         crate::validate_create(&request)?;
         validate_video(&metadata)?;
@@ -37,12 +47,21 @@ impl<R: LibraryRepository + VideoRepository> LibraryService<R> {
                 "影像资料只能用于新增影像版本。",
             ));
         }
-        self.repository.create_video(&request, &metadata)
+        self.repository
+            .create_video(&request, &metadata, content.as_ref())
     }
     pub fn update_video(
         &mut self,
         request: UpdateEdition,
         metadata: VideoMetadata,
+    ) -> Result<String, AppError> {
+        self.update_video_with_content(request, metadata, None)
+    }
+    pub fn update_video_with_content(
+        &mut self,
+        request: UpdateEdition,
+        metadata: VideoMetadata,
+        content: Option<EditionContent>,
     ) -> Result<String, AppError> {
         crate::request_id(&request.request_id)?;
         crate::request_id(&request.edition_id)?;
@@ -51,6 +70,7 @@ impl<R: LibraryRepository + VideoRepository> LibraryService<R> {
         if request.expected_revision < 1 || request.edition.category_id != "video" {
             return Err(AppError::new("validation", "影像版本无效。"));
         }
-        self.repository.update_video(&request, &metadata)
+        self.repository
+            .update_video(&request, &metadata, content.as_ref())
     }
 }

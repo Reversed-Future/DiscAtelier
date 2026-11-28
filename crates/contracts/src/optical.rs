@@ -21,6 +21,8 @@ pub enum OpticalStatus {
 #[serde(rename_all = "camelCase")]
 pub struct OpticalMedium {
     pub label: String,
+    #[serde(default)]
+    pub disc_title: Option<String>,
     pub file_system: String,
     /// Volume serial and index hash detect stale probe results, not an edition ID.
     pub token: String,

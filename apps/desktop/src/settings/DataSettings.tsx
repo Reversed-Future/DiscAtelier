@@ -4,8 +4,8 @@ import { library, errorMessage } from '../library/gateway';
 import { settings, type DataLocation, type LogInfo } from './gateway';
 import { BackupManager } from './BackupManager';
 
-export function DataSettings({ libraryAvailable, onRestore, onBusy }: {
-  libraryAvailable: boolean; onRestore(): void; onBusy(value: boolean): void;
+export function DataSettings({ section, libraryAvailable, onRestore, onBusy }: {
+  section: 'backups' | 'logs'; libraryAvailable: boolean; onRestore(): void; onBusy(value: boolean): void;
 }) {
   const [location, setLocation] = useState<DataLocation | null>(null);
   const [busy, setBusy] = useState(false);
@@ -53,7 +53,7 @@ export function DataSettings({ libraryAvailable, onRestore, onBusy }: {
     finally { setLogBusy(false); onBusy(false); }
   }
   return <div className="data-settings">
-    <div className="setting-row"><span>数据位置</span><button className="text-button" disabled={!location || busy} onClick={() => {
+    {section === 'backups' && <><div className="setting-row"><span>数据位置</span><button className="text-button" disabled={!location || busy} onClick={() => {
       void settings.openDirectory().catch(cause => setError(errorMessage(cause)));
     }}>打开目录 ↗</button></div>
     <p className="data-path">{location?.directory || '读取中'}</p>
@@ -64,7 +64,8 @@ export function DataSettings({ libraryAvailable, onRestore, onBusy }: {
       <p className="setting-hint">备份不会自动清理，可在下方选择删除。每份备份包含当时的收藏、封面和模型。</p>
       <BackupManager revision={revision} busy={busy} onBusy={value => { setManaging(value); onBusy(value); }} />
     </div>
-    <div className="settings-section">
+    </>}
+    {section === 'logs' && <div>
       <div className="setting-row"><span>诊断日志</span><button className="text-button" disabled={logBusy} onClick={() => {
         void settings.openLogs().catch(cause => setError(errorMessage(cause)));
       }}>打开日志目录 ↗</button></div>
@@ -75,9 +76,9 @@ export function DataSettings({ libraryAvailable, onRestore, onBusy }: {
         <button className="text-button" disabled={logBusy} onClick={() => void exportLogs()}>{logBusy ? '导出中…' : '导出诊断日志'}</button>
       </span></div>
       {logNotice && <p className="setting-hint" role="status">{logNotice}</p>}
-    </div>
+    </div>}
     <div className="settings-feedback" aria-live="polite">
-      {saved && <><span>备份已保存</span><p className="data-path">{saved}</p></>}
+      {section === 'backups' && saved && <><span>备份已保存</span><p className="data-path">{saved}</p></>}
       {error && <p className="form-error" role="alert">{error}</p>}
     </div>
   </div>;

@@ -40,14 +40,11 @@ pub fn save(
     if !saved.is_empty() {
         if let Some(item) = crate::reads::edition(&tx, edition)? {
             let content = crate::content::read(&tx, edition)?.unwrap_or_default();
-            let keys: Vec<_> = discatelier_application::optical_discs::for_media(
-                &content.tracks,
-                &item.edition.title,
-                &item.edition.media,
-            )
-            .into_iter()
-            .map(|disc| disc.key)
-            .collect();
+            let keys: Vec<_> =
+                discatelier_application::optical_discs::for_edition(&content.tracks, &item.edition)
+                    .into_iter()
+                    .map(|disc| disc.key)
+                    .collect();
             {
                 for link in
                     discatelier_application::disc_links::resolve(&keys, &saved, &item.edition.media)

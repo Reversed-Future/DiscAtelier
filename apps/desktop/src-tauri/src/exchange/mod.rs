@@ -1,6 +1,7 @@
 mod credentials;
 mod model;
 mod provider;
+pub mod purchase;
 mod storage;
 #[cfg(test)]
 mod tests;

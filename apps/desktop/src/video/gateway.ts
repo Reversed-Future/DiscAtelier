@@ -22,8 +22,8 @@ export const video = {
   search: (source: VideoSource, query: string, page: number) => invoke<{ items: VideoWork[]; page: number; hasMore: boolean }>('video_search', { source, query, page }),
   work: (source: VideoSource, id: number) => invoke<VideoWork>('video_work', { source, id }),
   metadata: (editionId: string) => invoke<VideoMetadata | null>('video_metadata', { editionId }),
-  create: (request: CreateCopy, metadata: VideoMetadata) => invoke<string>('video_create', { request, metadata }),
-  update: (request: UpdateEdition, metadata: VideoMetadata) => invoke<string>('video_update', { request, metadata }),
+  create: (request: CreateCopy, metadata: VideoMetadata, content: import('../metadata/gateway').EditionContent | null = null) => invoke<string>('video_create', { request, metadata, content }),
+  update: (request: UpdateEdition, metadata: VideoMetadata, content: import('../metadata/gateway').EditionContent | null = null) => invoke<string>('video_update', { request, metadata, content }),
   recognize: (pictures: string[]) => invoke<Recognition>('video_recognize', { pictures }),
 };
 export function workLink(work: VideoWork) {

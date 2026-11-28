@@ -1,3 +1,4 @@
+pub(crate) mod video_edition;
 use crate::db_error;
 use discatelier_contracts::{AppError, OpticalBinding};
 use rusqlite::{params, Connection, OptionalExtension};
@@ -57,16 +58,18 @@ pub(crate) fn save(
         return Err(AppError::new("validation", "收藏条目不存在。"));
     }
     let disc_label = if let Some(key) = disc_key {
-        let (edition, title): (String, String) = connection.query_row(
-            "SELECT e.id,w.title FROM copies c JOIN editions e ON e.id=c.edition_id JOIN works w ON w.id=e.work_id WHERE c.id=?1",
-            [copy_id], |row| Ok((row.get(0)?, row.get(1)?)),
-        ).map_err(db_error)?;
+        let edition: String = connection
+            .query_row(
+                "SELECT edition_id FROM copies WHERE id=?1",
+                [copy_id],
+                |row| row.get(0),
+            )
+            .map_err(db_error)?;
         let content = crate::content::read(connection, &edition)?.unwrap_or_default();
-        let media = crate::reads::edition(connection, &edition)?
-            .map(|copy| copy.edition.media)
-            .unwrap_or_default();
+        let item = crate::reads::edition(connection, &edition)?
+            .ok_or_else(|| AppError::new("validation", "收藏条目不存在。"))?;
         Some(
-            discatelier_application::optical_discs::for_media(&content.tracks, &title, &media)
+            discatelier_application::optical_discs::for_edition(&content.tracks, &item.edition)
                 .into_iter()
                 .find(|disc| disc.key == key)
                 .ok_or_else(|| AppError::new("validation", "该 Disc 已不存在，请重新选择。"))?

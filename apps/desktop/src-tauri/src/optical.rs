@@ -141,7 +141,7 @@ pub(crate) fn verify_disc(
                 mount_point: drive.mount_point,
                 media_token: medium.token,
                 playlist: playlist.into(),
-                label: medium.label,
+                label: medium.disc_title.unwrap_or(medium.label),
             });
         }
     }
@@ -182,6 +182,7 @@ pub async fn optical_candidates(
     library: tauri::State<'_, crate::commands::LibraryState>,
     label: String,
     query: String,
+    disc_title: Option<String>,
 ) -> Result<Vec<OpticalCandidate>, AppError> {
     if label.len() > 512 || query.len() > 1000 {
         return Err(AppError::new("validation", "光盘标题查询条件无效。"));
@@ -199,6 +200,26 @@ pub async fn optical_candidates(
                     })?
                     .copies,
             );
+        }
+        if let Some(title) = disc_title.as_deref() {
+            let mut rows = Vec::new();
+            for copy in copies {
+                if copy.edition.category_id != "video"
+                    || !copy.edition.media.iter().any(|m| m.carrier_id == "bd")
+                {
+                    continue;
+                }
+                let exact = crate::optical_title_match::matches_copy(service, title, &copy)?;
+                let mut row = crate::optical_match::scored(copy, title);
+                if exact {
+                    row.score = 100;
+                    row.match_kind = "title".into();
+                }
+                rows.push(row);
+            }
+            rows.sort_by_key(|row| std::cmp::Reverse(row.score));
+            rows.truncate(8);
+            return Ok(rows);
         }
         Ok(crate::optical_match::candidates(copies, &label))
     })
@@ -263,6 +284,22 @@ pub async fn optical_bluray_playlists(
 }
 
 #[tauri::command]
+pub async fn optical_dvd_title_count(
+    state: tauri::State<'_, OpticalState>,
+    mount_point: String,
+    token: String,
+) -> Result<u16, AppError> {
+    run(state.inner().clone(), move |_| {
+        let source = verify_disc(&mount_point, &token, discatelier_player_vlc::DVD_MENU)?;
+        discatelier_optical_windows::dvd::title_count(&PathBuf::from(format!(
+            "{}\\",
+            source.mount_point
+        )))
+    })
+    .await
+}
+
+#[tauri::command]
 pub async fn optical_dvd_chapters(
     state: tauri::State<'_, OpticalState>,
     mount_point: String,
@@ -293,6 +330,7 @@ pub async fn optical_unbind(
 
 #[tauri::command]
 pub async fn optical_presence(
+    match_title_tokens: Option<Vec<String>>,
     library: tauri::State<'_, crate::commands::LibraryState>,
     playback: tauri::State<'_, crate::playback::PlaybackState>,
 ) -> Result<Vec<OpticalPresence>, AppError> {
@@ -319,9 +357,17 @@ pub async fn optical_presence(
     crate::commands::run(library.inner().clone(), move |service| {
         let mut result = Vec::new();
         for (drive, mount_point, medium) in media {
-            let Some(binding) = service.optical_binding(&medium.token)? else {
-                continue;
+            let existing = service.optical_binding(&medium.token)?;
+            let binding = if existing.is_none()
+                && match_title_tokens
+                    .as_ref()
+                    .is_some_and(|tokens| tokens.contains(&medium.token))
+            {
+                crate::optical_title_match::associate(service, &medium)?
+            } else {
+                existing
             };
+            let Some(binding) = binding else { continue };
             result.push(OpticalPresence {
                 copy_id: binding.copy_id,
                 title: binding.title,
@@ -329,7 +375,7 @@ pub async fn optical_presence(
                 drive,
                 mount_point,
                 media_token: medium.token.clone(),
-                label: medium.label,
+                label: medium.disc_title.unwrap_or(medium.label),
                 playing: playing.as_deref() == Some(medium.token.as_str()),
                 disc_key: binding.disc_key,
                 disc_label: binding.disc_label,

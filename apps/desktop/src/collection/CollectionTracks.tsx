@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { videoDiscPages } from '../video/physicalContents';
 import { discPages } from '../metadata/discTracks';
 import { DiscTabs, DiscTrackPanel } from '../metadata/DiscTrackView';
 import type { ReleaseTrack } from '../metadata/gateway';
@@ -27,11 +28,11 @@ export function CollectionTracks({ rows, albums, links, bindings, item, player }
     window.addEventListener('local-files-changed', load);
     return () => { active = false; window.removeEventListener('local-files-changed', load); };
   }, [item.id]);
-  const pages = useMemo(() => trackLeaves(rows).length ? discPages(rows, item.edition.title, item.edition.media) : albums.flatMap(entry => {
+  const pages = useMemo(() => item.edition.categoryId === 'video' && (rows.length || !albums.length) ? videoDiscPages(rows, item.edition) : trackLeaves(rows).length ? discPages(rows, item.edition.title, item.edition.media) : albums.flatMap(entry => {
     const discs = [...new Set(entry.album.tracks.map(t => t.disc))];
     const all = albumRows(entry);
     return discs.map(disc => ({ key: `${entry.album.albumId}:${disc}`, name: entry.album.title + (discs.length > 1 ? ` · Disc ${disc}` : ''), numbered: false, tracks: all.filter((_, i) => entry.album.tracks[i].disc === disc) }));
-  }), [rows, albums, item.edition.title, item.edition.media]);
+  }), [rows, albums, item.edition]);
   const localByTrack = useMemo(() => localBindingByTrack(pages, local), [local, pages]);
   function localPlayback(track: ReleaseTrack): TrackPlayback | undefined {
     const binding = localByTrack.get(trackKey(track));
@@ -57,5 +58,5 @@ export function CollectionTracks({ rows, albums, links, bindings, item, player }
       else void player.startNetease(item.editionId, song.id);
     } };
   }
-  return pages.length ? <div className="collection-tracks"><DiscTabs pages={pages} page={index} onChange={setPage}/><DiscTrackPanel disc={pages[index]} index={index} playback={playback} localPlayback={localPlayback} positionLabel={trackLeaves(rows).length ? undefined : row => albumRowLabel(row, albums)}/></div> : <p className="utility-copy">{item.edition.categoryId === 'video' ? '暂无本版章节资料' : '暂无曲目'}</p>;
+  return pages.length ? <div className="collection-tracks"><DiscTabs pages={pages} page={index} onChange={setPage}/><DiscTrackPanel emptyLabel={item.edition.categoryId === 'video' ? '这张碟片还没有录入内容。' : undefined} disc={pages[index]} index={index} playback={playback} localPlayback={localPlayback} positionLabel={trackLeaves(rows).length ? undefined : row => albumRowLabel(row, albums)}/></div> : <p className="utility-copy">{item.edition.categoryId === 'video' ? '暂无本版章节资料' : '暂无曲目'}</p>;
 }

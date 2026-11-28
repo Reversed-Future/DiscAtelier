@@ -24,6 +24,106 @@ fn metadata() -> VideoMetadata {
     serde_json::from_value(json!({"work":{"source":"bangumi","externalId":311,"title":"作品","originalTitle":"原名","summary":"作品简介","premiereDate":"2010-01-01","posterUrl":"","episodeCount":12,"genres":["动画"],"people":[{"name":"人员","role":"导演"}]},"physical":{"territory":"日本","releaseDate":"2011-02-03","volume":"第1卷","includedContent":"第1–2集","packaging":"附小册子"}})).unwrap()
 }
 #[test]
+fn physical_disc_contents_share_the_video_transaction_and_remain_separate_from_the_work() {
+    let dir = directory();
+    let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let mut draft = request();
+    draft.edition.as_mut().unwrap().media = serde_json::from_value(json!([
+        {"carrierId":"bd","label":"本编"}, {"carrierId":"bd","label":"特典一"}, {"carrierId":"dvd","label":"特典二"}
+    ])).unwrap();
+    let content: EditionContent = serde_json::from_value(json!({"genres":[],"styles":[],"tracks":[
+        {"title":"访谈","position":"1","disc_number":2}, {"title":"预告","position":"1","disc_number":3}
+    ]})).unwrap();
+    let id = service
+        .create_video_with_content(draft, metadata(), Some(content.clone()))
+        .unwrap();
+    let item = service.list(query()).unwrap().copies.remove(0);
+    let discs = service.edition_discs(&item.edition_id).unwrap();
+    assert_eq!(
+        discs.iter().map(|d| d.label.as_str()).collect::<Vec<_>>(),
+        ["Disc 1. 本编", "Disc 2. 特典一", "Disc 3. 特典二"]
+    );
+    service
+        .save_optical_disc_binding("test-feature-disc", &id, "本编", Some(&discs[0].key))
+        .unwrap();
+    let update = UpdateEdition {
+        request_id: uuid::Uuid::new_v4().to_string(),
+        edition_id: item.edition_id.clone(),
+        expected_revision: item.edition_revision,
+        edition: item.edition.clone(),
+        cover: CoverChange::Keep,
+        model: ModelChange::Keep,
+    };
+    let mut invalid = content.clone();
+    invalid.tracks[0].disc_number = Some(4);
+    assert!(service
+        .update_video_with_content(update.clone(), metadata(), Some(invalid))
+        .is_err());
+    let mut edited = content;
+    edited.tracks[0].title = "访谈完整版".into();
+    service
+        .update_video_with_content(update.clone(), metadata(), Some(edited.clone()))
+        .unwrap();
+    service
+        .update_video_with_content(update.clone(), metadata(), Some(edited))
+        .unwrap();
+    let mut other = metadata();
+    other.physical.volume = "其他".into();
+    assert!(service
+        .update_video_with_content(update, other, None)
+        .is_err());
+    drop(service);
+    let service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());
+    let saved = service.edition_content(&item.edition_id).unwrap().unwrap();
+    assert_eq!(saved.tracks[0].title, "访谈完整版");
+    assert_eq!(saved.tracks[1].disc_number, Some(3));
+    assert_eq!(
+        service
+            .video_metadata(&item.edition_id)
+            .unwrap()
+            .unwrap()
+            .work
+            .unwrap()
+            .title,
+        "作品"
+    );
+}
+
+#[test]
+fn removing_a_bonus_disc_preserves_the_other_physical_disc_binding() {
+    let mut service = LibraryService::new(SqliteLibrary::open(&directory()).unwrap());
+    let mut draft = request();
+    draft.edition.as_mut().unwrap().media = serde_json::from_value(json!([
+        {"carrierId":"bd","label":"本编"}, {"carrierId":"bd","label":"特典一"}, {"carrierId":"dvd","label":"特典二"}
+    ])).unwrap();
+    let id = service.create_video(draft, metadata()).unwrap();
+    let item = service.list(query()).unwrap().copies.remove(0);
+    service
+        .save_optical_disc_binding("bonus-1", &id, "特典一", Some("manual:2"))
+        .unwrap();
+    service
+        .save_optical_disc_binding("bonus-2", &id, "特典二", Some("manual:3"))
+        .unwrap();
+    let mut edition = item.edition;
+    edition.media.remove(1);
+    let update = UpdateEdition {
+        request_id: uuid::Uuid::new_v4().to_string(),
+        edition_id: item.edition_id,
+        expected_revision: item.edition_revision,
+        edition,
+        cover: CoverChange::Keep,
+        model: ModelChange::Keep,
+    };
+    service.update_video(update, metadata()).unwrap();
+    let removed = service.optical_binding("bonus-1").unwrap().unwrap();
+    let shifted = service.optical_binding("bonus-2").unwrap().unwrap();
+    assert_eq!(removed.copy_id, id);
+    assert!(removed.disc_key.is_none());
+    assert_eq!(shifted.disc_key.as_deref(), Some("manual:2"));
+    assert_eq!(shifted.disc_label.as_deref(), Some("Disc 2. 特典二"));
+}
+
+#[test]
 fn video_create_is_atomic_idempotent_and_does_not_replace_physical_fields() {
     let dir = directory();
     let mut service = LibraryService::new(SqliteLibrary::open(&dir).unwrap());

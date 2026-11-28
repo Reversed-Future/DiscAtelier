@@ -12,15 +12,16 @@ pub fn update(
     request: &UpdateEdition,
     prepared: &crate::models::prepared::PreparedModels,
 ) -> Result<String, AppError> {
-    update_with_video(connection, request, prepared, None)
+    update_draft(connection, request, prepared, None, None, None)
 }
 pub fn update_with_video(
     connection: &mut Connection,
     request: &UpdateEdition,
     prepared: &crate::models::prepared::PreparedModels,
     video: Option<&discatelier_contracts::VideoMetadata>,
+    content: Option<&discatelier_contracts::EditionContent>,
 ) -> Result<String, AppError> {
-    update_draft(connection, request, prepared, video, None, None)
+    update_draft(connection, request, prepared, video, content, None)
 }
 pub fn update_with_content(
     connection: &mut Connection,
@@ -60,6 +61,8 @@ fn update_draft(
                 Sha256::digest(
                     if let Some(source) = source {
                         serde_json::to_vec(&("replace_source", source))
+                    } else if video.is_some() && content.is_some() {
+                        serde_json::to_vec(&(request, video, content))
                     } else if content.is_some() {
                         serde_json::to_vec(&(request, "content", content))
                     } else if video.is_some() {
@@ -93,6 +96,11 @@ fn update_draft(
             "版本资料已发生变化，请重新打开后再编辑。",
         ));
     }
+    let bound_discs = if request.edition.category_id == "video" {
+        crate::optical::video_edition::load(&transaction, &request.edition_id)?
+    } else {
+        None
+    };
     let cover = match &request.cover {
         CoverChange::Keep => old_cover,
         CoverChange::Remove => None,
@@ -151,6 +159,10 @@ fn update_draft(
         .map_err(db_error)?;
     if let Some(value) = content {
         crate::content::replace(&transaction, &request.edition_id, value)?;
+    }
+    if let Some(bound) = bound_discs {
+        let saved = crate::content::read(&transaction, &request.edition_id)?.unwrap_or_default();
+        bound.sync(&transaction, edition, &saved)?;
     }
     if let Some(value) = video {
         crate::video::save(&transaction, &request.edition_id, value)?;

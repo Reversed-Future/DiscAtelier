@@ -1,46 +1,69 @@
+import { useEffect, useRef, useState } from 'react';
 import { WindowSettings } from '../shell/WindowSettings';
 import { VideoSettings } from '../video/VideoSettings';
-import { useEffect, useRef, useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { enter } from '../ui/motion';
 import { PlaybackSettings } from '../optical/PlaybackSettings';
 import { IntegrationSettings } from '../integrations/IntegrationSettings';
 import { ExchangeSettings } from '../exchange/ExchangeSettings';
+import { EqualizerSettings } from '../playback/EqualizerSettings';
 import { DataSettings } from './DataSettings';
 import { MusicSettings } from './MusicSettings';
 import { AboutSettings } from './AboutSettings';
-import { EqualizerSettings } from '../playback/EqualizerSettings';
-import { SubtitleSettings } from './SubtitleSettings';
+import { SubtitleSettings, type SubtitleSection } from './SubtitleSettings';
+import { SettingsNavigation, SettingsTabs } from './SettingsNavigation';
+import { settingsPages, type SectionId } from './settingsDirectory';
 
-const pages = [{ id: 'window', label: '窗口' }, { id: 'data', label: '数据' }, { id: 'exchange', label: '汇率' }, { id: 'video', label: '影像资料' }, { id: 'music', label: '音乐资料' }, { id: 'assistant', label: '助手' }, { id: 'playback', label: '播放' }, { id: 'subtitles', label: 'AI 字幕' }, { id: 'audio', label: '音效' }, { id: 'about', label: '关于' }] as const;
-type Page = typeof pages[number]['id'];
+const entryPoints = { home: 'backups', discogs: 'discogs', about: 'app', audio: 'equalizer' } as const;
+
 export function Settings({ initialPage, libraryAvailable, onRestore, onClose }: {
-  initialPage: 'home' | 'discogs' | 'about' | 'audio'; libraryAvailable: boolean; onRestore(): void; onClose(): void;
+  initialPage: keyof typeof entryPoints; libraryAvailable: boolean; onRestore(): void; onClose(): void;
 }) {
-  const [page, setPage] = useState<Page>(initialPage === 'home' ? 'data' : initialPage === 'about' ? 'about' : initialPage === 'audio' ? 'audio' : 'music');
+  const [section, setSection] = useState<SectionId>(entryPoints[initialPage]);
+  const [subtitleSection, setSubtitleSection] = useState<SubtitleSection>();
   const [busy, setBusy] = useState(false);
+  const page = settingsPages.find(item => item.sections.some(tab => tab.id === section))!;
   const content = useRef<HTMLDivElement>(null);
-  useEffect(() => { enter(content.current, 3); }, [page]);
+  const heading = useRef<HTMLHeadingElement>(null);
+  function navigate(id: SectionId) {
+    if (busy) return;
+    if (id === 'appearance' || id === 'speech' || id === 'models') setSubtitleSection(id);
+    setSection(id);
+  }
+  useEffect(() => { if (content.current) content.current.scrollTop = 0; }, [section]);
+  useEffect(() => { enter(content.current, 3); }, [page.id]);
+
+  function controls() {
+    switch (section) {
+      case 'window': return <WindowSettings/>;
+      case 'backups': case 'logs': return <DataSettings section={section} libraryAvailable={libraryAvailable} onRestore={onRestore} onBusy={setBusy}/>;
+      case 'discogs': case 'musicbrainz': case 'netease': return <MusicSettings section={section} onBusy={setBusy}/>;
+      case 'assistant': return <IntegrationSettings kind="assistant" onBusy={setBusy}/>;
+      case 'tmdb': case 'bangumi': return <VideoSettings section={section} onBusy={setBusy}/>;
+      case 'today': case 'ratesApi': return <ExchangeSettings section={section} onBusy={setBusy}/>;
+      case 'mediaKeys': case 'bluray': case 'engines': return <PlaybackSettings section={section} onBusy={setBusy}/>;
+      case 'equalizer': return <EqualizerSettings/>;
+      case 'app': case 'credits': return <AboutSettings section={section} onBusy={setBusy}/>;
+      case 'appearance': case 'speech': case 'models': return null;
+    }
+  }
   return <Modal title="设置" onClose={onClose} busy={busy} className="settings-panel">
     <div className="settings-layout">
-      <nav className="settings-nav" aria-label="设置分类">
-        {pages.map(item => <button key={item.id} aria-current={page === item.id ? 'page' : undefined} disabled={busy}
-          onClick={() => setPage(item.id)}>{item.label}</button>)}
-        <span className="settings-brand">DiscAtelier</span>
-      </nav>
-      <section ref={content} className="settings-content" data-long-scroll aria-label={pages.find(item => item.id === page)?.label}>
-        <h3>{pages.find(item => item.id === page)?.label}</h3>
-        {page === 'window' && <WindowSettings/>}
-        {page === 'data' && <DataSettings libraryAvailable={libraryAvailable} onRestore={onRestore} onBusy={setBusy}/>}
-        {page === 'music' && <MusicSettings initialSection={initialPage === 'discogs' ? 'discogs' : 'musicbrainz'} onBusy={setBusy}/>}
-        {page === 'assistant' && <IntegrationSettings key="assistant" kind="assistant" onBusy={setBusy}/>}
-        {page === 'video' && <VideoSettings onBusy={setBusy}/>}
-        {page === 'exchange' && <ExchangeSettings onBusy={setBusy}/>}
-        {page === 'playback' && <PlaybackSettings onBusy={setBusy}/>}
-        {page === 'audio' && <EqualizerSettings/>}
-        {page === 'subtitles' && <SubtitleSettings/>}
-        {page === 'about' && <AboutSettings onBusy={setBusy}/>}
-      </section>
+      <SettingsNavigation page={page} busy={busy} onSelect={id => { navigate(id); heading.current?.focus(); }}/>
+      <div className="settings-workspace">
+        <header className="settings-page-heading">
+          <h3 ref={heading} tabIndex={-1} id="settings-page-title">{page.label}</h3>
+          <SettingsTabs page={page} section={section} busy={busy} onSelect={navigate}/>
+        </header>
+        <div ref={content} id="settings-section" className="settings-content" data-long-scroll
+          role={page.sections.length > 1 ? 'tabpanel' : 'region'}
+          aria-labelledby={page.sections.length > 1 ? `settings-tab-${section}` : 'settings-page-title'}>
+          {controls()}
+          {subtitleSection && <div hidden={page.id !== 'subtitles'}>
+            <SubtitleSettings section={subtitleSection} onAssistant={() => navigate('assistant')} onBusy={setBusy}/>
+          </div>}
+        </div>
+      </div>
     </div>
   </Modal>;
 }

@@ -47,7 +47,7 @@ async function base64(file: File) {
   return btoa(binary);
 }
 
-export function PlaybackSettings({ onBusy }: { onBusy(value: boolean): void }) {
+export function PlaybackSettings({ section, onBusy }: { section: 'mediaKeys' | 'bluray' | 'engines'; onBusy(value: boolean): void }) {
   const [value, setValue] = useState<Settings>(() => cachedSettings || initial);
   const [keydb, setKeydb] = useState<KeydbStatus | null>(cachedKeydb);
   const [checking, setChecking] = useState(!cachedKeydb);
@@ -121,9 +121,9 @@ export function PlaybackSettings({ onBusy }: { onBusy(value: boolean): void }) {
     catch (cause) { setError(errorMessage(cause)); }
     finally { setBusy(false); onBusy(false); }
   }}>
-    <div className="setting-row"><span>Windows 媒体控制 · SMTC</span><SquishSwitch checked={value.smtcEnabled} disabled={busy} onChange={next => change('smtcEnabled', next)} ariaLabel="Windows 媒体控制 · SMTC" width={36} height={20} radius={0} trackColor="#27272a" trackOnColor="#f5f5f5" colorDuration={220}/></div>
-    <p className="setting-hint">在系统媒体面板显示当前播放，并支持媒体键控制。保存后生效。</p>
-    <div className="setting-row bluray-key-row">
+    {section === 'mediaKeys' && <><div className="setting-row"><span>Windows 媒体控制 · SMTC</span><SquishSwitch checked={value.smtcEnabled} disabled={busy} onChange={next => change('smtcEnabled', next)} ariaLabel="Windows 媒体控制 · SMTC" width={36} height={20} radius={0} trackColor="#27272a" trackOnColor="#f5f5f5" colorDuration={220}/></div>
+    <p className="setting-hint">在系统媒体面板显示当前播放，并支持媒体键控制。保存后生效。</p></>}
+    {section === 'bluray' && <><div className="setting-row bluray-key-row">
       <span>蓝光密钥文件</span>
       <span className="bluray-key-actions">
         <button type="button" className="text-button" disabled={busy} onClick={() => keyFile.current?.click()}>
@@ -163,8 +163,12 @@ export function PlaybackSettings({ onBusy }: { onBusy(value: boolean): void }) {
       </label>
     </div>
     <p className="setting-hint">仅在 libaacs 确认属于解密能力不足时自动尝试，不启动独立 MakeMKV 实例；普通读盘错误、光盘取出或停止播放不会触发。</p>
+    </>}
+    {section === 'engines' && <>
+    <p className="setting-intro">需要指定其他播放器时，可在这里选择 MPV 或 VLC 的位置。</p>
     <label>MPV<div className="path-input"><input value={value.mpvExecutable} onChange={event => change('mpvExecutable', event.target.value)} disabled={busy} spellCheck={false} placeholder="mpv.exe 完整路径；留空自动检测"/><button type="button" className="text-button" disabled={busy} onClick={() => void choosePath('mpvExecutable', '选择 mpv.exe', ['exe'])}>浏览</button></div></label>
     <label>VLC · CD / DVD / Blu-ray<div className="path-input"><input value={value.vlcLibrary} onChange={event => change('vlcLibrary', event.target.value)} disabled={busy} spellCheck={false} placeholder="留空使用内置 VLC；也可填写 libvlc.dll 完整路径"/><button type="button" className="text-button" disabled={busy} onClick={() => void choosePath('vlcLibrary', '选择 libvlc.dll', ['dll'])}>浏览</button></div></label>
+    </>}
     {error && <p className="form-error" role="alert">{error}</p>}
     <footer className="settings-actions"><button className="solid-button" disabled={busy}>{saved ? '已保存' : busy ? '读取中' : '保存'}</button></footer>
   </form>;

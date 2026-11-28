@@ -25,3 +25,12 @@ Both libraries are licensed under the GNU Lesser General Public License,
 version 2.1 or later. See COPYING.LGPL-2.1. The corresponding source is
 available at the VideoLAN repositories above. No KEYDB.cfg or key material is
 included in this directory or in the application package.
+
+libbluray.dll (Windows x64) is the unmodified playlist reader from LAV Filters 0.80.
+Binary distribution: https://github.com/Nevcairiel/LAVFilters/releases/tag/0.80
+Asset: LAVFilters-0.80-x64.zip
+Archive SHA-256: c121f087d1d48b6abd38a641a3c5d1e391cd136b9b4ead31c19cd3b098542650
+DLL SHA-256: 48c317355af0e53147cd7e5dcf404b0dd6466beded40acb533b8403778d66ad9
+Corresponding source: https://gitea.1f0.de/LAV/libbluray.git
+Revision: c2ef29d2020b141488e6543a29f217f5693f6035
+Source reference: https://github.com/Nevcairiel/LAVFilters/tree/0.80

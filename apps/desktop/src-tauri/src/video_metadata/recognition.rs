@@ -117,7 +117,7 @@ pub async fn video_recognize(
     tauri::async_runtime::spawn_blocking(move || {
         images::validate(&pictures)?;
         let settings=integration_settings::read(&directory)?;
-        if settings.ai_base_url.is_empty()||settings.ai_model.is_empty() {return Err(error("请先在设置 → 助手中配置支持图片的 AI 模型。"));}
+        if settings.ai_base_url.is_empty()||settings.ai_model.is_empty() {return Err(error("请先在设置 → AI 助手与翻译中配置支持图片的 AI 模型。"));}
         let mut content=vec![json!({"type":"text","text":format!("以下依次为包装图片 1 至 {}，只提取图片可见信息。",pictures.len())})];
         for picture in &pictures {content.push(json!({"type":"image_url","image_url":{"url":picture,"detail":"high"}}));}
         let body=json!({"model":settings.ai_model,"stream":false,"messages":[{"role":"system","content":include_str!("packaging-prompt.txt")},{"role":"user","content":content}]});

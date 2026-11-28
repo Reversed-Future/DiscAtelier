@@ -155,7 +155,7 @@ pub async fn subtitle_text_translation(
     }
     let ai = integration_settings::read(&directory.0)?;
     if ai.ai_base_url.is_empty() || ai.ai_model.is_empty() {
-        return Err(error("请在设置 → 助手配置翻译服务。"));
+        return Err(error("请在设置 → AI 助手与翻译配置翻译服务。"));
     }
     tauri::async_runtime::spawn_blocking(move || {
         let result = translation::translate(

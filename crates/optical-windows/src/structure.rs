@@ -55,6 +55,7 @@ pub fn inspect(
     }
     Ok(OpticalMedium {
         label,
+        disc_title: if bluray { crate::disc_title::read(root) } else { None },
         file_system,
         token: format!("{:x}", hash.finalize()),
         kind: if bluray {

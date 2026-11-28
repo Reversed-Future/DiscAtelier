@@ -58,19 +58,15 @@ pub async fn playback_start(
         #[cfg(feature = "performance-harness")]
         let fixture = crate::playback_fixture::resolve(directory, &mount_point, &token, &playlist)?;
         #[cfg(feature = "performance-harness")]
-        let mut source = match &fixture {
+        let source = match &fixture {
             Some((source, _)) => source.clone(),
             None => verify_disc(&mount_point, &token, &playlist)?,
         };
         #[cfg(not(feature = "performance-harness"))]
-        let mut source = verify_disc(&mount_point, &token, &playlist)?;
-        // MPV cannot create its embedded video window on this Windows build,
-        // and VLC cannot select an arbitrary Blu-ray playlist after opening.
-        // A concrete playlist therefore enters through the disc menu, where
-        // the user can start the same title without an abnormal MPV exit.
-        if discatelier_player_vlc::is_bluray_playlist(&source.playlist) {
-            source.playlist = discatelier_player_vlc::BD_MENU.into();
-        }
+        let source = verify_disc(&mount_point, &token, &playlist)?;
+        let direct = discatelier_player_vlc::is_bluray_playlist(&source.playlist);
+        #[cfg(feature = "performance-harness")]
+        let direct = direct && fixture.is_none();
         let cd_history = cd_metadata.clone();
         let checkpoint: Checkpoint = Arc::new(move |snapshot| {
             let record = PlaybackRecord::from(&crate::cd_metadata::decorate_snapshot(
@@ -87,8 +83,12 @@ pub async fn playback_start(
         });
         let disc_menu = source.playlist == discatelier_player_vlc::DVD_MENU
             || source.playlist == discatelier_player_vlc::BD_MENU;
-        let vlc = disc_menu || discatelier_player_vlc::cd_track(&source.playlist).is_some();
-        let vlc_video = disc_menu;
+        let vlc = direct || disc_menu || discatelier_player_vlc::cd_track(&source.playlist).is_some();
+        let vlc_video = disc_menu || direct;
+        let playlist_duration = if direct {
+            let root = std::path::PathBuf::from(format!("{}/", source.mount_point));
+            Some(discatelier_optical_windows::bluray::playlist(&root, &source.playlist)?.duration_seconds)
+        } else { None };
         let vlc_path = if vlc {
             Some(discatelier_player_vlc::configured(&settings)?)
         } else {
@@ -109,6 +109,7 @@ pub async fn playback_start(
                     source,
                     resume_seconds,
                     resume_title,
+                    playlist_duration,
                     checkpoint,
                 )?)
             } else {

@@ -40,6 +40,15 @@ pub struct MediaTrack {
     pub language: *mut c_char,
     pub description: *mut c_char,
 }
+pub(crate) fn load_library(path: &Path) -> Result<Library, libloading::Error> {
+    #[cfg(windows)]
+    unsafe {
+        use windows_sys::Win32::System::LibraryLoader::{LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR, LOAD_LIBRARY_SEARCH_SYSTEM32};
+        libloading::os::windows::Library::load_with_flags(path, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32).map(Into::into)
+    }
+    #[cfg(not(windows))]
+    unsafe { Library::new(path) }
+}
 macro_rules! api {
     ($($name:ident: $signature:ty),+ $(,)?) => {
         pub struct Api {
@@ -49,18 +58,7 @@ macro_rules! api {
         impl Api {
             pub fn load(path: &Path) -> Result<Self, AppError> {
                 // Absolute path and restricted dependency search; no global DLL/PATH changes.
-                #[cfg(windows)]
-                let library: Library = unsafe {
-                    use windows_sys::Win32::System::LibraryLoader::{
-                        LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR, LOAD_LIBRARY_SEARCH_SYSTEM32,
-                    };
-                    libloading::os::windows::Library::load_with_flags(
-                        path, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32
-                    ).map_err(|e| error(format!("无法加载 libVLC：{e}")))?.into()
-                };
-                #[cfg(not(windows))]
-                let library = unsafe { Library::new(path) }
-                    .map_err(|e| error(format!("无法加载 libVLC：{e}")))?;
+                let library = load_library(path).map_err(|e| error(format!("无法加载 libVLC：{e}")))?;
                 let api = unsafe {
                     Self {
                         $($name: *library.get::<$signature>(concat!(stringify!($name), "\0").as_bytes())
@@ -82,6 +80,9 @@ api! {
     libvlc_new: unsafe extern "C" fn(c_int, *const *const c_char) -> Handle,
     libvlc_release: unsafe extern "C" fn(Handle),
     libvlc_media_new_location: unsafe extern "C" fn(Handle, *const c_char) -> Handle,
+    libvlc_media_new_callbacks: unsafe extern "C" fn(Handle, unsafe extern "C" fn(Handle, *mut Handle, *mut u64) -> c_int,
+        unsafe extern "C" fn(Handle, *mut u8, usize) -> isize, unsafe extern "C" fn(Handle, u64) -> c_int,
+        unsafe extern "C" fn(Handle), Handle) -> Handle,
     libvlc_media_add_option: unsafe extern "C" fn(Handle, *const c_char),
     libvlc_media_release: unsafe extern "C" fn(Handle),
     libvlc_media_player_get_media: unsafe extern "C" fn(Handle) -> Handle,

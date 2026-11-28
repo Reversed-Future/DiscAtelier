@@ -13,6 +13,7 @@ pub struct Player {
     pub api: Api,
     pub handle: Handle,
     instance: Handle,
+    _disc_input: Option<Box<crate::disc_stream::DiscInput>>,
     pub(crate) captions: Option<std::sync::Arc<crate::captions::Capture>>,
     equalizer: Mutex<Option<StoredEqualizer>>,
 }
@@ -88,7 +89,7 @@ impl Player {
         window: usize,
         track: Option<u8>,
         bluray_menu: bool,
-        bluray_direct: bool,
+        direct: Option<&discatelier_contracts::PlaybackSource>,
         silent: bool,
         fade_in: bool,
         caption_session: Option<&str>,
@@ -96,6 +97,7 @@ impl Player {
         if bluray_menu {
             configure_bluray_classpath(path);
         }
+        let disc_input = direct.map(crate::disc_stream::DiscInput::new).transpose()?;
         let api = Api::load(path)?;
         let location = CString::new(location).map_err(|_| ffi::error("光盘路径无效。"))?;
         // These flags are defined by VLC 3's src/libvlc-module.c.
@@ -131,7 +133,10 @@ impl Player {
                     "libVLC 初始化失败，请检查安装目录中的 plugins。",
                 ));
             }
-            let media = (api.libvlc_media_new_location)(instance, location.as_ptr());
+            let media = match &disc_input {
+                Some(input) => input.media(&api, instance),
+                None => (api.libvlc_media_new_location)(instance, location.as_ptr()),
+            };
             if media.is_null() {
                 (api.libvlc_release)(instance);
                 return Err(ffi::error("无法打开光盘。"));
@@ -143,11 +148,9 @@ impl Player {
             if bluray_menu {
                 let option = CString::new(":bluray-menu=1").unwrap();
                 (api.libvlc_media_add_option)(media, option.as_ptr());
-            } else if bluray_direct {
-                // Explicitly disable the top-menu path; otherwise VLC can
-                // start at First Play (a short logo) for a concrete playlist.
-                let option = CString::new(":bluray-menu=0").unwrap();
-                (api.libvlc_media_add_option)(media, option.as_ptr());
+            } else if disc_input.is_some() {
+                (api.libvlc_media_add_option)(media, c":demux=ts".as_ptr());
+                (api.libvlc_media_add_option)(media, c":stream-filter=atelier_playlist_seek".as_ptr());
             }
             let handle = (api.libvlc_media_player_new_from_media)(media);
             (api.libvlc_media_release)(media);
@@ -161,6 +164,7 @@ impl Player {
                 captions,
                 handle,
                 equalizer: Mutex::new(None),
+                _disc_input: disc_input,
             };
             (player.api.libvlc_media_player_set_hwnd)(handle, window as Handle);
             (player.api.libvlc_video_set_mouse_input)(handle, 1);

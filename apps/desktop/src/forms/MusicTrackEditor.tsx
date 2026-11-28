@@ -6,8 +6,8 @@ import { physicalDiscLabel } from '../metadata/physicalDiscs';
 import { ContentEditorTable } from './ContentEditorTable';
 import { assignTrackDisc, removeTrackRows, updateTrackRows } from './contentTracks';
 
-export function MusicTrackEditor({ tracks, title, media, onChange }: {
-  tracks: ReleaseTrack[]; title: string; media: MediumDraft[]; onChange(tracks: ReleaseTrack[], sameRows?: boolean): void;
+export function MusicTrackEditor({ tracks, title, media, onChange, discNumber }: {
+  tracks: ReleaseTrack[]; title: string; media: MediumDraft[]; discNumber?: number | null; onChange(tracks: ReleaseTrack[], sameRows?: boolean): void;
 }) {
   const edit = (rows: ReleaseTrack[]) => onChange(rows, true);
   const pages = discPages(tracks, title, media);
@@ -23,16 +23,17 @@ export function MusicTrackEditor({ tracks, title, media, onChange }: {
     const row: ReleaseTrack = { title: '', position: '', duration: '', type_, heading_kind: type_ === 'heading' ? 'section' : undefined, disc_number: section.number, sub_tracks: [], extraartists: [] };
     onChange([...tracks.slice(0, after), row, ...tracks.slice(after)]);
   }
-  return <div className="music-track-editor">{sections.map(section => {
+  return <div className="music-track-editor">{sections.filter(section => discNumber === undefined || section.number === discNumber).map(section => {
+    const item = discNumber === undefined || (section.number && media[section.number - 1].carrierId === 'cd') ? '曲目' : '章节';
     const first = section.entries[0];
     const discTitle = section.titleEntry;
     const entries = section.entries.filter(entry => entry.source !== discTitle?.source);
     return <section className="content-editor-disc" key={section.number ?? 'unassigned'} aria-label={section.label}>
       <div className="content-editor-heading"><h3>{section.label}</h3><div className="content-editor-disc-actions">
-        <button type="button" className="text-button" onClick={() => add(section, 'track')}>添加曲目</button>
+        <button type="button" className="text-button" onClick={() => add(section, 'track')}>添加{item}</button>
         <button type="button" className="text-button" onClick={() => add(section, 'heading')}>添加小标题</button>
       </div></div>
-      <label className="content-editor-disc-title"><span>分盘标题</span><input aria-label={`${section.label} 分盘标题`} value={discTitle?.source.title || ''} placeholder={title}
+      {discNumber === undefined && <label className="content-editor-disc-title"><span>分盘标题</span><input aria-label={`${section.label} 分盘标题`} value={discTitle?.source.title || ''} placeholder={title}
         onChange={event => {
           if (discTitle) edit(updateTrackRows(tracks, discTitle.path, { title: event.target.value }));
           else {
@@ -40,8 +41,9 @@ export function MusicTrackEditor({ tracks, title, media, onChange }: {
             const heading: ReleaseTrack = { title: event.target.value, position: '', duration: '', type_: 'heading', heading_kind: 'disc', disc_number: section.number };
             onChange([...tracks.slice(0, before), heading, ...tracks.slice(before)]);
           }
-        }}/></label>
-      <ContentEditorTable kind="tracks"><thead><tr><th>所属 Disc</th><th>条目类型</th><th>原曲号</th><th>标题</th><th>时长</th><th/></tr></thead><tbody>
+        }}/></label>}
+      {discNumber !== undefined && discTitle && <button type="button" className="text-button" onClick={() => onChange(removeTrackRows(tracks, discTitle.path))}>移除分盘标题</button>}
+      <ContentEditorTable kind="tracks"><thead><tr><th>所属 Disc</th><th>条目类型</th><th>{discNumber === undefined ? '原曲号' : '编号'}</th><th>标题</th><th>时长</th><th/></tr></thead><tbody>
         {entries.map(({ source: row, path }) => {
           const group = !!row.sub_tracks?.length;
           const kind = row.type_ === 'heading' ? 'heading' : group ? 'index' : 'track';
@@ -52,15 +54,15 @@ export function MusicTrackEditor({ tracks, title, media, onChange }: {
                 ...media.map((medium, index) => ({ id: String(index + 1), label: physicalDiscLabel(medium, index) }))]}
               onChange={value => edit(assignTrackDisc(tracks, path, value ? Number(value) : null))}/></td>
             <td><Select label={`条目 ${label} 类型`} value={kind} disabled={group}
-              options={[{ id: 'track', label: '曲目' }, { id: 'heading', label: '小标题' }, ...(group ? [{ id: 'index', label: '曲目组' }] : [])]}
+              options={[{ id: 'track', label: item }, { id: 'heading', label: '小标题' }, ...(group ? [{ id: 'index', label: '曲目组' }] : [])]}
               onChange={value => edit(updateTrackRows(tracks, path, { type_: value, heading_kind: value === 'heading' ? 'section' : undefined, disc_number: value === 'heading' ? section.number : row.disc_number }))}/></td>
-            <td><input disabled={kind === 'heading'} aria-label={`条目 ${label} 原曲号`} value={row.position} onChange={event => edit(updateTrackRows(tracks, path, { position: event.target.value }))}/></td>
+            <td><input disabled={kind === 'heading'} aria-label={`条目 ${label} ${discNumber === undefined ? '原曲号' : '编号'}`} value={row.position} onChange={event => edit(updateTrackRows(tracks, path, { position: event.target.value }))}/></td>
             <td><input aria-label={`条目 ${label} 标题`} style={{ paddingLeft: 10 + (path.length - 1) * 16 }} value={row.title} onChange={event => edit(updateTrackRows(tracks, path, { title: event.target.value }))}/></td>
             <td><input disabled={kind === 'heading'} aria-label={`条目 ${label} 时长`} value={row.duration} onChange={event => edit(updateTrackRows(tracks, path, { duration: event.target.value }))}/></td>
             <td><button type="button" className="text-button" onClick={() => onChange(removeTrackRows(tracks, path))}>移除</button></td>
           </tr>;
         })}
-        {!entries.length && <tr className="content-editor-ghost"><td colSpan={6}><button type="button" className="content-editor-ghost-add" onClick={() => add(section, 'track')}>添加第一条曲目</button></td></tr>}
+        {!entries.length && <tr className="content-editor-ghost"><td colSpan={6}><button type="button" className="content-editor-ghost-add" onClick={() => add(section, 'track')}>{discNumber === undefined ? '添加第一条曲目' : `添加${item}`}</button></td></tr>}
       </tbody></ContentEditorTable>
     </section>;
   })}</div>;

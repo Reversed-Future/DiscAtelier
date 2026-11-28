@@ -5,7 +5,11 @@ export interface Quote { from: string; to: string; rate: string; updatedAt: stri
 export interface ExchangeStatus {
   settings: ExchangeSettings; hasKey: boolean; rates: Quote[]; today: string; attemptDate: string; lastAttemptAt: number; error: string;
 }
+export interface YenPurchaseRate {
+  purchaseDate: string; quoteDate: string; cnyPerJpy: string; hkdPerJpy: string;
+}
 export const exchange = {
+  purchaseRate: (purchaseDate: string) => invoke<YenPurchaseRate>('exchange_purchase_rate', { purchaseDate }),
   openDocs: () => invoke<void>('exchange_open_docs'),
   status: () => invoke<ExchangeStatus>('exchange_status'),
   refresh: (force = false) => invoke<ExchangeStatus>('exchange_refresh', { force }),

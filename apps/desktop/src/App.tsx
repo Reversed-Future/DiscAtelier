@@ -16,6 +16,7 @@ import { Browse } from './collection/Browse';
 import { Inspection } from './collection/Inspection';
 import { AddCopy } from './forms/AddCopy';
 import { EditEdition } from './forms/EditEdition';
+import { resetPurchaseRates } from './exchange/usePurchaseRates';
 import { RestoreLibrary } from './forms/RestoreLibrary';
 import { useZoom } from './ui/useZoom';
 import { DiscogsBrowser } from './metadata/DiscogsBrowser';
@@ -49,6 +50,10 @@ export function App() {
   const [snapshot, setSnapshot] = useState<LibrarySnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const marking = useRef(new Set<string>());
+  const [markingId, setMarkingId] = useState('');
+  const latestQuery = useRef(query);
+  latestQuery.current = query;
   const [organize, setOrganize] = useState(false);
   const [selectedId, setSelectedId] = useState('');
   const [inspected, setInspected] = useState<LibraryCopy | null>(null);
@@ -169,6 +174,19 @@ export function App() {
     }
     for (const token of [...knownOptical.current]) if (!present.has(token)) knownOptical.current.delete(token);
   }, [opticalPresence, opticalOpen, player.open, inspected?.id, selectedId]);
+  async function markOwned(item: LibraryCopy) {
+    if (item.copy.status !== 'transit' || marking.current.has(item.id)) return;
+    marking.current.add(item.id);
+    setMarkingId(item.id);
+    try {
+      await library.update({ requestId: crypto.randomUUID(), id: item.id, expectedRevision: item.revision,
+        copy: { ...item.copy, status: 'owned' } });
+      snapshots.current.clear();
+      await refresh(latestQuery.current);
+      notify('已标记为已购入');
+    } catch (cause) { notify(errorMessage(cause)); }
+    finally { marking.current.delete(item.id); setMarkingId(id => id === item.id ? '' : id); }
+  }
   async function jumpToOptical(value: OpticalPresence) {
     let copy = items.find(item => item.id === value.copyId);
     if (!copy) {
@@ -200,6 +218,7 @@ export function App() {
       const item = id ? items.find(value => value.id === id) : null;
       if (item) return [
         { label: '查看收藏', run: () => setInspected(item) },
+        ...(item.copy.status === 'transit' ? [{ label: '标记为已购入', run: () => markOwned(item) }] : []),
         { label: '编辑版本', run: () => setEditing(item) },
         { label: '复制名称', run: () => navigator.clipboard.writeText(`${item.edition.title} ${item.edition.creator}`.trim()) },
         { label: '删除收藏', separator: true, run: () => setDeletingCopy(item) },
@@ -260,7 +279,7 @@ export function App() {
       <Icon name={player.snapshot?.paused && opticalVideoActive ? 'play' : 'disc'}/>
       <span className="video-disc-return-dot" data-playing={player.active && opticalVideoActive && !player.snapshot?.paused}/>
     </button>}
-    {inspected && <Inspection metadata={currentVideo.value} metadataError={currentVideo.error} partId={partId} onPart={(id,instant) => {setPartId(id);setInstantFlip(instant);}} onOptical={() => setOpticalOpen(true)} key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
+    {inspected && <Inspection markOwned={() => void markOwned(inspected)} markingOwned={markingId === inspected.id} metadata={currentVideo.value} metadataError={currentVideo.error} partId={partId} onPart={(id,instant) => {setPartId(id);setInstantFlip(instant);}} onOptical={() => setOpticalOpen(true)} key={inspected.id} player={player} item={inspected} carriers={snapshot?.carriers || []} artworkSlot={artwork.inspectionRef} prepareClose={artwork.prepareClose} modelBusy={artwork.busy} onClose={() => setInspected(null)} onSaved={async () => { const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已保存'); }}
       onDeleted={async () => { setInspected(null); setSelectedId(''); const filter = { ...query, status: null, query: '' }; setQuery(filter); await refresh(filter); notify('已删除'); }}
       edit={() => setEditing(inspected)}/>}
     {editing && snapshot && <EditEdition item={editing} categories={snapshot.categories} carriers={snapshot.carriers}
@@ -269,6 +288,7 @@ export function App() {
     {add && snapshot && <AddCopy categoryId={query.categoryId} categories={snapshot.categories} carriers={snapshot.carriers} existing={add.existing} onClose={() => setAdd(null)}
       onSaved={async (id, categoryId) => { setSelectedId(id); setQuery({ categoryId, query: '', status: null }); notify('已加入收藏'); }}/>}
     {restoring && <RestoreLibrary onClose={() => setRestoring(false)} onRestored={() => {
+      resetPurchaseRates(); snapshots.current.clear();
       setInspected(null); setSelectedId(''); setQuery({ categoryId: 'music', status: null, query: '' }); notify('收藏已恢复');
     }}/>}
     {metadataOpen && snapshot && query.categoryId === 'video' && !videoDiscogs && <AddCopy categoryId="video" onDiscogs={() => setVideoDiscogs(true)} categories={snapshot.categories} carriers={snapshot.carriers} onClose={() => { setMetadataOpen(false); setVideoDiscogs(false); }}

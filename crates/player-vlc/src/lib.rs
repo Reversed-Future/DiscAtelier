@@ -5,6 +5,7 @@ mod cd_metadata;
 pub use audio_cd::cd_track;
 pub use cd_metadata::read_cd_metadata;
 mod ffi;
+mod disc_stream;
 mod player;
 mod stream;
 #[cfg(test)]
@@ -127,7 +128,7 @@ pub fn capture_menu(
         window,
         None,
         source.playlist == BD_MENU,
-        false,
+        None,
         true,
         false,
         None,
@@ -153,6 +154,7 @@ impl VlcSession {
         source: PlaybackSource,
         seconds: f64,
         title: Option<i32>,
+        playlist_duration: Option<f64>,
         checkpoint: Checkpoint,
     ) -> Result<Self, AppError> {
         if window == 0 {
@@ -187,6 +189,7 @@ impl VlcSession {
                 dvd: track.is_none() && !bluray_direct,
                 bluray_menu: source.playlist == BD_MENU,
                 bluray_direct,
+                playlist_duration,
                 silent: false,
             },
             source,

@@ -35,6 +35,7 @@ mod netease_queue;
 mod netease_startup;
 mod optical;
 mod optical_match;
+mod optical_title_match;
 mod optical_menu;
 mod optical_menu_match;
 mod playback;
@@ -184,6 +185,7 @@ fn main() {
             video_metadata::recognition::video_recognize,
             video_metadata::settings::video_settings_get,
             video_metadata::settings::video_settings_save,
+            exchange::purchase::exchange_purchase_rate,
             exchange::exchange_status,
             exchange::exchange_open_docs,
             exchange::exchange_save,
@@ -271,6 +273,7 @@ fn main() {
             optical::optical_discs,
             optical::optical_unbind,
             optical::optical_bluray_playlists,
+            optical::optical_dvd_title_count,
             optical::optical_dvd_chapters,
             optical::optical_presence,
             optical::playback_settings_get,

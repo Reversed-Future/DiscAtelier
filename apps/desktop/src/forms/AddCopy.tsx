@@ -1,5 +1,7 @@
 import { partsError } from '../video/parts';
 import { video, emptyVideo } from '../video/gateway';
+import { VideoDiscEditor } from '../video/VideoDiscEditor';
+import { emptyEditionContent } from './useContentDraft';
 import { VideoFields } from '../video/VideoFields';
 import { useEffect, useRef, useState } from 'react';
 import type { CoverChange, Descriptor, EditionDraft, LibraryCopy } from '../library/types';
@@ -37,13 +39,14 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
     catalogNumber: '',
     media: [{ carrierId: categoryId === 'music' ? 'cd' : 'bd', label: '' }],
   });
+  const [discContent, setDiscContent] = useState(emptyEditionContent);
   const [videoDraft, setVideoDraft] = useState(emptyVideo);
   const [copy, setCopy] = useState(emptyCopy);
   const [music, setMusic] = useState<MusicSupplement | null>(initialMusic);
   const [musicOpen, setMusicOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [bundle, setBundle] = useState<LibraryCopy[]>([]);
-  const [tab, setTab] = useState<'edition' | 'model' | 'purchase'>(existing ? 'purchase' : 'edition');
+  const [tab, setTab] = useState<'edition' | 'discs' | 'model' | 'purchase'>(existing ? 'purchase' : 'edition');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [reading, setReading] = useState(false);
@@ -106,14 +109,14 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
         const coverData = !existing && cover.action === 'replace' ? cover.dataUrl : null;
         const modelToken = !existing && model.action === 'prepared' ? model.token : null;
         const neteaseAlbumId = edition.categoryId === 'music' ? music?.albumId || null : null;
-        const payload = JSON.stringify({ edition, purchase, coverData, modelToken, existingEditionId: existing?.editionId, token: imported?.token, neteaseAlbumId, videoDraft, bundle: bundle.map(entry => entry.id) });
+        const payload = JSON.stringify({ edition, purchase, coverData, modelToken, existingEditionId: existing?.editionId, token: imported?.token, neteaseAlbumId, videoDraft, discContent, bundle: bundle.map(entry => entry.id) });
         if (payload !== attempt.current.payload) attempt.current = { payload, requestId: crypto.randomUUID() };
         setBusy(true); setError('');
         const manualRequest = { requestId: attempt.current.requestId, edition: existing ? null : edition, existingEditionId: existing?.editionId || null, copy: purchase, cover: coverData, model: null, modelToken };
         const id = imported
           ? await discogs.importCopy({ requestId: attempt.current.requestId, token: imported.token, edition, copy: purchase, cover: coverData, model: null, modelToken,
             existingEditionId: existing?.editionId || null, expectedRevision: existing?.editionRevision || null, neteaseAlbumId })
-          : edition.categoryId === 'video' && !existing ? await video.create(manualRequest, videoDraft)
+          : edition.categoryId === 'video' && !existing ? await video.create(manualRequest, videoDraft, discContent.tracks.length ? discContent : null)
           : neteaseAlbumId && !existing ? await netease.createCopy(manualRequest, neteaseAlbumId) : await library.create(manualRequest);
         await applyBundlePurchase(purchase, bundle);
         await onSaved(id, edition.categoryId);
@@ -124,6 +127,7 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
       {onDiscogs && <button type="button" className="text-button import-back" disabled={busy || reading} onClick={onDiscogs}>从 Discogs 导入</button>}
       {!existing && <nav className="detail-tabs" aria-label="添加步骤">
         <button type="button" className={tab === 'edition' ? 'active' : ''} onClick={() => setTab('edition')} disabled={busy || reading}>版本</button>
+        {!imported && edition.categoryId === 'video' && <button type="button" className={tab === 'discs' ? 'active' : ''} onClick={() => setTab('discs')} disabled={busy || reading}>实体碟片</button>}
         <button type="button" className={tab === 'model' ? 'active' : ''} onClick={() => setTab('model')} disabled={busy || reading}>模型</button>
         <button type="button" className={tab === 'purchase' ? 'active' : ''} onClick={() => {
           if (!edition.title.trim()) setError('请填写名称');
@@ -144,8 +148,8 @@ export function AddCopy({ categoryId, categories, carriers, existing: suppliedEx
         {(imported || edition.categoryId !== 'video') && <CoverField edition={edition} value={cover} onChange={setCover} onBusy={setReading}
           remoteCover={music && edition.categoryId === 'music' ? { label: '使用网易云封面', load: () => netease.albumCover(music.albumId) } : edition.categoryId === 'video' && videoDraft.work ? { label: '使用作品封面', load: () => video.cover(videoDraft.work!) } : undefined}/>}
         {imported && edition.categoryId === 'music' && <ImportMusicField tracks={importTracks} value={music} onChange={setMusic} onPick={() => setMusicOpen(true)}/>}
-        <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
-      </> : tab === 'model' ? <ModelField value={model} actionsHost={modelActionsHost} onChange={setModel} onBusy={setReading} disabled={busy || reading}/> : <PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy} title={edition.title} creator={edition.creator} onBusy={setReading}
+        <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers} onDiscs={!imported && edition.categoryId === 'video' ? () => setTab('discs') : undefined}/>
+      </> : tab === 'discs' ? <VideoDiscEditor edition={edition} carriers={carriers} content={discContent} onEdition={setEdition} onContent={setDiscContent}/> : tab === 'model' ? <ModelField value={model} actionsHost={modelActionsHost} onChange={setModel} onBusy={setReading} disabled={busy || reading}/> : <PurchaseFields value={copy} amount={amount} setAmount={setAmount} onChange={setCopy} title={edition.title} creator={edition.creator} onBusy={setReading}
         afterDate={<BundlePicker value={bundle} onChange={setBundle}/>}/>}
       </fieldset>
       <p className="form-error" role="alert">{error}</p>

@@ -1,5 +1,6 @@
 mod audio_cd;
 pub mod bluray;
+mod disc_title;
 pub mod dvd;
 mod structure;
 #[cfg(target_os = "windows")]

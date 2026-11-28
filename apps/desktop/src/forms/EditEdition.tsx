@@ -1,5 +1,6 @@
 import { partsError } from '../video/parts';
 import { video, emptyVideo } from '../video/gateway';
+import { VideoDiscEditor } from '../video/VideoDiscEditor';
 import { VideoFields } from '../video/VideoFields';
 import { VideoSourcesEditor } from '../video/VideoSourcesEditor';
 import { leave } from '../ui/motion';
@@ -23,7 +24,7 @@ import { netease, type LinkedMusicAlbum } from '../integrations/gateway';
 export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   item: LibraryCopy; categories: Descriptor[]; carriers: Descriptor[]; onClose(): void; onSaved(categoryId: string): void;
 }) {
-  const [page, setPage] = useState<'edition' | 'content' | 'related' | 'model'>('edition');
+  const [page, setPage] = useState<'edition' | 'discs' | 'content' | 'related' | 'model'>('edition');
   const [sourceOpen, setSourceOpen] = useState(false);
   const [sourceDraft, setSourceDraft] = useState<ImportPreview | null>(null);
   const [videoDraft, setVideoDraft] = useState(emptyVideo);
@@ -40,7 +41,7 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
     return () => { live = false; };
   }, [item.editionId]);
   const [edition, setEdition] = useState(item.edition);
-  const content = useContentDraft(item.editionId, sourceOpen || (page === 'content' && edition.categoryId !== 'video'));
+  const content = useContentDraft(item.editionId, sourceOpen || page === 'discs' || (page === 'content' && edition.categoryId !== 'video'));
   const [cover, setCover] = useState<CoverChange>({ action: 'keep' });
   const [busy, setBusy] = useState(false);
   const [reading, setReading] = useState(false);
@@ -52,6 +53,7 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
     <nav className="detail-tabs editor-page-tabs" aria-label="编辑内容">
       <button type="button" className={page === 'edition' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('edition')}>版本</button>
       <button type="button" className={page === 'content' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('content')}>资料</button>
+      {edition.categoryId === 'video' && <button type="button" className={page === 'discs' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('discs')}>实体碟片</button>}
       {edition.categoryId === 'video' && <button type="button" className={page === 'related' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('related')}>关联</button>}
       <button type="button" className={page === 'model' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('model')}>模型</button>
     </nav>
@@ -64,7 +66,7 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
       setBusy(true); setError('');
       try {
         const request = { requestId: attempt.current.requestId, editionId: item.editionId, expectedRevision: item.editionRevision, edition, cover, model: modelChangeRequest(model) };
-        await measureAsync('save_ipc', () => sourceDraft && content.value ? discogs.updateEdition(request, sourceDraft.token, content.value, edition.categoryId === 'video' ? videoDraft : null) : edition.categoryId === 'video' ? video.update(request, videoDraft) : library.updateEdition(request, content.changed));
+        await measureAsync('save_ipc', () => sourceDraft && content.value ? discogs.updateEdition(request, sourceDraft.token, content.value, edition.categoryId === 'video' ? videoDraft : null) : edition.categoryId === 'video' ? video.update(request, videoDraft, content.changed) : library.updateEdition(request, content.changed));
         onSaved(edition.categoryId);
         dialog?.setAttribute('data-closing', 'true'); await leave(dialog); onClose();
       } catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
@@ -84,9 +86,11 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
             if (!album) throw new Error('请先在网易云资料中关联专辑。');
             return netease.albumCover(album.albumId);
           } } : videoDraft.work ? { label: '使用作品封面', load: () => video.cover(videoDraft.work!) } : undefined}/>}
-        <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers}/>
+        <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers} onDiscs={edition.categoryId === 'video' ? () => setPage('discs') : undefined}/>
       </fieldset>
-      </> : page === 'related' ? <fieldset disabled={busy || reading || !videoLoaded}>
+      </> : page === 'discs' ? <fieldset disabled={busy || reading || !videoLoaded}>
+        {content.value ? <VideoDiscEditor edition={edition} carriers={carriers} content={content.value} onEdition={setEdition} onContent={content.change}/> : !content.error && <p className="utility-copy">正在读取实体碟片…</p>}
+      </fieldset> : page === 'related' ? <fieldset disabled={busy || reading || !videoLoaded}>
         <VideoSourcesEditor value={videoDraft} initialQuery={edition.title} onChange={setVideoDraft}
           onFirstWork={work => { if (!edition.title.trim()) setEdition(current => ({ ...current, title: work.title })); }}/>
       </fieldset> : page === 'model' ? <fieldset disabled={busy || reading}>

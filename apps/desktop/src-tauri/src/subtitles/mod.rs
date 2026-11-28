@@ -126,7 +126,7 @@ pub fn subtitle_start(
     };
     let bilingual = translation.is_some();
     let notice = if p.bilingual && !bilingual {
-        "当前仅显示原文。配置“设置 → 助手”后可开启中文翻译。"
+        "当前仅显示原文。配置“设置 → AI 助手与翻译”后可开启中文翻译。"
     } else {
         ""
     };

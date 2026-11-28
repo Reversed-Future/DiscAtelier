@@ -42,6 +42,44 @@ pub fn for_media(
     result.into_iter().map(|(_, disc)| disc).collect()
 }
 
+/// Video editions can list physical discs before their chapters have been catalogued.
+pub fn for_edition(
+    tracks: &[ReleaseTrack],
+    edition: &discatelier_domain::EditionDraft,
+) -> Vec<OpticalDisc> {
+    let title = edition.title.as_str();
+    let media = &edition.media;
+    let mut pages = for_media(tracks, title, media);
+    if edition.category_id != "video" {
+        return pages;
+    }
+    let mut discs = Vec::with_capacity(media.len());
+    for (index, medium) in media.iter().enumerate() {
+        let number = index + 1;
+        let existing = pages
+            .iter()
+            .position(|disc| crate::physical_discs::number(&disc.key, media) == Some(number));
+        let mut disc = existing
+            .map(|at| pages.remove(at))
+            .unwrap_or_else(|| OpticalDisc {
+                key: format!("manual:{number}"),
+                title: title.into(),
+                label: String::new(),
+            });
+        if disc.title == title {
+            disc.title = if medium.label.trim().is_empty() {
+                medium.carrier_id.to_ascii_uppercase()
+            } else {
+                medium.label.trim().to_owned()
+            };
+        }
+        disc.label = format!("Disc {number}. {}", disc.title);
+        discs.push(disc);
+    }
+    discs.extend(pages);
+    discs
+}
+
 pub fn groups(tracks: &[ReleaseTrack], title: &str, disc_count: usize) -> Vec<OpticalDisc> {
     let rows = crate::disc_structure::rows(tracks, disc_count);
     let mut result: Vec<OpticalDisc> = Vec::new();

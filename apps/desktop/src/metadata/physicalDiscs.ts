@@ -10,7 +10,10 @@ export function physicalDiscNumber(key: string, media: readonly MediumDraft[]): 
   return slots[Number(carrier[2] || 1) - 1] ?? null;
 }
 
+export function carrierName(medium: MediumDraft): string {
+  return ({ cd: 'CD', dvd: 'DVD', bd: 'BD' } as Record<string, string>)[medium.carrierId] || medium.label || medium.carrierId;
+}
+
 export function physicalDiscLabel(medium: MediumDraft, index: number): string {
-  const label = ({ cd: 'CD', dvd: 'DVD', bd: 'BD' } as Record<string, string>)[medium.carrierId] || medium.label;
-  return `Disc ${index + 1} · ${label}`;
+  return `Disc ${index + 1} · ${carrierName(medium)}`;
 }

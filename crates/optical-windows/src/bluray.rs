@@ -149,7 +149,7 @@ fn parse(bytes: &[u8], name: &str) -> Result<BlurayPlaylist, AppError> {
                 audio_streams.push(stream);
             }
         }
-        starts.push(elapsed);
+        starts.push((elapsed, in_time, out_time));
         segments.push(BluraySegment {
             index: index as u32,
             clip_id: text(clip),
@@ -287,7 +287,12 @@ fn parse_audio_streams(bytes: &[u8], stn: usize, end: usize) -> Vec<BlurayAudioS
     streams
 }
 
-fn parse_marks(bytes: &[u8], mark_pos: usize, starts: &[f64], total: f64) -> Vec<BlurayChapter> {
+fn parse_marks(
+    bytes: &[u8],
+    mark_pos: usize,
+    starts: &[(f64, u32, u32)],
+    total: f64,
+) -> Vec<BlurayChapter> {
     if mark_pos < HEADER_BYTES || mark_pos + 6 > bytes.len() {
         return Vec::new();
     }
@@ -321,10 +326,13 @@ fn parse_marks(bytes: &[u8], mark_pos: usize, starts: &[f64], total: f64) -> Vec
         let Some(ticks) = read_u32(bytes, offset + 4) else {
             break;
         };
-        let Some(item_start) = starts.get(play_item) else {
+        let Some(&(item_start, in_time, out_time)) = starts.get(play_item) else {
             continue;
         };
-        let start = item_start + f64::from(ticks) / TICKS_PER_SECOND;
+        if ticks < in_time || ticks > out_time {
+            continue;
+        }
+        let start = item_start + f64::from(ticks - in_time) / TICKS_PER_SECOND;
         if !start.is_finite() || start < 0.0 || start > total + 0.001 {
             continue;
         }
@@ -430,7 +438,7 @@ mod tests {
         let items = [
             play_item_with_audio("00001", 0, 60, 5, Some(audio_stn())),
             play_item("00002", 10, 70, 6),
-            play_item("00003", 0, 30, 1),
+            play_item("00003", 600, 630, 1),
         ];
         // After the length field: reserved (2) + item count (2) + subpath
         // count (2), then the play items.
@@ -452,7 +460,7 @@ mod tests {
         // Two chapter marks: 10s into the first item and 5s into the third.
         put_u32(&mut bytes, (2 + 2 * 14) as u32);
         put_u16(&mut bytes, 2);
-        for (item, seconds) in [(0u16, 10u32), (2, 5)] {
+        for (item, seconds) in [(0u16, 10u32), (2, 605)] {
             bytes.push(0);
             bytes.push(1);
             put_u16(&mut bytes, item);

@@ -14,12 +14,15 @@ impl VideoRepository for SqliteLibrary {
         &mut self,
         request: &CreateCopy,
         metadata: &VideoMetadata,
+        content: Option<&EditionContent>,
     ) -> Result<String, AppError> {
         validate_video(metadata)?;
-        let payload = format!(
-            "video:{:x}",
-            Sha256::digest(serde_json::to_vec(&(request, metadata)).map_err(|_| invalid())?)
-        );
+        let encoded = match content {
+            Some(value) => serde_json::to_vec(&(request, metadata, value)),
+            None => serde_json::to_vec(&(request, metadata)),
+        }
+        .map_err(|_| invalid())?;
+        let payload = format!("video:{:x}", Sha256::digest(encoded));
         let tx = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -34,6 +37,9 @@ impl VideoRepository for SqliteLibrary {
             })
             .map_err(db_error)?;
         save(&tx, &edition, metadata)?;
+        if let Some(value) = content {
+            crate::content::replace(&tx, &edition, value)?;
+        }
         writes::save_receipt(&tx, &request.request_id, &payload, &id)?;
         tx.commit().map_err(db_error)?;
         Ok(id)
@@ -42,6 +48,7 @@ impl VideoRepository for SqliteLibrary {
         &mut self,
         request: &UpdateEdition,
         metadata: &VideoMetadata,
+        content: Option<&EditionContent>,
     ) -> Result<String, AppError> {
         validate_video(metadata)?;
         crate::editions::update_with_video(
@@ -49,6 +56,7 @@ impl VideoRepository for SqliteLibrary {
             request,
             &self.prepared_models,
             Some(metadata),
+            content,
         )
     }
 }

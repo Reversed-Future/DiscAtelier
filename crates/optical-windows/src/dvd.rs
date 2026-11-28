@@ -37,12 +37,26 @@ fn playback_seconds(bytes: &[u8], offset: usize) -> Option<f64> {
     let minute = bcd(byte(bytes, offset + 1)?);
     let second = bcd(byte(bytes, offset + 2)?);
     let frame_byte = byte(bytes, offset + 3)?;
-    let frames = u32::from(frame_byte & 0x3f);
+    let frames = bcd(frame_byte & 0x3f);
     let fps = match (frame_byte & 0xc0) >> 6 {
         3 => 29.97,
         _ => 25.0,
     };
     Some(hour as f64 * 3600.0 + minute as f64 * 60.0 + second as f64 + frames as f64 / fps)
+}
+
+pub fn title_count(root: &Path) -> Result<u16, AppError> {
+    let vmg = read_ifo(&root.join("VIDEO_TS").join("VIDEO_TS.IFO"))?;
+    if vmg.get(..12) == Some(b"DVDVIDEO-VMG") {
+        if let Some(count) = be32(&vmg, 196)
+            .and_then(|sector| sector_span(&vmg, sector))
+            .and_then(|table| be16(table, 0))
+            .filter(|n| (1..=99).contains(n))
+        {
+            return Ok(count);
+        }
+    }
+    Err(AppError::new("dvd", "无法读取 DVD 标题目录。"))
 }
 
 fn title_map(vmg: &[u8], title: u32) -> Option<(u8, u8)> {
@@ -113,7 +127,7 @@ fn chapters_from_pgc(pgc: &[u8]) -> Option<Vec<DvdChapter>> {
             duration_seconds: (end - start).max(0.0),
         });
     }
-    (result.len() > 1).then_some(result)
+    (!result.is_empty()).then_some(result)
 }
 
 pub fn chapters(root: &Path, title: u32) -> Result<Vec<DvdChapter>, AppError> {
@@ -192,6 +206,7 @@ mod tests {
         vts[second..second + 4].copy_from_slice(&time(0, 2, 0));
         std::fs::write(dir.join("VIDEO_TS/VTS_01_0.IFO"), vts).unwrap();
 
+        assert_eq!(title_count(&dir).unwrap(), 1);
         let result = chapters(&dir, 1).unwrap();
         assert_eq!(result.len(), 2);
         assert!((result[0].start_seconds - 0.0).abs() < 0.001);

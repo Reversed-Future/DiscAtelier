@@ -6,7 +6,7 @@ export interface CdTrackMetadata {
   date: string | null; genre: string | null; trackTotal: number | null;
 }
 export interface OpticalMedium {
-  label: string; fileSystem: string; token: string; kind: 'bluray' | 'dvdVideo' | 'audioCd' | 'other';
+  label: string; discTitle?: string | null; fileSystem: string; token: string; kind: 'bluray' | 'dvdVideo' | 'audioCd' | 'other';
   tracks: CdTrack[]; playlists: string[]; discId: string | null; aacsDirectory: boolean; bdplusDirectory: boolean; javaDirectory: boolean;
 }
 export interface OpticalDrive {
@@ -67,13 +67,14 @@ export const optical = {
     const onProgress = new Channel<KeydbProgress>(); onProgress.onmessage = progress;
     return invoke<KeydbImport>('bluray_key_download', { onProgress });
   },
-  presence: () => invoke<OpticalPresence[]>('optical_presence'),
-  candidates: (label: string, query: string) => invoke<OpticalCandidate[]>('optical_candidates', { label, query }),
+  presence: (matchTitleTokens?: string[]) => invoke<OpticalPresence[]>('optical_presence', { matchTitleTokens }),
+  candidates: (label: string, query: string, discTitle?: string | null) => invoke<OpticalCandidate[]>('optical_candidates', { label, query, discTitle }),
   discs: (editionId: string) => invoke<OpticalDisc[]>('optical_discs', { editionId }),
   associate: (mediaToken: string, copyId: string, label: string, discKey: string | null = null) => invoke<OpticalBinding>('optical_associate', { mediaToken, copyId, label, discKey }),
   unbind: (mediaToken: string) => invoke<void>('optical_unbind', { mediaToken }),
   blurayPlaylists: (mountPoint: string, token: string) =>
     invoke<BlurayPlaylist[]>('optical_bluray_playlists', { mountPoint, token }),
+  dvdTitleCount: (mountPoint: string, token: string) => invoke<number>('optical_dvd_title_count', {mountPoint, token}),
   dvdChapters: (mountPoint: string, token: string, title: number) =>
     invoke<DvdChapter[]>('optical_dvd_chapters', { mountPoint, token, title }),
 };

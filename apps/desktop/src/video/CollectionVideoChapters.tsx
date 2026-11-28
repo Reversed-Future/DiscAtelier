@@ -11,7 +11,8 @@ import type { TrackPlayback } from '../metadata/TrackRow';
 interface LocalBinding { copyId: string; path: string; label: string; episode?: number | null; track?: number | null }
 
 export function CollectionVideoChapters({ item, metadata, enabled, physical, hasPhysical, onSaved, onBusy, sourceKeys, player }: { item: LibraryCopy; metadata: VideoMetadata | null; enabled: boolean; physical: ReactNode; hasPhysical: boolean; onSaved(): Promise<void>; sourceKeys?:string[]; onBusy(value: boolean): void; player: PlaybackController }) {
-  const [tab, setTab] = useState(hasPhysical && !sourceKeys ? 'physical' : 'work');
+  const [selectedTab, setTab] = useState<'physical' | 'work' | null>(null);
+  const tab = selectedTab ?? (hasPhysical && !sourceKeys ? 'physical' : 'work');
   const [local, setLocal] = useState<LocalBinding[]>([]);
   useEffect(() => {
     let active = true;

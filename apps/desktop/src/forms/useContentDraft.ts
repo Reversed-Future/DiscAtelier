@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { errorMessage, library } from '../library/gateway';
 import type { EditionContent } from '../metadata/gateway';
 
+export const emptyEditionContent = (): EditionContent => ({ genres: [], styles: [], tracks: [], credits: [], companies: [], notes: '', detailsLoaded: false });
+
 /** Keep the editor draft above the tab panels; opening a tab never writes data. */
 export function useContentDraft(editionId: string, enabled: boolean) {
   const [value, setValue] = useState<EditionContent | null>(null);
@@ -12,7 +14,7 @@ export function useContentDraft(editionId: string, enabled: boolean) {
     let live = true;
     setError('');
     void library.content(editionId).then(content => {
-      if (live) setValue(content || { genres: [], styles: [], tracks: [], credits: [], companies: [], notes: '', detailsLoaded: false });
+      if (live) setValue(content || emptyEditionContent());
     }).catch(cause => { if (live) setError(errorMessage(cause)); });
     return () => { live = false; };
   }, [editionId, enabled, value]);

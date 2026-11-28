@@ -18,6 +18,7 @@ pub use models::file::prepare as prepare_model_file;
 pub use models::source::with_preview as prepare_source_model_preview;
 mod playback;
 pub mod profiling;
+mod purchase_rates;
 mod reads;
 mod recovery;
 mod search;

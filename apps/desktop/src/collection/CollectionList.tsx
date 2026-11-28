@@ -40,7 +40,7 @@ export function CollectionList({items,inspect,move}: {items:LibraryCopy[];inspec
         </div></td>
         <td>{item.edition.media.map(medium => medium.carrierId.toUpperCase()).join(' + ')}</td>
         <td>{statuses.find(status => status.id === item.copy.status)?.label}</td>
-        <td>{formatPrice(item.copy.amountMinor,item.copy.currency)}<ConvertedPrice amount={item.copy.amountMinor} currency={item.copy.currency}/></td>
+        <td>{formatPrice(item.copy.amountMinor,item.copy.currency)}<ConvertedPrice amount={item.copy.amountMinor} currency={item.copy.currency} acquiredAt={item.copy.acquiredAt}/></td>
       </tr>)}
     </tbody></table>
   </div>;

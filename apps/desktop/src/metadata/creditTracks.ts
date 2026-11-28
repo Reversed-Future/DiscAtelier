@@ -33,9 +33,10 @@ export function creditSelection(value: string, options: CreditTrackOption[]) {
 }
 
 /** Update references with the edited row, including renumbering and disc moves. */
-export function changeContentTracks(content: EditionContent, tracks: ReleaseTrack[], title: string, media: MediumDraft[], sameRows = false): EditionContent {
+export function changeContentTracks(content: EditionContent, tracks: ReleaseTrack[], title: string, media: MediumDraft[], sameRows = false, nextMedia = media): EditionContent {
+  if (!content.credits.length) return { ...content, tracks };
   const before = creditTrackOptions(content.tracks, title, media);
-  const after = creditTrackOptions(tracks, title, media);
+  const after = creditTrackOptions(tracks, title, nextMedia);
   const replacements = new Map(before.map(option => [option.id,
     after.find(next => next.source === option.source || (sameRows && next.key === option.key))?.id]));
   const credits = content.credits.map(credit => ({ ...credit,
