@@ -11,6 +11,7 @@ impl<R: LibraryRepository> LibraryService<R> {
         discatelier_domain::validate_edition(&value.request.edition).map_err(crate::validation)?;
         validate_content(&value.content)?;
         validate_source(&value.source, &value.identifiers)?;
+        crate::validate_edition_links(&value.request, value.music_links.as_ref())?;
         if value.request.expected_revision < 1 || value.source.provider_id != "discogs" {
             return Err(AppError::new("validation", "Discogs 版本资料无效。"));
         }

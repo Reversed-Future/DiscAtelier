@@ -26,7 +26,7 @@ impl SongState {
         cache.insert(song.id, (Instant::now(), song));
         Ok(())
     }
-    fn read(&self, id: u64) -> Result<Option<SupplementTrack>, AppError> {
+    pub(crate) fn read(&self, id: u64) -> Result<Option<SupplementTrack>, AppError> {
         Ok(self
             .0
             .lock()

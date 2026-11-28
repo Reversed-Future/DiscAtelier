@@ -129,5 +129,15 @@
 .disc-album-selector > button { padding-bottom: 14px; }
 .disc-album-selector p { flex-basis: 100%; margin: 0; }
 .track-link-manager .collection-tracks { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.track-link-columns { display: flex; justify-content: space-between; padding: 8px 4px 4px; color: var(--muted); font-size: 11px; }
+.edition-music-links h3 { margin: 0 0 10px; font-size: 13px; font-weight: 500; }
+.edition-linked-albums { max-height: 30%; overflow: auto; margin-bottom: 20px; }
+.edition-linked-albums > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.edition-linked-albums strong, .edition-linked-albums small { display: block; overflow-wrap: anywhere; }
+.edition-linked-albums strong { font-size: 13px; font-weight: 500; }
+.edition-linked-albums small { margin-top: 4px; color: var(--muted); }
+.edition-linked-albums button { flex-shrink: 0; }
+.edition-music-links footer { display: flex; justify-content: flex-end; gap: 12px; padding-top: 12px; }
+.track-link-panel .track-link-list button[aria-pressed="true"] { background: #ffffff09; }
 
 .cover-album-choice { display: grid; gap: 10px; margin-bottom: 18px; max-width: 460px; font-size: 12px; color: var(--muted); }

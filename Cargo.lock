@@ -970,6 +970,7 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "chrono",
+ "dirs",
  "discatelier-agent-harness",
  "discatelier-application",
  "discatelier-contracts",

@@ -196,11 +196,16 @@ pub async fn discogs_import(
 pub async fn discogs_update_edition(
     state: tauri::State<'_, DiscogsState>,
     library: tauri::State<'_, LibraryState>,
+    app: tauri::AppHandle,
     request: UpdateEdition,
     token: String,
     content: EditionContent,
     metadata: Option<VideoMetadata>,
+    music_links: Option<crate::edition_music_links::MusicLinkSelection>,
 ) -> Result<String, AppError> {
+    let music_links = music_links
+        .map(|selection| selection.resolve(&app))
+        .transpose()?;
     let value = run(state.inner().clone(), move |service| {
         let prepared = service
             .imports
@@ -211,6 +216,7 @@ pub async fn discogs_update_edition(
             request,
             content,
             video: metadata,
+            music_links,
             source: prepared.source.clone(),
             identifiers: prepared.identifiers.clone(),
         })

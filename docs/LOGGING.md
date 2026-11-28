@@ -4,15 +4,13 @@
 
 ## 位置
 
-```text
-%LOCALAPPDATA%\com.reversedfuture.discatelier\logs\discatelier.log
-```
+日志保存在当前数据目录下的 `logs\discatelier.log`。已迁移的收藏使用 `%LOCALAPPDATA%\DiscAtelier`，仍沿用原路径的收藏使用 `%LOCALAPPDATA%\com.reversedfuture.discatelier`。可在 **设置 → 收藏数据** 查看实际目录。
 
 日志达到约 2 MiB 后轮换为同目录的 `discatelier.1.log`，只保留当前文件和上一份文件。
 
 ## 如何获取
 
-打开 **设置 → 数据 → 诊断日志**：
+打开 **设置 → 收藏数据 → 诊断日志**：
 
 - **打开日志目录 ↗**：在资源管理器中定位日志文件；
 - **复制最近日志**：复制最近 160 行到剪贴板，可直接粘贴发送；

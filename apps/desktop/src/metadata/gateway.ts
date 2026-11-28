@@ -25,7 +25,7 @@ export interface MetadataRelease {
   images: { type: string; uri: string; uri150: string }[];
 }
 export const discogs = {
-  updateEdition: (request: import('../library/types').UpdateEdition, token: string, content: EditionContent, metadata: import('../video/gateway').VideoMetadata | null) => invoke<string>('discogs_update_edition', { request, token, content, metadata }),
+  updateEdition: (request: import('../library/types').UpdateEdition, token: string, content: EditionContent, metadata: import('../video/gateway').VideoMetadata | null, musicLinks: import('../integrations/gateway').MusicLinkSelection | null = null) => invoke<string>('discogs_update_edition', { request, token, content, metadata, musicLinks }),
   completeContent: (editionId: string, id: number) => invoke<EditionContent>('discogs_complete_content', { editionId, id }),
   prepareImport: (id: number, categoryId: string, refreshCover = false) => invoke<ImportPreview>('discogs_prepare_import', { id, categoryId, refreshCover }),
   retryCover: (id: number) => invoke<string | null>('discogs_retry_cover', { id }),

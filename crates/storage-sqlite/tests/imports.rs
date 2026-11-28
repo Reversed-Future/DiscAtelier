@@ -535,6 +535,16 @@ fn replacing_discogs_source_is_atomic_and_preserves_collection_and_supplements()
             description: "".into(),
         }],
         video: None,
+        music_links: Some(EditionMusicEdits {
+            albums: vec![AlbumReplacement {
+                previous_id: Some(42),
+                album: MusicSupplement {
+                    album_id: 43,
+                    ..original.supplement.clone().unwrap()
+                },
+            }],
+            tracks: vec![],
+        }),
     };
     let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
     let supplement: String = connection
@@ -550,12 +560,21 @@ fn replacing_discogs_source_is_atomic_and_preserves_collection_and_supplements()
     assert_eq!(unchanged.edition.title, first.edition.title);
     assert_eq!(unchanged.edition_revision, first.edition_revision);
     assert!(service.source_copy("discogs", "249505").unwrap().is_none());
+    assert_eq!(service.music_albums(&first.edition_id).unwrap().len(), 1);
     connection
         .execute_batch("DROP TRIGGER fail_replacement")
         .unwrap();
     service.replace_edition_source(value.clone()).unwrap();
     service.replace_edition_source(value.clone()).unwrap();
     assert!(service.source_copy("discogs", "249504").unwrap().is_none());
+    let albums = service.music_albums(&first.edition_id).unwrap();
+    assert_eq!(
+        albums
+            .iter()
+            .map(|entry| entry.album.album_id)
+            .collect::<Vec<_>>(),
+        [43]
+    );
     let copies = service.list(query("")).unwrap().copies;
     assert_eq!(copies.len(), 2);
     for copy in &copies {

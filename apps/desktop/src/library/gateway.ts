@@ -14,7 +14,7 @@ export const library: LibraryGateway = {
   create: request => invoke('library_create', { request }),
   update: request => invoke('library_update', { request }),
   delete: request => invoke('library_delete', { request }),
-  updateEdition: (request, content) => invoke('library_update_edition', { request, content: content ?? null }),
+  updateEdition: (request, content, musicLinks = null) => invoke('library_update_edition', { request, content: content ?? null, musicLinks }),
   model: (assetId, preview) => invoke('library_model', { assetId, preview }),
   cover: assetId => invoke('library_cover', { assetId }),
   backup: () => invoke('library_backup'),

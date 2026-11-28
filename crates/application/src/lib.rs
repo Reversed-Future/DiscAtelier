@@ -5,7 +5,7 @@ pub mod video;
 use discatelier_domain::{carriers, categories, validate_copy, validate_edition};
 use std::collections::BTreeMap;
 mod song_links;
-pub use song_links::SongLinkRepository;
+pub use song_links::{unique_song_row, SongLinkRepository};
 mod disc_albums;
 pub mod disc_links;
 mod disc_structure;
@@ -51,11 +51,11 @@ pub trait LibraryRepository: Send {
     fn update(&mut self, request: &UpdateCopy) -> Result<String, AppError>;
     fn delete(&mut self, request: &DeleteCopy) -> Result<String, AppError>;
     fn replace_edition_source(&mut self, value: &ReplaceEditionSource) -> Result<String, AppError>;
-    fn update_edition(&mut self, request: &UpdateEdition) -> Result<String, AppError>;
-    fn update_edition_content(
+    fn update_edition(
         &mut self,
         request: &UpdateEdition,
-        content: &EditionContent,
+        content: Option<&EditionContent>,
+        music_links: Option<&EditionMusicEdits>,
     ) -> Result<String, AppError>;
     fn model(&self, asset_id: &str, preview: bool) -> Result<String, AppError>;
     fn cover(&self, asset_id: &str) -> Result<String, AppError>;
@@ -268,18 +268,26 @@ impl<R: LibraryRepository> LibraryService<R> {
         request: UpdateEdition,
         content: Option<EditionContent>,
     ) -> Result<String, AppError> {
+        self.save_edition_draft(request, content, None)
+    }
+    pub fn save_edition_draft(
+        &mut self,
+        request: UpdateEdition,
+        content: Option<EditionContent>,
+        music_links: Option<EditionMusicEdits>,
+    ) -> Result<String, AppError> {
         request_id(&request.request_id)?;
         request_id(&request.edition_id)?;
         if request.expected_revision < 1 {
             return Err(validation("版本记录无效".into()));
         }
         validate_edition(&request.edition).map_err(validation)?;
-        if let Some(content) = content {
-            validate_content(&content)?;
-            self.repository.update_edition_content(&request, &content)
-        } else {
-            self.repository.update_edition(&request)
+        if let Some(content) = &content {
+            validate_content(content)?;
         }
+        validate_edition_links(&request, music_links.as_ref())?;
+        self.repository
+            .update_edition(&request, content.as_ref(), music_links.as_ref())
     }
     pub fn model(&self, asset_id: String, preview: bool) -> Result<String, AppError> {
         if asset_id.len() != 64 || !asset_id.bytes().all(|value| value.is_ascii_hexdigit()) {
@@ -293,6 +301,20 @@ impl<R: LibraryRepository> LibraryService<R> {
         }
         self.repository.cover(&asset_id)
     }
+}
+fn validate_edition_links(
+    request: &UpdateEdition,
+    music_links: Option<&EditionMusicEdits>,
+) -> Result<(), AppError> {
+    if let Some(edits) = music_links {
+        if request.edition.category_id != "music" {
+            return Err(validation("网易云专辑只能关联到音乐版本。".into()));
+        }
+        for edit in &edits.albums {
+            validate_supplement(&edit.album)?;
+        }
+    }
+    Ok(())
 }
 fn validate_create(request: &CreateCopy) -> Result<(), AppError> {
     request_id(&request.request_id)?;

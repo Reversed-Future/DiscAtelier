@@ -8,8 +8,11 @@ mod cd_metadata;
 mod commands;
 mod credentials;
 mod data_location;
+#[cfg(any(not(feature = "isolated-preview"), test))]
+mod installed_data;
 mod desktop_shell;
 mod discogs;
+mod edition_music_links;
 mod equalizer;
 mod equalizer_window;
 mod exchange;
@@ -70,13 +73,14 @@ fn main() {
     if !single_instance::claim() {
         return;
     }
-    let context = tauri::generate_context!();
+    let mut context = tauri::generate_context!();
     #[cfg(feature = "isolated-preview")]
-    let context = {
-        let mut context = context;
-        preview_config::isolate_webviews(context.config_mut());
-        context
-    };
+    preview_config::isolate_webviews(context.config_mut());
+    #[cfg(not(feature = "isolated-preview"))]
+    if let Err(error) = installed_data::configure(context.config_mut()) {
+        installed_data::report_error(&error);
+        return;
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -92,10 +96,6 @@ fn main() {
                     .map_err(|error| error.message)?,
             );
             let directory = app.path().app_local_data_dir()?;
-            // Feature-only test build: never migrate the installed application's library.
-            #[cfg(feature = "isolated-preview")]
-            let directory =
-                directory.with_file_name("com.reversedfuture.discatelier.video-preview");
             // Ordinary Release never redirects the user's collection via test env.
             #[cfg(any(debug_assertions, feature = "performance-harness"))]
             let directory = std::env::var_os("DISCATELIER_TEST_DATA_DIR")

@@ -39,47 +39,73 @@ impl SongLinkRepository for SqliteLibrary {
                 "收藏资料已改变，请重新打开详情。",
             ));
         }
-        // Clear legacy overrides in every associated album without touching other links.
-        for mut entry in crate::music_albums::read(&tx, edition)? {
-            entry
-                .album
-                .links
-                .retain(|l| l.position != position || l.title != title);
-            let raw = serde_json::to_string(&entry.album)
-                .map_err(|_| AppError::new("storage", "补充资料不可保存。"))?;
-            tx.execute(
-                "UPDATE edition_music_albums SET payload=?3 WHERE edition_id=?1 AND album_id=?2",
-                params![edition, entry.album.album_id as i64, raw],
-            )
-            .map_err(db_error)?;
-        }
-        if let Some(link) = link {
-            let total: i64 = tx
-                .query_row(
-                    "SELECT count(*) FROM edition_song_links WHERE edition_id=?1",
-                    [edition],
-                    |r| r.get(0),
-                )
-                .map_err(db_error)?;
-            let exists = tx.query_row("SELECT 1 FROM edition_song_links WHERE edition_id=?1 AND position=?2 AND title=?3", params![edition,position,title], |_| Ok(())).optional().map_err(db_error)?.is_some();
-            if total >= 1000 && !exists {
-                return Err(AppError::new(
-                    "validation",
-                    "单个版本最多关联 1000 首歌曲。",
-                ));
-            }
-            let raw = serde_json::to_string(link)
-                .map_err(|_| AppError::new("storage", "歌曲关联不可保存。"))?;
-            tx.execute("INSERT INTO edition_song_links VALUES(?1,?2,?3,?4) ON CONFLICT(edition_id,position,title) DO UPDATE SET payload=excluded.payload", params![edition,position,title,raw]).map_err(db_error)?;
-        } else {
-            tx.execute(
-                "DELETE FROM edition_song_links WHERE edition_id=?1 AND position=?2 AND title=?3",
-                params![edition, position, title],
-            )
-            .map_err(db_error)?;
-        }
+        write(&tx, edition, position, title, link)?;
         tx.commit().map_err(db_error)
     }
+}
+pub(super) fn write(
+    tx: &rusqlite::Transaction<'_>,
+    edition: &str,
+    position: &str,
+    title: &str,
+    link: Option<&SongLink>,
+) -> Result<(), AppError> {
+    // Clear legacy overrides in every associated album without touching other links.
+    for mut entry in crate::music_albums::read(tx, edition)? {
+        if !entry
+            .album
+            .links
+            .iter()
+            .any(|l| l.position == position && l.title == title)
+        {
+            continue;
+        }
+        entry
+            .album
+            .links
+            .retain(|l| l.position != position || l.title != title);
+        let raw = serde_json::to_string(&entry.album)
+            .map_err(|_| AppError::new("storage", "补充资料不可保存。"))?;
+        tx.execute(
+            "UPDATE edition_music_albums SET payload=?3 WHERE edition_id=?1 AND album_id=?2",
+            params![edition, entry.album.album_id as i64, raw],
+        )
+        .map_err(db_error)?;
+    }
+    if let Some(link) = link {
+        let total: i64 = tx
+            .query_row(
+                "SELECT count(*) FROM edition_song_links WHERE edition_id=?1",
+                [edition],
+                |r| r.get(0),
+            )
+            .map_err(db_error)?;
+        let exists = tx
+            .query_row(
+                "SELECT 1 FROM edition_song_links WHERE edition_id=?1 AND position=?2 AND title=?3",
+                params![edition, position, title],
+                |_| Ok(()),
+            )
+            .optional()
+            .map_err(db_error)?
+            .is_some();
+        if total >= 1000 && !exists {
+            return Err(AppError::new(
+                "validation",
+                "单个版本最多关联 1000 首歌曲。",
+            ));
+        }
+        let raw = serde_json::to_string(link)
+            .map_err(|_| AppError::new("storage", "歌曲关联不可保存。"))?;
+        tx.execute("INSERT INTO edition_song_links VALUES(?1,?2,?3,?4) ON CONFLICT(edition_id,position,title) DO UPDATE SET payload=excluded.payload", params![edition,position,title,raw]).map_err(db_error)?;
+    } else {
+        tx.execute(
+            "DELETE FROM edition_song_links WHERE edition_id=?1 AND position=?2 AND title=?3",
+            params![edition, position, title],
+        )
+        .map_err(db_error)?;
+    }
+    Ok(())
 }
 pub fn validate(connection: &Connection) -> Result<(), AppError> {
     let mut statement = connection

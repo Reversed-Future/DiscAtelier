@@ -1,14 +1,11 @@
-use tauri::utils::config::{AppDirectoriesOverride, AppDirectoryOverrides};
-
 /// WebView2 defaults to app_local_data_dir before setup creates our library.
 /// Override that resolver before Builder::build. Tauri runtime 2.12.2 drops
 /// WindowConfig.data_directory when constructing WebviewAttributes.
 pub fn isolate_webviews(config: &mut tauri::Config) {
-    config.app.app_directories_override =
-        Some(AppDirectoriesOverride::Directories(AppDirectoryOverrides {
-            local_data: Some("$LOCALDATA/com.reversedfuture.discatelier.video-preview".into()),
-            ..Default::default()
-        }));
+    crate::data_location::set_directory(
+        config,
+        "$LOCALDATA/com.reversedfuture.discatelier.video-preview".into(),
+    );
 }
 
 #[cfg(test)]

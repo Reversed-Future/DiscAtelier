@@ -10,6 +10,10 @@ export type NeteaseSong = MusicSupplement['tracks'][number];
 export interface LinkedMusicAlbum { album: MusicSupplement; legacyPositions: boolean }
 export interface DiscAlbumLink { discKey: string; albumId: number }
 export interface SongLink { position: string; title: string; song: NeteaseSong }
+export interface MusicLinkSelection {
+  albums: { previousId: number | null; albumId: number }[];
+  tracks: { position: string; title: string; songId: number | null }[];
+}
 export interface AlbumResult { id: number; title: string; artists: string[]; coverUrl: string | null }
 export interface AlbumSearchPage { items: AlbumResult[]; total: number; offset: number; limit: number }
 export const integrations = {

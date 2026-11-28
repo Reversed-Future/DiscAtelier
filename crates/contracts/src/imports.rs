@@ -70,6 +70,8 @@ pub struct ReplaceEditionSource {
     pub source: EditionSource,
     pub identifiers: Vec<ImportedIdentifier>,
     pub video: Option<crate::VideoMetadata>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub music_links: Option<crate::EditionMusicEdits>,
 }
 
 pub fn validate_source(

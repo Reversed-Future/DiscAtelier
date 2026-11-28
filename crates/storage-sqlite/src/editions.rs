@@ -2,7 +2,9 @@ use crate::{
     artwork, db_error,
     writes::{receipt, save_receipt},
 };
-use discatelier_contracts::{AppError, CoverChange, ModelChange, UpdateEdition};
+use discatelier_contracts::{
+    AppError, CoverChange, EditionContent, EditionMusicEdits, ModelChange, UpdateEdition,
+};
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -11,8 +13,18 @@ pub fn update(
     connection: &mut Connection,
     request: &UpdateEdition,
     prepared: &crate::models::prepared::PreparedModels,
+    content: Option<&EditionContent>,
+    music_links: Option<&EditionMusicEdits>,
 ) -> Result<String, AppError> {
-    update_draft(connection, request, prepared, None, None, None)
+    update_draft(
+        connection,
+        request,
+        prepared,
+        None,
+        content,
+        None,
+        music_links,
+    )
 }
 pub fn update_with_video(
     connection: &mut Connection,
@@ -21,15 +33,7 @@ pub fn update_with_video(
     video: Option<&discatelier_contracts::VideoMetadata>,
     content: Option<&discatelier_contracts::EditionContent>,
 ) -> Result<String, AppError> {
-    update_draft(connection, request, prepared, video, content, None)
-}
-pub fn update_with_content(
-    connection: &mut Connection,
-    request: &UpdateEdition,
-    prepared: &crate::models::prepared::PreparedModels,
-    content: &discatelier_contracts::EditionContent,
-) -> Result<String, AppError> {
-    update_draft(connection, request, prepared, None, Some(content), None)
+    update_draft(connection, request, prepared, video, content, None, None)
 }
 pub fn replace_source(
     connection: &mut Connection,
@@ -43,6 +47,7 @@ pub fn replace_source(
         value.video.as_ref(),
         Some(&value.content),
         Some(value),
+        value.music_links.as_ref(),
     )
 }
 fn update_draft(
@@ -52,6 +57,7 @@ fn update_draft(
     video: Option<&discatelier_contracts::VideoMetadata>,
     content: Option<&discatelier_contracts::EditionContent>,
     source: Option<&discatelier_contracts::ReplaceEditionSource>,
+    music_links: Option<&EditionMusicEdits>,
 ) -> Result<String, AppError> {
     let _total = crate::profiling::Span::new("edition.total");
     let payload =
@@ -61,6 +67,8 @@ fn update_draft(
                 Sha256::digest(
                     if let Some(source) = source {
                         serde_json::to_vec(&("replace_source", source))
+                    } else if let Some(edits) = music_links {
+                        serde_json::to_vec(&(request, "music_links", content, edits))
                     } else if video.is_some() && content.is_some() {
                         serde_json::to_vec(&(request, video, content))
                     } else if content.is_some() {
@@ -169,6 +177,9 @@ fn update_draft(
     }
     if let Some(value) = source {
         crate::source_replacement::save(&transaction, value)?;
+    }
+    if let Some(edits) = music_links {
+        crate::edition_music_links::apply(&transaction, &request.edition_id, edits)?;
     }
     save_receipt(
         &transaction,

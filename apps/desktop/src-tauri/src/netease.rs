@@ -3,14 +3,16 @@ use crate::{
     data_location::DataLocation,
     integration_settings,
 };
-use discatelier_contracts::{AppError, MusicSupplement};
+use discatelier_contracts::{AppError, MusicSupplement, SupplementTrack};
 use discatelier_integration_http::error;
 use discatelier_provider_netease::{self as provider, AlbumResult, AlbumSearchPage};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
+
+const ALBUM_CACHE_TTL: Duration = Duration::from_secs(600);
 
 #[derive(Default)]
 pub struct NeteaseState(pub Mutex<HashMap<u64, (Instant, MusicSupplement)>>);
@@ -20,13 +22,35 @@ pub fn cached_album(state: &NeteaseState, id: u64) -> Result<MusicSupplement, Ap
         .lock()
         .map_err(|_| error("资料缓存不可用。"))?
         .get(&id)
-        .filter(|(time, _)| time.elapsed() < Duration::from_secs(600))
+        .filter(|(time, _)| time.elapsed() < ALBUM_CACHE_TTL)
         .map(|(_, album)| album.clone())
         .ok_or_else(|| error("网易云预览已过期，请重新读取。"))
 }
+pub fn cached_album_tracks(
+    state: &NeteaseState,
+    selected: &HashSet<u64>,
+) -> Result<HashMap<u64, SupplementTrack>, AppError> {
+    let mut tracks = HashMap::new();
+    if !selected.is_empty() {
+        let cache = state.0.lock().map_err(|_| error("资料缓存不可用。"))?;
+        for (_, album) in cache
+            .values()
+            .filter(|(time, _)| time.elapsed() < ALBUM_CACHE_TTL)
+        {
+            for song in album
+                .tracks
+                .iter()
+                .filter(|song| selected.contains(&song.id))
+            {
+                tracks.insert(song.id, song.clone());
+            }
+        }
+    }
+    Ok(tracks)
+}
 fn cache_album(state: &NeteaseState, album: &MusicSupplement) -> Result<(), AppError> {
     let mut cache = state.0.lock().map_err(|_| error("资料缓存不可用。"))?;
-    cache.retain(|_, (time, _)| time.elapsed() < Duration::from_secs(600));
+    cache.retain(|_, (time, _)| time.elapsed() < ALBUM_CACHE_TTL);
     if cache.len() >= 20 {
         cache.clear();
     }

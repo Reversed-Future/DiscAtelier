@@ -4,6 +4,19 @@ use std::path::PathBuf;
 use tauri_plugin_opener::OpenerExt;
 
 pub struct DataLocation(pub PathBuf);
+
+/// On Windows Tauri's local data and cache share a directory, and its log
+/// directory is the logs child. Configure them before any WebView is created.
+pub fn set_directory(config: &mut tauri::Config, directory: PathBuf) {
+    use tauri::utils::config::{AppDirectoriesOverride, AppDirectoryOverrides};
+    config.app.app_directories_override =
+        Some(AppDirectoriesOverride::Directories(AppDirectoryOverrides {
+            cache: Some(directory.clone()),
+            log: Some(directory.join("logs")),
+            local_data: Some(directory),
+            ..Default::default()
+        }));
+}
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LocationInfo {

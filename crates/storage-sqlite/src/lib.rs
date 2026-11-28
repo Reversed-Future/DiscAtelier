@@ -13,6 +13,7 @@ mod music_albums;
 mod optical;
 mod ordering;
 mod song_links;
+mod edition_music_links;
 mod video;
 pub use models::file::prepare as prepare_model_file;
 pub use models::source::with_preview as prepare_source_model_preview;
@@ -117,19 +118,18 @@ impl LibraryRepository for SqliteLibrary {
     fn delete(&mut self, request: &DeleteCopy) -> Result<String, AppError> {
         deletes::delete(&mut self.connection, request)
     }
-    fn update_edition(&mut self, request: &UpdateEdition) -> Result<String, AppError> {
-        editions::update(&mut self.connection, request, &self.prepared_models)
-    }
-    fn update_edition_content(
+    fn update_edition(
         &mut self,
         request: &UpdateEdition,
-        content: &EditionContent,
+        content: Option<&EditionContent>,
+        music_links: Option<&EditionMusicEdits>,
     ) -> Result<String, AppError> {
-        editions::update_with_content(
+        editions::update(
             &mut self.connection,
             request,
             &self.prepared_models,
             content,
+            music_links,
         )
     }
     fn model(&self, asset_id: &str, preview: bool) -> Result<String, AppError> {

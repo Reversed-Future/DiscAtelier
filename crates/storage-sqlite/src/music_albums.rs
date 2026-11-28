@@ -96,7 +96,7 @@ pub fn write(
     tx.commit().map_err(db_error)
 }
 
-fn validate_albums(albums: &[LinkedMusicAlbum]) -> Result<(), AppError> {
+pub(super) fn validate_albums(albums: &[LinkedMusicAlbum]) -> Result<(), AppError> {
     if albums.len() > 20
         || albums.iter().map(|a| a.album.tracks.len()).sum::<usize>() > 5000
         || albums.iter().filter(|a| a.legacy_positions).count() > 1

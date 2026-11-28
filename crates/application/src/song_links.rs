@@ -14,6 +14,16 @@ fn count(rows: &[ReleaseTrack], position: &str, title: &str) -> usize {
         .sum()
 }
 
+fn has_tracks(rows: &[ReleaseTrack]) -> bool {
+    rows.iter().any(|row| {
+        if row.sub_tracks.is_empty() {
+            row.type_ != "heading"
+        } else {
+            has_tracks(&row.sub_tracks)
+        }
+    })
+}
+
 pub trait SongLinkRepository {
     fn song_links(&self, edition: &str) -> Result<Vec<SongLink>, AppError>;
     fn save_song_link(
@@ -31,7 +41,7 @@ impl<R: LibraryRepository + ExtensionRepository + SongLinkRepository> LibrarySer
         crate::request_id(edition)?;
         let mut links = self.repository.song_links(edition)?;
         let content = self.repository.edition_content(edition)?;
-        if let Some(content) = content.filter(|v| !v.tracks.is_empty()) {
+        if let Some(content) = content.filter(|v| has_tracks(&v.tracks)) {
             links.retain(|l| count(&content.tracks, &l.position, &l.title) == 1);
         } else {
             let albums = self.repository.music_albums(edition)?;
@@ -73,24 +83,20 @@ impl<R: LibraryRepository + ExtensionRepository + SongLinkRepository> LibrarySer
             }
         }
         let content = self.repository.edition_content(edition)?;
-        let valid = if let Some(content) = content.filter(|v| !v.tracks.is_empty()) {
-            count(&content.tracks, position, title) == 1
+        let albums = if content.as_ref().is_none_or(|v| !has_tracks(&v.tracks)) {
+            self.repository.music_albums(edition)?
         } else {
-            self.repository
-                .music_albums(edition)?
-                .iter()
-                .map(|a| {
-                    a.album
-                        .tracks
-                        .iter()
-                        .filter(|t| {
-                            a.track_position(&t.disc, t.number) == position && t.title == title
-                        })
-                        .count()
-                })
-                .sum::<usize>()
-                == 1
+            Vec::new()
         };
+        let valid = unique_song_row(
+            content
+                .as_ref()
+                .map(|c| c.tracks.as_slice())
+                .unwrap_or_default(),
+            &albums,
+            position,
+            title,
+        );
         if !valid {
             return Err(AppError::new(
                 "conflict",
@@ -100,4 +106,23 @@ impl<R: LibraryRepository + ExtensionRepository + SongLinkRepository> LibrarySer
         self.repository
             .save_song_link(edition, revision, position, title, link)
     }
+}
+
+pub fn unique_song_row(
+    rows: &[ReleaseTrack],
+    albums: &[discatelier_contracts::LinkedMusicAlbum],
+    position: &str,
+    title: &str,
+) -> bool {
+    if has_tracks(rows) {
+        return count(rows, position, title) == 1;
+    }
+    albums
+        .iter()
+        .flat_map(|entry| entry.album.tracks.iter().map(move |song| (entry, song)))
+        .filter(|(entry, song)| {
+            entry.track_position(&song.disc, song.number) == position && song.title == title
+        })
+        .count()
+        == 1
 }

@@ -41,6 +41,75 @@ fn setup() -> (
 }
 
 #[test]
+fn editing_music_replaces_the_selected_album_and_track_atomically() {
+    let (dir, mut service, item) = setup();
+    let id = &item.edition_id;
+    service
+        .save_supplement(id, 1, &album(100, "First"))
+        .unwrap();
+    service.save_disc_album(id, 2, "1", Some(100)).unwrap();
+    let content = service.edition_content(id).unwrap().unwrap();
+    let mut edit = UpdateEdition {
+        request_id: uuid::Uuid::new_v4().to_string(),
+        edition_id: id.clone(),
+        expected_revision: 3,
+        edition: item.edition.clone(),
+        cover: CoverChange::Keep,
+        model: ModelChange::Keep,
+    };
+    let second = EditionMusicEdits {
+        albums: vec![AlbumReplacement {
+            previous_id: Some(100),
+            album: album(200, "Second"),
+        }],
+        tracks: vec![TrackAssociationEdit {
+            position: "1-1".into(),
+            title: "Song".into(),
+            song_id: Some(201),
+            cached_song: None,
+        }],
+    };
+    edit.edition.edition_label = "Edited physical edition".into();
+    let mut stale = edit.clone();
+    stale.expected_revision = 2;
+    assert!(service
+        .save_edition_draft(stale, None, Some(second.clone()))
+        .is_err());
+    assert_eq!(service.music_albums(id).unwrap().len(), 1);
+    let connection = Connection::open(dir.join("library.sqlite3")).unwrap();
+    connection.execute_batch("CREATE TRIGGER reject_link BEFORE INSERT ON edition_music_albums BEGIN SELECT RAISE(ABORT,'test'); END;").unwrap();
+    assert!(service
+        .save_edition_draft(edit.clone(), None, Some(second.clone()))
+        .is_err());
+    let unchanged = service.list(query()).unwrap().copies.remove(0);
+    assert_eq!(unchanged.edition_revision, 3);
+    assert_eq!(unchanged.edition.edition_label, item.edition.edition_label);
+    connection
+        .execute_batch("DROP TRIGGER reject_link")
+        .unwrap();
+    for _ in 0..2 {
+        service
+            .save_edition_draft(edit.clone(), None, Some(second.clone()))
+            .unwrap();
+    }
+    assert!(service
+        .save_edition_draft(edit, None, Some(EditionMusicEdits::default()))
+        .is_err());
+    let saved = service.list(query()).unwrap().copies.remove(0);
+    assert_eq!(saved.edition_revision, 4);
+    assert_eq!(saved.edition.edition_label, "Edited physical edition");
+    assert_eq!(saved.edition.title, item.edition.title);
+    assert_eq!(service.music_albums(id).unwrap().len(), 1);
+    assert_eq!(service.music_albums(id).unwrap()[0].album.album_id, 200);
+    assert_eq!(service.song_links(id).unwrap()[0].song.id, 201);
+    assert_eq!(service.disc_albums(id).unwrap()[0].album_id, 200);
+    assert_eq!(
+        serde_json::to_value(service.edition_content(id).unwrap().unwrap()).unwrap(),
+        serde_json::to_value(content).unwrap()
+    );
+}
+
+#[test]
 fn multiple_albums_disc_bindings_manual_links_and_purchase_survive_restore() {
     let (dir, mut service, before) = setup();
     let id = &before.edition_id;

@@ -96,11 +96,16 @@ pub async fn library_backup(state: tauri::State<'_, LibraryState>) -> Result<Str
 #[tauri::command]
 pub async fn library_update_edition(
     state: tauri::State<'_, LibraryState>,
+    app: tauri::AppHandle,
     request: UpdateEdition,
     content: Option<EditionContent>,
+    music_links: Option<crate::edition_music_links::MusicLinkSelection>,
 ) -> Result<String, AppError> {
+    let music_links = music_links
+        .map(|selection| selection.resolve(&app))
+        .transpose()?;
     run(state.inner().clone(), move |service| {
-        service.update_edition_with_content(request, content)
+        service.save_edition_draft(request, content, music_links)
     })
     .await
 }
