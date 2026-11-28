@@ -3,6 +3,7 @@ import type { ReleaseTrack } from './gateway';
 import { Credits } from './ReleaseDetails';
 import { Icon } from '../ui/Icon';
 import { NeteaseLogo } from '../ui/NeteaseLogo';
+import { copyAction, setContextActions } from '../ui/contextActions';
 
 export interface TrackPlayback { playing: boolean; busy: boolean; play(): void }
 
@@ -11,7 +12,12 @@ export function TrackRow({ track, playback, localPlayback, positionLabel }: { tr
   const id = useId();
   const actions = localPlayback || playback;
   return <>
-    <div className="track-row" data-playing={actions?.playing || undefined}>
+    <div className="track-row" data-playing={actions?.playing || undefined} onContextMenu={event => setContextActions(event, [
+      ...(localPlayback && !localPlayback.busy ? [{label: '播放本地文件', run: localPlayback.play}] : []),
+      ...(playback && !playback.busy ? [{label: '网易云播放', run: playback.play}] : []),
+      ...(track.extraartists?.length ? [{label: expanded ? '收起 Credits' : '查看 Credits', run: () => setExpanded(!expanded)}] : []),
+      copyAction('复制标题', track.title),
+    ])}>
       <span className="track-position">{positionLabel ?? track.position}</span>
       <span className="track-heading-content"><span className="track-name">{track.title}</span>
         {!!track.extraartists?.length && <button type="button" className="track-credits-toggle" aria-label={`${track.title} 的 Credits`} aria-expanded={expanded} aria-controls={id} onClick={() => setExpanded(v => !v)}>Credits</button>}

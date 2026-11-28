@@ -3,6 +3,7 @@ import { library } from '../library/gateway';
 import { useStaticArtwork } from '../library/useStaticArtwork';
 import { Icon } from '../ui/Icon';
 import { AudioContentTabs } from './AudioContentTabs';
+import { QueueTrackButton } from './QueueTrackButton';
 import { PlaybackControls } from './PlaybackControls';
 import type { PlaybackController } from './usePlayback';
 import { time } from './gateway';
@@ -30,7 +31,9 @@ export function NeteaseAudioPlayer({ player }: { player: PlaybackController }) {
       <div className="audio-cd-content">
         <div className="local-audio-meta"><h2>{album?.title || player.snapshot?.title}</h2><p>{album?.artists.join('，')}</p></div>
         <AudioContentTabs player={player} songId={queue.songId}>
-          <div className="audio-track-list" aria-label="网易云曲目">{album?.tracks.map((track, index) => <button key={track.id} aria-current={track.id === queue.songId ? 'true' : undefined} onClick={() => void queue.start(album.editionId, track.id)}><span>{String(index + 1).padStart(2, '0')}</span><strong>{track.title}</strong><time>{time(track.durationMs / 1000)}</time></button>)}</div>
+          <div className="audio-track-list" aria-label="网易云曲目">{album?.tracks.map((track, index) =>
+            <QueueTrackButton key={track.id} number={index + 1} title={track.title} current={track.id === queue.songId}
+              duration={time(track.durationMs / 1000)} onPlay={() => void queue.start(album.editionId, track.id)}/>)}</div>
           <div className="cd-metadata-status">{album ? `${album.tracks.length} 首` : '正在读取曲目…'}</div>
         </AudioContentTabs>
       </div>

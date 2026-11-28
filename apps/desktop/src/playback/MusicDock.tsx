@@ -6,6 +6,7 @@ import { PlaybackControls } from './PlaybackControls';
 import { time } from './gateway';
 import type { PlaybackController } from './usePlayback';
 import { usePlaybackLayer } from './usePlaybackLayer';
+import { QueueTrackButton } from './QueueTrackButton';
 
 export function MusicDock({ player }: { player: PlaybackController }) {
   const host = usePlaybackLayer();
@@ -21,7 +22,10 @@ export function MusicDock({ player }: { player: PlaybackController }) {
   useEffect(() => { list.current?.scrollTo(0, 0); enter(list.current, 0); }, [album?.editionId, host]);
   useEffect(() => {
     if (!queue.open) return;
-    const pointer = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) queue.setOpen(false); };
+    const pointer = (event: PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest('.app-context-menu')) return;
+      if (!root.current?.contains(event.target as Node)) queue.setOpen(false);
+    };
     const key = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); queue.setOpen(false); trigger.current?.focus(); }
     };
@@ -36,11 +40,10 @@ export function MusicDock({ player }: { player: PlaybackController }) {
       <header className="music-dock-heading"><h3>播放列表</h3><div className="local-dock-heading-actions">{online && <button className="icon-button" aria-label="打开播放界面" title="打开播放界面" onClick={player.show}><Icon name="disc"/></button>}<button className="icon-button" aria-label="收起播放列表" onClick={() => { queue.setOpen(false); trigger.current?.focus(); }}><Icon name="close"/></button></div></header>
       <nav className="music-album-tabs" aria-label="最近播放的专辑">{queue.albums.map(row => <button key={row.editionId} title={row.title} aria-pressed={row.editionId === album?.editionId} onClick={() => setSelected(row.editionId)}>{row.title}</button>)}</nav>
       <div ref={list} className="music-queue-scroll" aria-busy={queue.busy}>
-        {album?.tracks.map((track, index) => <button key={track.id} className="music-queue-track"
-          aria-current={online && queue.current?.editionId === album.editionId && queue.songId === track.id ? 'true' : undefined}
-          onClick={() => void queue.start(album.editionId, track.id)}>
-          <span>{String(index + 1).padStart(2, '0')}</span><strong>{track.title}</strong><time>{time(track.durationMs / 1000)}</time>
-        </button>)}
+        {album?.tracks.map((track, index) => <QueueTrackButton key={track.id} dock number={index + 1}
+          title={track.title} duration={time(track.durationMs / 1000)}
+          current={online && queue.current?.editionId === album.editionId && queue.songId === track.id}
+          onPlay={() => void queue.start(album.editionId, track.id)}/>)}
         {!album && <p className="setting-hint">{queue.busy ? '读取中' : '暂无曲目'}</p>}
       </div>
       <footer className="music-dock-footer">

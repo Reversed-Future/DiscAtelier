@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { errorMessage } from '../library/gateway';
 import { Select } from '../ui/Select';
+import { ContextMenu } from '../ui/ContextMenu';
 import SquishSwitch from '../ui/SquishSwitch';
 import {
   EQ_BANDS, EQ_MAX, EQ_MIN, activeProfile, allProfiles, defaultEqualizer, profileState, useEqualizer,
@@ -99,6 +100,7 @@ export function EqualizerSettings({ standalone = false }: { standalone?: boolean
     setDraft({ ...draft, enabled: true, activeProfile: 'flat', preamp: 0, bands: EQ_BANDS.map(() => 0) });
   }
   return <section className="equalizer-settings">
+    {standalone && <ContextMenu onError={showToast}/>}
     <div className="video-section-heading"><h3>均衡器 · VLC</h3></div>
     <p className="setting-hint">作用于本地音乐、CD、网易云和本地视频。光盘播放使用 MPV，暂不应用 EQ。</p>
     {!standalone && <div className="equalizer-window-link"><button type="button" className="text-button" onClick={() => void invoke('equalizer_window_open').catch(() => {})}>在独立窗口调节</button></div>}

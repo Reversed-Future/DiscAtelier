@@ -19,6 +19,7 @@ import { Modal } from '../ui/Modal';
 import { Icon } from '../ui/Icon';
 import { enter } from '../ui/motion';
 import { EditPurchase } from '../forms/EditPurchase';
+import { copyAction, setContextActions } from '../ui/contextActions';
 import { EditionContents } from './EditionContents';
 import { useEditionContent } from './useEditionContent';
 import { NeteasePanel } from '../integrations/NeteasePanel';
@@ -91,11 +92,19 @@ export function Inspection({ item, carriers, onClose, onSaved, onDeleted, edit, 
           <button className={tab === 'purchase' ? 'active' : ''} onClick={() => setTab('purchase')}>购入</button>
         </nav>
         <div ref={content} className="inspection-tab-content" data-tab={tab}>
-          <div hidden={tab !== 'metadata'}>{isVideo && <VideoIntroduction key={part?.id || 'merged'} works={works}/>}<dl className="metadata">{fields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>{item.edition.categoryId === 'video' && <VideoDetails value={view}/>}<EditionContents section="metadata" state={editionContent} albums={supplement.value} links={supplement.links} bindings={supplement.bindings} item={item} player={player}/></div>
+          <div hidden={tab !== 'metadata'}>{isVideo && <VideoIntroduction key={part?.id || 'merged'} works={works}/>}<dl className="metadata">{fields.map(([key, value]) =>
+            <div key={key} onContextMenu={event => setContextActions(event, [
+              copyAction(`复制${key}`, value),
+              ...(!modelBusy && !chapterBusy ? [{label: '编辑版本', run: edit}] : []),
+            ])}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>{item.edition.categoryId === 'video' && <VideoDetails value={view}/>}<EditionContents section="metadata" state={editionContent} albums={supplement.value} links={supplement.links} bindings={supplement.bindings} item={item} player={player}/></div>
           <div className="inspection-tracks-page" hidden={tab !== 'tracks'}>{isVideo ? <CollectionVideoChapters key={`${item.editionId}:${item.editionRevision}:${works.length}:${part?.id || 'merged'}`} item={item} metadata={metadata} sourceKeys={part?.sourceKeys} enabled={tab === 'tracks'} physical={trackContent} hasPhysical={item.edition.media.length > 1 || !!editionContent.content?.tracks.length} onSaved={onSaved} onBusy={setChapterBusy} player={player}/> : trackContent}</div>
           {isVideo && <div hidden={tab !== 'characters'}><CollectionVideoCharacters key={`${item.editionId}:${item.editionRevision}:${works.length}:${part?.id || 'merged'}`} item={item} metadata={metadata} sourceKeys={part?.sourceKeys} onSaved={onSaved} onBusy={setChapterBusy}/></div>}
           {isVideo && <div hidden={tab !== 'gallery'}><CollectionVideoGallery key={`${item.editionId}:${item.editionRevision}:${works.length}:${part?.id || 'merged'}`} item={item} metadata={metadata} sourceKeys={part?.sourceKeys} enabled={tab === 'gallery'} onSaved={onSaved} onBusy={setChapterBusy}/></div>}
-          <div hidden={tab !== 'purchase'}><dl className="metadata">{purchaseFields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}{key === '购入价格' && <ConvertedPrice amount={item.copy.amountMinor} currency={item.copy.currency} acquiredAt={item.copy.acquiredAt}/>}</dd></div>)}</dl></div>
+          <div hidden={tab !== 'purchase'}><dl className="metadata">{purchaseFields.map(([key, value]) =>
+            <div key={key} onContextMenu={event => setContextActions(event, [
+              copyAction(`复制${key}`, value || ''),
+              ...(!modelBusy && !chapterBusy ? [{label: '编辑购入', run: () => setEditingPurchase(true)}] : []),
+            ])}><dt>{key}</dt><dd>{value}{key === '购入价格' && <ConvertedPrice amount={item.copy.amountMinor} currency={item.copy.currency} acquiredAt={item.copy.acquiredAt}/>}</dd></div>)}</dl></div>
         </div>
         {metadataError && <p className="form-error" role="alert">{metadataError}</p>}
         {supplement.error && <p className="form-error" role="alert">{supplement.error}</p>}

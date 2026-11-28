@@ -1,5 +1,6 @@
 .video-parts-editor { margin: 24px 0; padding: 18px; border: 1px solid var(--line); border-radius: 4px; background: #ffffff03; }
 .video-parts-heading { align-items: flex-start; }
+.video-parts-toggle { min-width: calc(5em + 12px); justify-content: center; }
 .video-parts-intro { min-width: 0; }
 .video-parts-intro h3 { margin: 0 0 7px; }
 .video-parts-intro .form-note { margin: 0; }

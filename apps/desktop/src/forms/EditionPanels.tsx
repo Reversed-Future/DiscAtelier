@@ -2,6 +2,8 @@ import type { Descriptor, EditionDraft } from '../library/types';
 import type { EditionContent } from '../metadata/gateway';
 import type { VideoMetadata } from '../video/gateway';
 import { VideoDiscEditor } from '../video/VideoDiscEditor';
+import { ChapterLinkEditor } from '../video/ChapterLinkEditor';
+import { videoWorks } from '../video/sources';
 import { VideoPartsEditor } from '../video/VideoPartsEditor';
 import { VideoSourcesEditor } from '../video/VideoSourcesEditor';
 import { MusicEditor, VideoEditor } from './ContentEditor';
@@ -28,6 +30,8 @@ export function EditionDetails({page, edition, onEdition, carriers, content, onC
     <VideoSourcesEditor value={metadata} initialQuery={edition.title} onChange={onMetadata}
       onFirstWork={work => { if (!edition.title.trim()) onEdition({...edition, title: work.title}); }}/>
     <VideoPartsEditor value={metadata} onChange={onMetadata}/>
+    <ChapterLinkEditor works={videoWorks(metadata)} links={metadata.chapterLinks || []}
+      onChange={chapterLinks => onMetadata({...metadata, chapterLinks})}/>
     <VideoEditor key={focusWork} initialWork={focusWork} metadata={metadata} setMetadata={onMetadata} onBusy={onBusy}/>
   </>;
   if (!content) return <p className="utility-copy">正在读取资料…</p>;

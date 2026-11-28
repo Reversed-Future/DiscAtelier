@@ -1,3 +1,5 @@
+import { useId } from 'react';
+import { DisclosureBody } from '../ui/DisclosureBody';
 import type { VideoMetadata } from './gateway';
 import { Select } from '../ui/Select';
 import { videoWorks, workKey, sourceCaption } from './sources';
@@ -5,6 +7,8 @@ import { assignPart, partsError, partWorks } from './parts';
 
 export function VideoPartsEditor({value,onChange}: {value:VideoMetadata;onChange(value:VideoMetadata):void}) {
   const parts = value.parts || [], works = videoWorks(value), error = partsError(value);
+  const expanded = parts.length > 0;
+  const fieldsId = useId();
   const setParts = (next: VideoMetadata['parts']) => onChange({ ...value, parts: next });
   if (works.length < 2 && !parts.length) return null;
   return <section className="video-parts-editor">
@@ -15,15 +19,14 @@ export function VideoPartsEditor({value,onChange}: {value:VideoMetadata;onChange
       </div>
       <div className="video-heading-actions">
         {!!parts.length && <button type="button" className="text-button" onClick={() => setParts([...parts].reverse())}>交换前后顺序</button>}
-        {parts.length
-          ? <button type="button" className="text-button" onClick={() => setParts([])}>取消分编</button>
-          : <button type="button" className="text-button" disabled={works.length < 2} onClick={() => setParts([
+        <button type="button" className="text-button video-parts-toggle" aria-expanded={expanded} aria-controls={fieldsId}
+          disabled={!expanded && works.length < 2} onClick={() => setParts(expanded ? [] : [
               { id: crypto.randomUUID(), label: '前编', sourceKeys: works.map(workKey), coverSourceKey: workKey(works[0]) },
               { id: crypto.randomUUID(), label: '后编', sourceKeys: [], coverSourceKey: '' },
-            ])}>设置前后编</button>}
+            ])}>{expanded ? '取消分编' : '设置前后编'}</button>
       </div>
     </div>
-    {!!parts.length && <>
+    <DisclosureBody id={fieldsId} open={expanded}>
       <div className="video-parts-grid">
         {parts.map((part, index) => <article className="video-part-editor" key={part.id}>
           <header className="video-part-editor-heading">
@@ -49,6 +52,6 @@ export function VideoPartsEditor({value,onChange}: {value:VideoMetadata;onChange
         </label>)}
       </div>
       {error && <p className="form-note" role="status">{error}</p>}
-    </>}
+    </DisclosureBody>
   </section>;
 }

@@ -165,6 +165,7 @@ fn main() {
             about::about_open_project,
             local_files::local_files_scan,
             local_files::local_files_get,
+            local_files::local_file_reveal,
             local_files::local_files_save,
             mobile_bridge::mobile_addresses,
             mobile_bridge::mobile_start,

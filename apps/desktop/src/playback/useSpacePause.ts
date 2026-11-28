@@ -10,7 +10,7 @@ export function useSpacePause(player: PlaybackController, enabled = true) {
       if (!live.current.enabled || event.code !== 'Space' || event.repeat || event.defaultPrevented
         || event.ctrlKey || event.altKey || event.metaKey) return;
       const target = event.target as HTMLElement | null;
-      if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)) return;
+      if (target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable || target.closest('[role="menu"]'))) return;
       event.preventDefault();
       const current = live.current.player;
       if (!current.active || current.busy) return;

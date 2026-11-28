@@ -24,6 +24,8 @@ import './styles/integrations.css';
 import './styles/music-dock.css';
 import './styles/window-chrome.css';
 
+// Let contextual actions and model gestures handle the event before suppressing WebView2's menu.
+window.addEventListener('contextmenu', event => event.preventDefault());
 window.addEventListener('error', event => {
   if (event.error || event.message) logError('window', event.error || event.message, `${event.filename || ''}:${event.lineno || 0}:${event.colno || 0}`);
 });

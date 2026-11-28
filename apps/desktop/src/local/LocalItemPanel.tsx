@@ -10,6 +10,7 @@ import { loadVideoChapters } from './videoChapters';
 import { FolderPicker } from './FolderPicker';
 import { Select } from '../ui/Select';
 import { Modal } from '../ui/Modal';
+import { copyAction, setContextActions } from '../ui/contextActions';
 
 interface ScannedFile {
   path: string;
@@ -238,7 +239,15 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
           const associated = item.edition.categoryId === 'video'
             ? binding.episode != null || !!savedTitle(binding)
             : binding.track != null || !!savedTitle(binding);
-          return <tr key={binding.path}><td title={binding.path}><span>{binding.path.split(/[\\/]/).pop()}</span></td>
+          return <tr key={binding.path} onContextMenu={event => setContextActions(event, [
+            ...(associated && !busy ? [{label: '播放本地文件', run: () => play(binding.path)}] : []),
+            {label: '打开文件所在位置', run: async () => {
+              setError('');
+              try { await invoke('local_file_reveal', {copyId: item.id, path: binding.path}); }
+              catch (cause) { setError(errorMessage(cause)); }
+            }},
+            copyAction('复制文件路径', binding.path),
+          ])}><td title={binding.path}><span>{binding.path.split(/[\\/]/).pop()}</span></td>
           <td>{binding.episode ? `第 ${binding.episode} 章` : binding.track ? `${binding.disc ? `${binding.disc} · ` : ''}第 ${binding.track} 轨` : '—'}</td>
           <td><span className="local-track-title">{item.edition.categoryId === 'video' ? (savedTitle(binding) || (binding.episode ? `第 ${binding.episode} 章` : '—')) : savedTitle(binding) || '—'}</span></td>
           <td>{associated ? <button type="button" className="text-button" disabled={busy} onClick={() => void play(binding.path)}>播放</button> : <span className="local-files-miss">未关联</span>}</td></tr>;
@@ -248,7 +257,9 @@ export function LocalItemPanel({ item, onClose }: { item: LibraryCopy; onClose()
     {!!files.length && <>
       <div className="local-files-summary"><span>{rows.length} 个文件将关联到当前收藏</span></div>
       <div className="local-files-table-wrap"><table className="local-files-table"><thead><tr><th>文件</th><th>{item.edition.categoryId === 'video' ? '章节' : '轨号'}</th><th>{item.edition.categoryId === 'video' ? '关联章节' : '关联歌曲'}</th><th>操作</th></tr></thead><tbody>
-        {rows.map((row, index) => <tr key={row.file.path}>
+        {rows.map((row, index) => <tr key={row.file.path} onContextMenu={event => setContextActions(event, [
+          copyAction('复制文件路径', row.file.path),
+        ])}>
           <td title={row.file.relativePath}><span>{row.file.relativePath}</span></td>
           <td><div className="local-track-cell"><input type="number" min="1" max="9999" aria-label={`${row.file.name} 的${item.edition.categoryId === 'video' ? '章节' : '轨号'}`} value={row.number}
             onChange={event => updateNumber(index, event.target.value)}/>{row.disc && <span className="local-track-manual">{row.disc}</span>}</div></td>

@@ -1,12 +1,14 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { EditionContent, ReleaseCompany, ReleaseCredit } from '../metadata/gateway';
 import { errorMessage } from '../library/gateway';
 import type { EditionDraft } from '../library/types';
 import { readCover } from '../library/artwork';
 import { sourceLabel, videoImageUrl, type VideoCharacter, type VideoChapter, type VideoFact, type VideoMetadata, type VideoWork } from '../video/gateway';
 import { videoWorks } from '../video/sources';
+import { CharacterPortrait } from '../video/CharacterPortrait';
 import { TrackMultiSelect } from './TrackMultiSelect';
 import { Select } from '../ui/Select';
+import { DisclosureBody } from '../ui/DisclosureBody';
 import { ContentEditorTable } from './ContentEditorTable';
 import { MusicTrackEditor } from './MusicTrackEditor';
 import { changeContentTracks, creditSelection, creditTrackOptions } from '../metadata/creditTracks';
@@ -54,6 +56,7 @@ export function MusicEditor({ edition, content, onChange, section }: { section: 
 export function VideoEditor({ metadata, setMetadata, onBusy, initialWork = 0 }: { initialWork?: number; metadata: VideoMetadata; setMetadata(value: VideoMetadata): void; onBusy(value: boolean): void }) {
   const [requested, setSelected] = useState(initialWork);
   const [imagesOpen, setImagesOpen] = useState(false);
+  const imagesId = useId();
   const [error, setError] = useState('');
   const avatarInput = useRef<HTMLInputElement>(null);
   const [avatarRow, setAvatarRow] = useState(-1);
@@ -136,11 +139,12 @@ export function VideoEditor({ metadata, setMetadata, onBusy, initialWork = 0 }: 
 
       <div className="content-editor-heading"><h3>图片 <span className="content-editor-source-label">{images.length} 张</span></h3>
         <div className="content-editor-heading-actions">
-          <button type="button" className="text-button" onClick={() => setImagesOpen(open => !open)}>{imagesOpen ? '收起' : '展开'}</button>
+          <button type="button" className="text-button" aria-expanded={imagesOpen} aria-controls={imagesId}
+            onClick={() => setImagesOpen(open => !open)}>{imagesOpen ? '收起' : '展开'}</button>
           <button type="button" className="text-button" onClick={() => { setImagesOpen(true); updateWork({ images: [...images, { kind: 'backdrop', url: '', previewUrl: '', width: 1, height: 1, language: '' }] }); }}>添加</button>
         </div>
       </div>
-      {imagesOpen && <ContentEditorTable kind="images"><thead><tr><th>类型</th><th>地址</th><th>预览地址</th><th>语言</th><th>宽</th><th>高</th><th/></tr></thead><tbody>
+      <DisclosureBody id={imagesId} open={imagesOpen}><ContentEditorTable kind="images"><thead><tr><th>类型</th><th>地址</th><th>预览地址</th><th>语言</th><th>宽</th><th>高</th><th/></tr></thead><tbody>
         {images.map((row, i) => <tr key={i}><td><Select label={`第 ${i + 1} 张图片类型`} value={row.kind} options={[{id:'poster',label:'海报'},{id:'backdrop',label:'剧照'}]} onChange={value => { if (value === 'poster' || value === 'backdrop') updateWork({ images: images.map((image, at) => at === i ? { ...image, kind: value } : image) }); }}/></td><td><input value={row.url} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, url: e.target.value } : image) })}/></td><td><input value={row.previewUrl} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, previewUrl: e.target.value } : image) })}/></td><td><input value={row.language} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, language: e.target.value } : image) })}/></td><td><input type="number" min="1" value={row.width} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, width: Number(e.target.value) } : image) })}/></td><td><input type="number" min="1" value={row.height} onChange={e => updateWork({ images: images.map((image, at) => at === i ? { ...image, height: Number(e.target.value) } : image) })}/></td><td><button type="button" className="text-button" onClick={() => updateWork({ images: images.filter((_, at) => at !== i) })}>移除</button></td></tr>)}
         {!images.length && <tr className="content-editor-ghost">
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
@@ -148,7 +152,7 @@ export function VideoEditor({ metadata, setMetadata, onBusy, initialWork = 0 }: 
           <td><span className="content-editor-ghost-cell"/></td><td><span className="content-editor-ghost-cell"/></td>
           <td><button type="button" className="content-editor-ghost-add" onClick={() => updateWork({ images: [{ kind: 'backdrop', url: '', previewUrl: '', width: 1, height: 1, language: '' }] })}>添加图片</button></td>
         </tr>}
-      </tbody></ContentEditorTable>}
+      </tbody></ContentEditorTable></DisclosureBody>
 
       <div className="content-editor-heading"><h3>人物</h3><button type="button" className="text-button" onClick={() => updateWork({ people: [...people, { name: '', role: '' }] })}>添加</button></div>
       <ContentEditorTable kind="people"><thead><tr><th>姓名</th><th>角色</th><th/></tr></thead><tbody>
@@ -159,7 +163,7 @@ export function VideoEditor({ metadata, setMetadata, onBusy, initialWork = 0 }: 
       <div className="content-editor-heading"><h3>角色</h3><button type="button" className="text-button" onClick={() => updateWork({ characters: [...characters, { name: '', role: '', actors: [], portraitUrl: '', avatar: '' }] })}>添加角色</button></div>
       <div className="content-editor-characters">{characters.map((row, i) => <div className="content-editor-character" key={i}>
         <div className="content-editor-avatar">
-          {row.avatar?.startsWith('data:image/') ? <img src={row.avatar} alt={row.name}/> : <span>无头像</span>}
+          <CharacterPortrait character={row} emptyLabel="无头像"/>
           <button type="button" className="text-button" onClick={() => { setAvatarRow(i); avatarInput.current?.click(); }}>选择图片</button>
           {row.avatar && <button type="button" className="text-button" onClick={() => character(i, { avatar: '' })}>移除图片</button>}
         </div>

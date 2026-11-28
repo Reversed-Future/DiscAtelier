@@ -168,7 +168,7 @@
 .video-episode-details p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.9; }
 .video-episode-details button { margin: 0; max-width: 360px; text-align: left; }
 .video-episode-details img { display: block; aspect-ratio: 16 / 9; max-height: none; object-fit: contain; background: var(--surface); }
-.video-chapter-links-editor { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
+.video-chapter-links-editor { margin: 24px 0; }
 .video-chapter-links-editor > .video-section-heading { align-items: baseline; margin-bottom: 12px; }
 .video-chapter-links-editor > .video-section-heading h3 { margin: 0; }
 .video-chapter-links-editor > .video-section-heading .setting-hint { margin: 0; }
@@ -188,3 +188,4 @@
 .unified-gallery .poster img, .unified-gallery .poster .video-picture-missing { aspect-ratio: 2 / 3; }
 .unified-gallery .still img, .unified-gallery .still .video-picture-missing { aspect-ratio: 16 / 9; }
 .video-linked-work { padding: 0 0 18px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.video-linked-work:has(+ .video-parts-editor) { padding-bottom: 0; border-bottom: 0; }

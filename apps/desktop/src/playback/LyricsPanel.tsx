@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { errorMessage } from '../library/gateway';
 import type { PlaybackController } from './usePlayback';
 import { activeLyric, lyricLines, type Lyrics } from './lyrics';
+import { copyAction, setContextActions } from '../ui/contextActions';
 import '../styles/lyrics.css';
 
 const cache = new Map<number, Lyrics>();
@@ -34,13 +35,23 @@ export function LyricsPanel({ songId, player, resolving = false }: { songId: num
     if (root && line) root.scrollTo({ top: root.scrollTop + line.getBoundingClientRect().top - root.getBoundingClientRect().top - root.clientHeight / 2 + line.clientHeight / 2, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   }, [index, following, songId]);
   const loading = resolving || (!!songId && result?.id !== songId && !error);
+  const canSeek = player.active && player.snapshot?.seekable && !player.busy;
   return <div className="lyrics-panel">
     <div className="lyrics-scroll" ref={list} aria-label="歌词" onWheel={() => { browsing.current = performance.now() + 6000; setFollowing(false); }} onTouchMove={() => { browsing.current = performance.now() + 6000; setFollowing(false); }}>
       {loading ? <p className="setting-hint" role="status">正在读取歌词…</p> : error ? <p className="setting-hint" role="status">{error} <button className="text-button" onClick={() => setRetry(v => v + 1)}>重试</button></p>
         : !songId ? <p className="setting-hint">这首歌尚未关联网易云资料</p>
-        : parsed.lines.length ? parsed.lines.map((line, i) => <button key={`${line.seconds}:${i}`} className="lyric-line" aria-current={index === i ? 'true' : undefined} disabled={!player.active || !player.snapshot?.seekable || player.busy}
-          onClick={() => void player.control({ action: 'seek', seconds: line.seconds })}><span>{line.text || '♪'}</span>{line.translation && line.translation !== line.text && <small>{line.translation}</small>}</button>)
-        : parsed.plain.length ? parsed.plain.map((line, i) => <p className="lyric-line" key={i}>{line}</p>) : <p className="setting-hint">暂无歌词</p>}
+        : parsed.lines.length ? parsed.lines.map((line, i) => {
+          const translation = line.translation !== line.text ? line.translation : '';
+          const seek = () => { if (canSeek) void player.control({ action: 'seek', seconds: line.seconds }); };
+          return <button key={`${line.seconds}:${i}`} className="lyric-line" aria-current={index === i ? 'true' : undefined} aria-disabled={!canSeek}
+            onClick={seek} onContextMenu={event => setContextActions(event, [
+              ...(canSeek ? [{label: '定位到这句', run: seek}] : []),
+              ...(line.text ? [copyAction('复制原文', line.text)] : []),
+              ...(translation ? [copyAction('复制译文', translation)] : []),
+              ...(line.text && translation ? [copyAction('复制双语歌词', line.text + '\n' + translation)] : []),
+            ])}><span>{line.text || '♪'}</span>{translation && <small>{translation}</small>}</button>;
+        })
+        : parsed.plain.length ? parsed.plain.map((line, i) => <p className="lyric-line" key={i} onContextMenu={event => setContextActions(event, [copyAction('复制歌词', line)])}>{line}</p>) : <p className="setting-hint">暂无歌词</p>}
     </div>
     <div className="lyrics-caption"><span>网易云歌词</span>{!following && <button className="text-button" onClick={() => { browsing.current = 0; setFollowing(true); }}>回到当前</button>}</div>
   </div>;

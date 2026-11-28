@@ -4,6 +4,13 @@
 }
 /* Layout, depth, spacing and shadows use the original store.css carousel. */
 .record-sleeve { background: transparent; }
+.record-sleeve[data-portrait="true"] { border-color: transparent; box-shadow: none; }
+/* Let the shelf show through wherever a fitted poster leaves space. */
+.record-sleeve[data-portrait="true"] .cover-art[data-loaded],
+.record-sleeve[data-portrait="true"] .cover-art > img,
+.record-sleeve .video-part-card,
+.record-sleeve .video-part-poster { background: transparent; }
+.record-sleeve[data-portrait="true"] .cover-art[data-loaded]::after { content: none; }
 .shelf-artwork-slot { position: absolute; inset: 0; pointer-events: none; }
 .has-model .shelf-artwork-slot { inset: -12.5%; }
 .shelf-artwork-slot .shared-artwork { pointer-events: none; }

@@ -1,17 +1,12 @@
-import { videoImageUrl, type VideoWork, type VideoCharacter } from './gateway';
+import type { VideoWork, VideoCharacter } from './gateway';
+import { CharacterPortrait } from './CharacterPortrait';
 import { visibleCharacters } from './characters';
-import { useState } from 'react';
-function Portrait({ url, avatar, name }: { url: string; avatar?: string; name: string }) {
-  const [failed, setFailed] = useState(false);
-  const src = avatar?.startsWith('data:image/') ? avatar : videoImageUrl(url);
-  return src && !failed ? <img className="video-character-portrait" src={src} alt={name} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)}/> : <span className="video-character-no-image">暂无图片</span>;
-}
 export function VideoCharacters({ work, rows: supplied }: { work?: VideoWork | null; rows?: VideoCharacter[] }) {
   const rows = supplied || (work?.source === 'bangumi' ? work.characters || [] : []);
   const visible = visibleCharacters(rows);
   if (!visible.length) return <p className="utility-copy">{rows.length ? '暂无主要角色资料。' : '暂无角色资料。'}</p>;
   return <ul className="video-characters">{visible.map((row, i) => <li key={i}>
-    <Portrait key={`${row.avatar || ''}:${row.portraitUrl || ''}`} url={row.portraitUrl || ''} avatar={row.avatar} name={row.name}/>
+    <CharacterPortrait character={row}/>
     <div className="video-character-copy"><div><strong>{row.name}</strong><span>{row.role}</span></div>
       {!!row.facts?.length && <dl className="video-character-facts">{row.facts.map(fact => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.values.map(v => v.text).join(' / ')}</dd></div>)}</dl>}
       {row.actors.length > 0 && <p className="video-character-actors">声优 · {row.actors.join(' / ')}</p>}

@@ -1,4 +1,4 @@
-import { ContextMenu, type ContextAction } from './ui/ContextMenu';
+import { ContextMenu } from './ui/ContextMenu';
 import { DeleteCollection } from './collection/DeleteCollection';
 import { DesktopShell } from './shell/DesktopShell';
 import { useVideoMetadata } from './video/useVideoMetadata';
@@ -220,12 +220,7 @@ export function App() {
         { label: '复制名称', run: () => navigator.clipboard.writeText(`${item.edition.title} ${item.edition.creator}`.trim()) },
         { label: '删除收藏', separator: true, run: () => setDeletingCopy(item) },
       ];
-      const actions: ContextAction[] = [];
-      if (!target.closest('dialog, input, textarea, [contenteditable="true"]')) {
-        if (player.active) actions.push({ label: '打开播放界面', run: player.show });
-        actions.push({ label: '设置', run: () => setSettingsPage('home') });
-      }
-      return actions;
+      return [];
     }}/>
     {deletingCopy && <DeleteCollection item={deletingCopy} onClose={() => setDeletingCopy(null)} onDeleted={async () => {
       snapshots.current.clear(); setInspected(null); setSelectedId(''); await refresh(query); notify('已删除');

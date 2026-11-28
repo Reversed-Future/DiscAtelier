@@ -11,6 +11,7 @@ import { useStaticArtwork } from '../library/useStaticArtwork';
 import { usePlayerClose } from './usePlayerClose';
 import type { LibraryCopy } from '../library/types';
 import { AudioContentTabs } from './AudioContentTabs';
+import { QueueTrackButton } from './QueueTrackButton';
 import { useLinkedLyricSong } from './useLinkedLyricSong';
 import { useSystemMediaSource } from './useSystemMediaSource';
 import { useSpacePause } from './useSpacePause';
@@ -84,8 +85,9 @@ export function AudioPlayer({ player }: { player: PlaybackController }) {
         {(currentMetadata?.date || currentMetadata?.genre) && <p>{[currentMetadata?.date, currentMetadata?.genre].filter(Boolean).join(' · ')}</p>}
       </div>
       <AudioContentTabs player={player} {...lyric}><div className="audio-track-list" aria-label="光盘曲目">{tracks.map((track, index) =>
-        <button key={track.number} aria-current={index === current ? 'true' : undefined}
-          onClick={() => play(index)}><span>{String(track.number).padStart(2, '0')}</span><strong>{metadata.tracks.find(item => item.number === track.number)?.title || `曲目 ${track.number}`}</strong><time>{time(track.durationSeconds)}</time></button>)}
+        <QueueTrackButton key={track.number} number={track.number} current={index === current}
+          title={metadata.tracks.find(item => item.number === track.number)?.title || `曲目 ${track.number}`}
+          duration={time(track.durationSeconds)} onPlay={() => play(index)}/>)}
       </div>
       <div className="cd-metadata-status"><span>{tracks[current]?.number || 0} / {currentMetadata?.trackTotal || tracks.length} 首</span>{metadata.loading ? <span role="status">正在识别曲目资料…</span> : <button className="text-button" onClick={metadata.refresh}>重新识别</button>}
         {metadata.error && <span role="status">{metadata.error} 仍可按曲号播放。</span>}</div></AudioContentTabs>

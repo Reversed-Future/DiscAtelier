@@ -17,8 +17,22 @@
 .editor-source-toolbar .form-note { margin: 0; }
 .editor-panel > .panel-body { display: flex; flex-direction: column; overflow: hidden; }
 .editor-page-tabs { flex: 0 0 auto; margin-top: 0; }
-.work-extra-fields { border-top: 1px solid var(--line); margin-top: 20px; }
+.work-extra-fields { margin-top: 20px; }
+.disclosure-body { overflow: hidden; }
 .work-extra-fields > summary { padding-block: 16px; cursor: pointer; font-size: 12px; }
+@supports selector(details::details-content) and (interpolate-size: allow-keywords) {
+  .work-extra-fields::details-content, .video-work details::details-content {
+    interpolate-size: allow-keywords;
+    block-size: 0; opacity: 0; overflow: hidden;
+    transition: block-size 200ms var(--ease), opacity 200ms var(--ease), content-visibility 200ms allow-discrete;
+  }
+  .work-extra-fields[open]::details-content, .video-work details[open]::details-content {
+    block-size: auto; opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .work-extra-fields::details-content, .video-work details::details-content { transition: none; }
+  }
+}
 .edition-identity { display: grid; grid-template-columns: clamp(155px, 22%, 220px) minmax(0, 1fr); gap: clamp(24px, 4vw, 60px); align-items: start; }
 .edition-identity[data-part-covers="true"] { grid-template-columns: 1fr; }
 .edition-identifiers { min-width: 0; }
@@ -92,7 +106,7 @@
 .content-editor-characters { display: grid; gap: 12px; }
 .content-editor-character { display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .content-editor-avatar { display: grid; gap: 5px; justify-items: start; }
-.content-editor-avatar img { width: 96px; height: 120px; object-fit: cover; background: #111; }
+.content-editor-avatar img { width: 96px; height: 120px; object-fit: contain; object-position: top center; background: #111; }
 .content-editor-avatar > span { width: 96px; height: 120px; display: grid; place-items: center; background: #151515; color: var(--muted); font-size: 10px; }
 .content-editor-character-fields { min-width: 0; }
 .content-editor-character-fields label { margin: 0 0 7px; }

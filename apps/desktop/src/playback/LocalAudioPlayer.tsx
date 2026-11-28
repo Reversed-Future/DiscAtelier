@@ -12,6 +12,7 @@ import { PlaybackControls } from './PlaybackControls';
 import { usePlaybackLayer } from './usePlaybackLayer';
 import type { PlaybackController } from './usePlayback';
 import { AudioContentTabs } from './AudioContentTabs';
+import { QueueTrackButton } from './QueueTrackButton';
 import { useLinkedLyricSong } from './useLinkedLyricSong';
 import { useSystemMediaSource } from './useSystemMediaSource';
 import { usePlayerClose } from './usePlayerClose';
@@ -45,6 +46,7 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
   useEffect(() => {
     if (!dockOpen) return;
     const pointer = (event: PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest('.app-context-menu')) return;
       if (!dockRoot.current?.contains(event.target as Node)) setDockOpen(false);
     };
     document.addEventListener('pointerdown', pointer, true);
@@ -192,10 +194,8 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
       </div></header>
       <div className="local-dock-album"><strong>{copy?.edition.title || '本地音乐'}</strong><span>{copy?.edition.creator}</span></div>
       <div className="music-queue-scroll">
-        {tracks.map((item, index) => <button key={item.order} className={`music-queue-track${item.binding ? '' : ' is-unavailable'}`}
-          disabled={!item.binding} aria-current={index === current ? 'true' : undefined} onClick={() => play(index, true)}>
-          <span>{String(item.number || index + 1).padStart(2, '0')}</span><strong>{item.title}</strong>
-        </button>)}
+        {tracks.map((item, index) => <QueueTrackButton key={item.order} dock number={item.number || index + 1}
+          current={index === current} title={item.title} onPlay={item.binding ? () => play(index, true) : undefined}/>)}
         {!tracks.length && <p className="setting-hint">{contentReady ? '这个收藏还没有本地曲目' : '正在读取专辑曲目…'}</p>}
       </div>
       <footer className="music-dock-footer">
@@ -226,10 +226,8 @@ export function LocalAudioPlayer({ player }: { player: PlaybackController }) {
           <p>{copy?.edition.creator}</p>
         </div>
         <AudioContentTabs player={player} {...lyric}><div className="audio-track-list" aria-label="本地曲目">{tracks.map((item, index) =>
-          <button key={item.order} className={item.binding ? undefined : 'is-unavailable'} disabled={!item.binding}
-            aria-current={index === current ? 'true' : undefined} onClick={() => play(index)}>
-            <span>{String(item.number || index + 1).padStart(2, '0')}</span><strong>{item.title}</strong>
-          </button>)}
+          <QueueTrackButton key={item.order} number={item.number || index + 1} title={item.title}
+            current={index === current} onPlay={item.binding ? () => play(index) : undefined}/>)}
         </div>
         <div className="cd-metadata-status">{!tracks.length && (contentReady ? '这个收藏还没有本地曲目' : '正在读取专辑曲目…')}</div></AudioContentTabs>
       </div>

@@ -211,6 +211,18 @@ pub fn local_files_get(
 }
 
 #[tauri::command]
+pub fn local_file_reveal(
+    directory: tauri::State<'_, DataLocation>,
+    copy_id: String,
+    path: String,
+) -> Result<(), AppError> {
+    let binding = find(&directory.0, &copy_id, &path)?;
+    validate_binding_path(&binding)?;
+    tauri_plugin_opener::reveal_item_in_dir(&binding.path)
+        .map_err(|_| error("无法在文件资源管理器中定位这个文件。"))
+}
+
+#[tauri::command]
 pub fn local_files_save(
     directory: tauri::State<'_, DataLocation>,
     bindings: Vec<Binding>,

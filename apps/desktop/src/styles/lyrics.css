@@ -4,7 +4,7 @@
 .lyrics-scroll { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; padding: 24px 0; }
 .lyric-line { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 14px 0; text-align: left; font-size: 17px; line-height: 1.6; font-weight: 400; color: var(--muted); background: transparent; border: 0; white-space: pre-wrap; overflow-wrap: anywhere; transition: color 180ms var(--ease); }
 .lyric-line[aria-current="true"] { color: var(--ink); }
-.lyric-line:disabled { opacity: 1; cursor: default; }
+.lyric-line[aria-disabled="true"] { opacity: 1; cursor: default; }
 .lyric-line small { font-size: 12px; color: var(--muted); }
 .lyrics-caption { min-height: 26px; display: flex; justify-content: space-between; gap: 12px; align-items: center; font-size: 10px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .lyric-line { transition: none; } }
