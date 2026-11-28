@@ -3,12 +3,41 @@
 .panel-dialog[open] { display: flex; flex-direction: column; }
 .panel-heading { flex: 0 0 auto; }
 .panel-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-.panel-body:has(> .editor-form) { overflow: hidden; display: flex; flex-direction: column; }
+.panel-body:has(> .editor-form) {
+  --editor-scroll-rail: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Extend the scroll area to the dialog edge while keeping tabs and footer inset. */
+  margin-inline-end: calc(-1 * var(--panel-padding));
+  padding-inline-end: var(--panel-padding);
+}
 .editor-panel { width: min(1180px, calc(100vw - 56px)); max-width: calc(100vw - 56px); }
 .editor-source-toolbar { margin: 8px 0 2px; min-height: 24px; }
 .editor-source-toolbar .form-note { margin: 0; }
 .editor-panel > .panel-body { display: flex; flex-direction: column; overflow: hidden; }
 .editor-page-tabs { flex: 0 0 auto; margin-top: 0; }
+.work-extra-fields { border-top: 1px solid var(--line); margin-top: 20px; }
+.work-extra-fields > summary { padding-block: 16px; cursor: pointer; font-size: 12px; }
+.edition-identity { display: grid; grid-template-columns: clamp(155px, 22%, 220px) minmax(0, 1fr); gap: clamp(24px, 4vw, 60px); align-items: start; }
+.edition-identity[data-part-covers="true"] { grid-template-columns: 1fr; }
+.edition-identifiers { min-width: 0; }
+.edition-artwork { padding-top: 14px; min-width: 0; }
+.edition-artwork .cover-field { flex-direction: column; align-items: flex-start; gap: 8px; margin: 0; }
+.edition-artwork .cover-preview { width: min(100%, 150px); height: auto; aspect-ratio: 1; }
+.edition-artwork .cover-preview[data-portrait="true"] { aspect-ratio: 3 / 4; height: auto; }
+.edition-artwork .cover-controls { justify-content: flex-start; gap: 2px 8px; }
+.edition-artwork .text-button { padding-inline: 0; }
+.edition-import-tools { display: grid; justify-items: start; margin-top: 20px; gap: 3px; border-top: 1px solid var(--line); padding-top: 14px; }
+.edition-import-tools h3 { margin: 0 0 4px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.edition-artwork .video-cover-choice { margin: 0; display: grid; gap: 8px; }
+.editor-form [aria-invalid="true"] { border-color: var(--ink); outline: 1px solid var(--ink); outline-offset: -1px; }
+@media (max-width: 660px) {
+  .edition-identity { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .edition-artwork { display: flex; gap: 16px; align-items: flex-start; }
+  .edition-artwork .cover-preview { width: 80px; }
+  .edition-import-tools { margin: 0; border: 0; padding: 0; }
+}
 .content-editor { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
 .content-editor-scroll { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; padding-right: 4px; }
 .content-editor label { display: flex; flex-direction: column; gap: 7px; margin: 12px 0; color: var(--muted); font-size: 11px; }
@@ -69,7 +98,30 @@
 .content-editor-character-fields label { margin: 0 0 7px; }
 .editor-form { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .editor-form > :not(fieldset) { flex-shrink: 0; }
-.editor-form > fieldset { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.editor-form > fieldset {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  margin-inline-end: calc(-1 * var(--panel-padding));
+  padding-inline-end: calc(var(--panel-padding) - var(--editor-scroll-rail));
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+.editor-form > fieldset::-webkit-scrollbar { width: var(--editor-scroll-rail); height: 0; }
+.editor-form > fieldset::-webkit-scrollbar-track { background: transparent; }
+.editor-form > fieldset::-webkit-scrollbar-thumb {
+  min-height: 28px;
+  border: 0 solid transparent;
+  border-inline-width: 6px 3px;
+  /* Subtracting the 6px and 3px borders leaves a 1.5px radius on each painted corner. */
+  border-radius: 7.5px 4.5px 4.5px 7.5px / 1.5px;
+  background: #686868 padding-box;
+}
+.editor-form > fieldset::-webkit-scrollbar-thumb:hover { background-color: #929292; }
+.editor-form > fieldset::-webkit-scrollbar-thumb:active { background-color: #bdbdbd; }
+.editor-form > fieldset::-webkit-scrollbar-button { display: none; }
 .editor-form > .form-footer { margin-top: 0; }
 .metadata-browser-panel { width: 960px; }
 .metadata-browser-panel > .panel-body { display: flex; flex-direction: column; overflow: hidden; }

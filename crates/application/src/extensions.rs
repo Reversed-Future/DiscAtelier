@@ -1,14 +1,15 @@
 use crate::LibraryRepository;
 use crate::LibraryService;
 use discatelier_contracts::{
-    validate_supplement, AppError, CreateCopy, LinkedMusicAlbum, MusicSupplement,
+    validate_supplement, AppError, CreateCopy, EditionContent, LinkedMusicAlbum, MusicSupplement,
 };
 
 pub trait ExtensionRepository {
     fn create_music(
         &mut self,
         request: &CreateCopy,
-        album: &MusicSupplement,
+        album: Option<&MusicSupplement>,
+        content: Option<&EditionContent>,
     ) -> Result<String, AppError>;
     fn supplement(&self, edition: &str) -> Result<Option<MusicSupplement>, AppError>;
     fn music_albums(&self, edition: &str) -> Result<Vec<LinkedMusicAlbum>, AppError>;
@@ -44,6 +45,14 @@ impl<R: LibraryRepository + ExtensionRepository> LibraryService<R> {
         request: CreateCopy,
         album: MusicSupplement,
     ) -> Result<String, AppError> {
+        self.create_music_with_content(request, Some(album), None)
+    }
+    pub fn create_music_with_content(
+        &mut self,
+        request: CreateCopy,
+        album: Option<MusicSupplement>,
+        content: Option<EditionContent>,
+    ) -> Result<String, AppError> {
         crate::validate_create(&request)?;
         if request.existing_edition_id.is_some()
             || request
@@ -56,8 +65,11 @@ impl<R: LibraryRepository + ExtensionRepository> LibraryService<R> {
                 "网易云资料只能用于新增音乐版本。",
             ));
         }
-        validate_supplement(&album)?;
-        self.repository.create_music(&request, &album)
+        if let Some(album) = &album {
+            validate_supplement(album)?;
+        }
+        self.repository
+            .create_music(&request, album.as_ref(), content.as_ref())
     }
     pub fn supplement(&self, edition: &str) -> Result<Option<MusicSupplement>, AppError> {
         crate::request_id(edition)?;

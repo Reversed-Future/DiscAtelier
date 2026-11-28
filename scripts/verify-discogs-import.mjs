@@ -48,6 +48,7 @@ const invoke = (command, args) => page.evaluate(({ command, args }) => window.__
 const list = (query = '') => invoke('library_list', { query: { categoryId: 'music', status: null, query } });
 async function open() {
   await page.locator('.topbar').getByRole('button', { name: '添加收藏', exact: true }).click();
+  await page.getByRole('button', { name: '从 Discogs 导入', exact: true }).click();
   return page.getByRole('dialog', { name: 'Discogs', exact: true });
 }
 async function search(dialog, mode, query) {
@@ -85,15 +86,16 @@ try {
   await dialog.getByRole('button', { name: '上一页', exact: true }).click();
   await expect(dialog.locator('.metadata-results article')).toHaveCount(2, { timeout: 15000 });
   await choose(dialog, 'Import fixture');
-  await expect(dialog.getByRole('alert')).toContainText('封面暂时无法下载');
+  let form = page.getByRole('dialog', { name: '添加音乐版本', exact: true });
+  await expect(form.getByRole('status')).toContainText('封面未能保存');
   assert.equal((await list()).copies.length, 0);
-  await dialog.getByRole('button', { name: '选择此版本', exact: true }).click();
-  await expect(dialog.getByRole('alert')).toContainText('封面格式无效');
+  await form.getByRole('button', { name: '重试封面', exact: true }).click();
+  await expect(form.getByRole('button', { name: '重试封面', exact: true })).toBeVisible();
   assert.equal((await list()).copies.length, 0);
-  await dialog.getByRole('button', { name: '选择此版本', exact: true }).click();
-  let form = page.getByRole('dialog', { name: '添加收藏', exact: true });
+  await form.getByRole('button', { name: '重试封面', exact: true }).click();
   await expect(form.locator('.cover-preview img')).toHaveAttribute('src', `data:image/png;base64,${coverBytes.toString('base64')}`);
   await expect(form.getByRole('textbox', { name: '条码', exact: true })).toHaveValue('000123');
+  await form.getByRole('button', { name: '碟片与曲目', exact: true }).click();
   await expect(form.locator('.medium-row')).toHaveCount(3);
   await expect(form.getByRole('combobox', { name: '第 3 张载体', exact: true })).toHaveText('BD');
   await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('plugin:window|set_size', { label: 'main', value: { Logical: { width: 960, height: 680 } } }));
@@ -103,8 +105,9 @@ try {
     await expect.poll(() => page.evaluate(() => innerWidth)).toBe(expected);
   }
   assert.equal(await form.evaluate(node => node.scrollWidth <= node.clientWidth + 1), true);
+  await form.getByRole('button', { name: '版本信息', exact: true }).click();
   await form.getByRole('textbox', { name: '名称', exact: true }).fill('My confirmed title');
-  await form.getByRole('button', { name: '下一步', exact: true }).click();
+  await form.getByRole('button', { name: '填写购入信息', exact: true }).click();
   await form.getByRole('textbox', { name: '价格', exact: true }).fill('12.00');
   await form.getByRole('textbox', { name: '购入位置', exact: true }).fill('Shop A');
   for (let index = 0; index < 35; index++) {
@@ -151,12 +154,12 @@ try {
   dialog = await open();
   await search(dialog, '品番', 'Ab-01');
   await choose(dialog, 'Alternate fixture');
-  form = page.getByRole('dialog', { name: '添加收藏', exact: true });
-  await form.getByRole('button', { name: '下一步', exact: true }).click();
-  await expect(form.getByRole('alert')).toContainText('请选择每张盘片的载体');
+  form = page.getByRole('dialog', { name: '添加音乐版本', exact: true });
+  await form.getByRole('button', { name: '填写购入信息', exact: true }).click();
+  await expect(form.getByRole('alert')).toContainText('请选择第 1 张碟片的载体');
   await form.getByRole('combobox', { name: '第 1 张载体', exact: true }).click();
   await page.getByRole('option', { name: '其他', exact: true }).click();
-  await form.getByRole('button', { name: '下一步', exact: true }).click();
+  await form.getByRole('button', { name: '填写购入信息', exact: true }).click();
   await form.getByRole('combobox', { name: '状态', exact: true }).click();
   await page.getByRole('option', { name: '想购入', exact: true }).click();
   await form.getByRole('textbox', { name: '购买链接', exact: true }).fill('https://example.invalid/fixture');

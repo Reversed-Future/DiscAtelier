@@ -45,10 +45,10 @@ try {
   });
   await invoke('discogs_save_token', { token: 'fixture-only-token' });
   await page.locator('.topbar').getByRole('button', { name: '添加收藏', exact: true }).click();
-  await page.getByRole('button', { name: '手动录入', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: '添加收藏', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: '添加音乐版本', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '关闭', exact: true }).click();
   await page.locator('.empty-state').getByRole('button', { name: '添加收藏', exact: true }).click();
+  await page.getByRole('button', {name: '从 Discogs 导入', exact: true}).click();
   const dialog = page.getByRole('dialog', { name: 'Discogs', exact: true });
   const initialHeight = await dialog.evaluate(node => node.clientHeight);
   await dialog.getByRole('textbox', { name: 'Discogs 搜索内容' }).fill('fixture');
@@ -98,9 +98,10 @@ try {
   await expect(articles.last().locator('button')).toBeInViewport();
   await screenshot('search-200');
   await page.getByRole('button', { name: '关闭', exact: true }).click();
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '影像', exact: true }).click();
   await page.locator('.topbar').getByRole('button', { name: '添加收藏', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: '添加收藏', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: '添加影片版本', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: '更多', exact: true }).click();
   await expect(page.locator('#tools-popover').getByRole('button', { name: '备份收藏', exact: true })).toHaveCount(0);

@@ -19,7 +19,6 @@ import { EditEdition } from './forms/EditEdition';
 import { resetPurchaseRates } from './exchange/usePurchaseRates';
 import { RestoreLibrary } from './forms/RestoreLibrary';
 import { useZoom } from './ui/useZoom';
-import { DiscogsBrowser } from './metadata/DiscogsBrowser';
 import { useScrollbars } from './ui/useScrollbars';
 import { Settings } from './settings/Settings';
 import { useCollectionArtwork } from './collection/useCollectionArtwork';
@@ -67,8 +66,6 @@ export function App() {
   const knownOptical = useRef(new Set<string>());
   const [settingsPage, setSettingsPage] = useState<'home' | 'discogs' | 'about' | 'audio' | null>(null);
   const [restoring, setRestoring] = useState(false);
-  const [metadataOpen, setMetadataOpen] = useState(false);
-  const [videoDiscogs, setVideoDiscogs] = useState(false);
   const search = useRef<HTMLInputElement>(null);
   const searchTrigger = useRef<HTMLButtonElement>(null);
   const scene = useRef<HTMLElement>(null);
@@ -158,9 +155,9 @@ export function App() {
     document.addEventListener('keydown', shortcut);
     return () => { document.removeEventListener('keydown', shortcut); clearTimeout(notifyTimer.current); };
   }, []);
-  const openAdd = () => query.categoryId === 'music' ? setMetadataOpen(true) : setAdd({});
+  const openAdd = () => setAdd({});
   const items = snapshot?.copies || [];
-  const modelActive = !assistantOpen && !add && !restoring && !metadataOpen && !settingsPage && !opticalOpen && !player.open;
+  const modelActive = !assistantOpen && !add && !restoring && !settingsPage && !opticalOpen && !player.open;
   const current = inspected || items.find(item => item.id === selectedId) || items[0];
   const currentVideo = useVideoMetadata(current?.editionId || '',current?.editionRevision || 0,current?.edition.categoryId === 'video');
   const [partId,setPartId] = useState(''), [instantFlip,setInstantFlip] = useState(false);
@@ -291,15 +288,9 @@ export function App() {
       resetPurchaseRates(); snapshots.current.clear();
       setInspected(null); setSelectedId(''); setQuery({ categoryId: 'music', status: null, query: '' }); notify('收藏已恢复');
     }}/>}
-    {metadataOpen && snapshot && query.categoryId === 'video' && !videoDiscogs && <AddCopy categoryId="video" onDiscogs={() => setVideoDiscogs(true)} categories={snapshot.categories} carriers={snapshot.carriers} onClose={() => { setMetadataOpen(false); setVideoDiscogs(false); }}
-      onSaved={async (id, categoryId) => { setSelectedId(id); setQuery({ categoryId, query: '', status: null }); notify('已加入收藏'); }}/>}
-    {metadataOpen && snapshot && (query.categoryId !== 'video' || videoDiscogs) && <DiscogsBrowser categoryId={query.categoryId} categories={snapshot.categories} carriers={snapshot.carriers}
-      onSettings={() => setSettingsPage('discogs')}
-      onClose={() => { setMetadataOpen(false); setVideoDiscogs(false); }}
-      onSaved={async (id, categoryId) => { setSelectedId(id); setQuery({ categoryId, query: '', status: null }); notify('已加入收藏'); }}/>}
     {settingsPage && <Settings initialPage={settingsPage} libraryAvailable={!!snapshot}
       onClose={() => setSettingsPage(null)}
-      onRestore={() => { setSettingsPage(null); setMetadataOpen(false); setRestoring(true); }}/>}
+      onRestore={() => { setSettingsPage(null); setRestoring(true); }}/>}
     <OpticalJumpPrompt value={opticalPrompt} onDismiss={() => setOpticalPrompt(null)} onConfirm={value => void jumpToOptical(value)}/>
     <div className={`toast${notice ? ' visible' : ''}`} role="status">{notice}</div>
     <MusicDock player={player}/>

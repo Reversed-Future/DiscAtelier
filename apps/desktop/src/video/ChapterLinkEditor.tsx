@@ -17,13 +17,13 @@ export function ChapterLinkEditor({ works, links, onChange }: { works: VideoWork
     if (!row.chapterLink) return;
     onChange(links.filter(link => link.bangumi !== row.chapterLink!.bangumi || link.tmdb !== row.chapterLink!.tmdb));
   }
+  if (!hasBangumi || !hasTmdb) return null;
   return <section className="video-chapter-links-editor">
     <div className="video-section-heading">
       <h3>章节关联</h3>
       <span className="setting-hint">自动按集数／日期对应；未对应的可手动选择</span>
     </div>
-    {!hasBangumi || !hasTmdb ? <p className="form-note">同时关联 Bangumi 与 TMDB 剧集后，才能对应章节。</p>
-      : !groups.length ? <p className="form-note">还没有可对应的章节。先在资料页读取并保存 Bangumi／TMDB 章节。</p>
+    {!groups.length ? <p className="form-note">还没有可对应的章节。请先补充 Bangumi 和 TMDB 的作品章节。</p>
       : !pending.length ? <p className="form-note">当前章节均已自动对应，没有需要手动处理的行。</p>
       : pending.map(group => <div className="video-chapter-link-group" key={group.key}>
         {!!group.label.trim() && <h4>{group.label}</h4>}

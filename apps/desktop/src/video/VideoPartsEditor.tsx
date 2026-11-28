@@ -6,6 +6,7 @@ import { assignPart, partsError, partWorks } from './parts';
 export function VideoPartsEditor({value,onChange}: {value:VideoMetadata;onChange(value:VideoMetadata):void}) {
   const parts = value.parts || [], works = videoWorks(value), error = partsError(value);
   const setParts = (next: VideoMetadata['parts']) => onChange({ ...value, parts: next });
+  if (works.length < 2 && !parts.length) return null;
   return <section className="video-parts-editor">
     <div className="video-section-heading video-parts-heading">
       <div className="video-parts-intro">
@@ -29,7 +30,7 @@ export function VideoPartsEditor({value,onChange}: {value:VideoMetadata;onChange
             <span>{index === 0 ? '第一张卡片' : '第二张卡片'}</span>
             <strong>{part.label || (index === 0 ? '前编' : '后编')}</strong>
           </header>
-          <label>卡片名称<input value={part.label} maxLength={60} onChange={e => setParts(parts.map(p => p.id === part.id ? { ...p, label: e.target.value } : p))}/></label>
+          <label>卡片名称<input aria-label={`第 ${index + 1} 张卡片名称`} value={part.label} maxLength={60} onChange={e => setParts(parts.map(p => p.id === part.id ? { ...p, label: e.target.value } : p))}/></label>
           <label>封面来源<Select label={`${part.label}封面来源`} value={part.coverSourceKey}
             options={[{ id: '', label: '请选择封面作品' }, ...partWorks(value, part).map(work => ({ id: workKey(work), label: sourceCaption(work, works) }))]}
             onChange={coverSourceKey => setParts(parts.map(p => p.id === part.id ? { ...p, coverSourceKey } : p))}/></label>

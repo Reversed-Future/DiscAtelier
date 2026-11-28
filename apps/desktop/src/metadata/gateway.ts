@@ -29,7 +29,7 @@ export const discogs = {
   completeContent: (editionId: string, id: number) => invoke<EditionContent>('discogs_complete_content', { editionId, id }),
   prepareImport: (id: number, categoryId: string, refreshCover = false) => invoke<ImportPreview>('discogs_prepare_import', { id, categoryId, refreshCover }),
   retryCover: (id: number) => invoke<string | null>('discogs_retry_cover', { id }),
-  importCopy: (request: ImportCopyRequest) => invoke<string>('discogs_import', { request }),
+  importCopy: (request: ImportCopyRequest, content: EditionContent | null = null) => invoke<string>('discogs_import', { request, content }),
   openRelease: (id: number) => invoke<void>('discogs_open_release', { id }),
   openTokenPage: () => invoke<void>('discogs_open_token_page'),
   configured: () => invoke<boolean>('discogs_configured'),

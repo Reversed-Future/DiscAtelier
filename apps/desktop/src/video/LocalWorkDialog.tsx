@@ -14,7 +14,7 @@ export function LocalWorkDialog({ onAdd, onClose }: { onAdd(work: VideoWork): vo
   }
   return <Modal title="本地新建来源" onClose={onClose} wide className="editor-panel">
     <div className="content-editor">
-      <p className="setting-hint">不访问 Bangumi 或 TMDB，建立一份只属于这份收藏的本地作品来源。建立后可在“资料”页补充章节、角色和图片。</p>
+      <p className="setting-hint">建立后可在「作品资料」中补充章节、角色和图片。</p>
       <div className="content-editor-scroll">
         <label>作品标题<input autoFocus value={title} placeholder="例如：夏日重现 · 本地资料" onChange={e => setTitle(e.target.value)}/></label>
       </div>

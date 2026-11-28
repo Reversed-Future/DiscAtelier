@@ -27,7 +27,7 @@ export const netease = {
   remove: (editionId: string, revision: number, id: number) => invoke<void>('netease_remove_album', { editionId, revision, id }),
   song: (id: number) => invoke<NeteaseSong>('netease_song_detail', { id }),
   links: (editionId: string) => invoke<SongLink[]>('netease_track_links', { editionId }),
-  createCopy: (request: import('../library/types').CreateCopy, albumId: number) => invoke<string>('netease_create_copy', { request, albumId }),
+  createCopy: (request: import('../library/types').CreateCopy, albumId: number | null, content: import('../metadata/gateway').EditionContent | null = null) => invoke<string>('netease_create_copy', { request, albumId, content }),
   search: (query: string, offset = 0) => invoke<AlbumSearchPage>('netease_search', { query, offset }),
   album: (id: number) => invoke<MusicSupplement>('netease_album', { id }),
   albumCover: (id: number) => invoke<string>('netease_album_cover', { id }),

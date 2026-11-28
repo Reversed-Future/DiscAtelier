@@ -14,28 +14,28 @@ try {
   await writeFile(bad, '{}');
   const p = await h.start();
   await p.locator('.topbar').getByRole('button', { name: '添加收藏', exact: true }).click();
-  await p.getByRole('button', { name: '手动录入', exact: true }).click();
+  await p.getByRole('button', {name: '模型', exact: true}).click();
   async function open(instruction) {
-    await p.locator('.model-file-actions button').first().click();
+    await p.locator('.model-preview-empty, .model-action-button[title]').click();
     console.log(instruction);
   }
-  const title = p.locator('.model-file-title');
+  const title = p.locator('.model-action-button[title]');
   await open('取消文件选择');
-  await h.expect(p.getByRole('button', { name: '上传模型', exact: true })).toBeEnabled({ timeout: 300000 });
+  await h.expect(p.locator('.model-preview-empty')).toBeEnabled({ timeout: 300000 });
   checks.push('取消后恢复表单');
   await open(`选择 ${hinge}`);
-  await h.expect(title).toHaveText('翻盖纪念盒', { timeout: 300000 });
+  await h.expect(title).toHaveAttribute('title', '翻盖纪念盒', { timeout: 300000 });
   checks.push('中文与空格路径选择成功');
   await open(`选择 ${bad}`);
   await h.expect(p.locator('.model-field [role="alert"]')).toBeVisible({ timeout: 300000 });
-  await h.expect(title).toHaveText('翻盖纪念盒');
+  await h.expect(title).toHaveAttribute('title', '翻盖纪念盒');
   checks.push('损坏文件不覆盖原选择');
   await open(`选择 ${drawer}`);
-  await h.expect(title).toHaveText('抽屉收藏盒', { timeout: 300000 });
+  await h.expect(title).toHaveAttribute('title', '抽屉收藏盒', { timeout: 300000 });
   checks.push('失败后重试并更换成功');
   await open('取消更换');
   await h.expect(p.getByRole('button', { name: '更换模型', exact: true })).toBeEnabled({ timeout: 300000 });
-  await h.expect(title).toHaveText('抽屉收藏盒');
+  await h.expect(title).toHaveAttribute('title', '抽屉收藏盒');
   await p.keyboard.press('Escape');
   const list = await p.evaluate(() => window.__TAURI_INTERNALS__.invoke('library_list', { query: { categoryId: 'music', status: null, query: '' } }));
   assert.equal(list.copies.length, 0);

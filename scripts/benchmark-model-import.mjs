@@ -35,11 +35,15 @@ for (let trial = 0; trial < 3; trial++) {
       const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: 'input[aria-label="模型文件"]' });
       await cdp.send('DOM.setFileInputFiles', { nodeId, files: [file] });
       await cdp.detach();
-    } else await p.getByRole('button', { name: '上传模型', exact: true }).click();
-    await h.expect(p.locator('.model-file-title')).toHaveText('24时', { timeout: 120000 });
+      await h.expect(p.locator('.model-file-title')).toHaveText('24时', { timeout: 120000 });
+    } else {
+      await p.getByRole('button', { name: '模型', exact: true }).click();
+      await p.locator('.model-preview-empty').click();
+      await h.expect(p.locator('.model-action-button[title]')).toHaveAttribute('title', '24时', { timeout: 120000 });
+    }
     const ready = Date.now();
-    await p.getByRole('button', { name: '保存版本', exact: true }).click();
-    await h.expect(p.getByRole('dialog', { name: '编辑版本', exact: true })).not.toBeVisible({ timeout: 120000 });
+    await p.getByRole('button', { name: mode === 'before' ? '保存版本' : '保存更改', exact: true }).click();
+    await h.expect(p.getByRole('dialog', { name: mode === 'before' ? '编辑版本' : '编辑音乐版本', exact: true })).not.toBeVisible({ timeout: 120000 });
     const saved = Date.now();
     await h.expect(p.locator('.record-sleeve .model-view[data-loaded="true"]')).toBeVisible({ timeout: 60000 });
     await p.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));

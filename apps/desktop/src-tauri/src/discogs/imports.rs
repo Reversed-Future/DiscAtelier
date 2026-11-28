@@ -108,7 +108,9 @@ pub async fn discogs_prepare_import(
     let (cover, cover_error) = if existing.is_none() || refresh_cover.unwrap_or(false) {
         let session = session_cover_cookies(&window);
         match run(state.inner().clone(), move |service| {
-            service.provider.cover_with_cookies(&images, session.as_deref())
+            service
+                .provider
+                .cover_with_cookies(&images, session.as_deref())
         })
         .await
         {
@@ -145,7 +147,9 @@ pub async fn discogs_retry_cover(
             .map(|snapshot| snapshot.release.images.clone())
             .ok_or_else(|| AppError::new("expired", "资料已过期，请重新查询这个发行。"))?;
         let session = session_cover_cookies(&window);
-        service.provider.cover_with_cookies(&images, session.as_deref())
+        service
+            .provider
+            .cover_with_cookies(&images, session.as_deref())
     })
     .await
 }
@@ -156,6 +160,7 @@ pub async fn discogs_import(
     library: tauri::State<'_, LibraryState>,
     netease: tauri::State<'_, Arc<crate::netease::NeteaseState>>,
     request: ImportCopyRequest,
+    content: Option<EditionContent>,
 ) -> Result<String, AppError> {
     let supplement = request
         .netease_album_id
@@ -169,7 +174,11 @@ pub async fn discogs_import(
             .ok_or_else(|| AppError::new("expired", "资料已过期，请返回资料页重新查询。"))?;
         Ok(ImportCopy {
             supplement,
-            content: prepared.content.clone(),
+            content: if request.existing_edition_id.is_none() {
+                content.unwrap_or_else(|| prepared.content.clone())
+            } else {
+                prepared.content.clone()
+            },
             request,
             source: prepared.source.clone(),
             identifiers: prepared.identifiers.clone(),

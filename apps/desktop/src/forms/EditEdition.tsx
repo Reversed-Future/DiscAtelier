@@ -1,8 +1,8 @@
-import { partsError } from '../video/parts';
+import { EditionIdentity } from './EditionIdentity';
+import { EditionDetails, EditionTabs } from './EditionPanels';
+import { editionIssue, useEditionNavigation } from './editionNavigation';
 import { video, emptyVideo } from '../video/gateway';
-import { VideoDiscEditor } from '../video/VideoDiscEditor';
 import { VideoFields } from '../video/VideoFields';
-import { VideoSourcesEditor } from '../video/VideoSourcesEditor';
 import { leave } from '../ui/motion';
 import { measureAsync, measureSync } from '../models/timing';
 import { useEffect, useRef, useState } from 'react';
@@ -14,7 +14,6 @@ import { useModelDraft } from '../models/useModelDraft';
 import { ModelField } from '../models/ModelField';
 import { modelChangeRequest } from '../models/assets';
 import { EditionFields } from './EditionFields';
-import { ContentEditor } from './ContentEditor';
 import { DiscogsReplacement } from './DiscogsReplacement';
 import { discogs, type ImportPreview } from '../metadata/gateway';
 import { useContentDraft } from './useContentDraft';
@@ -24,7 +23,8 @@ import { netease, type LinkedMusicAlbum } from '../integrations/gateway';
 export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   item: LibraryCopy; categories: Descriptor[]; carriers: Descriptor[]; onClose(): void; onSaved(categoryId: string): void;
 }) {
-  const [page, setPage] = useState<'edition' | 'discs' | 'content' | 'related' | 'model'>('edition');
+  const navigation = useEditionNavigation();
+  const page = navigation.page;
   const [sourceOpen, setSourceOpen] = useState(false);
   const [sourceDraft, setSourceDraft] = useState<ImportPreview | null>(null);
   const [videoDraft, setVideoDraft] = useState(emptyVideo);
@@ -49,18 +49,16 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
   const [modelActionsHost, setModelActionsHost] = useState<HTMLDivElement | null>(null);
   const [error, setError] = useState('');
   const attempt = useRef({ payload: '', requestId: crypto.randomUUID() });
-  return <Modal title="编辑版本" onClose={onClose} busy={busy || reading} wide className="editor-panel">
-    <nav className="detail-tabs editor-page-tabs" aria-label="编辑内容">
-      <button type="button" className={page === 'edition' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('edition')}>版本</button>
-      <button type="button" className={page === 'content' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('content')}>资料</button>
-      {edition.categoryId === 'video' && <button type="button" className={page === 'discs' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('discs')}>实体碟片</button>}
-      {edition.categoryId === 'video' && <button type="button" className={page === 'related' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('related')}>关联</button>}
-      <button type="button" className={page === 'model' ? 'active' : ''} disabled={busy || reading} onClick={() => setPage('model')}>模型</button>
-    </nav>
-    <form className="editor-form" noValidate onSubmit={async event => {
+  const locked = busy || reading || !videoLoaded;
+  const isVideo = edition.categoryId === 'video';
+  const identity = <EditionFields value={edition} onChange={setEdition} categories={categories}/>;
+  return <Modal title={isVideo ? '编辑影片版本' : '编辑音乐版本'} onClose={onClose} busy={busy || reading} wide className="editor-panel">
+    <EditionTabs page={page} video={isVideo} disabled={locked} onChange={next => { setError(''); navigation.navigate(next); }}/>
+    <form className="editor-form" ref={navigation.form} onChange={navigation.clear} noValidate onSubmit={async event => {
       const dialog = event.currentTarget.closest('dialog');
       event.preventDefault(); if (busy || reading || !videoLoaded || content.pending) return;
-      if (edition.categoryId === 'video' && partsError(videoDraft)) {setError(partsError(videoDraft));return;}
+      const issue = editionIssue(edition, carriers, videoDraft);
+      if (issue) { navigation.report(issue); return; }
       const payload = measureSync('draft_encode', () => JSON.stringify({ edition, cover, model, videoDraft, content: content.changed, sourceToken: sourceDraft?.token }));
       if (payload !== attempt.current.payload) attempt.current = { payload, requestId: crypto.randomUUID() };
       setBusy(true); setError('');
@@ -71,38 +69,26 @@ export function EditEdition({ item, categories, carriers, onClose, onSaved }: {
         dialog?.setAttribute('data-closing', 'true'); await leave(dialog); onClose();
       } catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
     }}>
+      <fieldset key={page} disabled={locked}>
       {page === 'edition' ? <>
-      {edition.categoryId !== 'video' && <div className="metadata-toolbar editor-source-toolbar">
-        <button type="button" className="text-button" disabled={busy || reading} onClick={() => setSourceOpen(true)}>更换 Discogs 资料</button>
-        {sourceDraft && <span className="form-note">已选择 Discogs #{sourceDraft.source.externalId} · 保存后生效</span>}
-      </div>}
-      {item.editionCopyCount > 1 && <p className="form-note">本版本共 {item.editionCopyCount} 套，资料、封面与模型会同步更新。</p>}
-      <fieldset disabled={busy || reading || !videoLoaded}>
-        {edition.categoryId === 'video' && videoLoaded && <VideoFields value={videoDraft} onChange={setVideoDraft} edition={edition} onEdition={setEdition} onCover={setCover} cover={cover} assetId={item.coverAssetId} onBusy={setReading}/>}
+        {item.editionCopyCount > 1 && <p className="form-note">本版本共 {item.editionCopyCount} 套，资料、封面与模型会同步更新。</p>}
+        {isVideo ? <VideoFields value={videoDraft} onChange={setVideoDraft} edition={edition} onEdition={setEdition} onCover={setCover} cover={cover} assetId={item.coverAssetId} onBusy={setReading}>{identity}</VideoFields>
+        : <EditionIdentity artwork={<>
         {albums.length > 1 && <label className="cover-album-choice">网易云封面来源<Select label="网易云封面来源" value={coverAlbum} options={albums.map(a => ({id:String(a.album.albumId),label:a.album.title}))} onChange={setCoverAlbum}/></label>}
-        {edition.categoryId !== 'video' && <CoverField edition={edition} assetId={item.coverAssetId} value={cover} onChange={setCover} onBusy={setReading}
-          remoteCover={item.edition.categoryId === 'music' ? { label: '使用网易云封面', load: async () => {
-            const album = albums.find(a => String(a.album.albumId) === coverAlbum)?.album ?? (await netease.albums(item.editionId))[0]?.album;
-            if (!album) throw new Error('请先在网易云资料中关联专辑。');
-            return netease.albumCover(album.albumId);
-          } } : videoDraft.work ? { label: '使用作品封面', load: () => video.cover(videoDraft.work!) } : undefined}/>}
-        <EditionFields value={edition} onChange={setEdition} categories={categories} carriers={carriers} onDiscs={edition.categoryId === 'video' ? () => setPage('discs') : undefined}/>
+        <CoverField edition={edition} assetId={item.coverAssetId} value={cover} onChange={setCover} onBusy={setReading}
+          remoteCover={coverAlbum ? {label: '使用网易云封面', load: () => netease.albumCover(Number(coverAlbum))} : undefined}/>
+        <div className="edition-import-tools"><h3>导入资料</h3>
+          <button type="button" className="text-button" onClick={() => setSourceOpen(true)}>更换 Discogs 资料</button>
+          {sourceDraft && <span className="form-note">Discogs #{sourceDraft.source.externalId}</span>}
+        </div></>}>{identity}</EditionIdentity>}
+      </> : page === 'discs' || page === 'content' ? <EditionDetails page={page} edition={edition} carriers={carriers} onEdition={setEdition}
+        content={content.value} onContent={content.change} metadata={videoDraft} onMetadata={setVideoDraft} onBusy={setReading} focusDisc={navigation.target.disc} focusWork={navigation.target.work}/>
+        : <ModelField value={model} title={item.modelTitle} assetId={item.modelAssetId} actionsHost={modelActionsHost} onChange={setModel} onBusy={setReading} disabled={locked}/>}
       </fieldset>
-      </> : page === 'discs' ? <fieldset disabled={busy || reading || !videoLoaded}>
-        {content.value ? <VideoDiscEditor edition={edition} carriers={carriers} content={content.value} onEdition={setEdition} onContent={content.change}/> : !content.error && <p className="utility-copy">正在读取实体碟片…</p>}
-      </fieldset> : page === 'related' ? <fieldset disabled={busy || reading || !videoLoaded}>
-        <VideoSourcesEditor value={videoDraft} initialQuery={edition.title} onChange={setVideoDraft}
-          onFirstWork={work => { if (!edition.title.trim()) setEdition(current => ({ ...current, title: work.title })); }}/>
-      </fieldset> : page === 'model' ? <fieldset disabled={busy || reading}>
-        <ModelField value={model} title={item.modelTitle} assetId={item.modelAssetId} actionsHost={modelActionsHost} onChange={setModel} onBusy={setReading} disabled={busy || reading}/>
-      </fieldset> : <fieldset disabled={busy || reading || !videoLoaded}>
-        <ContentEditor edition={edition} content={content.value} onContent={content.change}
-          metadata={videoDraft} onMetadata={setVideoDraft} onBusy={setReading} onManageSources={() => setPage('related')}/>
-      </fieldset>}
-      <p className="form-error" role="alert">{error || content.error}</p>
-      <footer className="form-footer"><div className="model-footer-actions" ref={setModelActionsHost}/><button type="submit" className="solid-button" disabled={busy || reading || !videoLoaded || content.pending}>{busy ? '保存中' : page === 'content' ? '保存资料' : page === 'related' ? '保存关联' : '保存版本'}</button></footer>
+      <p id="edition-validation" className="form-error" role="alert">{navigation.issue?.message || error || content.error}</p>
+      <footer className="form-footer"><div className="model-footer-actions" ref={setModelActionsHost}/><button type="submit" className="solid-button" disabled={busy || reading || !videoLoaded || content.pending}>{busy ? '保存中' : '保存更改'}</button></footer>
     </form>
-    {sourceOpen && edition.categoryId !== 'video' && <DiscogsReplacement editionId={item.editionId} edition={edition} categories={categories} carriers={carriers}
+    {sourceOpen && edition.categoryId !== 'video' && <DiscogsReplacement editionId={item.editionId} edition={edition}
       onClose={() => setSourceOpen(false)} onApply={value => {
         setEdition(value.preview.edition); content.change(value.content); setSourceDraft(value.preview);
         if (value.preview.cover) setCover({ action: 'replace', dataUrl: value.preview.cover });

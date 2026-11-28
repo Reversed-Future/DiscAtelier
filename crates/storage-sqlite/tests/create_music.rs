@@ -107,3 +107,39 @@ fn manual_import_rejects_invalid_supplement_and_existing_edition() {
     assert!(service.create_music(input, album()).is_err());
     assert_eq!(service.list(query()).unwrap().copies.len(), 1);
 }
+
+#[test]
+fn music_content_is_saved_with_the_copy_and_invalid_disc_rolls_back() {
+    let mut service = LibraryService::new(SqliteLibrary::open(&directory()).unwrap());
+    let input = request();
+    let mut content: EditionContent = serde_json::from_value(serde_json::json!({
+        "genres": [], "styles": [], "tracks": [{"title":"Intro","position":"1","duration":"","type_":"track","disc_number":2}]
+    })).unwrap();
+    assert!(service
+        .create_music_with_content(input.clone(), None, Some(content.clone()))
+        .is_err());
+    assert!(service.list(query()).unwrap().copies.is_empty());
+    content.tracks[0].disc_number = Some(1);
+    let id = service
+        .create_music_with_content(input.clone(), None, Some(content.clone()))
+        .unwrap();
+    assert_eq!(
+        service
+            .create_music_with_content(input.clone(), None, Some(content.clone()))
+            .unwrap(),
+        id
+    );
+    let edition = &service.list(query()).unwrap().copies[0].edition_id;
+    assert_eq!(
+        service.edition_content(edition).unwrap().unwrap().tracks[0].title,
+        "Intro"
+    );
+    content.notes = "changed".into();
+    assert_eq!(
+        service
+            .create_music_with_content(input, None, Some(content))
+            .unwrap_err()
+            .code,
+        "conflict"
+    );
+}

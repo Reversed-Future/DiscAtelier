@@ -11,20 +11,26 @@ export function partView(value: VideoMetadata | null, part?: VideoPart): VideoMe
   const [work, ...additionalWorks] = partWorks(value, part);
   return {...value, work: work || null, additionalWorks, parts: []};
 }
-export function partsError(value: VideoMetadata): string {
-  if (!value.parts?.length) return '';
-  if (value.parts.length !== 2) return '请设置前后两编。';
+export function partIssue(value: VideoMetadata): { message: string; selector: string } | null {
+  if (!value.parts?.length) return null;
+  const assignments = '.video-part-assignment button[role=combobox]';
+  if (value.parts.length !== 2) return { message: '请设置前后两编。', selector: '.video-parts-heading .video-heading-actions button:last-child' };
   const keys = videoWorks(value).map(workKey), seen = new Set<string>();
-  for (const part of value.parts) {
-    if (!part.label.trim()) return '请填写分编名称。';
-    if (!part.sourceKeys.length) return `请为「${part.label}」关联至少一份作品资料。`;
-    if (!part.sourceKeys.includes(part.coverSourceKey)) return `请选择「${part.label}」的封面来源。`;
+  for (const [index, part] of value.parts.entries()) {
+    const card = `.video-part-editor:nth-child(${index + 1})`;
+    if (!part.label.trim()) return { message: '请填写分编名称。', selector: card + ' input' };
+    if (!part.sourceKeys.length) return { message: `请为「${part.label}」关联至少一份作品资料。`, selector: assignments };
+    if (!part.sourceKeys.includes(part.coverSourceKey)) return { message: `请选择「${part.label}」的封面来源。`, selector: card + ' button[role=combobox]' };
     for (const key of part.sourceKeys) {
-      if (!keys.includes(key) || seen.has(key)) return '每份作品资料只能属于一个分编。';
+      if (!keys.includes(key) || seen.has(key)) return { message: '每份作品资料只能属于一个分编。', selector: assignments };
       seen.add(key);
     }
   }
-  return seen.size === keys.length ? '' : '请将所有作品资料分配到前编或后编。';
+  const missing = keys.findIndex(key => !seen.has(key));
+  return missing < 0 ? null : { message: '请将所有作品资料分配到前编或后编。', selector: `.video-part-assignment:nth-of-type(${missing + 1}) button` };
+}
+export function partsError(value: VideoMetadata): string {
+  return partIssue(value)?.message || '';
 }
 export function assignPart(value: VideoMetadata, key: string, id: string): VideoMetadata {
   return {...value, parts: value.parts?.map(part => {

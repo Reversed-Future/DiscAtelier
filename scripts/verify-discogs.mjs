@@ -7,6 +7,7 @@ const { expect, directory, errors } = harness;
 let page;
 async function open() {
   await page.locator('.topbar').getByRole('button', { name: '添加收藏', exact: true }).click();
+  await page.getByRole('button', { name: '从 Discogs 导入', exact: true }).click();
   return page.getByRole('dialog', { name: 'Discogs', exact: true });
 }
 try {
@@ -57,10 +58,10 @@ try {
   await dialog.getByRole('button', { name: '查询', exact: true }).click();
   await expect(dialog.locator('.release-preview h3')).toHaveText('Never Gonna Give You Up', { timeout: 25000 });
   await dialog.getByRole('button', { name: '选择此版本', exact: true }).click();
-  const form = page.getByRole('dialog', { name: '添加收藏', exact: true });
+  const form = page.getByRole('dialog', { name: '添加音乐版本', exact: true });
   await expect(form.getByRole('textbox', { name: '品番', exact: true })).toHaveValue('PB 41447');
   await expect(form.locator('.cover-preview img')).toHaveAttribute('src', /^data:image\/jpeg;base64,/, { timeout: 25000 });
-  await form.getByRole('button', { name: '下一步', exact: true }).click();
+  await form.getByRole('button', { name: '填写购入信息', exact: true }).click();
   await form.getByRole('button', { name: '加入收藏', exact: true }).click();
   await expect(page.locator('.record-caption h1')).toHaveText('Never Gonna Give You Up');
   await harness.stop(); page = await harness.start();

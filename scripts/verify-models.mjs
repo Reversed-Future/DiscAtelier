@@ -21,14 +21,15 @@ async function inspect(title) {
 async function edit(title) {
   await inspect(title);
   await page.getByRole('button', { name: '编辑版本', exact: true }).click();
+  await page.getByRole('button', { name: '模型', exact: true }).click();
 }
 async function selectModel(path) {
   await writeFile(`${directory}/model-selection.txt`, path);
-  await page.locator('.model-file-actions button').first().click();
+  await page.locator('.model-preview-empty, .model-action-button[title]').click();
 }
 async function saveEdition() {
-  await page.getByRole('button', { name: '保存版本', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: '编辑版本', exact: true })).not.toBeVisible({ timeout: 60000 });
+  await page.getByRole('button', { name: '保存更改', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '编辑音乐版本', exact: true })).not.toBeVisible({ timeout: 60000 });
 }
 async function loaded() {
   await expect(page.locator('.record-sleeve .model-view[data-loaded="true"]')).toBeVisible({ timeout: 30000 });
@@ -38,13 +39,13 @@ async function shot(name) { await page.screenshot({ path: `${directory}/${name}.
 try {
   page = await harness.start();
   await page.locator('.topbar').getByRole('button', { name: '添加收藏', exact: true }).click();
-  await page.getByRole('button', { name: '手动录入', exact: true }).click();
-  const form = page.getByRole('dialog', { name: '添加收藏', exact: true });
+  const form = page.getByRole('dialog', { name: '添加音乐版本', exact: true });
   await form.getByRole('textbox', { name: '名称', exact: true }).fill('模型测试');
   await form.getByLabel('封面文件', { exact: true }).setInputFiles(fileURLToPath(new URL('../apps/desktop/src-tauri/icons/32x32.png', import.meta.url)));
+  await form.getByRole('button', { name: '模型', exact: true }).click();
   await selectModel(hinge);
-  await expect(form.locator('.model-file-title')).toHaveText('翻盖纪念盒');
-  await form.getByRole('button', { name: '下一步', exact: true }).click();
+  await expect(form.locator('.model-action-button[title]')).toHaveAttribute('title', '翻盖纪念盒');
+  await form.getByRole('button', { name: '填写购入信息', exact: true }).click();
   await form.getByRole('button', { name: '加入收藏', exact: true }).click();
   await expect(form).not.toBeVisible();
   await loaded(); await shot('shelf-hinge');
@@ -68,7 +69,7 @@ try {
   const backup = await invoke('library_backup');
   await edit('模型测试');
   await selectModel(drawer);
-  await expect(page.locator('.model-file-title')).toHaveText('抽屉收藏盒');
+  await expect(page.locator('.model-action-button[title]')).toHaveAttribute('title', '抽屉收藏盒');
   await saveEdition(); await loaded();
   assert.notEqual((await list())[0].modelAssetId, first.modelAssetId);
   await edit('模型测试');
@@ -104,9 +105,9 @@ try {
   await edit('模型测试');
   const largeStart = Date.now();
   await selectModel(`${packages}/jony-j-24.ateliermodel`);
-  await expect(page.locator('.model-file-title')).toHaveText('24时', { timeout: 30000 });
+  await expect(page.locator('.model-action-button[title]')).toHaveAttribute('title', '24时', { timeout: 30000 });
   console.log(`large model validated: ${Date.now() - largeStart} ms`);
-  await expect(page.getByRole('button', { name: '保存版本', exact: true })).toBeEnabled({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: '保存更改', exact: true })).toBeEnabled({ timeout: 30000 });
   await saveEdition(); console.log(`large model saved: ${Date.now() - largeStart} ms`);
   await loaded(); await shot('shelf-album');
   await inspect('模型测试'); await shot('inspection-album');

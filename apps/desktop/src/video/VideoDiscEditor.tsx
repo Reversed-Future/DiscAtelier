@@ -10,13 +10,13 @@ import { Select } from '../ui/Select';
 import { changeVideoMedia, videoDiscPages } from './physicalContents';
 
 interface Props {
-  edition: EditionDraft; carriers: Descriptor[]; content: EditionContent;
+  focusDisc?: number; edition: EditionDraft; carriers: Descriptor[]; content: EditionContent;
   onEdition(value: EditionDraft): void; onContent(value: EditionContent): void;
 }
 
-export function VideoDiscEditor({ edition, carriers, content, onEdition, onContent }: Props) {
+export function VideoDiscEditor({ edition, carriers, content, onEdition, onContent, focusDisc }: Props) {
   const [importing, setImporting] = useState(false);
-  const [active, setActive] = useState<number | null>(1);
+  const [active, setActive] = useState<number | null>(focusDisc ?? 1);
   const pages = videoDiscPages(content.tracks, edition);
   const number = active === null && pages.some(page => page.number === undefined) ? null : Math.min(active ?? 1, edition.media.length);
   const medium = number ? edition.media[number - 1] : null;

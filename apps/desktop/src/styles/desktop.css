@@ -151,7 +151,7 @@ input:focus, input:focus-visible, textarea:focus, textarea:focus-visible { outli
   .form-row { flex-wrap: wrap; }
   .form-row label { width: 100%; }
   .medium-row { grid-template-columns: 18px minmax(65px, 90px) minmax(0, 1fr) 28px; gap: 6px; }
-  .panel-dialog { padding: 20px; }
+  .panel-dialog { --panel-padding: 20px; padding: var(--panel-padding); }
   .metadata-search { grid-template-columns: 90px minmax(0, 1fr); }
   .metadata-search .solid-button { grid-column: 2; justify-self: end; }
 }

@@ -68,7 +68,7 @@
 @media (max-width: 650px) { .window-modal > .panel-dialog.confirm-dialog { width: calc(100vw - 28px); } }
 @media (prefers-reduced-motion: reduce) { .window-modal:has(> .panel-dialog.confirm-dialog)::backdrop { transition: none; } }
 #object-status { color: var(--muted); font-size: 10px; }
-.panel-dialog { width: 420px; max-width: calc(100vw - 36px); max-height: 88vh; border: 1px solid var(--line); border-radius: 3px; padding: 30px; color: var(--ink); background: var(--surface); box-shadow: 0 25px 100px #00000066; }
+.panel-dialog { --panel-padding: 30px; width: 420px; max-width: calc(100vw - 36px); max-height: 88vh; border: 1px solid var(--line); border-radius: 3px; padding: var(--panel-padding); color: var(--ink); background: var(--surface); box-shadow: 0 25px 100px #00000066; }
 .panel-dialog::backdrop { background: #00000070; }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
 .panel-heading h2 { margin: 0; font-size: 20px; font-weight: 400; }

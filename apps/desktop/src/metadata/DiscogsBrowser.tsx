@@ -4,14 +4,10 @@ import { Select } from '../ui/Select';
 import { errorMessage } from '../library/gateway';
 import { discogs, type ImportPreview, type MetadataRelease, type MetadataResults, type MetadataSearch } from './gateway';
 import { ReleasePreview } from './ReleasePreview';
-import { AddCopy } from '../forms/AddCopy';
-import type { Descriptor } from '../library/types';
 import { enter } from '../ui/motion';
 import { SourceLink } from './SourceLink';
 import { SearchCover } from './SearchCover';
 import { MobileReceive } from '../mobile/MobileReceive';
-import { NeteaseBrowser } from '../integrations/NeteaseBrowser';
-import type { MusicSupplement } from '../integrations/gateway';
 
 type SearchMode = 'barcode' | 'catalog' | 'keyword' | 'release';
 function detectMode(value: string): SearchMode {
@@ -22,23 +18,19 @@ function detectMode(value: string): SearchMode {
   return 'keyword';
 }
 
-export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onClose, onSettings, onSelect, initialQuery = '' }: {
-  categoryId: string; categories: Descriptor[]; carriers: Descriptor[];
-  onSaved(id: string, categoryId: string): Promise<void>; onClose(): void; onSettings(): void;
-  onSelect?(preview: ImportPreview, release: MetadataRelease): void; initialQuery?: string;
+export function DiscogsBrowser({ categoryId, replacing, onClose, onSettings, onSelect, initialQuery = '' }: {
+  categoryId: string; replacing: boolean;
+  onClose(): void; onSettings(): void;
+  onSelect(preview: ImportPreview, release: MetadataRelease): void; initialQuery?: string;
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [mode, setMode] = useState<'auto' | SearchMode>('auto');
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [neteaseOpen, setNeteaseOpen] = useState(false);
-  const [neteaseSeed, setNeteaseSeed] = useState<MusicSupplement | null>(null);
-  const [manualOpen, setManualOpen] = useState(false);
   const [submitted, setSubmitted] = useState<MetadataSearch | null>(null);
   const [results, setResults] = useState<MetadataResults | null>(null);
   const [release, setRelease] = useState<MetadataRelease | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [imported, setImported] = useState<ImportPreview | null>(null);
   const content = useRef<HTMLDivElement>(null);
   const resultList = useRef<HTMLDivElement>(null);
   const expiry = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -48,7 +40,7 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
     mounted.current = true;
     return () => { mounted.current = false; clearTimeout(expiry.current); clearTimeout(releaseExpiry.current); };
   }, []);
-  useEffect(() => { enter(content.current, 0); }, [release, results, imported]);
+  useEffect(() => { enter(content.current, 0); }, [release, results]);
   useEffect(() => { resultList.current?.scrollTo(0, 0); }, [results]);
   function fresh(scope: 'results' | 'release') {
     if (!mounted.current) return;
@@ -71,18 +63,12 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
     try { setResults(await discogs.search(request)); setSubmitted(request); fresh('results'); }
     catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
   }
-  if (imported) return <AddCopy categoryId={categoryId} categories={categories} carriers={carriers} imported={imported}
-    importTracks={release?.tracklist || []}
-    onBack={() => setImported(null)} onClose={onClose} onSaved={onSaved}/>;
-  if (neteaseSeed) return <AddCopy categoryId={categoryId} categories={categories} carriers={carriers} initialMusic={neteaseSeed}
-    onBack={() => setNeteaseSeed(null)} onClose={onClose} onSaved={onSaved}/>;
   return <><Modal title="Discogs" onClose={onClose} wide busy={busy} className="metadata-browser-panel">
     <div className="metadata-toolbar">
+      <button type="button" disabled={busy} className="text-button" onClick={onClose}>返回录入</button>
       {release ? <button type="button" className="text-button" disabled={busy} onClick={() => setRelease(null)}>返回搜索</button> :
         <button type="button" className="text-button" disabled={busy} onClick={onSettings}>设置</button>}
-      {!release && !onSelect && <div className="metadata-toolbar-actions">
-        <button type="button" className="text-button" disabled={busy} onClick={() => setManualOpen(true)}>手动录入</button>
-        {categoryId === 'music' && <button type="button" className="text-button" disabled={busy} onClick={() => setNeteaseOpen(true)}>从网易云添加</button>}
+      {!release && <div className="metadata-toolbar-actions">
         <button type="button" className="text-button" disabled={busy} onClick={() => setMobileOpen(true)}>手机扫条码</button>
       </div>}
     </div>
@@ -106,7 +92,7 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
         <footer className="form-footer release-footer"><SourceLink id={release.id} button/>
           <button type="button" className="solid-button" disabled={busy} onClick={async () => {
           setBusy(true); setError('');
-          try { const preview = await discogs.prepareImport(release.id, categoryId, !!onSelect); if (onSelect) onSelect(preview, release); else setImported(preview); }
+          try { const preview = await discogs.prepareImport(release.id, categoryId, replacing); onSelect(preview, release); }
           catch (cause) { setError(errorMessage(cause)); } finally { setBusy(false); }
         }}>{busy ? '读取中' : '选择此版本'}</button></footer>
       </> : results && <>
@@ -127,7 +113,5 @@ export function DiscogsBrowser({ categoryId, categories, carriers, onSaved, onCl
     </>
   </Modal>{mobileOpen && <MobileReceive mode="barcode" onClose={() => setMobileOpen(false)} onReceive={value => {
     if (value.kind === 'barcode') { setQuery(value.value); setError(''); }
-  }}/>}{neteaseOpen && <NeteaseBrowser initialQuery={`${query}`.trim()} initialAlbum={null} onClose={() => setNeteaseOpen(false)}
-    onConfirm={async album => { setNeteaseOpen(false); setNeteaseSeed(album); }} confirmLabel="使用此资料"/>}{manualOpen && <AddCopy categoryId={categoryId} categories={categories} carriers={carriers}
-      onBack={() => setManualOpen(false)} onClose={onClose} onSaved={onSaved}/>}</>;
+  }}/>}</>;
 }

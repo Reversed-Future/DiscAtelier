@@ -1,15 +1,22 @@
 use crate::{db_error, SqliteLibrary};
 use discatelier_application::ExtensionRepository;
-use discatelier_contracts::{validate_supplement, AppError, MusicSupplement};
+use discatelier_contracts::{validate_supplement, AppError, EditionContent, MusicSupplement};
 use rusqlite::{params, OptionalExtension};
 
 impl ExtensionRepository for SqliteLibrary {
     fn create_music(
         &mut self,
         request: &discatelier_contracts::CreateCopy,
-        album: &MusicSupplement,
+        album: Option<&MusicSupplement>,
+        content: Option<&EditionContent>,
     ) -> Result<String, AppError> {
-        crate::create_music::create(&mut self.connection, request, album, &self.prepared_models)
+        crate::create_music::create(
+            &mut self.connection,
+            request,
+            album,
+            content,
+            &self.prepared_models,
+        )
     }
     fn supplement(&self, edition: &str) -> Result<Option<MusicSupplement>, AppError> {
         Ok(crate::music_albums::read(&self.connection, edition)?

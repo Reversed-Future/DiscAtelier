@@ -1,15 +1,15 @@
 use crate::{db_error, writes};
-use discatelier_contracts::{validate_supplement, AppError, CreateCopy, MusicSupplement};
+use discatelier_contracts::{AppError, CreateCopy, EditionContent, MusicSupplement};
 use rusqlite::{params, Connection, TransactionBehavior};
 use sha2::{Digest, Sha256};
 
 pub fn create(
     connection: &mut Connection,
     request: &CreateCopy,
-    album: &MusicSupplement,
+    album: Option<&MusicSupplement>,
+    content: Option<&EditionContent>,
     prepared: &crate::models::prepared::PreparedModels,
 ) -> Result<String, AppError> {
-    validate_supplement(album)?;
     if request.existing_edition_id.is_some()
         || request
             .edition
@@ -21,8 +21,11 @@ pub fn create(
             "网易云资料只能用于新增音乐版本。",
         ));
     }
-    let encoded = serde_json::to_vec(&(request, album))
-        .map_err(|_| AppError::new("validation", "数据编码失败。"))?;
+    let encoded = match content {
+        None => serde_json::to_vec(&(request, album)),
+        Some(content) => serde_json::to_vec(&(request, album, content)),
+    }
+    .map_err(|_| AppError::new("validation", "数据编码失败。"))?;
     let payload = format!("create-music:{:x}", Sha256::digest(encoded));
     let transaction = connection
         .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -36,14 +39,19 @@ pub fn create(
             row.get(0)
         })
         .map_err(db_error)?;
-    let data = serde_json::to_string(album)
-        .map_err(|_| AppError::new("storage", "网易云资料不可保存。"))?;
-    transaction
-        .execute(
-            "INSERT INTO edition_supplements(edition_id,payload) VALUES(?1,?2)",
-            params![edition, data],
-        )
-        .map_err(db_error)?;
+    if let Some(content) = content {
+        crate::content::replace(&transaction, &edition, content)?;
+    }
+    if let Some(album) = album {
+        let data = serde_json::to_string(album)
+            .map_err(|_| AppError::new("storage", "网易云资料不可保存。"))?;
+        transaction
+            .execute(
+                "INSERT INTO edition_supplements(edition_id,payload) VALUES(?1,?2)",
+                params![edition, data],
+            )
+            .map_err(db_error)?;
+    }
     writes::save_receipt(&transaction, &request.request_id, &payload, &id)?;
     transaction.commit().map_err(db_error)?;
     Ok(id)

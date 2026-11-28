@@ -10,13 +10,13 @@ const invoke=(command,args={})=>page.evaluate(({command,args})=>window.__TAURI_I
 const list=async()=>(await invoke('library_list',{query:{categoryId:'music',status:null,query:''}})).copies;
 async function add(path,title){
  await page.locator('.topbar').getByRole('button',{name:'添加收藏',exact:true}).click();
- await page.getByRole('button',{name:'手动录入',exact:true}).click();
- const form=page.getByRole('dialog',{name:'添加收藏',exact:true});
+ const form=page.getByRole('dialog',{name:'添加音乐版本',exact:true});
  await form.getByRole('textbox',{name:'名称',exact:true}).fill(title);
  await writeFile(join(directory,'model-selection.txt'),path);
- await form.getByRole('button',{name:'上传模型',exact:true}).click();
- await expect(form.locator('.model-file-title')).toHaveText(basename(path,extname(path)),{timeout:65000});
- await form.getByRole('button',{name:'下一步',exact:true}).click();
+ await form.getByRole('button',{name:'模型',exact:true}).click();
+ await form.locator('.model-preview-empty').click();
+ await expect(form.locator('.model-action-button[title]')).toHaveAttribute('title', basename(path,extname(path)),{timeout:65000});
+ await form.getByRole('button',{name:'填写购入信息',exact:true}).click();
  await form.getByRole('button',{name:'加入收藏',exact:true}).click();
  await expect(form).not.toBeVisible({timeout:15000});
  const row=(await list()).find(v=>v.edition.title===title);assert(row?.modelAssetId);
