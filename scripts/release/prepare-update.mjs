@@ -35,7 +35,6 @@ const receipt = {
   sourceCommit: execFileSync('git', ['rev-parse', `v${version}^{commit}`], { encoding: 'utf8' }).trim(),
   installer: { name: installerName, size: installer.length, sha256 },
   updater: { enabled: true, requireSignedVersion: true },
-  validation: { installerExecuted: false, hardwareTestedThisRelease: false },
 };
 writeFileSync(`${directory}/release-manifest.json`, JSON.stringify(receipt, null, 2) + '\n');
 const files = [installerPath, signaturePath, `${directory}/latest.json`, `${directory}/release-manifest.json`];
